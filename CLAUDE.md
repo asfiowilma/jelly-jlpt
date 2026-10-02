@@ -9,16 +9,51 @@ Everything runs in the browser with no build step and no installation required.
 
 ```
 jlpt-n5/
-├── index.html          # Application shell — React components + localStorage logic
-├── curriculum.js       # 1,720-day lesson data array + phase colour/name constants
-├── lib.js              # Pure utility functions: SM-2, card helpers, exercises
-├── tests.html          # QUnit browser test suite (open directly, no server)
-├── README.md           # User-facing documentation
-└── .nojekyll           # Disables Jekyll processing for GitHub Pages
+├── index.html              # Shell: head, CSP, <script src> load order, <div id="root">
+├── styles.css              # All app CSS (extracted from index.html's old inline <style>)
+├── curriculum/             # Lesson data, one file per phase (00 = shared constants)
+│   ├── 00-constants.js     #   var curriculum = []; + PHASE_COLORS/PHASE_BG/PHASE_NAMES
+│   ├── 01-hiragana.js      #   each later file: curriculum.push({...}) per day, in order
+│   ├── 02-katakana.js
+│   ├── ...
+│   └── 32-n1-test-prep.js
+├── lib.js                  # Pure utility functions: SM-2, card helpers, exercises
+├── app-helpers.js          # t()/translation strings, localStorage load/save, TTS, stroke-order fetch
+├── components/             # One React component per file (plain React.createElement, no JSX)
+│   ├── review-view.js
+│   ├── typing-tip.js
+│   ├── char-card.js
+│   ├── exercises.js
+│   ├── day-view.js
+│   ├── review-mode.js
+│   └── overview.js
+├── app.js                  # App component + ErrorBoundary + ReactDOM.createRoot(...).render(...)
+├── tests.html              # QUnit browser test suite (open directly, no server)
+├── tests/                  # One file per QUnit module, loaded by tests.html via <script src>
+│   ├── sm2-update.js
+│   ├── check-typing.js
+│   └── ... (19 files total, see Tests below)
+├── README.md               # User-facing documentation
+└── .nojekyll               # Disables Jekyll processing for GitHub Pages
 ```
 
-`curriculum.js` and `lib.js` are loaded by both `index.html` (app) and `tests.html`
-(test suite), making the pure functions testable without a build step.
+No bundler, no ES modules — every file above is a plain classic `<script src>` that
+defines top-level `var`/`function` globals. **Load order is load-bearing** and is
+not inferred automatically; it's spelled out in a comment at the top of
+`index.html`'s `<body>` (curriculum/ → lib.js → app-helpers.js → components/*.js,
+any order → app.js last, since app.js is what actually calls `ReactDOM.render`).
+
+`curriculum/*.js` and `lib.js` are loaded by both `index.html` (app) and `tests.html`
+(test suite), making the pure functions testable without a build step. The headless
+runner (`.claude/hooks/run-tests.js`) loads every file in `curriculum/` by reading
+the directory (sorted), so a new phase file just needs to exist there — no path to
+update. It also loads `app-helpers.js` + `components/*.js` + `app.js` in the same
+order as `index.html` to exercise the React render smoke tests.
+
+Adding a feature that's self-contained in its own component: add one file under
+`components/`, add its `<script src>` tag to `index.html` (and to the `appFiles`
+list in `.claude/hooks/run-tests.js` if it should be smoke-tested), done — no other
+file needs touching.
 
 ## Running the app
 
