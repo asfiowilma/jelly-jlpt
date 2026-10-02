@@ -35,10 +35,22 @@ QUnit.module('catalog checks', function () {
     }
     if (it.kind === 'grammar') {
       // Kana/kanji tokens of the pattern ('X は Y です' → は, です; '〜く/〜になる' → alternatives).
-      var tokens = it.pattern.replace(/[〜～…]|\([^)]*\)|[A-Za-z]+(-\S*)?/g, ' ').split(/\s+/).filter(Boolean);
-      return tokens.every(function (t) { return t.split('/').some(function (alt) { return !alt || jp.indexOf(alt) >= 0; }); });
+      // '/〜' joins alternatives ('〜ている/〜ています'), so that 〜 goes before splitting.
+      var tokens = it.pattern.replace(/\/\s*[〜～]/g, '/').replace(/[〜～…]|\([^)]*\)|[A-Za-z]+(-\S*)?/g, ' ').split(/\s+/).filter(Boolean);
+      return tokens.every(function (t) { return t.split('/').some(function (alt) { return !alt || grammarHas(alt, jp); }); });
     }
     return true;
+  }
+
+  // A grammar token as it shows up in a sentence: て/た voice after ん-verbs (〜てから → 読んでから,
+  // 〜たことがある → 読んだことがある), and a token ending in a verb's る/く/う conjugates like the vocab
+  // stem rule above (〜ている → ています, 〜に行く → に行きました).
+  // ponytail: ≥3 kana before the tail rule kicks in, so particles and short tokens stay exact.
+  function grammarHas(tok, jp) {
+    return [tok, tok.replace(/^て/, 'で').replace(/^た/, 'だ')].some(function (f) {
+      return jp.indexOf(f) >= 0 ||
+        (f.length >= 3 && /[るくう]$/.test(f) && new RegExp(f.slice(0, -1).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[' + HIRA + ']').test(jp));
+    });
   }
 
   function itemErrors(it, items) {
@@ -222,6 +234,13 @@ QUnit.module('catalog checks', function () {
     assert.ok(/uses/.test(errsFor(g, items)), 'example must list the grammar');
     items[g.id] = g;
     assert.ok(/doesn't contain g:te-mo-ii/.test(errsFor(ok('s:own:c', '食べます。'), items)), 'pattern absent');
+    assert.strictEqual(errsFor(ok('s:own:d', '読んでもいいですか。'), items), '', 'voiced て (読んで)');
+    var iru = { id: 'g:te-iru', kind: 'grammar', level: 'N5', pattern: '〜ている', meaning: 'is ~ing', sources: ['x'], verified: false };
+    items[iru.id] = iru;
+    assert.strictEqual(errsFor(s('本を読んでいます。', [iru.id]), items), '', 'conjugated tail (ています)');
+    assert.ok(/doesn't contain g:te-iru/.test(errsFor(s('本を読みます。', [iru.id]), items)), 'tail absent');
+    items[iru.id] = with_(iru, { pattern: '〜くない/〜かった' });
+    assert.strictEqual(errsFor(s('高かったです。', [iru.id]), items), '', "'/〜' alternatives: either one");
     assert.ok(/placeholder/.test(errsFor(with_(g, { pattern: 'Phase 6 review' }), items)), 'placeholder pattern');
   });
 
