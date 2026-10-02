@@ -72,14 +72,31 @@ QUnit.module('buildExercises (N3+ types)', {
     assert.ok(types.indexOf('reorder') >= 0, 'N2 grammar lesson generates reorder exercise');
   });
 
-  QUnit.test('N2 grammar lesson generates error_find exercise', function (assert) {
-    var lesson = { day: 1200, type: 'grammar', chars: [],
-      vocab: [['限る', 'かぎる', 'to be limited to']],
-      grammar: { pattern: '～に限って', meaning: 'only when / it is always the case that',
-        example_jp: '大事なときに限って失敗する。', example_en: 'I always fail at the important moments.' } };
-    var exs = buildExercises(lesson);
-    var types = exs.map(function (e) { return e.type; });
-    assert.ok(types.indexOf('error_find') >= 0, 'N2 grammar lesson generates error_find exercise');
+  QUnit.test('conjugation answers are real conjugations; non-verbs skipped', function (assert) {
+    var lesson = { day: 771, type: 'verbs', chars: [], // 771 % 7 = 1 → ない-form
+      vocab: [['書く', 'かく', 'to write'], ['難しい', 'むずかしい', 'difficult']] };
+    for (var i = 0; i < 10; i++) {
+      buildExercises(lesson).filter(function (e) { return e.type === 'conjugation'; }).forEach(function (c) {
+        assert.strictEqual(c.question, '書く (かく)');
+        assert.deepEqual(c.answers, ['書かない', 'かかない']);
+      });
+    }
+  });
+
+  QUnit.test('reorderChunks splits on spaces, else after particles, never mid-word', function (assert) {
+    assert.deepEqual(reorderChunks('私は 毎日 学校に 行きます。'), ['私は', '毎日', '学校に', '行きます']);
+    assert.deepEqual(reorderChunks('先生のおかげで試験に合格した。'), ['先生の', 'おかげで', '試験に', '合格した']);
+    assert.deepEqual(reorderChunks('鳥が空に上がった。'), ['鳥が', '空に', '上がった']);
+    assert.strictEqual(reorderChunks('はい。'), null);
+  });
+
+  QUnit.test('fill_blank never uses placeholder patterns', function (assert) {
+    curriculum.slice(660).forEach(function (lesson) {
+      buildExercises(lesson).filter(function (e) { return e.type === 'fill_blank'; }).forEach(function (ex) {
+        ex.options.forEach(function (o) { assert.notOk(isPlaceholderPattern(o), 'day ' + lesson.day + ': ' + o); });
+      });
+    });
+    assert.ok(isPlaceholderPattern('Review & Practice') && isPlaceholderPattern('Phase 18 grammar patterns comprehensive review'));
   });
 
   QUnit.test('N2 kanji lesson generates kanji_reading exercise', function (assert) {

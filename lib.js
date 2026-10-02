@@ -167,6 +167,72 @@ function rndShuffle(arr) {
   }
   return a;
 }
+// ── Verb conjugation ─────────────────────────────────────────────────────────
+var CONJ_FORMS = ['て-form', 'ない-form', 'た-form', 'potential', 'passive', 'causative', 'volitional'];
+var GODAN_ROWS = { 'う': 'わえお', 'く': 'かけこ', 'ぐ': 'がげご', 'す': 'させそ', 'つ': 'たてと', 'ぬ': 'なねの', 'ぶ': 'ばべぼ', 'む': 'まめも', 'る': 'られろ' };
+var GODAN_TE = { 'う': 'って', 'つ': 'って', 'る': 'って', 'く': 'いて', 'ぐ': 'いで', 'す': 'して', 'ぬ': 'んで', 'ぶ': 'んで', 'む': 'んで' };
+// ponytail: i/e-row る verbs that are godan anyway; kanji-only match, so an all-kana
+// ambiguous word (かえる, いる) falls back to ichidan. Extend the list when one bites.
+var GODAN_RU_EXCEPTIONS = /(帰|返|還|入|走|知|要|切|限|減|喋|滑|握|蹴|参|混じ|交じ|照|散|焦|茂|湿|練|遮|覆|陥|蘇|甦|罵|翻|捻|嘲|耽|詰|弄|煎|炒|しゃべ)る$/;
+
+// conjugate(dictForm, reading, form) → { kanji, kana } or null when the word
+// isn't a verb we can conjugate with certainty. form is one of CONJ_FORMS.
+function conjugate(dict, reading, form) {
+  var idx = CONJ_FORMS.indexOf(form);
+  if (idx < 0 || !dict || !reading || dict.slice(-1) !== reading.slice(-1)) return null;
+  var suffixes, cut = 1;
+  if (/する$/.test(dict) && /する$/.test(reading)) {
+    suffixes = ['して', 'しない', 'した', 'できる', 'される', 'させる', 'しよう'];
+    cut = 2;
+  } else if ((/来る$/.test(dict) || dict === 'くる') && /くる$/.test(reading)) {
+    var k = ['きて', 'こない', 'きた', 'こられる', 'こられる', 'こさせる', 'こよう'][idx];
+    var kana = reading.slice(0, -2) + k;
+    return { kanji: dict === 'くる' ? kana : dict.slice(0, -1) + k.slice(1), kana: kana };
+  } else if (/(ずる|ある)$/.test(reading)) {
+    return null; // ponytail: 信ずる-type and ある (ない-form) are irregular; not handled
+  } else if (/る$/.test(reading) && 'いきぎしじちぢにひびみりえけげせぜてでねへべめれ'.indexOf(reading.slice(-2, -1)) >= 0 &&
+             !GODAN_RU_EXCEPTIONS.test(dict)) {
+    suffixes = ['て', 'ない', 'た', 'られる', 'られる', 'させる', 'よう'];
+  } else {
+    var last = reading.slice(-1), row = GODAN_ROWS[last];
+    if (!row) return null;
+    var te = /行く$/.test(dict) || dict === 'いく' ? 'って' : GODAN_TE[last];
+    suffixes = [te, row[0] + 'ない', te.replace('て', 'た').replace('で', 'だ'), row[1] + 'る', row[0] + 'れる', row[0] + 'せる', row[2] + 'う'];
+  }
+  return { kanji: dict.slice(0, -cut) + suffixes[idx], kana: reading.slice(0, -cut) + suffixes[idx] };
+}
+
+// Phase-review / practice labels stored in grammar.pattern — not real patterns.
+function isPlaceholderPattern(p) {
+  return /review|practice|復習|comprehensive|^phase\s*\d/i.test(p || '');
+}
+
+// Split a sentence into reorder chunks: on spaces if present, else after a
+// particle that borders kanji/katakana. Returns 3–8 chunks, or null.
+// ponytail: heuristic, no tokenizer; misses particles between two kana words.
+function reorderChunks(sentence) {
+  var s = (sentence || '').replace(/[。！？!?]/g, '').trim();
+  var chunks = [];
+  if (/[\s　]/.test(s)) {
+    chunks = s.split(/[\s　]+/).filter(Boolean);
+  } else {
+    var isKK = function (c) { return !!c && /[一-鿿㐀-䶿゠-ヿ々]/.test(c); };
+    var start = 0, i = 0;
+    while (i < s.length) {
+      var m = /^((から|まで|より|[はがをにでとへものねよ])、?|、)/.exec(s.slice(i));
+      var j = m ? i + m[0].length : 0, next = s[j];
+      // next-char guard keeps okurigana (上が|る) and stacked particles (と|の) together
+      if (m && next && (/、$/.test(m[0]) || (isKK(s[i - 1]) || isKK(next)) && 'るらりれろっんゃゅょーはがをにでとへもの'.indexOf(next) < 0)) {
+        chunks.push(s.slice(start, j));
+        start = i = j;
+      } else i++;
+    }
+    chunks.push(s.slice(start));
+  }
+  while (chunks.length > 8) chunks.splice(-2, 2, chunks[chunks.length - 2] + chunks[chunks.length - 1]);
+  return chunks.length >= 3 ? chunks : null;
+}
+
 function buildExercises(lesson) {
   var exs = [];
   var allVocab = curriculum.flatMap(function (d) {
@@ -320,17 +386,22 @@ function buildExercises(lesson) {
 
   // Conjugation exercise (N3+, verb days)
   if (day > 660 && lesson.type === 'verbs' && lesson.vocab && lesson.vocab.length >= 2) {
-    var verbForms = ['て-form', 'ない-form', 'た-form', 'potential', 'passive', 'causative', 'volitional'];
-    var form = verbForms[day % verbForms.length];
-    var vConj = rndShuffle(lesson.vocab)[0];
-    exs.push({
-      type: 'conjugation',
-      prompt: 'Conjugate to ' + form + ':',
-      question: vConj[0],
-      answers: [vConj[1]],
-      targetForm: form,
-      placeholder: form + '...'
-    });
+    var form = CONJ_FORMS[day % CONJ_FORMS.length];
+    // Only plain verbs: "to …" meanings, not already-inflected entries like "(passive of 読む)"
+    var vConj = rndShuffle(lesson.vocab.filter(function (v) {
+      return /^to /i.test(v[2] || '') && !/passive|potential|causative/i.test(v[2]) && conjugate(v[0], v[1], form);
+    }))[0];
+    if (vConj) {
+      var conj = conjugate(vConj[0], vConj[1], form);
+      exs.push({
+        type: 'conjugation',
+        prompt: 'Conjugate to ' + form + ':',
+        question: vConj[0] + (vConj[0] !== vConj[1] ? ' (' + vConj[1] + ')' : ''),
+        answers: conj.kanji === conj.kana ? [conj.kana] : [conj.kanji, conj.kana],
+        targetForm: form,
+        placeholder: form + '...'
+      });
+    }
   }
 
   // Pair match (N3+, verb days with transitive/intransitive pairs)
@@ -350,11 +421,13 @@ function buildExercises(lesson) {
   }
 
   // Fill-in-the-blank (N3+, grammar days)
-  if (day > 660 && lesson.grammar && lesson.grammar.pattern && lesson.grammar.example_jp) {
+  if (day > 660 && lesson.grammar && lesson.grammar.pattern && lesson.grammar.example_jp && !isPlaceholderPattern(lesson.grammar.pattern)) {
     var gPat = lesson.grammar.pattern;
-    var wrongPats = rndShuffle(curriculum.filter(function (d) {
-      return d.grammar && d.grammar.pattern && d.grammar.pattern !== gPat;
-    }).map(function (d) { return d.grammar.pattern; })).slice(0, 3);
+    var seenPat = {};
+    var wrongPats = rndShuffle(curriculum.map(function (d) { return d.grammar && d.grammar.pattern; }).filter(function (p) {
+      if (!p || p === gPat || seenPat[p] || isPlaceholderPattern(p)) return false;
+      return seenPat[p] = true;
+    })).slice(0, 3);
     if (wrongPats.length >= 2) {
       var fillOpts = rndShuffle([gPat].concat(wrongPats));
       exs.push({
@@ -385,33 +458,16 @@ function buildExercises(lesson) {
 
   // Reorder exercise (N2+, grammar days)
   if (day > 960 && lesson.grammar && lesson.grammar.example_jp) {
-    var words = lesson.grammar.example_jp.replace(/[。、！？]/g, '').split('');
-    if (words.length >= 4) {
-      var chunks = [];
-      for (var ci = 0; ci < words.length; ci += 2) {
-        chunks.push(words.slice(ci, ci + 2).join(''));
-      }
-      if (chunks.length >= 3) {
-        exs.push({
-          type: 'reorder',
-          prompt: 'Arrange into a correct sentence:',
-          question: lesson.grammar.example_en,
-          items: rndShuffle(chunks),
-          answer: chunks.join('')
-        });
-      }
+    var chunks = reorderChunks(lesson.grammar.example_jp);
+    if (chunks) {
+      exs.push({
+        type: 'reorder',
+        prompt: 'Arrange into a correct sentence:',
+        question: lesson.grammar.example_en,
+        items: rndShuffle(chunks),
+        answer: chunks.join('')
+      });
     }
-  }
-
-  // Error find (N2+)
-  if (day > 960 && lesson.grammar && lesson.grammar.pattern) {
-    exs.push({
-      type: 'error_find',
-      prompt: 'Which grammar pattern is used correctly?',
-      question: '',
-      options: [lesson.grammar.example_jp, lesson.grammar.example_jp.split('').reverse().join('')],
-      correct: 0
-    });
   }
 
   // Kanji reading (N2+, kanji days)
@@ -427,41 +483,6 @@ function buildExercises(lesson) {
       question: kChar[0],
       options: kOpts,
       correct: kOpts.indexOf(kChar[1])
-    });
-  }
-
-  // Passage cloze (N1+)
-  if (day > 1320 && lesson.passage && lesson.passage.text_jp) {
-    exs.push({
-      type: 'passage_cloze',
-      prompt: 'Fill in the blank in the passage:',
-      question: lesson.passage.text_jp,
-      answers: lesson.passage.questions ? [lesson.passage.questions[0].answer] : [],
-      placeholder: 'Type the missing word...'
-    });
-  }
-
-  // Register exercise (N1+)
-  if (day > 1320 && lesson.vocab && lesson.vocab.length >= 2) {
-    var regV = rndShuffle(lesson.vocab)[0];
-    var regOpts = rndShuffle(['Formal', 'Informal', 'Honorific', 'Humble']);
-    exs.push({
-      type: 'register',
-      prompt: 'What formality level is this expression?',
-      question: regV[0],
-      options: regOpts,
-      correct: 0
-    });
-  }
-
-  // Paraphrase (N1+)
-  if (day > 1320 && lesson.grammar && lesson.grammar.example_jp && lesson.grammar.example_en) {
-    exs.push({
-      type: 'paraphrase',
-      prompt: 'Which sentence has the same meaning?',
-      question: lesson.grammar.example_jp,
-      options: [lesson.grammar.example_en],
-      correct: 0
     });
   }
 
