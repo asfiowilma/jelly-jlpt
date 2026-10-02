@@ -8,28 +8,21 @@ var NAV_TABS = [
 ];
 
 function App() {
-  var _React$useState23 = React.useState(function () {
-      try {
-        return parseInt(localStorage.getItem('n5_day') || '1') || 1;
-      } catch (e) {
-        return 1;
-      }
+  // Synced learning data comes from Store (store.js), loaded before App mounts.
+  var _React$useStateSnap = React.useState(function () {
+      return Store.snapshot();
     }),
+    snap0 = _React$useStateSnap[0];
+  var _React$useState23 = React.useState(snap0.dayNum),
     _React$useState24 = _slicedToArray(_React$useState23, 2),
     dayNum = _React$useState24[0],
     setDayNum = _React$useState24[1];
-  var _React$useState25 = React.useState(function () {
-      return srsLoad();
-    }),
+  var _React$useState25 = React.useState(snap0.srsCards),
     _React$useState26 = _slicedToArray(_React$useState25, 2),
     srsCards = _React$useState26[0],
     setSrsCards = _React$useState26[1];
   var _React$useState27 = React.useState(function () {
-      try {
-        return new Set(JSON.parse(localStorage.getItem('n5_completed') || '[]'));
-      } catch (e) {
-        return new Set();
-      }
+      return new Set(snap0.completed);
     }),
     _React$useState28 = _slicedToArray(_React$useState27, 2),
     completed = _React$useState28[0],
@@ -43,38 +36,25 @@ function App() {
     _React$useStatePrev2 = _slicedToArray(_React$useStatePrev, 2),
     prevView = _React$useStatePrev2[0],
     setPrevView = _React$useStatePrev2[1];
-  // Raw n5_furigana pref (null = unset → day-based default, see furiganaOn).
+  // Raw furigana pref 'true'|'false' (null = unset → day-based default, see furiganaOn).
   // Lives here, not in DayView, so the navbar ruby follows the same toggle.
-  var _React$useStateFuri = React.useState(function () {
-      try {
-        return localStorage.getItem('n5_furigana');
-      } catch (e) {
-        return null;
-      }
-    }),
+  var _React$useStateFuri = React.useState(snap0.furiganaPref),
     _React$useStateFuri2 = _slicedToArray(_React$useStateFuri, 2),
     furiganaPref = _React$useStateFuri2[0],
     setFuriganaPref = _React$useStateFuri2[1];
   // Interface language: 'auto' (progressive EN→JA by day), 'en' or 'ja'.
   // ponytail: defaults to 'en' while the app is under development; flip the
-  // fallback to 'auto' for release.
-  var _React$useStateLang = React.useState(function () {
-      try {
-        var v = localStorage.getItem('jlpt_ui_lang');
-        return v === 'auto' || v === 'ja' ? v : 'en';
-      } catch (e) {
-        return 'en';
-      }
-    }),
+  // fallback to 'auto' for release (docsToSnapshot in lib.js).
+  var _React$useStateLang = React.useState(snap0.uiLang),
     _React$useStateLang2 = _slicedToArray(_React$useStateLang, 2),
     uiLang = _React$useStateLang2[0],
     setUiLang = _React$useStateLang2[1];
   // Set during render (not in an effect) so t() in this render already sees it.
   window._uiLang = uiLang;
   React.useEffect(function () {
-    safeSave('jlpt_ui_lang', uiLang);
+    Store.putPrefs({ uiLang: uiLang });
   }, [uiLang]);
-  var _React$useStateStorageErr = React.useState(!storageAvailable()),
+  var _React$useStateStorageErr = React.useState(!storageAvailable() || Store.backend === 'memory'),
     _React$useStateStorageErrArr = _slicedToArray(_React$useStateStorageErr, 2),
     storageError = _React$useStateStorageErrArr[0],
     setStorageError = _React$useStateStorageErrArr[1];
@@ -127,19 +107,13 @@ function App() {
   var dueCount = srsDueCards(srsCards).length;
   var showFurigana = furiganaOn(furiganaPref, dayNum);
   var toggleFurigana = function toggleFurigana() {
-    var next = String(!showFurigana);
-    safeSave('n5_furigana', next);
-    setFuriganaPref(next);
+    Store.putPrefs({ furigana: !showFurigana });
+    setFuriganaPref(String(!showFurigana));
   };
   // Settings select: 'auto' clears the stored pref (day-based default), else 'true'/'false'.
   var setFuriganaMode = function setFuriganaMode(mode) {
-    if (mode === 'auto') {
-      try { localStorage.removeItem('n5_furigana'); } catch (e) {}
-      setFuriganaPref(null);
-    } else {
-      safeSave('n5_furigana', mode);
-      setFuriganaPref(mode);
-    }
+    Store.putPrefs({ furigana: mode === 'auto' ? null : mode === 'true' });
+    setFuriganaPref(mode === 'auto' ? null : mode);
   };
   var openSettings = function openSettings() {
     if (view === 'settings') return;
@@ -148,37 +122,26 @@ function App() {
   };
   var toggleDone = function toggleDone() {
     var wasDone = completed.has(dayNum);
+    Store.putDay(dayNum, !wasDone);
     setCompleted(function (prev) {
       var n = new Set(prev);
       n.has(dayNum) ? n["delete"](dayNum) : n.add(dayNum);
       return n;
     });
-    setSrsCards(function (prev) {
+    // Un-marking only flips day:N (sync design decision 10) — SRS cards are kept.
+    if (!wasDone) setSrsCards(function (prev) {
       var cards = Object.assign({}, prev);
-      if (wasDone) {
-        var prefix1 = 'v_' + dayNum + '_';
-        var prefix2 = 'c_' + dayNum + '_';
-        Object.keys(cards).forEach(function (id) {
-          if (id.startsWith(prefix1) || id.startsWith(prefix2)) {
-            delete cards[id];
-          }
-        });
-      } else {
-        srsAddCards(lesson, cards);
-      }
-      srsSave(cards);
+      if (srsAddCards(lesson, cards)) Store.putCards(cards);
       return cards;
     });
   };
   React.useEffect(function () {
-    safeSave('n5_day', String(dayNum));
+    Store.putPrefs({ currentDay: dayNum });
   }, [dayNum]);
-  React.useEffect(function () {
-    safeSave('n5_completed', JSON.stringify(_toConsumableArray(completed)));
-  }, [completed]);
   function handleExport() {
-    var data = exportProgress();
-    if (!data) { alert('Unable to access storage for export.'); return; }
+    var data = exportProgress(Store.docs(), function (k) {
+      try { return localStorage.getItem(k); } catch (e) { return null; }
+    });
     var json = JSON.stringify(data, null, 2);
     var blob = new Blob([json], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
@@ -204,10 +167,20 @@ function App() {
           var check = validateProgressData(parsed);
           if (!check.valid) { alert('Invalid progress file: ' + check.error); return; }
           if (!confirm('This will overwrite your current progress. Continue?')) return;
-          Object.keys(parsed.keys).forEach(function (k) {
-            safeSave(k, parsed.keys[k]);
+          var imported = progressFileToDocs(parsed, Store.deviceId, Date.now());
+          Object.keys(imported.device).forEach(function (k) {
+            safeSave(k, imported.device[k]);
           });
-          location.reload();
+          Store.replaceAll(imported.docs).then(function () {
+            if (Store.backend !== 'memory') return location.reload();
+            // In-memory session: a reload would lose the import, so apply it in place.
+            var s = Store.snapshot();
+            setCompleted(new Set(s.completed));
+            setSrsCards(s.srsCards);
+            setDayNum(s.dayNum);
+            setFuriganaPref(s.furiganaPref);
+            setUiLang(s.uiLang);
+          });
         } catch (err) {
           alert('Failed to read file: ' + err.message);
         }
@@ -221,7 +194,7 @@ function App() {
   }, storageError && /*#__PURE__*/React.createElement("div", {
     className: "storage-warning",
     role: "alert"
-  }, "\u26a0\ufe0f Unable to save progress \u2014 storage may be full or disabled. ", /*#__PURE__*/React.createElement("button", {
+  }, Store.backend === 'memory' ? "\u26a0\ufe0f Progress can't be saved in this browser \u2014 it lasts only until you close this tab. Export before closing. " : "\u26a0\ufe0f Unable to save progress \u2014 storage may be full or disabled. ", /*#__PURE__*/React.createElement("button", {
     onClick: function() { setStorageError(false); },
     className: "storage-warning-dismiss"
   }, "Dismiss")), /*#__PURE__*/React.createElement("header", {
@@ -277,7 +250,7 @@ function App() {
     dayNum: dayNum,
     onUpdate: function onUpdate(updated) {
       setSrsCards(updated);
-      srsSave(updated);
+      Store.putCards(updated);
     }
   }) : view === 'overview' ? /*#__PURE__*/React.createElement(Overview, {
     curriculum: curriculum,
@@ -315,13 +288,20 @@ var ErrorBoundary = (function () {
         React.createElement('h2', null, 'Something went wrong'),
         React.createElement('p', null, self.state.error && self.state.error.message),
         React.createElement('button', { onClick: function() { location.reload(); } }, 'Reload'),
-        React.createElement('button', { onClick: function() { localStorage.clear(); location.reload(); } }, 'Reset all data')
+        React.createElement('button', { onClick: function() {
+          localStorage.clear();
+          var wipe = typeof PouchDB !== 'undefined' ? new PouchDB(STORE_DB_NAME).destroy() : Promise.resolve();
+          wipe.catch(function () {}).then(function () { location.reload(); });
+        } }, 'Reset all data')
       );
     }
     return this.props.children;
   };
   return ErrorBoundary;
 }());
-ReactDOM.createRoot(document.getElementById('root')).render(
-  /*#__PURE__*/React.createElement(ErrorBoundary, null, React.createElement(App, null))
-);
+// Brief loading state while Store reads every doc into memory, then mount App.
+var appRoot = ReactDOM.createRoot(document.getElementById('root'));
+appRoot.render(React.createElement('div', { role: 'status', style: { padding: 40, textAlign: 'center', color: 'var(--muted)' } }, 'Loading…'));
+Store.init().then(function () {
+  appRoot.render(/*#__PURE__*/React.createElement(ErrorBoundary, null, React.createElement(App, null)));
+});

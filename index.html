@@ -7,6 +7,8 @@
 <title>日本語 N5–N1 Course</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<!-- PouchDB 9.0.0: local IndexedDB store for synced learning data (store.js) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pouchdb/9.0.0/pouchdb.min.js" integrity="sha512-hyVHTpOcRgAUXkchpu2278X+cGfyHDm7mVx8iUu9/jFjF2okiD4hWiDPQFhzQN9x788LJfU/9xcaDPz2nwYLDQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <link rel="stylesheet" href="styles.css">
 <!-- Apply saved theme before first paint (no flash). Unknown values fall back to styles.css's bare :root (Aizome dark); App normalizes + re-saves them. -->
 <script>try{document.documentElement.setAttribute('data-palette',localStorage.getItem('jlpt_palette')||'ai');document.documentElement.setAttribute('data-theme',localStorage.getItem('jlpt_theme')||'dark')}catch(e){}</script>
@@ -19,9 +21,10 @@
   1. curriculum/00-constants.js (declares `curriculum = []` + PHASE_COLORS/PHASE_BG/PHASE_NAMES)
   2. curriculum/01..32 (each appends its phase's days via curriculum.push())
   3. lib.js (pure helpers + Babel runtime helpers, no top-level curriculum reads)
-  4. app-helpers.js (t/lsLoad/lsSave/speak/..., reads PHASE_COLORS at load time)
-  5. components/*.js (any order — only read curriculum/helpers inside render, not at load time)
-  6. app.js (mounts React — the only script that actually renders the tree)
+  4. store.js (Store: PouchDB-backed persistence for synced learning data; uses lib.js)
+  5. app-helpers.js (t/lsLoad/lsSave/speak/..., reads PHASE_COLORS at load time)
+  6. components/*.js (any order — only read curriculum/helpers inside render, not at load time)
+  7. app.js (awaits Store.init(), then mounts React — the only script that actually renders the tree)
 -->
 <script src="curriculum/00-constants.js"></script>
 <script src="curriculum/01-hiragana.js"></script>
@@ -57,6 +60,7 @@
 <script src="curriculum/31-n1-kanji.js"></script>
 <script src="curriculum/32-n1-test-prep.js"></script>
 <script src="lib.js"></script>
+<script src="store.js"></script>
 <script src="app-helpers.js"></script>
 <script src="components/review-view.js"></script>
 <script src="components/typing-tip.js"></script>

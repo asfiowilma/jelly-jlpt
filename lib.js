@@ -547,17 +547,7 @@ function sanitizeSvg(raw) {
 }
 
 // ── SRS: SM-2 ───────────────────────────────────────────────────────────────
-var SRS_KEY = 'n5_srs';
-function srsLoad() {
-  try {
-    return JSON.parse(localStorage.getItem(SRS_KEY)) || {};
-  } catch (e) {
-    return {};
-  }
-}
-function srsSave(cards) {
-  safeSave(SRS_KEY, JSON.stringify(cards));
-}
+// Cards persist via Store (store.js) as `card:<id>` docs.
 function srsAddCards(dayLesson, cards) {
   var changed = false;
   var now = Date.now();
@@ -614,7 +604,8 @@ function srsReview(card, quality) {
     interval: interval,
     ease: ease,
     reps: reps,
-    due: due
+    due: due,
+    lastReviewedAt: Date.now() // merge key for card docs (pickStoreWinner)
   });
 }
 function srsDueCards(cards) {
@@ -624,27 +615,161 @@ function srsDueCards(cards) {
   });
 }
 
-// exportProgress: collects all jlpt_*/n5_* keys from localStorage and returns
-// a JSON-serialisable object with a version field.
-// Returns null if localStorage is unavailable.
-function exportProgress() {
-  try {
-    var KEYS = ['n5_day', 'n5_completed', 'n5_furigana', 'n5_srs', 'n5_2025', 'jlpt_tts_rate', 'jlpt_palette', 'jlpt_theme', 'jlpt_ui_lang'];
-    var data = { version: 1, exported: new Date().toISOString(), keys: {} };
-    KEYS.forEach(function (k) {
-      var v = localStorage.getItem(k);
-      if (v !== null) data.keys[k] = v;
-    });
-    return data;
-  } catch (e) {
-    return null;
-  }
+// ── Store docs (synced learning data, persisted by store.js) ────────────────
+// One doc per entity; every doc also carries updatedAt (ms) + deviceId.
+//   day:<N>         { done }
+//   card:<id>       SRS card fields (id, type, front, back, reading?, interval,
+//                   ease, due, reps) + lastReviewedAt (0 = never reviewed)
+//   prefs:learning  { currentDay, furigana (true|false; null/absent = day-based),
+//                   uiLang ('auto'|'en'|'ja') }
+// Reserved, not written yet (features come later):
+//   ach:<id>            { unlockedAt }   merge: earliest unlock wins, never deleted
+//   ev:<ts>:<deviceId>  { type, ... }    immutable, append-only
+// Device-only prefs stay in localStorage and never become docs:
+var DEVICE_PREF_KEYS = ['jlpt_palette', 'jlpt_theme', 'jlpt_tts_rate'];
+// v1 export / pre-store localStorage keys that now live in docs:
+var LEGACY_SYNCED_KEYS = ['n5_day', 'n5_completed', 'n5_furigana', 'n5_srs', 'jlpt_ui_lang'];
+var STORE_ID_RE = /^(day:[1-9]\d*|card:[vc]_\d+_\d+|prefs:learning)$/;
+
+function stripDocMeta(doc) {
+  var out = {};
+  Object.keys(doc).forEach(function (k) {
+    if (['_id', '_rev', '_conflicts', 'updatedAt', 'deviceId'].indexOf(k) === -1) out[k] = doc[k];
+  });
+  return out;
 }
 
-// validateProgressData: checks that a parsed progress object has the expected
-// shape. Returns { valid: boolean, error: string|null }.
+// pickStoreWinner: deterministic merge of two revisions of the same doc
+// (sync design decision 11). card:* → latest lastReviewedAt (then updatedAt);
+// everything else → last write (updatedAt) wins. Ties → higher deviceId.
+// Use as revs.reduce(pickStoreWinner).
+function pickStoreWinner(a, b) {
+  var isCard = a._id.indexOf('card:') === 0;
+  var ka = isCard ? [a.lastReviewedAt || 0, a.updatedAt || 0] : [a.updatedAt || 0];
+  var kb = isCard ? [b.lastReviewedAt || 0, b.updatedAt || 0] : [b.updatedAt || 0];
+  for (var i = 0; i < ka.length; i++) {
+    if (ka[i] !== kb[i]) return ka[i] > kb[i] ? a : b;
+  }
+  return String(a.deviceId || '') >= String(b.deviceId || '') ? a : b;
+}
+
+// legacyToDocs: pre-store localStorage values → docs. `get(key)` returns the
+// stored string or null (localStorage.getItem, or a v1 export's keys).
+function legacyToDocs(get, deviceId, now) {
+  var docs = [];
+  function add(id, body) {
+    docs.push(Object.assign({ _id: id }, body, { updatedAt: now, deviceId: deviceId }));
+  }
+  function json(k, fallback) {
+    try { return JSON.parse(get(k)) || fallback; } catch (e) { return fallback; }
+  }
+  var done = json('n5_completed', []);
+  if (Array.isArray(done)) done.forEach(function (n) {
+    n = parseInt(n);
+    if (n > 0) add('day:' + n, { done: true });
+  });
+  var cards = json('n5_srs', {});
+  Object.keys(cards).forEach(function (id) {
+    var c = cards[id];
+    if (!c || typeof c !== 'object' || !STORE_ID_RE.test('card:' + id)) return;
+    // Old cards have no review timestamp; srsReview set due = review + interval days.
+    var reviewed = c.lastReviewedAt || (c.reps > 0 ? c.due - c.interval * 86400000 : 0) || 0;
+    add('card:' + id, Object.assign({}, c, { id: id, lastReviewedAt: reviewed }));
+  });
+  var prefs = {};
+  var day = parseInt(get('n5_day'));
+  var furi = get('n5_furigana');
+  var lang = get('jlpt_ui_lang');
+  if (day > 0) prefs.currentDay = day;
+  if (furi === 'true' || furi === 'false') prefs.furigana = furi === 'true';
+  if (lang === 'auto' || lang === 'en' || lang === 'ja') prefs.uiLang = lang;
+  if (Object.keys(prefs).length) add('prefs:learning', prefs);
+  return docs;
+}
+
+// docsToSnapshot: docs → App's synchronous state shape.
+function docsToSnapshot(docs) {
+  var snap = { completed: [], srsCards: {}, dayNum: 1, furiganaPref: null, uiLang: 'en' };
+  docs.forEach(function (d) {
+    if (d._id.indexOf('day:') === 0) {
+      if (d.done) snap.completed.push(parseInt(d._id.slice(4)));
+    } else if (d._id.indexOf('card:') === 0) {
+      snap.srsCards[d._id.slice(5)] = stripDocMeta(d);
+    } else if (d._id === 'prefs:learning') {
+      if (d.currentDay > 0) snap.dayNum = Math.floor(d.currentDay);
+      if (typeof d.furigana === 'boolean') snap.furiganaPref = String(d.furigana);
+      // ponytail: 'en' fallback while under development (see App); 'auto' for release.
+      if (d.uiLang === 'auto' || d.uiLang === 'ja') snap.uiLang = d.uiLang;
+    }
+  });
+  return snap;
+}
+
+// exportProgress: v2 progress file from the store's docs plus device-only
+// prefs read via `get(key)` (localStorage.getItem).
+function exportProgress(docs, get) {
+  var device = {};
+  DEVICE_PREF_KEYS.forEach(function (k) {
+    var v = get(k);
+    if (v !== null && v !== undefined) device[k] = v;
+  });
+  return {
+    version: 2,
+    exported: new Date().toISOString(),
+    docs: docs.map(function (d) {
+      var c = Object.assign({}, d);
+      delete c._rev;
+      delete c._conflicts;
+      return c;
+    }),
+    device: device
+  };
+}
+
+// progressFileToDocs: a validated v1 or v2 progress file → { docs, device }.
+// `device` = localStorage keys to write back as-is (device prefs; v1 legacy extras).
+function progressFileToDocs(data, deviceId, now) {
+  if (data.version === 2) return { docs: data.docs, device: data.device || {} };
+  var keys = data.keys;
+  var device = {};
+  Object.keys(keys).forEach(function (k) {
+    if (LEGACY_SYNCED_KEYS.indexOf(k) === -1) device[k] = keys[k];
+  });
+  var get = function (k) { return Object.prototype.hasOwnProperty.call(keys, k) ? keys[k] : null; };
+  return { docs: legacyToDocs(get, deviceId, now), device: device };
+}
+
+function validateProgressV2(data) {
+  function bad(msg) { return { valid: false, error: 'version 2: ' + msg }; }
+  if (!Array.isArray(data.docs)) return bad('missing docs array');
+  for (var i = 0; i < data.docs.length; i++) {
+    var d = data.docs[i];
+    if (!d || typeof d !== 'object' || typeof d._id !== 'string' || !STORE_ID_RE.test(d._id)) {
+      return bad('bad doc id: ' + (d && d._id));
+    }
+    if (typeof d.updatedAt !== 'number') return bad(d._id + ' missing updatedAt');
+    if (d._id.indexOf('day:') === 0 && typeof d.done !== 'boolean') return bad(d._id + ' missing done');
+    if (d._id.indexOf('card:') === 0 && ['interval', 'ease', 'due', 'reps'].some(function (f) {
+      return typeof d[f] !== 'number';
+    })) return bad(d._id + ' missing SRS fields');
+  }
+  if (data.device !== undefined) {
+    if (!data.device || typeof data.device !== 'object') return bad('device is not an object');
+    var dk = Object.keys(data.device);
+    for (var j = 0; j < dk.length; j++) {
+      if (DEVICE_PREF_KEYS.indexOf(dk[j]) === -1) return bad('unknown device key: ' + dk[j]);
+      if (typeof data.device[dk[j]] !== 'string') return bad('device key ' + dk[j] + ' is not a string');
+    }
+  }
+  return { valid: true, error: null };
+}
+
+// validateProgressData: checks that a parsed progress object (v1 localStorage
+// key dump or v2 doc export) has the expected shape.
+// Returns { valid: boolean, error: string|null }.
 function validateProgressData(data) {
   if (!data || typeof data !== 'object') return { valid: false, error: 'not an object' };
+  if (data.version === 2) return validateProgressV2(data);
   if (data.version !== 1) return { valid: false, error: 'unsupported version: ' + data.version };
   if (!data.keys || typeof data.keys !== 'object') return { valid: false, error: 'missing keys field' };
   var allowedKeys = ['n5_day', 'n5_completed', 'n5_furigana', 'n5_srs', 'n5_2025', 'jlpt_tts_rate', 'jlpt_palette', 'jlpt_theme', 'jlpt_ui_lang'];

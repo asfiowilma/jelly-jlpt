@@ -34,9 +34,8 @@ vm.runInThisContext(fs.readFileSync(path.join(projectDir, "lib.js"), "utf8"));
 // ── minimal test harness ──────────────────────────────────────────────────────
 var _pass = 0, _fail = 0;
 
-function test(name, fn) {
-  var failures = [];
-  var assert = {
+function makeAssert(failures) {
+  return {
     equal: function (a, b, m) {
       if (a !== b)
         failures.push((m ? m + " — " : "") + "expected " + JSON.stringify(b) + ", got " + JSON.stringify(a));
@@ -51,19 +50,41 @@ function test(name, fn) {
       if (a === b) failures.push(m || "expected different references");
     },
   };
+}
+function record(name, failures) {
+  if (failures.length === 0) {
+    _pass++;
+  } else {
+    _fail++;
+    console.error("  FAIL  " + name);
+    failures.forEach(function (f) { console.error("         " + f); });
+  }
+}
+
+function test(name, fn) {
+  var failures = [];
   try {
-    fn(assert);
-    if (failures.length === 0) {
-      _pass++;
-    } else {
-      _fail++;
-      console.error("  FAIL  " + name);
-      failures.forEach(function (f) { console.error("         " + f); });
-    }
+    fn(makeAssert(failures));
+    record(name, failures);
   } catch (e) {
     _fail++;
     console.error("  ERROR " + name + ": " + e.message);
   }
+}
+
+// testAsync: fn returns a promise. Async tests run one after another; the
+// summary at the bottom waits for the chain.
+var _asyncChain = Promise.resolve();
+function testAsync(name, fn) {
+  _asyncChain = _asyncChain.then(function () {
+    var failures = [];
+    return Promise.resolve().then(function () { return fn(makeAssert(failures)); }).then(function () {
+      record(name, failures);
+    }, function (e) {
+      _fail++;
+      console.error("  ERROR " + name + ": " + (e && e.message || e));
+    });
+  });
 }
 
 // ── 1. sm2Update ──────────────────────────────────────────────────────────────
@@ -638,6 +659,7 @@ test("passage: all reading-type days have text_jp and text_en", function (a) {
 (function () {
   // Mirrors the <script src> order in index.html (after curriculum/ and lib.js)
   var appFiles = [
+    "store.js",
     "app-helpers.js",
     path.join("components", "review-view.js"),
     path.join("components", "typing-tip.js"),
@@ -1050,11 +1072,170 @@ test("navbar: levelRamp filled up to and including the current day", function (a
   a.ok(Math.abs(levelRamp(860, 1720).here - 50) < 0.1, "marker at the middle for day 860");
 });
 
+// ── store (mirrors tests/store.js) ───────────────────────────────────────────
+(function () {
+  function fakeLs(init) {
+    var d = Object.assign({}, init);
+    return {
+      get: function (k) { return Object.prototype.hasOwnProperty.call(d, k) ? d[k] : null; },
+      set: function (k, v) { d[k] = String(v); }
+    };
+  }
+  function persistentBackend() { var b = memoryBackend(); b.name = "fake-persistent"; return b; }
+  function storeOn(ls, backend) {
+    return createStore({ ls: ls, openBackend: function () { return Promise.resolve(backend); } });
+  }
+  var MIGRATED = { jlpt_store_migrated_v1: "1" };
+  var LEGACY = {
+    n5_completed: "[1,2]",
+    n5_srs: JSON.stringify({
+      v_1_0: { id: "v_1_0", type: "vocab", front: "いえ", back: "house", reading: "いえ", interval: 6, ease: 2.5, due: 10 * 86400000, reps: 2 },
+      c_2_0: { id: "c_2_0", type: "char", front: "あ", back: "a", interval: 1, ease: 2.5, due: 5, reps: 0 }
+    }),
+    n5_day: "3", n5_furigana: "false", jlpt_ui_lang: "ja",
+    jlpt_palette: "shu", jlpt_theme: "light", jlpt_tts_rate: "1"
+  };
+  function sorted(arr) { return arr.slice().sort(); }
+
+  test("store: pickStoreWinner day/prefs LWW, ties → higher deviceId", function (a) {
+    var x = { _id: "day:1", done: true, updatedAt: 200, deviceId: "a" };
+    var y = { _id: "day:1", done: false, updatedAt: 100, deviceId: "z" };
+    a.equal(pickStoreWinner(x, y), x); a.equal(pickStoreWinner(y, x), x, "order-independent");
+    var p1 = { _id: "prefs:learning", currentDay: 5, updatedAt: 1, deviceId: "a" };
+    var p2 = { _id: "prefs:learning", currentDay: 9, updatedAt: 1, deviceId: "b" };
+    a.equal(pickStoreWinner(p1, p2), p2, "tie → higher deviceId"); a.equal(pickStoreWinner(p2, p1), p2);
+  });
+  test("store: pickStoreWinner card latest review wins over a newer write", function (a) {
+    var reviewed = { _id: "card:v_1_0", reps: 3, lastReviewedAt: 500, updatedAt: 500, deviceId: "a" };
+    var stale = { _id: "card:v_1_0", reps: 0, lastReviewedAt: 0, updatedAt: 900, deviceId: "b" };
+    a.equal(pickStoreWinner(reviewed, stale), reviewed); a.equal(pickStoreWinner(stale, reviewed), reviewed);
+    var newer = Object.assign({}, stale, { updatedAt: 950 });
+    a.equal(pickStoreWinner(stale, newer), newer, "same review time → updatedAt");
+  });
+  test("store: legacyToDocs localStorage fixture → day/card/prefs docs", function (a) {
+    var docs = legacyToDocs(fakeLs(LEGACY).get, "dev1", 42), byId = {};
+    docs.forEach(function (d) { byId[d._id] = d; });
+    a.deepEqual(sorted(Object.keys(byId)), ["card:c_2_0", "card:v_1_0", "day:1", "day:2", "prefs:learning"]);
+    a.equal(byId["day:1"].done, true);
+    var p = byId["prefs:learning"];
+    a.deepEqual([p.currentDay, p.furigana, p.uiLang], [3, false, "ja"]);
+    a.equal(byId["card:v_1_0"].lastReviewedAt, 4 * 86400000, "reviewed: due - interval days");
+    a.equal(byId["card:c_2_0"].lastReviewedAt, 0, "never reviewed → 0");
+    a.ok(docs.every(function (d) { return d.updatedAt === 42 && d.deviceId === "dev1"; }), "stamped");
+    a.deepEqual(legacyToDocs(fakeLs({ n5_srs: "garbage" }).get, "d", 1), [], "bad JSON → no docs");
+  });
+  testAsync("store: migration copies legacy keys once, sets flag, leaves old + device keys", function (a) {
+    var ls = fakeLs(LEGACY), backend = persistentBackend(), s1 = storeOn(ls, backend);
+    return s1.init().then(function (snap) {
+      a.deepEqual(sorted(snap.completed), [1, 2]);
+      a.deepEqual([snap.dayNum, snap.furiganaPref, snap.uiLang], [3, "false", "ja"]);
+      a.equal(snap.srsCards.v_1_0.front, "いえ");
+      return s1.flush();
+    }).then(function () {
+      a.equal(ls.get("jlpt_store_migrated_v1"), "1", "flag set");
+      a.equal(ls.get("n5_completed"), "[1,2]", "old key untouched");
+      a.notOk(s1.docs().some(function (d) { return /palette|theme|tts/.test(JSON.stringify(d)); }), "device prefs not in docs");
+      ls.set("n5_completed", "[1,2,7]");
+      return storeOn(ls, backend).init();
+    }).then(function (snap) { a.deepEqual(sorted(snap.completed), [1, 2], "no second migration"); });
+  });
+  testAsync("store: in-memory fallback migrates for the session but does not set the flag", function (a) {
+    var ls = fakeLs(LEGACY), warn = console.warn;
+    var s = createStore({ ls: ls, openBackend: function () { return Promise.reject(new Error("no idb")); } });
+    console.warn = function () {};
+    return s.init().then(function (snap) {
+      console.warn = warn;
+      a.equal(s.backend, "memory");
+      a.deepEqual(sorted(snap.completed), [1, 2]);
+      return s.flush();
+    }).then(function () { a.equal(ls.get("jlpt_store_migrated_v1"), null); });
+  });
+  testAsync("store: in-memory backend round-trip across sessions", function (a) {
+    var backend = memoryBackend(), ls = fakeLs(MIGRATED), s1 = storeOn(ls, backend);
+    var card = { id: "v_4_0", type: "vocab", front: "x", back: "y", interval: 1, ease: 2.5, due: 1, reps: 0 };
+    return s1.init().then(function () {
+      s1.putDay(4, true); s1.putCards({ v_4_0: card });
+      s1.putPrefs({ currentDay: 4, furigana: true, uiLang: "auto" });
+      return s1.flush();
+    }).then(function () { return storeOn(ls, backend).init(); }).then(function (snap) {
+      a.deepEqual(snap.completed, [4]);
+      a.deepEqual(snap.srsCards.v_4_0, card);
+      a.deepEqual([snap.dayNum, snap.furiganaPref, snap.uiLang], [4, "true", "auto"]);
+      return backend.loadAll();
+    }).then(function (docs) {
+      a.ok(docs.every(function (d) { return typeof d.updatedAt === "number" && d.deviceId === ls.get("jlpt_device_id"); }), "updatedAt + deviceId");
+    });
+  });
+  testAsync("store: putPrefs/putDay skip unchanged values", function (a) {
+    var s = storeOn(fakeLs(MIGRATED), memoryBackend());
+    return s.init().then(function () {
+      s.putPrefs({ currentDay: 1, uiLang: "en", furigana: null });
+      a.equal(s.docs().length, 0, "defaults not written");
+      s.putDay(2, true); var first = s.docs()[0]; s.putDay(2, true);
+      a.equal(s.docs()[0], first, "no rewrite");
+    });
+  });
+  testAsync("store: un-marking a day keeps its SRS cards (decision 10)", function (a) {
+    var s = storeOn(fakeLs(MIGRATED), memoryBackend());
+    return s.init().then(function () {
+      var cards = {}; srsAddCards(curriculum[4], cards);
+      s.putDay(5, true); s.putCards(cards); s.putDay(5, false);
+      var snap = s.snapshot();
+      a.deepEqual(snap.completed, [], "day 5 not done");
+      a.deepEqual(sorted(Object.keys(snap.srsCards)), sorted(Object.keys(cards)), "cards kept");
+      a.ok(Object.keys(cards).length > 0, "day 5 has cards");
+    });
+  });
+  test("store: export v2 → validate → import round-trips docs + device prefs", function (a) {
+    var docs = legacyToDocs(fakeLs(LEGACY).get, "dev1", 42).map(function (d) { return Object.assign({ _rev: "1-x" }, d); });
+    var file = exportProgress(docs, fakeLs(LEGACY).get);
+    a.equal(file.version, 2);
+    a.deepEqual(file.device, { jlpt_palette: "shu", jlpt_theme: "light", jlpt_tts_rate: "1" });
+    a.ok(file.docs.every(function (d) { return d._rev === undefined; }), "_rev stripped");
+    var parsed = JSON.parse(JSON.stringify(file));
+    a.ok(validateProgressData(parsed).valid, validateProgressData(parsed).error);
+    var imp = progressFileToDocs(parsed, "dev2", 99);
+    a.deepEqual(docsToSnapshot(imp.docs), docsToSnapshot(docs));
+    a.deepEqual(imp.device, file.device);
+  });
+  test("store: import v1 synced keys → docs, other keys → localStorage", function (a) {
+    var v1 = { version: 1, keys: { n5_completed: "[3]", n5_day: "3", jlpt_palette: "matcha", n5_2025: "{}" } };
+    a.ok(validateProgressData(v1).valid);
+    var imp = progressFileToDocs(v1, "dev", 7);
+    a.deepEqual(sorted(imp.docs.map(function (d) { return d._id; })), ["day:3", "prefs:learning"]);
+    a.deepEqual(imp.device, { jlpt_palette: "matcha", n5_2025: "{}" });
+  });
+  testAsync("store: replaceAll overwrites (removes docs not in the file)", function (a) {
+    var backend = memoryBackend(), ls = fakeLs(MIGRATED), s = storeOn(ls, backend);
+    return s.init().then(function () {
+      s.putDay(9, true);
+      return s.replaceAll([{ _id: "day:3", done: true, updatedAt: 1, deviceId: "old" }]);
+    }).then(function () { return storeOn(ls, backend).init(); })
+      .then(function (snap) { a.deepEqual(snap.completed, [3]); });
+  });
+  test("store: validateProgressData v2 rejects malformed files", function (a) {
+    function err(d) { return validateProgressData(d).error || ""; }
+    var ok = { _id: "day:1", done: true, updatedAt: 1 };
+    a.ok(err({ version: 2 }).indexOf("docs") !== -1, "missing docs");
+    a.ok(err({ version: 2, docs: [{ _id: "evil", updatedAt: 1 }] }).indexOf("bad doc id") !== -1);
+    a.ok(err({ version: 2, docs: [{ _id: "day:1", done: true }] }).indexOf("updatedAt") !== -1);
+    a.ok(err({ version: 2, docs: [{ _id: "day:1", done: "yes", updatedAt: 1 }] }).indexOf("done") !== -1);
+    a.ok(err({ version: 2, docs: [{ _id: "card:v_1_0", updatedAt: 1 }] }).indexOf("SRS") !== -1);
+    a.ok(err({ version: 2, docs: [ok], device: { n5_srs: "{}" } }).indexOf("unknown device key") !== -1);
+    a.ok(validateProgressData({ version: 2, docs: [ok], device: { jlpt_theme: "dark" } }).valid);
+    a.notOk(validateProgressData({ version: 3, docs: [] }).valid, "unknown version");
+  });
+  // (PouchDB conflict-resolution test is browser-only — see tests/store.js)
+}());
+
+
 // ── summary ───────────────────────────────────────────────────────────────────
-var total = _pass + _fail;
-if (_fail === 0) {
-  console.log("Tests: " + _pass + "/" + total + " passed");
-} else {
-  console.log("\nTests: " + _pass + " passed, " + _fail + " FAILED out of " + total);
-}
-process.exit(_fail > 0 ? 1 : 0);
+_asyncChain.then(function () {
+  var total = _pass + _fail;
+  if (_fail === 0) {
+    console.log("Tests: " + _pass + "/" + total + " passed");
+  } else {
+    console.log("\nTests: " + _pass + " passed, " + _fail + " FAILED out of " + total);
+  }
+  process.exit(_fail > 0 ? 1 : 0);
+});
