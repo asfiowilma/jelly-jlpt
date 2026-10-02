@@ -149,3 +149,17 @@ node .claude/hooks/run-tests.js
 
 Hosted on GitHub Pages — push to `main`, enable Pages from repo Settings (branch: main, root `/`).
 Live URL pattern: `https://<username>.github.io/jlpt-n5`
+
+## Commit convention
+
+Commits follow [gitmoji](https://gitmoji.dev/): `<emoji> [scope?]: <imperative message>`, body only when the why isn't obvious. One emoji per commit. Common ones: ✨ feature, 🐛 fix, ♻️ refactor, 📝 docs, ✅ tests, 🔧 config, 🚑️ hotfix, 💥 breaking change.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs are tracked as local markdown files under `.scratch/<feature-slug>/`, one file per ticket. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context — `CONTEXT.md` + `docs/adr/` at the repo root, read lazily when they exist. See `docs/agents/domain.md`.
