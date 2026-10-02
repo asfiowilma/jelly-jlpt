@@ -1,5 +1,12 @@
 "use strict";
 
+// Navbar view tabs (label = UI_STRINGS key, icon = ICONS key in app-helpers.js)
+var NAV_TABS = [
+  { view: 'day', label: 'view_today', icon: 'today' },
+  { view: 'overview', label: 'view_overview', icon: 'overview' },
+  { view: 'review', label: 'view_review', icon: 'review' }
+];
+
 function App() {
   var _React$useState23 = React.useState(function () {
       try {
@@ -31,6 +38,40 @@ function App() {
     _React$useState30 = _slicedToArray(_React$useState29, 2),
     view = _React$useState30[0],
     setView = _React$useState30[1];
+  // View to return to when Settings is closed
+  var _React$useStatePrev = React.useState('day'),
+    _React$useStatePrev2 = _slicedToArray(_React$useStatePrev, 2),
+    prevView = _React$useStatePrev2[0],
+    setPrevView = _React$useStatePrev2[1];
+  // Raw n5_furigana pref (null = unset → day-based default, see furiganaOn).
+  // Lives here, not in DayView, so the navbar ruby follows the same toggle.
+  var _React$useStateFuri = React.useState(function () {
+      try {
+        return localStorage.getItem('n5_furigana');
+      } catch (e) {
+        return null;
+      }
+    }),
+    _React$useStateFuri2 = _slicedToArray(_React$useStateFuri, 2),
+    furiganaPref = _React$useStateFuri2[0],
+    setFuriganaPref = _React$useStateFuri2[1];
+  // Interface language: 'auto' (progressive EN→JA by day), 'en' or 'ja'.
+  var _React$useStateLang = React.useState(function () {
+      try {
+        var v = localStorage.getItem('jlpt_ui_lang');
+        return v === 'en' || v === 'ja' ? v : 'auto';
+      } catch (e) {
+        return 'auto';
+      }
+    }),
+    _React$useStateLang2 = _slicedToArray(_React$useStateLang, 2),
+    uiLang = _React$useStateLang2[0],
+    setUiLang = _React$useStateLang2[1];
+  // Set during render (not in an effect) so t() in this render already sees it.
+  window._uiLang = uiLang;
+  React.useEffect(function () {
+    safeSave('jlpt_ui_lang', uiLang);
+  }, [uiLang]);
   var _React$useStateStorageErr = React.useState(!storageAvailable()),
     _React$useStateStorageErrArr = _slicedToArray(_React$useStateStorageErr, 2),
     storageError = _React$useStateStorageErrArr[0],
@@ -81,7 +122,28 @@ function App() {
   var pColor = PHASE_COLORS[lesson.phaseNum] || 'var(--muted)';
   var pBg = PHASE_BG[lesson.phaseNum] || 'var(--surface2)';
   var totalDays = curriculum.length;
-  var pct = Math.round(completed.size / totalDays * 100);
+  var dueCount = srsDueCards(srsCards).length;
+  var showFurigana = furiganaOn(furiganaPref, dayNum);
+  var toggleFurigana = function toggleFurigana() {
+    var next = String(!showFurigana);
+    safeSave('n5_furigana', next);
+    setFuriganaPref(next);
+  };
+  // Settings select: 'auto' clears the stored pref (day-based default), else 'true'/'false'.
+  var setFuriganaMode = function setFuriganaMode(mode) {
+    if (mode === 'auto') {
+      try { localStorage.removeItem('n5_furigana'); } catch (e) {}
+      setFuriganaPref(null);
+    } else {
+      safeSave('n5_furigana', mode);
+      setFuriganaPref(mode);
+    }
+  };
+  var openSettings = function openSettings() {
+    if (view === 'settings') return;
+    setPrevView(view);
+    setView('settings');
+  };
   var toggleDone = function toggleDone() {
     var wasDone = completed.has(dayNum);
     setCompleted(function (prev) {
@@ -162,78 +224,52 @@ function App() {
     className: "storage-warning-dismiss"
   }, "Dismiss")), /*#__PURE__*/React.createElement("header", {
     className: "header"
-  }, /*#__PURE__*/React.createElement("h1", null, "\u65E5\u672C\u8A9E N5\u2013N1 Course"), /*#__PURE__*/React.createElement("div", {
-    className: "header-right"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "progress-wrap"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "progress-bar",
-    role: "progressbar",
-    'aria-valuenow': pct,
-    'aria-valuemin': 0,
-    'aria-valuemax': 100,
-    'aria-label': "Course progress: " + pct + "%"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "progress-fill",
-    style: {
-      width: pct + '%'
-    }
-  })), /*#__PURE__*/React.createElement("span", null, completed.size, " / ", totalDays)), /*#__PURE__*/React.createElement("label", {
-    className: "tts-rate-label"
-  }, "\uD83D\uDD0A\u00A0", /*#__PURE__*/React.createElement("select", {
-    className: "tts-rate-select",
-    value: String(speechRate),
-    onChange: function(e) { setSpeechRate(parseFloat(e.target.value)); },
-    'aria-label': "TTS playback speed"
-  }, /*#__PURE__*/React.createElement("option", { value: "0.5" }, "0.5\u00D7"),
-     /*#__PURE__*/React.createElement("option", { value: "0.75" }, "0.75\u00D7"),
-     /*#__PURE__*/React.createElement("option", { value: "0.85" }, "0.85\u00D7"),
-     /*#__PURE__*/React.createElement("option", { value: "1" }, "1.0\u00D7"),
-     /*#__PURE__*/React.createElement("option", { value: "1.25" }, "1.25\u00D7")
-  )), /*#__PURE__*/React.createElement("select", {
-    className: "theme-select",
-    value: themePrefs.palette,
-    onChange: function(e) { setThemePrefs({ palette: e.target.value, theme: themePrefs.theme }); },
-    'aria-label': "Color palette"
-  }, THEME_PALETTES.map(function (p) {
-    return /*#__PURE__*/React.createElement("option", { key: p.id, value: p.id }, p.k + ' ' + p.name);
-  })), /*#__PURE__*/React.createElement("button", {
-    className: "theme-toggle",
-    'aria-pressed': themePrefs.theme === 'dark',
-    onClick: function() { setThemePrefs({ palette: themePrefs.palette, theme: themePrefs.theme === 'dark' ? 'light' : 'dark' }); },
-    title: "Toggle dark mode"
-  }, "☾ Dark mode"), /*#__PURE__*/React.createElement("button", {
-    className: "data-btn",
-    onClick: handleExport,
-    'aria-label': "Export progress to file",
-    title: "Export progress"
-  }, "Export"), /*#__PURE__*/React.createElement("button", {
-    className: "data-btn",
-    onClick: handleImport,
-    'aria-label': "Import progress from file",
-    title: "Import progress"
-  }, "Import"), /*#__PURE__*/React.createElement("div", {
-    className: "view-btns",
+  }, /*#__PURE__*/React.createElement("h1", {
+    className: "brand"
+  }, "日本語 ", /*#__PURE__*/React.createElement("small", null, "N5 → N1")), /*#__PURE__*/React.createElement("nav", {
+    className: "nav-tabs",
     role: "navigation",
     'aria-label': "View navigation"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "view-btn ".concat(view === 'day' ? 'active' : ''),
-    onClick: function onClick() {
-      return setView('day');
-    }
-  }, "Day View"), /*#__PURE__*/React.createElement("button", {
-    className: "view-btn ".concat(view === 'overview' ? 'active' : ''),
-    onClick: function onClick() {
-      return setView('overview');
-    }
-  }, "Overview"), /*#__PURE__*/React.createElement("button", {
-    className: "view-btn ".concat(view === 'review' ? 'active' : ''),
-    onClick: function onClick() {
-      return setView('review');
-    }
-  }, t('view_review', dayNum), srsDueCards(srsCards).length > 0 ? " (".concat(srsDueCards(srsCards).length, ")") : '')))), /*#__PURE__*/React.createElement("main", {
+  }, NAV_TABS.map(function (tab) {
+    return /*#__PURE__*/React.createElement("button", {
+      key: tab.view,
+      className: "tab",
+      'aria-current': view === tab.view ? 'page' : undefined,
+      onClick: function onClick() {
+        return setView(tab.view);
+      }
+    }, icon(tab.icon), /*#__PURE__*/React.createElement("span", null, tRuby(tab.label, dayNum, showFurigana)), tab.view === 'review' && dueCount > 0 && /*#__PURE__*/React.createElement("span", {
+      className: "pill"
+    }, dueCount, /*#__PURE__*/React.createElement("span", {
+      className: "sr-only"
+    }, " due")));
+  })
+  // Slot: Achievements tab (実績) joins NAV_TABS once achievements exist.
+  ),
+  // Slot: streak pill goes here (before the gear) once the dated activity log exists.
+  /*#__PURE__*/React.createElement("button", {
+    className: "icon-btn",
+    'aria-label': "Settings",
+    title: "Settings",
+    'aria-current': view === 'settings' ? 'page' : undefined,
+    onClick: openSettings
+  }, icon('gear'))), /*#__PURE__*/React.createElement("main", {
     className: "main"
-  }, view === 'review' ? /*#__PURE__*/React.createElement(ReviewMode, {
+  }, view === 'settings' ? /*#__PURE__*/React.createElement(SettingsView, {
+    themePrefs: themePrefs,
+    setThemePrefs: setThemePrefs,
+    speechRate: speechRate,
+    setSpeechRate: setSpeechRate,
+    uiLang: uiLang,
+    setUiLang: setUiLang,
+    furiganaMode: furiganaPref === 'true' || furiganaPref === 'false' ? furiganaPref : 'auto',
+    setFuriganaMode: setFuriganaMode,
+    onExport: handleExport,
+    onImport: handleImport,
+    onBack: function onBack() {
+      return setView(prevView);
+    }
+  }) : view === 'review' ? /*#__PURE__*/React.createElement(ReviewMode, {
     cards: srsCards,
     dayNum: dayNum,
     onUpdate: function onUpdate(updated) {
@@ -257,7 +293,9 @@ function App() {
     pBg: pBg,
     completed: completed,
     toggleDone: toggleDone,
-    setDay: setDayNum
+    setDay: setDayNum,
+    showFurigana: showFurigana,
+    toggleFurigana: toggleFurigana
   })));
 }
 

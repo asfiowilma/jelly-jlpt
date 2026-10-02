@@ -15,7 +15,10 @@ var UI_STRINGS = {
   day_label:      { en: 'Day',      ja: 'だい',       since: 38  },
   week_label:     { en: 'Week',     ja: 'しゅう',     since: 39  },
   of_total:       { en: 'of',       ja: '/',           since: 38  },
-  view_review:    { en: 'Review',   ja: 'ふくしゅう', since: 49  },
+  // Navbar tabs: kanji labels, `rt` = furigana shown via tRuby() while the pref is on
+  view_today:     { en: 'Today',    ja: '今日', rt: 'きょう',     since: 38   },
+  view_overview:  { en: 'Overview', ja: '一覧', rt: 'いちらん',   since: 1044 },
+  view_review:    { en: 'Review',   ja: '復習', rt: 'ふくしゅう', since: 49   },
   // Day status
   mark_complete:   { en: '✓ Mark Complete',   ja: '✓ かんりょう！', since: 203 },
   mark_incomplete: { en: '✕ Mark Incomplete', ja: '✕ まだ',         since: 53  },
@@ -70,10 +73,34 @@ var UI_STRINGS = {
   furigana_show:   { en: 'Show furigana', ja: 'ふりがな表示', since: 400 },
   furigana_hide:   { en: 'Hide furigana', ja: 'ふりがな非表示', since: 400 },
 };
+// window._uiLang ('auto' | 'en' | 'ja', set by App from jlpt_ui_lang) overrides
+// the progressive switch; 'auto' / unset keeps the day-based behavior.
 function t(key, dayNum) {
   var s = UI_STRINGS[key];
   if (!s) return key;
+  if (window._uiLang === 'en') return s.en;
+  if (window._uiLang === 'ja') return s.ja;
   return (dayNum >= s.since) ? s.ja : s.en;
+}
+// tRuby: t() as a React node — a JA label with an `rt` reading gets ruby
+// furigana when `furigana` is on (same pref DayView uses, see furiganaOn).
+function tRuby(key, dayNum, furigana) {
+  var s = UI_STRINGS[key], label = t(key, dayNum);
+  if (!s || !s.rt || !furigana || label !== s.ja) return label;
+  return React.createElement('ruby', null, s.ja, React.createElement('rt', null, s.rt));
+}
+
+// ── Icons (navbar / settings) ────────────────────────────────────────────────
+// Stroke icons from the navbar sketch; styled by .tab svg / .icon-btn svg.
+var ICONS = {
+  today: [['path', { d: 'M4 19V6a2 2 0 0 1 2-2h12v15H6a2 2 0 0 0-2 2z' }], ['path', { d: 'M8 8h6' }]],
+  overview: [['rect', { x: 4, y: 4, width: 7, height: 7, rx: 1.5 }], ['rect', { x: 13, y: 4, width: 7, height: 7, rx: 1.5 }], ['rect', { x: 4, y: 13, width: 7, height: 7, rx: 1.5 }], ['rect', { x: 13, y: 13, width: 7, height: 7, rx: 1.5 }]],
+  review: [['rect', { x: 3, y: 7, width: 14, height: 12, rx: 2 }], ['path', { d: 'M7 4h12a2 2 0 0 1 2 2v10' }]],
+  gear: [['circle', { cx: 12, cy: 12, r: 3 }], ['path', { d: 'M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z' }]]
+};
+function icon(name) {
+  return React.createElement('svg', { viewBox: '0 0 24 24', 'aria-hidden': 'true', focusable: 'false' },
+    ICONS[name].map(function (el, i) { return React.createElement(el[0], Object.assign({ key: i }, el[1])); }));
 }
 
 // ── localStorage ─────────────────────────────────────────────────────────────

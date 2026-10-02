@@ -33,16 +33,40 @@ function Overview(_ref10) {
     var lvDone = lvDays.filter(function (l) { return completed.has(l.day); }).length;
     return { key: lv.key, label: lv.label, total: lvDays.length, done: lvDone, pct: lvDays.length > 0 ? Math.round(lvDone / lvDays.length * 100) : 0 };
   });
+  var ramp = levelRamp(currentDay, curriculum.length);
   return /*#__PURE__*/React.createElement("div", {
     className: "overview"
-  }, /*#__PURE__*/React.createElement("div", {
+  },
+  // N5→N1 level ramp: segments sized by level day range, filled up to the current day
+  /*#__PURE__*/React.createElement("div", {
+    className: "ramp",
+    role: "img",
+    'aria-label': "Day " + currentDay + " of " + curriculum.length + ", level " + dayToLevel(currentDay)
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "ramp-here",
+    style: { '--here': ramp.here + '%' }
+  }, t('day_label', currentDay), " ", currentDay), /*#__PURE__*/React.createElement("div", {
+    className: "ramp-bars"
+  }, ramp.segments.map(function (s) {
+    return /*#__PURE__*/React.createElement("i", {
+      key: s.level,
+      style: { flex: s.len, '--lv': LEVEL_COLORS[s.level] }
+    }, /*#__PURE__*/React.createElement("b", { style: { width: s.fill + '%' } }));
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "ramp-lbl",
+    'aria-hidden': "true"
+  }, ramp.segments.map(function (s) {
+    return /*#__PURE__*/React.createElement("span", { key: s.level, style: { flex: s.len } }, s.level);
+  }))), /*#__PURE__*/React.createElement("p", {
+    className: "ramp-meta"
+  }, completed.size, " / ", curriculum.length, " completed"), /*#__PURE__*/React.createElement("div", {
     className: "overview-header"
   }, /*#__PURE__*/React.createElement("h2", null, "Course Overview \u2014 All ", curriculum.length, " Days"), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: '0.85rem',
       color: 'var(--muted)'
     }
-  }, completed.size, " completed \xB7 Click a day to jump to it")),
+  }, "Click a day to jump to it")),
   // Level filter tabs
   /*#__PURE__*/React.createElement("div", { className: "level-tabs" }, LEVELS.map(function (lv) {
     return /*#__PURE__*/React.createElement("button", {

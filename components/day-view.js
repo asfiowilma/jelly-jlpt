@@ -14,16 +14,9 @@ function DayView(_ref0) {
     _React$useState32 = _slicedToArray(_React$useState31, 2),
     quizActive = _React$useState32[0],
     setQuizActive = _React$useState32[1];
-  var defaultFurigana = dayNum <= 1320;
-  var _React$useStateFuri = React.useState(function () {
-    try { var v = localStorage.getItem('n5_furigana'); return v !== null ? v === 'true' : defaultFurigana; } catch (e) { return defaultFurigana; }
-  }),
-    _React$useStateFuri2 = _slicedToArray(_React$useStateFuri, 2),
-    showFurigana = _React$useStateFuri2[0],
-    setShowFurigana = _React$useStateFuri2[1];
-  var toggleFurigana = function () {
-    setShowFurigana(function (v) { safeSave('n5_furigana', String(!v)); return !v; });
-  };
+  // Furigana pref is owned by App (shared with the navbar ruby labels)
+  var showFurigana = _ref0.showFurigana,
+    toggleFurigana = _ref0.toggleFurigana;
   React.useEffect(function () {
     setQuizActive(false);
   }, [dayNum]);

@@ -33,6 +33,30 @@ function dayToLevel(day) {
   return 'N1';
 }
 
+// levelRamp: the N5→N1 ramp shown atop Overview. One segment per level, sized
+// by its day range (derived from dayToLevel, so the two can't drift) and filled
+// up to and including currentDay. `here` = marker position in % of the ramp.
+function levelRamp(currentDay, totalDays) {
+  var segments = [];
+  for (var d = 1; d <= totalDays; d++) {
+    var lv = dayToLevel(d), s = segments[segments.length - 1];
+    if (!s || s.level !== lv) segments.push(s = { level: lv, start: d, len: 0 });
+    s.len++;
+  }
+  segments.forEach(function (s) {
+    s.fill = Math.max(0, Math.min(s.len, currentDay - s.start + 1)) / s.len * 100;
+  });
+  return { segments: segments, here: (currentDay - 0.5) / totalDays * 100 };
+}
+
+// furiganaOn: the n5_furigana pref ('true'/'false' string, or null when unset).
+// Unset → on through N2 (day 1320), off for N1.
+function furiganaOn(stored, dayNum) {
+  if (stored === 'true') return true;
+  if (stored === 'false') return false;
+  return dayNum <= 1320;
+}
+
 function exerciseCap(day) {
   if (day <= 660) return 5;
   if (day <= 960) return 7;
@@ -605,7 +629,7 @@ function srsDueCards(cards) {
 // Returns null if localStorage is unavailable.
 function exportProgress() {
   try {
-    var KEYS = ['n5_day', 'n5_completed', 'n5_furigana', 'n5_srs', 'n5_2025', 'jlpt_tts_rate', 'jlpt_palette', 'jlpt_theme'];
+    var KEYS = ['n5_day', 'n5_completed', 'n5_furigana', 'n5_srs', 'n5_2025', 'jlpt_tts_rate', 'jlpt_palette', 'jlpt_theme', 'jlpt_ui_lang'];
     var data = { version: 1, exported: new Date().toISOString(), keys: {} };
     KEYS.forEach(function (k) {
       var v = localStorage.getItem(k);
@@ -623,7 +647,7 @@ function validateProgressData(data) {
   if (!data || typeof data !== 'object') return { valid: false, error: 'not an object' };
   if (data.version !== 1) return { valid: false, error: 'unsupported version: ' + data.version };
   if (!data.keys || typeof data.keys !== 'object') return { valid: false, error: 'missing keys field' };
-  var allowedKeys = ['n5_day', 'n5_completed', 'n5_furigana', 'n5_srs', 'n5_2025', 'jlpt_tts_rate', 'jlpt_palette', 'jlpt_theme'];
+  var allowedKeys = ['n5_day', 'n5_completed', 'n5_furigana', 'n5_srs', 'n5_2025', 'jlpt_tts_rate', 'jlpt_palette', 'jlpt_theme', 'jlpt_ui_lang'];
   var found = Object.keys(data.keys);
   for (var i = 0; i < found.length; i++) {
     if (allowedKeys.indexOf(found[i]) === -1) return { valid: false, error: 'unknown key: ' + found[i] };

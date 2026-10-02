@@ -646,6 +646,7 @@ test("passage: all reading-type days have text_jp and text_en", function (a) {
     path.join("components", "day-view.js"),
     path.join("components", "review-mode.js"),
     path.join("components", "overview.js"),
+    path.join("components", "settings-view.js"),
     "app.js",
   ];
 
@@ -703,6 +704,7 @@ test("passage: all reading-type days have text_jp and text_en", function (a) {
         lesson: lesson0, dayNum: 1,
         pColor: PHASE_COLORS[1], pBg: PHASE_BG[1],
         completed: emptySet, toggleDone: noop, setDay: noop,
+        showFurigana: true, toggleFurigana: noop,
       });
       a.ok(true);
     } catch (e) { a.ok(false, e.message); }
@@ -720,6 +722,33 @@ test("passage: all reading-type days have text_jp and text_en", function (a) {
       ReviewMode({ cards: {}, dayNum: 1, onUpdate: noop });
       a.ok(true);
     } catch (e) { a.ok(false, e.message); }
+  });
+
+  test("React render: SettingsView() renders without throwing", function (a) {
+    try {
+      SettingsView({
+        themePrefs: { palette: "ai", theme: "dark" }, setThemePrefs: noop,
+        speechRate: 0.85, setSpeechRate: noop,
+        uiLang: "auto", setUiLang: noop, furiganaMode: "auto", setFuriganaMode: noop,
+        onExport: noop, onImport: noop, onBack: noop,
+      });
+      a.ok(true);
+    } catch (e) { a.ok(false, e.message); }
+  });
+
+  test("t(): window._uiLang en/ja overrides the progressive switch", function (a) {
+    var prev = window._uiLang;
+    window._uiLang = "en"; a.equal(t("view_review", 1700), "Review");
+    window._uiLang = "ja"; a.equal(t("view_review", 1), "復習");
+    window._uiLang = "auto"; a.equal(t("view_review", 1), "Review");
+    window._uiLang = prev;
+  });
+
+  test("tRuby: plain string unless JA kanji label with furigana on", function (a) {
+    a.equal(tRuby("view_today", 1, true), "Today");
+    a.equal(tRuby("view_today", 38, false), "今日");
+    a.equal(typeof tRuby("view_today", 38, true), "object", "ruby element");
+    a.equal(tRuby("day_label", 38, true), "だい", "no rt → plain t()");
   });
 
   test("React render: ErrorBoundary renders children when no error", function (a) {
@@ -987,6 +1016,34 @@ test("normalizeThemePrefs: defaults to Aizome dark, keeps valid values", functio
 });
 test("validateProgressData: theme keys pass", function (a) {
   a.ok(validateProgressData({ version: 1, keys: { jlpt_palette: "shu", jlpt_theme: "light" } }).valid);
+});
+
+// ── navbar (mirrors tests/navbar.js) ─────────────────────────────────────────
+test("navbar: nav tab labels have kanji JA + furigana readings", function (a) {
+  a.deepEqual(UI_STRINGS.view_today, { en: "Today", ja: "今日", rt: "きょう", since: 38 });
+  a.deepEqual(UI_STRINGS.view_overview, { en: "Overview", ja: "一覧", rt: "いちらん", since: 1044 });
+  a.deepEqual(UI_STRINGS.view_review, { en: "Review", ja: "復習", rt: "ふくしゅう", since: 49 });
+});
+test("navbar: nav tab labels switch EN→JA at since", function (a) {
+  a.equal(t("view_today", 37), "Today"); a.equal(t("view_today", 38), "今日");
+  a.equal(t("view_overview", 1043), "Overview"); a.equal(t("view_overview", 1044), "一覧");
+  a.equal(t("view_review", 48), "Review"); a.equal(t("view_review", 49), "復習");
+});
+test("navbar: furiganaOn stored pref wins, unset defaults on through day 1320", function (a) {
+  a.equal(furiganaOn("true", 1700), true); a.equal(furiganaOn("false", 1), false);
+  a.equal(furiganaOn(null, 1320), true); a.equal(furiganaOn(null, 1321), false);
+});
+test("navbar: levelRamp segments sized by level day ranges", function (a) {
+  a.deepEqual(levelRamp(1, 1720).segments.map(function (s) { return s.level + ":" + s.start + "+" + s.len; }),
+    ["N5:1+365", "N4:366+295", "N3:661+300", "N2:961+360", "N1:1321+400"]);
+});
+test("navbar: levelRamp filled up to and including the current day", function (a) {
+  var fills = function (day) { return levelRamp(day, 1720).segments.map(function (s) { return Math.round(s.fill); }); };
+  a.deepEqual(fills(1), [0, 0, 0, 0, 0]);
+  a.deepEqual(fills(365), [100, 0, 0, 0, 0]);
+  a.deepEqual(fills(513), [100, 50, 0, 0, 0]);
+  a.deepEqual(fills(1720), [100, 100, 100, 100, 100]);
+  a.ok(Math.abs(levelRamp(860, 1720).here - 50) < 0.1, "marker at the middle for day 860");
 });
 
 // ── summary ───────────────────────────────────────────────────────────────────
