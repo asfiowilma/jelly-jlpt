@@ -62,14 +62,14 @@ QUnit.module('buildExercises (N3+ types)', {
     assert.ok(types.indexOf('synonym') >= 0, 'N2 vocab lesson generates synonym exercise');
   });
 
-  QUnit.test('N2 grammar lesson generates reorder exercise', function (assert) {
+  QUnit.test('N2 grammar lesson no longer generates reorder (needs authored chunks)', function (assert) {
     var lesson = { day: 1180, type: 'grammar', chars: [],
       vocab: [['わけだ', 'わけだ', "that's why"]],
       grammar: { pattern: '～わけだ', meaning: "that's why / no wonder",
         example_jp: 'だから彼女は怒っているわけだ。', example_en: "So that's why she is angry." } };
     var exs = buildExercises(lesson);
     var types = exs.map(function (e) { return e.type; });
-    assert.ok(types.indexOf('reorder') >= 0, 'N2 grammar lesson generates reorder exercise');
+    assert.ok(types.indexOf('reorder') < 0, 'reorder disabled');
   });
 
   QUnit.test('conjugation answers are real conjugations; non-verbs skipped', function (assert) {
@@ -81,13 +81,6 @@ QUnit.module('buildExercises (N3+ types)', {
         assert.deepEqual(c.answers, ['書かない', 'かかない']);
       });
     }
-  });
-
-  QUnit.test('reorderChunks splits on spaces, else after particles, never mid-word', function (assert) {
-    assert.deepEqual(reorderChunks('私は 毎日 学校に 行きます。'), ['私は', '毎日', '学校に', '行きます']);
-    assert.deepEqual(reorderChunks('先生のおかげで試験に合格した。'), ['先生の', 'おかげで', '試験に', '合格した']);
-    assert.deepEqual(reorderChunks('鳥が空に上がった。'), ['鳥が', '空に', '上がった']);
-    assert.strictEqual(reorderChunks('はい。'), null);
   });
 
   QUnit.test('fill_blank never uses placeholder patterns', function (assert) {

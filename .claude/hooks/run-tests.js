@@ -666,26 +666,15 @@ test("buildExercises N3: conjugation answers are real conjugations", function (a
   }
 });
 
-test("buildExercises: no removed types, no placeholder patterns, whole-word reorder chunks", function (a) {
+test("buildExercises: no removed types, no placeholder patterns", function (a) {
   curriculum.slice(660).forEach(function (lesson) {
     buildExercises(lesson).forEach(function (ex) {
-      a.ok(['register', 'error_find', 'paraphrase', 'passage_cloze'].indexOf(ex.type) < 0, 'day ' + lesson.day + ' emitted ' + ex.type);
+      a.ok(['register', 'error_find', 'paraphrase', 'passage_cloze', 'reorder'].indexOf(ex.type) < 0, 'day ' + lesson.day + ' emitted ' + ex.type);
       if (ex.type === 'fill_blank') ex.options.forEach(function (o) {
         a.notOk(isPlaceholderPattern(o), 'day ' + lesson.day + ' placeholder option ' + o);
       });
-      if (ex.type === 'reorder') {
-        a.ok(ex.items.length >= 3 && ex.items.length <= 8, 'day ' + lesson.day + ' chunk count ' + ex.items.length);
-      }
     });
   });
-});
-
-test("reorderChunks: splits on spaces, else after particles", function (a) {
-  a.deepEqual(reorderChunks('私は 毎日 学校に 行きます。'), ['私は', '毎日', '学校に', '行きます']);
-  a.deepEqual(reorderChunks('先生のおかげで試験に合格した。'), ['先生の', 'おかげで', '試験に', '合格した']);
-  a.deepEqual(reorderChunks('鳥が空に上がった。'), ['鳥が', '空に', '上がった'], 'no split inside 上がる');
-  a.deepEqual(reorderChunks('だから彼女は怒っているわけだ。'), ['だから', '彼女は', '怒っているわけだ']);
-  a.equal(reorderChunks('はい。'), null, 'fewer than 3 chunks → null');
 });
 
 // ── conjugate (runs tests/conjugate.js through a minimal QUnit shim) ──────────
@@ -881,7 +870,7 @@ test("passage: all reading-type days have text_jp and text_en", function (a) {
     }
     a.equal(errors.length, 0, errors.slice(0, 5).join("\n"));
     ["mc", "listen", "typing", "reading", "conjugation", "pair_match", "fill_blank", "synonym",
-     "reorder", "kanji_reading"].forEach(function (t) {
+     "kanji_reading"].forEach(function (t) {
       a.ok(seen[t], "type " + t + " was rendered");
     });
   });

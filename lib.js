@@ -207,32 +207,6 @@ function isPlaceholderPattern(p) {
   return /review|practice|復習|comprehensive|^phase\s*\d/i.test(p || '');
 }
 
-// Split a sentence into reorder chunks: on spaces if present, else after a
-// particle that borders kanji/katakana. Returns 3–8 chunks, or null.
-// ponytail: heuristic, no tokenizer; misses particles between two kana words.
-function reorderChunks(sentence) {
-  var s = (sentence || '').replace(/[。！？!?]/g, '').trim();
-  var chunks = [];
-  if (/[\s　]/.test(s)) {
-    chunks = s.split(/[\s　]+/).filter(Boolean);
-  } else {
-    var isKK = function (c) { return !!c && /[一-鿿㐀-䶿゠-ヿ々]/.test(c); };
-    var start = 0, i = 0;
-    while (i < s.length) {
-      var m = /^((から|まで|より|[はがをにでとへものねよ])、?|、)/.exec(s.slice(i));
-      var j = m ? i + m[0].length : 0, next = s[j];
-      // next-char guard keeps okurigana (上が|る) and stacked particles (と|の) together
-      if (m && next && (/、$/.test(m[0]) || (isKK(s[i - 1]) || isKK(next)) && 'るらりれろっんゃゅょーはがをにでとへもの'.indexOf(next) < 0)) {
-        chunks.push(s.slice(start, j));
-        start = i = j;
-      } else i++;
-    }
-    chunks.push(s.slice(start));
-  }
-  while (chunks.length > 8) chunks.splice(-2, 2, chunks[chunks.length - 2] + chunks[chunks.length - 1]);
-  return chunks.length >= 3 ? chunks : null;
-}
-
 function buildExercises(lesson) {
   var exs = [];
   var allVocab = curriculum.flatMap(function (d) {
@@ -456,19 +430,8 @@ function buildExercises(lesson) {
     });
   }
 
-  // Reorder exercise (N2+, grammar days)
-  if (day > 960 && lesson.grammar && lesson.grammar.example_jp) {
-    var chunks = reorderChunks(lesson.grammar.example_jp);
-    if (chunks) {
-      exs.push({
-        type: 'reorder',
-        prompt: 'Arrange into a correct sentence:',
-        question: lesson.grammar.example_en,
-        items: rndShuffle(chunks),
-        answer: chunks.join('')
-      });
-    }
-  }
+  // ponytail: no reorder until the catalog has hand-authored chunks (ticket 11);
+  // heuristic splitting broke words (信頼で|きる). The reorder renderer stays.
 
   // Kanji reading (N2+, kanji days)
   if (day > 960 && lesson.type === 'kanji' && lesson.chars && lesson.chars.length >= 2) {
