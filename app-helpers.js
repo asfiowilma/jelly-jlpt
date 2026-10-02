@@ -92,6 +92,24 @@ var UI_STRINGS = {
   set_sync:          { en: 'Sync',              ja: '同期',             since: 'N1' },
   set_sync_soon:     { en: 'Multi-device sync — coming soon', ja: '複数端末の同期 — 近日公開', since: 'N1' },
   set_sfx:           { en: 'Sound effects',     ja: '効果音',           since: 'N1' },
+  // Pace (Settings + Overview, see PACE_MODES in lib.js)
+  set_pace_section:  { en: 'Pace',              ja: 'ペース',           since: 'N1' },
+  set_pace:          { en: 'Units per day',     ja: '1日のユニット数',  since: 'N1' },
+  pace_casual:       { en: 'Casual — 1 unit every 2 days', ja: 'ゆっくり — 2日に1ユニット', since: 'N1' },
+  pace_standard:     { en: 'Standard — 1 unit a day',      ja: '標準 — 1日1ユニット',       since: 'N1' },
+  pace_intensive:    { en: 'Intensive — 2 units a day',    ja: '集中 — 1日2ユニット',       since: 'N1' },
+  pace_super:        { en: 'Super intensive — 3 units a day', ja: '超集中 — 1日3ユニット',  since: 'N1' },
+  pace_super_note:   { en: 'More units a day means more new cards, so your daily reviews grow too.', ja: 'ユニットが増えると新しいカードも増え、毎日の復習も増えます。', since: 'N1' },
+  set_exam_date:     { en: 'JLPT exam date (optional)', ja: 'JLPT試験日（任意）', since: 'N1' },
+  set_exam_hint:     { en: 'The JLPT is held in July and December.', ja: 'JLPTは7月と12月に実施されます。', since: 'N1' },
+  pace_units:        { en: 'units',             ja: 'ユニット',         since: 'N1' },
+  pace_finish:       { en: 'Projected finish',  ja: '修了予定',         since: 'N1' },
+  pace_all_levels:   { en: 'all available levels', ja: '全レベル',      since: 'N1' },
+  pace_exam:         { en: 'Exam',              ja: '試験',             since: 'N1' },
+  pace_on_track:     { en: 'On track',          ja: '順調',             since: 'N1' },
+  pace_behind:       { en: 'Behind',            ja: '遅れ気味',         since: 'N1' },
+  pace_suggested:    { en: 'Suggested',         ja: 'おすすめ',         since: 'N1' },
+  pace_too_late:     { en: "Even Super intensive won't finish a week before the exam", ja: '超集中でも試験の1週間前までに終わりません', since: 'N1' },
 };
 // t(key, level): level = the learner's current unit level ('N5'…'N1').
 // window._uiLang ('auto' | 'en' | 'ja', set by App from prefs) overrides

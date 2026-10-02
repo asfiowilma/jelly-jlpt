@@ -90,6 +90,7 @@ function UnitView(props) {
       }, t('nav_prev', lv)),
       React.createElement("div", null,
         React.createElement("div", { className: "day-counter" }, t('unit_label', lv), " ", unit.index + 1, " / ", units.length),
+        props.pace && React.createElement("div", { className: "day-counter" }, paceTodayLine(props.pace, props.doneToday || 0, lv)),
         React.createElement("button", {
           className: "nav-btn complete " + (isDone ? 'done' : ''),
           onClick: toggleDone

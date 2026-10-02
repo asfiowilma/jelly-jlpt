@@ -1,5 +1,37 @@
 "use strict";
 
+// paceMode: the PACE_MODES entry for a stored pace (unknown → standard).
+function paceMode(pace) {
+  return PACE_MODES.filter(function (m) { return m.pace === pace; })[0] || PACE_MODES[1];
+}
+// paceTodayLine: "Today: 1 / 2 units" (also shown in UnitView).
+function paceTodayLine(pace, doneToday, lv) {
+  return t('view_today', lv) + ": " + doneToday + " / " + todayTarget(pace).units + " " + t('pace_units', lv);
+}
+
+// PacePanel: today target, projected finish (current level + all available
+// levels) and, with an exam date, on-track status + suggested pace.
+function PacePanel(props) {
+  var units = props.units, completed = props.completed, lv = props.level, pace = props.pace;
+  var now = Date.now();
+  var left = function (us) { return us.filter(function (u) { return !completed.has(u.id); }).length; };
+  var lvLeft = left(units.filter(function (u) { return u.level === lv; }));
+  var allLeft = left(units);
+  var levels = units[units.length - 1].level === units[0].level ? null : units[0].level + "–" + units[units.length - 1].level;
+  var exam = null;
+  if (props.examDate) {
+    var sug = suggestPace(lvLeft, props.examDate, now);
+    exam = React.createElement("p", null, t('pace_exam', lv), " ", props.examDate, ": ",
+      sug === null ? t('pace_too_late', lv)
+        : (pace >= sug ? t('pace_on_track', lv) : t('pace_behind', lv)) + " · " + t('pace_suggested', lv) + ": " + t(paceMode(sug).key, lv));
+  }
+  return React.createElement("div", { className: "pace-panel ramp-meta" },
+    React.createElement("p", null, React.createElement("strong", null, paceTodayLine(pace, props.doneToday, lv)), " · ", t(paceMode(pace).key, lv)),
+    React.createElement("p", null, t('pace_finish', lv), " ", lv, ": ", localDate(projectFinish(lvLeft, pace, now)),
+      levels && " · " + t('pace_all_levels', lv) + " (" + levels + "): " + localDate(projectFinish(allLeft, pace, now))),
+    exam);
+}
+
 // Overview: units per level. Nothing is locked (Q22): every unit opens; the
 // next suggested unit (first not done) is highlighted. Levels without units
 // yet show "Coming soon" (Q24).
@@ -29,6 +61,8 @@ function Overview(props) {
       return React.createElement("span", { key: s.level, style: { flex: s.len } }, s.level);
     }))),
     React.createElement("p", { className: "ramp-meta" }, completed.size, " / ", units.length, " units completed"),
+    React.createElement(PacePanel, { units: units, completed: completed, level: cur.level, pace: props.pace || 1,
+      doneToday: props.doneToday || 0, examDate: props.examDate }),
     React.createElement("div", { className: "overview-header" },
       React.createElement("h2", null, "Course Overview"),
       React.createElement("span", { style: { fontSize: '0.85rem', color: 'var(--muted)' } }, "Every unit is open — pick any")),

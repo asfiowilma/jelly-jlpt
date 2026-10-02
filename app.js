@@ -56,6 +56,16 @@ function App() {
     _React$useStateLang2 = _slicedToArray(_React$useStateLang, 2),
     uiLang = _React$useStateLang2[0],
     setUiLang = _React$useStateLang2[1];
+  // Pace (units/day, PACE_MODES in lib.js) + optional exam date 'YYYY-MM-DD'; synced prefs.
+  var _React$useStatePace = React.useState(snap0.pace),
+    pace = _React$useStatePace[0],
+    setPace = _React$useStatePace[1];
+  var _React$useStateExam = React.useState(snap0.examDate),
+    examDate = _React$useStateExam[0],
+    setExamDate = _React$useStateExam[1];
+  React.useEffect(function () {
+    Store.putPrefs({ pace: pace, examDate: examDate });
+  }, [pace, examDate]);
   // Set during render (not in an effect) so t() in this render already sees it.
   window._uiLang = uiLang;
   React.useEffect(function () {
@@ -130,6 +140,8 @@ function App() {
   var unit = UNITS[Math.min(unitIdx, UNITS.length - 1)];
   var level = unit.level;
   var dueCount = srsDueCards(srsCards).length;
+  // Re-derived each render; completing a unit re-renders App (setCompleted).
+  var doneToday = unitsDoneToday(Store.docs(), Date.now());
   var showFurigana = furiganaOn(furiganaPref, level);
   var toggleFurigana = function toggleFurigana() {
     Store.putPrefs({ furigana: !showFurigana });
@@ -205,6 +217,8 @@ function App() {
             setUnitIdx(i >= 0 ? i : nextUnit(UNITS, new Set(s.completed)));
             setFuriganaPref(s.furiganaPref);
             setUiLang(s.uiLang);
+            setPace(s.pace);
+            setExamDate(s.examDate);
           });
         } catch (err) {
           alert('Failed to read file: ' + err.message);
@@ -269,6 +283,10 @@ function App() {
     level: level,
     uiLang: uiLang,
     setUiLang: setUiLang,
+    pace: pace,
+    setPace: setPace,
+    examDate: examDate,
+    setExamDate: setExamDate,
     furiganaMode: furiganaPref === 'true' || furiganaPref === 'false' ? furiganaPref : 'auto',
     setFuriganaMode: setFuriganaMode,
     onExport: handleExport,
@@ -288,6 +306,9 @@ function App() {
     completed: completed,
     current: unit.index,
     suggested: nextUnit(UNITS, completed),
+    pace: pace,
+    doneToday: doneToday,
+    examDate: examDate,
     setUnit: function setUnit(i) {
       setUnitIdx(i);
       setView('unit');
@@ -298,6 +319,8 @@ function App() {
     completed: completed,
     toggleDone: toggleDone,
     setUnit: setUnitIdx,
+    pace: pace,
+    doneToday: doneToday,
     showFurigana: showFurigana,
     toggleFurigana: toggleFurigana
   })));

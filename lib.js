@@ -678,6 +678,49 @@ function pickStoreWinner(a, b) {
   return String(a.deviceId || '') >= String(b.deviceId || '') ? a : b;
 }
 
+// ── Pace (spec §5): units/day, today target, projection, exam-date suggestion ─
+// `key` = UI_STRINGS label. Nothing is locked (Q22): pace only drives targets.
+var PACE_MODES = [
+  { pace: 0.5, key: 'pace_casual' },
+  { pace: 1, key: 'pace_standard' },
+  { pace: 2, key: 'pace_intensive' },
+  { pace: 3, key: 'pace_super' }
+];
+var EXAM_BUFFER_DAYS = 7; // finish this many days before the exam
+// todayTarget(pace) → { units: ceil(pace), everyDays } (casual: 1 unit every 2 days).
+function todayTarget(pace) {
+  return pace < 1 ? { units: 1, everyDays: Math.round(1 / pace) } : { units: Math.ceil(pace), everyDays: 1 };
+}
+// unitsDoneToday: done unit:* docs whose completedAt falls on now's local date.
+function unitsDoneToday(unitDocs, now) {
+  var today = localDate(new Date(now));
+  return unitDocs.filter(function (d) {
+    return d._id.indexOf('unit:') === 0 && d.done && d.completedAt && localDate(new Date(d.completedAt)) === today;
+  }).length;
+}
+// projectFinish → local Date, ceil(remaining / pace) calendar days after now.
+function projectFinish(remainingUnits, pace, now) {
+  var d = new Date(now);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + Math.ceil(remainingUnits / pace));
+}
+// suggestPace → the slowest PACE_MODES pace that finishes ≥ EXAM_BUFFER_DAYS
+// before examDate ('YYYY-MM-DD'), or null when even super intensive can't.
+function suggestPace(remainingUnits, examDate, now) {
+  var days = dateToDayIndex(examDate) - dateToDayIndex(localDate(new Date(now))) - EXAM_BUFFER_DAYS;
+  for (var i = 0; i < PACE_MODES.length; i++) {
+    if (Math.ceil(remainingUnits / PACE_MODES[i].pace) <= days || remainingUnits === 0) return PACE_MODES[i].pace;
+  }
+  return null;
+}
+// newCardCap: items (= new SRS cards) introduced by the next ceil(pace) units.
+// ponytail: exposed only — cards are still added per completed unit (srsAddCards);
+// enforce a daily cap there if review load from fast pace becomes a problem.
+function newCardCap(pace, upcomingUnits) {
+  return upcomingUnits.slice(0, Math.ceil(pace)).reduce(function (n, u) {
+    return n + (u.vocab || []).length + (u.kanji || []).length + (u.grammar || []).length;
+  }, 0);
+}
+
 // docsToSnapshot: docs → App's synchronous state shape.
 function docsToSnapshot(docs) {
   var snap = { completed: [], srsCards: {}, currentUnit: null, pace: 1, examDate: null, furiganaPref: null, uiLang: 'en' };

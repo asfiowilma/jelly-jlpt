@@ -35,6 +35,28 @@ function SettingsView(props) {
           'aria-labelledby': "set-dark-label",
           onClick: function () { setThemePrefs({ palette: themePrefs.palette, theme: themePrefs.theme === 'dark' ? 'light' : 'dark' }); }
         }, themePrefs.theme === 'dark' ? L("set_on") : L("set_off")))),
+    section("set-pace", L("set_pace_section"),
+      React.createElement("div", { className: "setting-row" },
+        React.createElement("label", { htmlFor: "set-pace-mode" }, L("set_pace")),
+        React.createElement("select", {
+          id: "set-pace-mode",
+          className: "theme-select",
+          value: String(props.pace),
+          onChange: function (e) { props.setPace(parseFloat(e.target.value)); }
+        }, PACE_MODES.map(function (m) {
+          return React.createElement("option", { key: m.pace, value: String(m.pace) }, L(m.key));
+        }))),
+      props.pace >= 3 && React.createElement("p", { className: "setting-hint", role: "note" }, L("pace_super_note")),
+      React.createElement("div", { className: "setting-row" },
+        React.createElement("label", { htmlFor: "set-exam-date" }, L("set_exam_date")),
+        React.createElement("input", {
+          id: "set-exam-date",
+          type: "date",
+          className: "theme-select",
+          value: props.examDate || "",
+          onChange: function (e) { props.setExamDate(e.target.value || null); }
+        })),
+      React.createElement("p", { className: "setting-hint" }, L("set_exam_hint"))),
     section("set-language", L("set_language"),
       React.createElement("div", { className: "setting-row" },
         React.createElement("label", { htmlFor: "set-ui-lang" }, L("set_ui_lang")),
