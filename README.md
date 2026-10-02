@@ -98,3 +98,5 @@ Your site will be live at `https://YOUR_USERNAME.github.io/jlpt-n5` within a min
 ## License
 
 MIT — free to use, share, and modify.
+
+Sound effects in `sfx/` are from Kenney's [Music Jingles](https://kenney.nl/assets/music-jingles) pack (CC0); see `sfx/LICENSE-kenney.txt`.
