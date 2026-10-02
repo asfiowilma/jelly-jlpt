@@ -552,7 +552,8 @@ function srsDueCards(cards) {
 //                   device: { date, lessons: [unit ids marked done], quizzes:
 //                   [{ unit, right, total, at }], reviews: { count, again } }.
 //                   Append-only within the day; only its own device writes it,
-//                   so merges never conflict across devices (LWW is fine).
+//                   so devices never conflict; two tabs can, and are merged
+//                   field-wise (mergeLogDocs).
 //                   Readers aggregate across devices and treat missing fields
 //                   as empty, so fields can be added without migration.
 // Reserved, not written yet (features come later):
@@ -676,6 +677,81 @@ function pickStoreWinner(a, b) {
     if (ka[i] !== kb[i]) return ka[i] > kb[i] ? a : b;
   }
   return String(a.deviceId || '') >= String(b.deviceId || '') ? a : b;
+}
+
+// mergeLogDocs: field-wise merge of two revisions of one log:* doc (two tabs on
+// one device race on today's doc). Lessons: union; quizzes: union by at+unit;
+// reviews: max of each counter. Returns a or b itself when the merge adds
+// nothing to it, so a settled merge never rewrites (no sync ping-pong).
+// ponytail: max() undercounts reviews done in two tabs at once; per-tab
+// counters if that ever matters.
+function mergeLogDocs(a, b) {
+  var la = normalizeLog(a), lb = normalizeLog(b);
+  var lessons = la.lessons.concat(lb.lessons.filter(function (n) { return la.lessons.indexOf(n) === -1; }));
+  var key = function (q) { return q.at + '|' + q.unit; };
+  var seen = {};
+  la.quizzes.forEach(function (q) { seen[key(q)] = true; });
+  var quizzes = la.quizzes.concat(lb.quizzes.filter(function (q) { return !seen[key(q)]; }))
+    .sort(function (x, y) { return x.at - y.at; });
+  var reviews = { count: Math.max(la.reviews.count, lb.reviews.count), again: Math.max(la.reviews.again, lb.reviews.again) };
+  var covers = function (l) { // merged is a superset of each side, so equal sizes = equal content
+    return l.lessons.length === lessons.length && l.quizzes.length === quizzes.length &&
+      l.reviews.count === reviews.count && l.reviews.again === reviews.again;
+  };
+  if (covers(la)) return a;
+  if (covers(lb)) return b;
+  return Object.assign({}, b, a, { date: la.date, lessons: lessons, quizzes: quizzes, reviews: reviews,
+    updatedAt: Math.max(a.updatedAt || 0, b.updatedAt || 0) });
+}
+// mergeStoreDocs: the merge rule for any two revisions of one doc.
+function mergeStoreDocs(a, b) {
+  return a._id.indexOf('log:') === 0 ? mergeLogDocs(a, b) : pickStoreWinner(a, b);
+}
+
+// ── Remote sync helpers (Settings → Sync; PouchDB wiring is in store.js) ────
+// checkSyncUrl: the database URL typed in Settings → { ok, url, error }, error =
+// a UI_STRINGS key. https only, except a loopback CouchDB for development
+// (browsers allow http://localhost from https pages). The URL must name the
+// database; credentials go in their own fields, never in the URL.
+function checkSyncUrl(raw) {
+  var s = String(raw || '').trim();
+  var bad = function (k) { return { ok: false, url: null, error: k }; };
+  if (!s) return bad('sync_err_url_empty');
+  var u;
+  try { u = new URL(s); } catch (e) { return bad('sync_err_url'); }
+  if (u.protocol !== 'https:' && u.protocol !== 'http:') return bad('sync_err_url');
+  if (u.username || u.password) return bad('sync_err_url_creds');
+  var loopback = u.hostname === 'localhost' || u.hostname === '127.0.0.1';
+  if (u.protocol === 'http:' && !loopback) return bad('sync_err_https');
+  var path = u.pathname.replace(/\/+$/, '');
+  if (!path || u.search || u.hash) return bad('sync_err_url_db');
+  return { ok: true, url: u.origin + path, error: null };
+}
+// syncStatusFor: a PouchDB sync event → 'synced' | 'syncing' | 'offline' | 'error'
+// | 'off'. `err` = the event's error argument (paused carries one while a
+// retry:true replication is waiting out a network failure); online = navigator.onLine.
+function syncStatusFor(event, err, online) {
+  if (event === 'active' || event === 'change') return 'syncing';
+  if (event === 'paused') return err || online === false ? 'offline' : 'synced';
+  if (event === 'complete') return 'off';
+  if (event === 'error' && syncErrorKey(err) === 'sync_err_network') return 'offline';
+  return 'error'; // denied, error
+}
+// syncErrorKey: a PouchDB/fetch error → UI_STRINGS key for Settings.
+function syncErrorKey(err) {
+  if (!err) return null;
+  var msg = String(err.message || err.reason || '');
+  if (!err.status || /failed to fetch|networkerror|load failed|network/i.test(msg)) return 'sync_err_network';
+  if (err.status === 401) return 'sync_err_auth';
+  if (err.status === 403) return 'sync_err_forbidden';
+  if (err.status === 404) return 'sync_err_missing';
+  return 'sync_err_other';
+}
+// syncMergeSummary: counts for the one-line note after a first connect merged
+// two non-empty sides → { units: units marked done, cards: SRS cards }.
+function syncMergeSummary(docs) {
+  var s = docsToSnapshot(docs);
+  return { units: s.completed.length, cards: Object.keys(s.srsCards).length };
 }
 
 // ── Pace (spec §5): units/day, today target, projection, exam-date suggestion ─

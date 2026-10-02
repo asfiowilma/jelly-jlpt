@@ -119,13 +119,35 @@ function App() {
     window.addEventListener('storage-save-error', handleStorageError);
     return function () { window.removeEventListener('storage-save-error', handleStorageError); };
   }, []);
-  // Re-render when any component appends to the activity log (streak pill).
+  // Re-render when any component appends to the activity log (streak pill) or
+  // the sync status changes (Settings + gear dot read Store.syncInfo).
   var _React$useStateLogTick = React.useState(0),
     setLogTick = _React$useStateLogTick[1];
   React.useEffect(function () {
     function bump() { setLogTick(function (n) { return n + 1; }); }
     window.addEventListener('activity-logged', bump);
-    return function () { window.removeEventListener('activity-logged', bump); };
+    window.addEventListener('sync-status', bump);
+    return function () {
+      window.removeEventListener('activity-logged', bump);
+      window.removeEventListener('sync-status', bump);
+    };
+  }, []);
+  // Docs changed under us (another tab, a synced device, a merge): re-read the
+  // snapshot. The unit being viewed stays put; currentUnit only applies on load.
+  React.useEffect(function () {
+    function refresh() {
+      var s = Store.snapshot();
+      setCompleted(new Set(s.completed));
+      setSrsCards(s.srsCards);
+      setFuriganaPref(s.furiganaPref);
+      setUiLang(s.uiLang);
+      setLogTick(function (n) { return n + 1; });
+    }
+    window.addEventListener('store-changed', refresh);
+    // Reconnect sync on load if the user connected before (saved login).
+    var c = loadSyncCreds();
+    if (c && c.connected) connectSync(c);
+    return function () { window.removeEventListener('store-changed', refresh); };
   }, []);
   // ponytail: recomputed every render from all log docs; memoize if it shows up in profiles.
   var streak = computeStreak(studyDates(Store.logs()), localDate()).current;
@@ -267,11 +289,14 @@ function App() {
     title: "Current streak"
   }, "🔥 ", streak), /*#__PURE__*/React.createElement("button", {
     className: "icon-btn",
-    'aria-label': "Settings",
-    title: "Settings",
+    'aria-label': Store.syncInfo.connected ? "Settings (sync: " + Store.syncInfo.status + ")" : "Settings",
+    title: Store.syncInfo.connected ? "Settings · " + t('sync_' + Store.syncInfo.status, level) : "Settings",
     'aria-current': view === 'settings' ? 'page' : undefined,
     onClick: openSettings
-  }, icon('gear'))), /*#__PURE__*/React.createElement("main", {
+  }, icon('gear'), Store.syncInfo.connected && /*#__PURE__*/React.createElement("span", {
+    className: "sync-dot sync-" + Store.syncInfo.status,
+    'aria-hidden': "true"
+  }))), /*#__PURE__*/React.createElement("main", {
     className: "main"
   }, view === 'settings' ? /*#__PURE__*/React.createElement(SettingsView, {
     themePrefs: themePrefs,
@@ -291,6 +316,11 @@ function App() {
     setFuriganaMode: setFuriganaMode,
     onExport: handleExport,
     onImport: handleImport,
+    sync: Store.syncInfo,
+    savedCreds: loadSyncCreds(),
+    onConnect: connectSync,
+    onDisconnect: disconnectSync,
+    onSyncNow: Store.syncNow,
     onBack: function onBack() {
       return setView(prevView);
     }

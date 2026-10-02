@@ -226,6 +226,25 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
         speechRate: 0.85, setSpeechRate: noop,
         level: "N5", uiLang: "auto", setUiLang: noop, sfxOn: true, setSfxOn: noop, furiganaMode: "auto", setFuriganaMode: noop,
         onExport: noop, onImport: noop, onBack: noop,
+        sync: Store.syncInfo, savedCreds: null, onConnect: noop, onDisconnect: noop, onSyncNow: noop,
+      });
+      a.ok(true);
+    } catch (e) { a.ok(false, e.message); }
+  });
+
+  test("React render: SyncSettings() renders off, connecting, connected and error states", function (a) {
+    var L = function (k) { return t(k, "N5"); };
+    var saved = { url: "https://example.com/jelly", username: "me", password: "pw", remember: true };
+    try {
+      [{ connected: false, status: "off" }, { connected: false, status: "connecting" },
+       { connected: true, status: "synced", summary: { units: 2, cards: 9 } },
+       { connected: true, status: "error", error: "sync_err_other", detail: "boom" },
+       { connected: false, status: "error", error: "sync_err_auth" }].forEach(function (sync) {
+        SyncSettings({ L: L, sync: sync, savedCreds: saved, onConnect: noop, onDisconnect: noop, onSyncNow: noop });
+        SyncSettings({ L: L, sync: sync, savedCreds: null, onConnect: noop, onDisconnect: noop, onSyncNow: noop });
+      });
+      ["off", "connecting", "syncing", "synced", "offline", "error"].forEach(function (st) {
+        a.ok(UI_STRINGS["sync_" + st], "status string sync_" + st);
       });
       a.ok(true);
     } catch (e) { a.ok(false, e.message); }

@@ -108,5 +108,71 @@ function SettingsView(props) {
           React.createElement("button", { className: "data-btn", onClick: props.onExport, 'aria-label': "Export progress to file" }, L("set_export")),
           React.createElement("button", { className: "data-btn", onClick: props.onImport, 'aria-label': "Import progress from file" }, L("set_import"))))),
     section("set-sync", L("set_sync"),
-      React.createElement("p", { className: "setting-hint" }, L("set_sync_soon"))));
+      React.createElement(SyncSettings, { L: L, sync: props.sync, savedCreds: props.savedCreds,
+        onConnect: props.onConnect, onDisconnect: props.onDisconnect, onSyncNow: props.onSyncNow })));
+}
+
+// Settings → Sync: connect form when not connected, status + controls when
+// connected. sync = Store.syncInfo; savedCreds = loadSyncCreds();
+// onConnect(form) → Promise<{ error, detail }>.
+function SyncSettings(props) {
+  var L = props.L, sync = props.sync, saved = props.savedCreds || {};
+  var _f = React.useState(function () {
+      return { url: saved.url || '', username: saved.username || '', password: saved.password || '', remember: !!saved.remember };
+    }), form = _f[0], setForm = _f[1];
+  var _e = React.useState(null), formErr = _e[0], setFormErr = _e[1];
+  var _b = React.useState(false), busy = _b[0], setBusy = _b[1];
+  var _g = React.useState(false), forget = _g[0], setForget = _g[1];
+  var errText = function (key, detail) { return L(key) + (key === 'sync_err_other' && detail ? ' ' + detail : ''); };
+  var hint = React.createElement("p", { className: "setting-hint" }, L("set_sync_hint"));
+  var status = React.createElement("p", { className: "sync-status", role: "status" },
+    React.createElement("span", { className: "sync-dot sync-" + sync.status, 'aria-hidden': "true" }),
+    L("sync_" + sync.status),
+    sync.connected && sync.error ? " — " + errText(sync.error, sync.detail) : null,
+    sync.summary ? " · " + L("sync_merged").replace('{units}', sync.summary.units).replace('{cards}', sync.summary.cards) : null);
+  var check = function (checked, onChange, label, describedBy) {
+    return React.createElement("label", { className: "sync-check" },
+      React.createElement("input", { type: "checkbox", checked: checked, onChange: onChange, 'aria-describedby': describedBy }), label);
+  };
+  if (sync.connected) {
+    return React.createElement(React.Fragment, null, hint, status,
+      React.createElement("p", { className: "setting-hint sync-who" }, L("set_sync_as") + ' ' + saved.username + ' · ' + saved.url),
+      React.createElement("div", { className: "setting-row" },
+        check(forget, function (e) { setForget(e.target.checked); }, L("set_sync_forget")),
+        React.createElement("div", { className: "setting-btns" },
+          React.createElement("button", { className: "data-btn", type: "button", onClick: props.onSyncNow }, L("set_sync_now")),
+          React.createElement("button", { className: "data-btn", type: "button", onClick: function () { props.onDisconnect(forget); } }, L("set_sync_disconnect")))));
+  }
+  var submit = function (e) {
+    e.preventDefault();
+    setBusy(true);
+    setFormErr(null);
+    props.onConnect(form).then(function (r) {
+      setBusy(false);
+      setFormErr(r.error ? r : null);
+    });
+  };
+  var input = function (key, label, type, autoComplete) {
+    var urlErr = formErr && /url|https|missing|network/.test(formErr.error);
+    return React.createElement("div", { className: "setting-row" },
+      React.createElement("label", { htmlFor: "sync-" + key }, L(label)),
+      React.createElement("input", {
+        id: "sync-" + key, className: "sync-input", type: type, autoComplete: autoComplete,
+        value: form[key], spellCheck: false, autoCapitalize: "none",
+        placeholder: type === 'url' ? 'https://example.com/jelly' : undefined,
+        'aria-invalid': formErr && (key === 'url') === !!urlErr ? true : undefined,
+        'aria-describedby': formErr ? "sync-form-err" : undefined,
+        onChange: function (e) { var v = e.target.value; setForm(function (f) { var n = Object.assign({}, f); n[key] = v; return n; }); }
+      }));
+  };
+  return React.createElement("form", { className: "sync-form", onSubmit: submit, noValidate: true }, hint,
+    input("url", "set_sync_url", "url", "url"),
+    input("username", "set_sync_user", "text", "username"),
+    input("password", "set_sync_pass", "password", "current-password"),
+    React.createElement("div", { className: "setting-row" },
+      check(form.remember, function (e) { var v = e.target.checked; setForm(function (f) { return Object.assign({}, f, { remember: v }); }); },
+        L("set_sync_remember"), "sync-remember-hint"),
+      React.createElement("button", { className: "data-btn", type: "submit", disabled: busy }, busy ? L("sync_connecting") : L("set_sync_connect"))),
+    React.createElement("p", { id: "sync-remember-hint", className: "setting-hint" }, L("set_sync_remember_hint")),
+    formErr ? React.createElement("p", { id: "sync-form-err", className: "sync-form-err", role: "alert" }, errText(formErr.error, formErr.detail)) : status);
 }
