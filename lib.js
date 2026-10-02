@@ -629,7 +629,7 @@ function srsDueCards(cards) {
 //   ach:<id>            { unlockedAt }   merge: earliest unlock wins, never deleted
 //   ev:<ts>:<deviceId>  { type, ... }    immutable, append-only
 // Device-only prefs stay in localStorage and never become docs:
-var DEVICE_PREF_KEYS = ['jlpt_palette', 'jlpt_theme', 'jlpt_tts_rate'];
+var DEVICE_PREF_KEYS = ['jlpt_palette', 'jlpt_theme', 'jlpt_tts_rate', 'jlpt_sfx_mute'];
 // v1 export / pre-store localStorage keys that now live in docs:
 var LEGACY_SYNCED_KEYS = ['n5_day', 'n5_completed', 'n5_furigana', 'n5_srs', 'jlpt_ui_lang'];
 var STORE_ID_RE = /^(day:[1-9]\d*|card:[vc]_\d+_\d+|prefs:learning)$/;
@@ -775,7 +775,7 @@ function validateProgressData(data) {
   if (data.version === 2) return validateProgressV2(data);
   if (data.version !== 1) return { valid: false, error: 'unsupported version: ' + data.version };
   if (!data.keys || typeof data.keys !== 'object') return { valid: false, error: 'missing keys field' };
-  var allowedKeys = ['n5_day', 'n5_completed', 'n5_furigana', 'n5_srs', 'n5_2025', 'jlpt_tts_rate', 'jlpt_palette', 'jlpt_theme', 'jlpt_ui_lang'];
+  var allowedKeys = ['n5_day', 'n5_completed', 'n5_furigana', 'n5_srs', 'n5_2025', 'jlpt_tts_rate', 'jlpt_palette', 'jlpt_theme', 'jlpt_ui_lang', 'jlpt_sfx_mute'];
   var found = Object.keys(data.keys);
   for (var i = 0; i < found.length; i++) {
     if (allowedKeys.indexOf(found[i]) === -1) return { valid: false, error: 'unknown key: ' + found[i] };

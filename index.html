@@ -23,6 +23,7 @@
   3. lib.js (pure helpers + Babel runtime helpers, no top-level curriculum reads)
   4. store.js (Store: PouchDB-backed persistence for synced learning data; uses lib.js)
   5. app-helpers.js (t/lsLoad/lsSave/speak/..., reads PHASE_COLORS at load time)
+     sfx.js (playSfx/sfxMuted: quiz + achievement sounds from sfx/)
   6. components/*.js (any order — only read curriculum/helpers inside render, not at load time)
   7. app.js (awaits Store.init(), then mounts React — the only script that actually renders the tree)
 -->
@@ -62,6 +63,7 @@
 <script src="lib.js"></script>
 <script src="store.js"></script>
 <script src="app-helpers.js"></script>
+<script src="sfx.js"></script>
 <script src="components/review-view.js"></script>
 <script src="components/typing-tip.js"></script>
 <script src="components/char-card.js"></script>

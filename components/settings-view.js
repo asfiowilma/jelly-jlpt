@@ -68,8 +68,16 @@ function SettingsView(props) {
           onChange: function (e) { props.setSpeechRate(parseFloat(e.target.value)); }
         }, ["0.5", "0.75", "0.85", "1", "1.25"].map(function (v) {
           return React.createElement("option", { key: v, value: v }, (v === "1" ? "1.0" : v) + "×");
-        })))
-      // Slot: sound mute toggle (UI sound effects) goes here as another .setting-row.
+        }))),
+      React.createElement("div", { className: "setting-row" },
+        React.createElement("span", { id: "set-sfx-label" }, L("set_sfx")),
+        React.createElement("button", {
+          className: "theme-toggle",
+          role: "switch",
+          'aria-checked': props.sfxOn,
+          'aria-labelledby': "set-sfx-label",
+          onClick: function () { props.setSfxOn(!props.sfxOn); if (!props.sfxOn) playSfx('correct'); }
+        }, props.sfxOn ? L("set_on") : L("set_off")))
     ),
     section("set-data", L("set_data"),
       React.createElement("div", { className: "setting-row" },

@@ -69,6 +69,16 @@ function App() {
     window._ttsRate = speechRate;
     safeSave('jlpt_tts_rate', String(speechRate));
   }, [speechRate]);
+  // Sound effects on/off (device-only); playSfx() reads jlpt_sfx_mute directly.
+  var _React$useStateSfx = React.useState(function () {
+      return !sfxMuted();
+    }),
+    _React$useStateSfx2 = _slicedToArray(_React$useStateSfx, 2),
+    sfxOn = _React$useStateSfx2[0],
+    setSfxOn = _React$useStateSfx2[1];
+  React.useEffect(function () {
+    safeSave('jlpt_sfx_mute', String(!sfxOn));
+  }, [sfxOn]);
   var _React$useStateTheme = React.useState(function () {
       try {
         return normalizeThemePrefs(localStorage.getItem('jlpt_palette'), localStorage.getItem('jlpt_theme'));
@@ -234,6 +244,8 @@ function App() {
     themePrefs: themePrefs,
     setThemePrefs: setThemePrefs,
     speechRate: speechRate,
+    sfxOn: sfxOn,
+    setSfxOn: setSfxOn,
     setSpeechRate: setSpeechRate,
     dayNum: dayNum,
     uiLang: uiLang,

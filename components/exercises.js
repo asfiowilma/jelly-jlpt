@@ -104,6 +104,7 @@ function Exercises(_ref9) {
     onFinish && onFinish();
   };
   var advance = function advance(wasRight) {
+    playSfx(wasRight ? 'correct' : 'wrong');
     setResults(function (r) {
       return r.concat([wasRight]);
     });
@@ -116,6 +117,7 @@ function Exercises(_ref9) {
     setTimeout(function () {
       if (cur + 1 >= exs.length) {
         setDone(true);
+        playSfx('complete');
         onFinish && onFinish();
       } else {
         setCur(function (c) {

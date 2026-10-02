@@ -682,6 +682,7 @@ test("passage: all reading-type days have text_jp and text_en", function (a) {
   var appFiles = [
     "store.js",
     "app-helpers.js",
+    "sfx.js",
     path.join("components", "review-view.js"),
     path.join("components", "typing-tip.js"),
     path.join("components", "char-card.js"),
@@ -772,7 +773,7 @@ test("passage: all reading-type days have text_jp and text_en", function (a) {
       SettingsView({
         themePrefs: { palette: "ai", theme: "dark" }, setThemePrefs: noop,
         speechRate: 0.85, setSpeechRate: noop,
-        dayNum: 1, uiLang: "auto", setUiLang: noop, furiganaMode: "auto", setFuriganaMode: noop,
+        dayNum: 1, uiLang: "auto", setUiLang: noop, sfxOn: true, setSfxOn: noop, furiganaMode: "auto", setFuriganaMode: noop,
         onExport: noop, onImport: noop, onBack: noop,
       });
       a.ok(true);
@@ -785,6 +786,12 @@ test("passage: all reading-type days have text_jp and text_en", function (a) {
     window._uiLang = "ja"; a.equal(t("view_review", 1), "復習");
     window._uiLang = "auto"; a.equal(t("view_review", 1), "Review");
     window._uiLang = prev;
+  });
+
+  test("playSfx: no-op without Audio (Node) and never throws", function (a) {
+    a.equal(typeof playSfx, "function");
+    playSfx("correct"); playSfx("nope");
+    a.ok(["ogg", "mp3"].indexOf(SFX_EXT) !== -1, "SFX_EXT is ogg or mp3");
   });
 
   test("tRuby: plain string unless JA kanji label with furigana on", function (a) {

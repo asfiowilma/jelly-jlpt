@@ -96,6 +96,7 @@ var UI_STRINGS = {
   set_import:        { en: 'Import',            ja: 'インポート',       since: 1321 },
   set_sync:          { en: 'Sync',              ja: '同期',             since: 1321 },
   set_sync_soon:     { en: 'Multi-device sync — coming soon', ja: '複数端末の同期 — 近日公開', since: 1321 },
+  set_sfx:           { en: 'Sound effects',     ja: '効果音',           since: 1321 },
 };
 // window._uiLang ('auto' | 'en' | 'ja', set by App from jlpt_ui_lang) overrides
 // the progressive switch; 'auto' / unset keeps the day-based behavior.
