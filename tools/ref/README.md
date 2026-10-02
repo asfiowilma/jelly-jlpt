@@ -11,6 +11,12 @@ Regenerate from the dev-only research lists (`.scratch/content-audit/research/da
 node tools/build-ref.js .scratch/content-audit/research/data N5
 ```
 
+`build-ref.js` fixes a few known list errors on the way (`VOCAB_FIXES`: the 明い
+typo, おじいさん filed under 伯父/叔父, readings with する glued on, the truncated
+ラジオカセ, and others). Each fix is commented there.
+
+`data/n5/vocab.js` is generated from this list by `tools/author-vocab.js` (see its header).
+
 ## Credits
 
 - Vocabulary, kanji and grammar lists: Jonathan Waller's JLPT resources,

@@ -18,7 +18,23 @@ if (!dir) { console.error("usage: node tools/build-ref.js <research/data dir> [N
 function parts(s) {
   return s.replace(/\([^)]*\)/g, "").split(/[\/;、]|\s+/).map(function (x) { return x.replace(/^[～〜]+/, "").trim(); }).filter(Boolean);
 }
+// Known list errors, keyed by the research row "word|reading" (ticket 12). Each
+// value replaces the row's word and/or reading before parsing. Credit stays Tanos.
+const VOCAB_FIXES = {
+  "明い|あかるい": { word: "明るい" },                         // Tanos typo
+  "伯父/叔父|おじいさん": { word: "おじいさん" },               // grandfather, misfiled under 伯父/叔父 (= uncle)
+  "伯父/叔父|おじさん": { word: "伯父さん/叔父さん" },           // 伯父 alone reads おじ
+  "誰|だれか": { word: "誰か" },                               // reading has か, word dropped it
+  "散歩|さんぽする": { reading: "さんぽ" },                     // する belongs to the verb, not the reading
+  "掃除|そうじする": { reading: "そうじ" },
+  "勉強|べんきょうする": { reading: "べんきょう" },
+  "練習|れんしゅうする": { reading: "れんしゅう" },
+  "ラジオカセ|ラジオカセ": { word: "ラジカセ", reading: "ラジカセ" }, // elzup truncation of ラジオカセット
+  "お～|お～": { word: "お", reading: "お" },                   // prefix: ～ is not part of the word
+  "何～|なん～": { word: "何", reading: "なん" },
+};
 function vocabEntry(e) {
+  e = Object.assign({}, e, VOCAB_FIXES[e.word + "|" + e.reading]);
   const ws = parts(e.word), rs = parts(e.reading), alts = [];
   // ponytail: same-count variants pair by index (いい/よい|いい/よい); otherwise every combination.
   if (ws.length === rs.length) ws.forEach(function (w, i) { alts.push(w + "|" + rs[i]); });
