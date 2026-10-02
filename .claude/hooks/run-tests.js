@@ -1328,6 +1328,16 @@ test("navbar: levelRamp filled up to and including the current day", function (a
   // (PouchDB conflict-resolution test is browser-only — see tests/store.js)
 }());
 
+// ── activity log (runs tests/activity-log.js through a minimal QUnit shim) ─────
+global.QUnit = {
+  module: function (name, fn) { fn(); },
+  test: function (name, fn) {
+    testAsync("activity-log: " + name, function (a) { a.strictEqual = a.equal; return fn(a); });
+  }
+};
+vm.runInThisContext(fs.readFileSync(path.join(projectDir, "tests", "activity-log.js"), "utf8"));
+delete global.QUnit;
+
 
 // ── summary ───────────────────────────────────────────────────────────────────
 _asyncChain.then(function () {

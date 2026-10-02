@@ -135,6 +135,19 @@ function createStore(opts) {
     return enqueue(function () { return putNow(doc); });
   }
 
+  function appendLog(fn) {
+    var date = localDate();
+    var id = 'log:' + date + ':' + deviceId;
+    var cur = mirror[id] || { date: date };
+    var body = Object.assign(stripDocMeta(cur), normalizeLog(cur)); // keeps unknown (newer) fields
+    fn(body);
+    var p = write(id, body);
+    if (typeof window !== 'undefined' && window.dispatchEvent && typeof CustomEvent !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('activity-logged'));
+    }
+    return p;
+  }
+
   var store = {
     backend: null, // 'pouchdb' | 'memory' once init() resolves
     deviceId: deviceId,
@@ -188,6 +201,20 @@ function createStore(opts) {
       var changed = Object.keys(partial).some(function (k) { return effective[k] !== partial[k]; });
       return changed ? write('prefs:learning', body) : queue;
     },
+    // Activity log: appends to today's log:<date>:<deviceId> doc (see lib.js).
+    // ponytail: two tabs on one device can race on today's doc (409 → LWW drops
+    // the other tab's append); merge log docs field-wise if that ever matters.
+    logLesson: function (day) {
+      return appendLog(function (l) { if (l.lessons.indexOf(day) === -1) l.lessons.push(day); });
+    },
+    logQuiz: function (day, right, total) {
+      return appendLog(function (l) { l.quizzes.push({ day: day, right: right, total: total, at: Date.now() }); });
+    },
+    // quality: ReviewMode grade 0–3 (0 = Again, see srsReview).
+    logReview: function (quality) {
+      return appendLog(function (l) { l.reviews.count++; if (quality === 0) l.reviews.again++; });
+    },
+    logs: function () { return logDocs(store.docs()); },
     // Import: replace every doc. Imported docs are re-stamped as this device's
     // fresh write so they win LWW against older copies elsewhere.
     replaceAll: function (docs) {

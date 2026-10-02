@@ -609,14 +609,114 @@ function srsDueCards(cards) {
 //                   ease, due, reps) + lastReviewedAt (0 = never reviewed)
 //   prefs:learning  { currentDay, furigana (true|false; null/absent = day-based),
 //                   uiLang ('auto'|'en'|'ja') }
+//   log:<YYYY-MM-DD>:<deviceId>   dated activity log, one doc per local date per
+//                   device: { date, lessons: [dayNum marked done], quizzes:
+//                   [{ day, right, total, at }], reviews: { count, again } }.
+//                   Append-only within the day; only its own device writes it,
+//                   so merges never conflict across devices (LWW is fine).
+//                   Readers aggregate across devices and treat missing fields
+//                   as empty, so fields can be added without migration.
 // Reserved, not written yet (features come later):
 //   ach:<id>            { unlockedAt }   merge: earliest unlock wins, never deleted
-//   ev:<ts>:<deviceId>  { type, ... }    immutable, append-only
 // Device-only prefs stay in localStorage and never become docs:
 var DEVICE_PREF_KEYS = ['jlpt_palette', 'jlpt_theme', 'jlpt_tts_rate', 'jlpt_sfx_mute'];
 // v1 export / pre-store localStorage keys that now live in docs:
 var LEGACY_SYNCED_KEYS = ['n5_day', 'n5_completed', 'n5_furigana', 'n5_srs', 'jlpt_ui_lang'];
-var STORE_ID_RE = /^(day:[1-9]\d*|card:[vc]_\d+_\d+|prefs:learning)$/;
+var STORE_ID_RE = /^(day:[1-9]\d*|card:[vc]_\d+_\d+|prefs:learning|log:\d{4}-\d{2}-\d{2}:[\w-]+)$/;
+
+// ── Activity log (log:* docs) ───────────────────────────────────────────────
+// localDate: the user's local calendar date as 'YYYY-MM-DD' (not UTC).
+function localDate(d) {
+  d = d || new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+// normalizeLog: a log doc body with every field present (missing → empty).
+function normalizeLog(log) {
+  var r = log.reviews || {};
+  return {
+    date: log.date,
+    lessons: (log.lessons || []).slice(),
+    quizzes: (log.quizzes || []).map(function (q) { return Object.assign({}, q); }),
+    reviews: { count: r.count || 0, again: r.again || 0 }
+  };
+}
+function logDocs(docs) {
+  return docs.filter(function (d) { return d._id && d._id.indexOf('log:') === 0; });
+}
+// aggregateLogs: log docs (any devices) → { date: { lessons: [unique day nums],
+// quizzes: [sorted by at], reviews: { count, again } } }.
+function aggregateLogs(logs) {
+  var out = {};
+  logs.forEach(function (raw) {
+    var l = normalizeLog(raw);
+    var a = out[l.date] || (out[l.date] = { lessons: [], quizzes: [], reviews: { count: 0, again: 0 } });
+    l.lessons.forEach(function (n) { if (a.lessons.indexOf(n) === -1) a.lessons.push(n); });
+    a.quizzes = a.quizzes.concat(l.quizzes);
+    a.reviews.count += l.reviews.count;
+    a.reviews.again += l.reviews.again;
+  });
+  Object.keys(out).forEach(function (k) {
+    out[k].lessons.sort(function (x, y) { return x - y; });
+    out[k].quizzes.sort(function (x, y) { return x.at - y.at; });
+  });
+  return out;
+}
+// studyDates: sorted unique dates with any activity.
+function studyDates(logs) {
+  var agg = aggregateLogs(logs);
+  return Object.keys(agg).filter(function (k) {
+    var a = agg[k];
+    return a.lessons.length || a.quizzes.length || a.reviews.count;
+  }).sort();
+}
+function dateToDayIndex(s) {
+  var p = s.split('-');
+  return Math.round(Date.UTC(+p[0], p[1] - 1, +p[2]) / 86400000);
+}
+// computeStreak(dates, today) → { current, longest }. `current` counts back
+// from today, or from yesterday when today has no activity yet (so the streak
+// doesn't read 0 in the morning). No streak freezes.
+function computeStreak(dates, today) {
+  var idx = dates.map(dateToDayIndex).sort(function (a, b) { return a - b; })
+    .filter(function (n, i, arr) { return i === 0 || n !== arr[i - 1]; });
+  var have = {};
+  var longest = 0, run = 0;
+  idx.forEach(function (n, i) {
+    have[n] = true;
+    run = i > 0 && n === idx[i - 1] + 1 ? run + 1 : 1;
+    if (run > longest) longest = run;
+  });
+  var t = dateToDayIndex(today);
+  var start = have[t] ? t : t - 1;
+  var current = 0;
+  while (have[start - current]) current++;
+  return { current: current, longest: longest };
+}
+// firstQuizAttempts: { dayNum: earliest quiz entry for that lesson, across all logs }.
+// Anti-farm rewards count first attempts only.
+function firstQuizAttempts(logs) {
+  var first = {};
+  logs.forEach(function (l) {
+    normalizeLog(l).quizzes.forEach(function (q) {
+      if (!first[q.day] || q.at < first[q.day].at) first[q.day] = q;
+    });
+  });
+  return first;
+}
+// activityTotals: lifetime { lessons (distinct days marked done), quizzes,
+// perfectQuizzes, reviews }.
+function activityTotals(logs) {
+  var days = {}, t = { lessons: 0, quizzes: 0, perfectQuizzes: 0, reviews: 0 };
+  logs.forEach(function (raw) {
+    var l = normalizeLog(raw);
+    l.lessons.forEach(function (n) { days[n] = true; });
+    t.quizzes += l.quizzes.length;
+    t.perfectQuizzes += l.quizzes.filter(function (q) { return q.total > 0 && q.right === q.total; }).length;
+    t.reviews += l.reviews.count;
+  });
+  t.lessons = Object.keys(days).length;
+  return t;
+}
 
 function stripDocMeta(doc) {
   var out = {};
@@ -739,6 +839,7 @@ function validateProgressV2(data) {
     if (d._id.indexOf('card:') === 0 && ['interval', 'ease', 'due', 'reps'].some(function (f) {
       return typeof d[f] !== 'number';
     })) return bad(d._id + ' missing SRS fields');
+    if (d._id.indexOf('log:') === 0 && d.date !== d._id.split(':')[1]) return bad(d._id + ' date mismatch');
   }
   if (data.device !== undefined) {
     if (!data.device || typeof data.device !== 'object') return bad('device is not an object');

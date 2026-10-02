@@ -41,6 +41,7 @@ function ReviewMode(_ref1) {
   var rate = function rate(quality) {
     var updated = _objectSpread(_objectSpread({}, cards), {}, _defineProperty({}, card.id, srsReview(card, quality)));
     onUpdate(updated);
+    Store.logReview(quality);
     setFlipped(false);
     setIdx(function (i) {
       return i + 1;

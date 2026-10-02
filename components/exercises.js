@@ -117,6 +117,7 @@ function Exercises(_ref9) {
     setTimeout(function () {
       if (cur + 1 >= exs.length) {
         setDone(true);
+        Store.logQuiz(lesson.day, score.right + (wasRight ? 1 : 0), score.total + 1);
         playSfx('complete');
         onFinish && onFinish();
       } else {

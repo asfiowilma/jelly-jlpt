@@ -28,6 +28,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tab ruby{ruby-align:center}
 .tab rt{color:inherit;opacity:0.75}
 .icon-btn{margin-left:auto;width:44px;height:44px;flex-shrink:0;border-radius:10px;border:1px solid transparent;background:transparent;cursor:pointer;display:grid;place-items:center;color:var(--muted)}
+.streak{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:0.82rem;font-weight:650;color:var(--warn);font-variant-numeric:tabular-nums;white-space:nowrap}
+.streak+.icon-btn{margin-left:0}
 .icon-btn:hover,.icon-btn[aria-current="page"]{background:var(--surface2);color:var(--text)}
 .tab svg,.icon-btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .pill{font-size:0.66rem;font-weight:700;padding:1px 7px;border-radius:99px;background:var(--accent);color:var(--on-accent);font-variant-numeric:tabular-nums}

@@ -102,6 +102,16 @@ function App() {
     window.addEventListener('storage-save-error', handleStorageError);
     return function () { window.removeEventListener('storage-save-error', handleStorageError); };
   }, []);
+  // Re-render when any component appends to the activity log (streak pill).
+  var _React$useStateLogTick = React.useState(0),
+    setLogTick = _React$useStateLogTick[1];
+  React.useEffect(function () {
+    function bump() { setLogTick(function (n) { return n + 1; }); }
+    window.addEventListener('activity-logged', bump);
+    return function () { window.removeEventListener('activity-logged', bump); };
+  }, []);
+  // ponytail: recomputed every render from all log docs; memoize if it shows up in profiles.
+  var streak = computeStreak(studyDates(Store.logs()), localDate()).current;
   var curriculumCheck = validateCurriculum(curriculum);
   if (!curriculumCheck.valid) {
     return React.createElement('div', { style: { padding: 40, textAlign: 'center', fontFamily: 'sans-serif' } },
@@ -133,6 +143,7 @@ function App() {
   var toggleDone = function toggleDone() {
     var wasDone = completed.has(dayNum);
     Store.putDay(dayNum, !wasDone);
+    if (!wasDone) Store.logLesson(dayNum);
     setCompleted(function (prev) {
       var n = new Set(prev);
       n.has(dayNum) ? n["delete"](dayNum) : n.add(dayNum);
@@ -156,10 +167,8 @@ function App() {
     var blob = new Blob([json], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
-    var d = new Date();
-    var stamp = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
     a.href = url;
-    a.download = 'jlpt-progress-' + stamp + '.json';
+    a.download = 'jlpt-progress-' + localDate() + '.json';
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -231,8 +240,12 @@ function App() {
   })
   // Slot: Achievements tab (実績) joins NAV_TABS once achievements exist.
   ),
-  // Slot: streak pill goes here (before the gear) once the dated activity log exists.
-  /*#__PURE__*/React.createElement("button", {
+  streak > 0 && /*#__PURE__*/React.createElement("span", {
+    className: "streak",
+    role: "img",
+    'aria-label': "Current streak: " + streak + (streak === 1 ? " day" : " days"),
+    title: "Current streak"
+  }, "🔥 ", streak), /*#__PURE__*/React.createElement("button", {
     className: "icon-btn",
     'aria-label': "Settings",
     title: "Settings",
