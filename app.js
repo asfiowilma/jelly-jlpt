@@ -56,12 +56,14 @@ function App() {
     furiganaPref = _React$useStateFuri2[0],
     setFuriganaPref = _React$useStateFuri2[1];
   // Interface language: 'auto' (progressive EN→JA by day), 'en' or 'ja'.
+  // ponytail: defaults to 'en' while the app is under development; flip the
+  // fallback to 'auto' for release.
   var _React$useStateLang = React.useState(function () {
       try {
         var v = localStorage.getItem('jlpt_ui_lang');
-        return v === 'en' || v === 'ja' ? v : 'auto';
+        return v === 'auto' || v === 'ja' ? v : 'en';
       } catch (e) {
-        return 'auto';
+        return 'en';
       }
     }),
     _React$useStateLang2 = _slicedToArray(_React$useStateLang, 2),
@@ -260,6 +262,7 @@ function App() {
     setThemePrefs: setThemePrefs,
     speechRate: speechRate,
     setSpeechRate: setSpeechRate,
+    dayNum: dayNum,
     uiLang: uiLang,
     setUiLang: setUiLang,
     furiganaMode: furiganaPref === 'true' || furiganaPref === 'false' ? furiganaPref : 'auto',

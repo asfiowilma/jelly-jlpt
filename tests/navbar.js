@@ -8,12 +8,14 @@ QUnit.module('navbar', function () {
   });
 
   QUnit.test('nav tab labels switch EN→JA at `since`', function (assert) {
+    var prev = window._uiLang; window._uiLang = 'auto';
     assert.equal(t('view_today', 37), 'Today');
     assert.equal(t('view_today', 38), '今日');
     assert.equal(t('view_overview', 1043), 'Overview');
     assert.equal(t('view_overview', 1044), '一覧');
     assert.equal(t('view_review', 48), 'Review');
     assert.equal(t('view_review', 49), '復習');
+    window._uiLang = prev;
   });
 
   QUnit.test('t(): window._uiLang en/ja overrides the progressive switch', function (assert) {
@@ -22,6 +24,12 @@ QUnit.module('navbar', function () {
     window._uiLang = 'ja'; assert.equal(t('view_review', 1), '復習');
     window._uiLang = 'auto'; assert.equal(t('view_review', 1), 'Review');
     window._uiLang = prev;
+  });
+
+  QUnit.test('settings strings: every set_*/settings_* key has en + ja', function (assert) {
+    Object.keys(UI_STRINGS).filter(function (k) { return /^(set_|settings_)/.test(k); }).forEach(function (k) {
+      assert.ok(UI_STRINGS[k].en && UI_STRINGS[k].ja, k);
+    });
   });
 
   QUnit.test('furiganaOn: stored pref wins, unset defaults on through day 1320', function (assert) {

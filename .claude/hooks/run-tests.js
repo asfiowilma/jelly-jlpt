@@ -729,7 +729,7 @@ test("passage: all reading-type days have text_jp and text_en", function (a) {
       SettingsView({
         themePrefs: { palette: "ai", theme: "dark" }, setThemePrefs: noop,
         speechRate: 0.85, setSpeechRate: noop,
-        uiLang: "auto", setUiLang: noop, furiganaMode: "auto", setFuriganaMode: noop,
+        dayNum: 1, uiLang: "auto", setUiLang: noop, furiganaMode: "auto", setFuriganaMode: noop,
         onExport: noop, onImport: noop, onBack: noop,
       });
       a.ok(true);
@@ -745,10 +745,12 @@ test("passage: all reading-type days have text_jp and text_en", function (a) {
   });
 
   test("tRuby: plain string unless JA kanji label with furigana on", function (a) {
+    var prev = window._uiLang; window._uiLang = "auto";
     a.equal(tRuby("view_today", 1, true), "Today");
     a.equal(tRuby("view_today", 38, false), "今日");
     a.equal(typeof tRuby("view_today", 38, true), "object", "ruby element");
     a.equal(tRuby("day_label", 38, true), "だい", "no rt → plain t()");
+    window._uiLang = prev;
   });
 
   test("React render: ErrorBoundary renders children when no error", function (a) {
@@ -1025,9 +1027,11 @@ test("navbar: nav tab labels have kanji JA + furigana readings", function (a) {
   a.deepEqual(UI_STRINGS.view_review, { en: "Review", ja: "復習", rt: "ふくしゅう", since: 49 });
 });
 test("navbar: nav tab labels switch EN→JA at since", function (a) {
+  var prev = window._uiLang; window._uiLang = "auto";
   a.equal(t("view_today", 37), "Today"); a.equal(t("view_today", 38), "今日");
   a.equal(t("view_overview", 1043), "Overview"); a.equal(t("view_overview", 1044), "一覧");
   a.equal(t("view_review", 48), "Review"); a.equal(t("view_review", 49), "復習");
+  window._uiLang = prev;
 });
 test("navbar: furiganaOn stored pref wins, unset defaults on through day 1320", function (a) {
   a.equal(furiganaOn("true", 1700), true); a.equal(furiganaOn("false", 1), false);

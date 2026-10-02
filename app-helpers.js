@@ -72,6 +72,30 @@ var UI_STRINGS = {
   mock_exam:       { en: 'Mock Exam', ja: '模擬試験', since: 1695 },
   furigana_show:   { en: 'Show furigana', ja: 'ふりがな表示', since: 400 },
   furigana_hide:   { en: 'Hide furigana', ja: 'ふりがな非表示', since: 400 },
+  // Settings view. These words are never taught as lesson vocabulary, so in
+  // 'auto' they switch with N1 (day 1321); 'ja' shows them immediately.
+  settings_title:    { en: 'Settings',          ja: '設定',             since: 1321 },
+  settings_back:     { en: '← Back',            ja: '← 戻る',           since: 1321 },
+  set_appearance:    { en: 'Appearance',        ja: '外観',             since: 1321 },
+  set_palette:       { en: 'Color palette',     ja: '配色',             since: 1321 },
+  set_dark:          { en: '☾ Dark mode',       ja: '☾ ダークモード',   since: 1321 },
+  set_on:            { en: 'On',                ja: 'オン',             since: 1321 },
+  set_off:           { en: 'Off',               ja: 'オフ',             since: 1321 },
+  set_language:      { en: 'Language',          ja: '言語',             since: 1321 },
+  set_ui_lang:       { en: 'Interface language', ja: '表示言語',        since: 1321 },
+  set_lang_auto:     { en: 'Auto — switch to Japanese as you learn', ja: '自動 — 学習に合わせて日本語に', since: 1321 },
+  set_furigana:      { en: 'Furigana',          ja: 'ふりがな',         since: 1321 },
+  set_furi_auto:     { en: 'Auto — on until N1', ja: '自動 — N1まで表示', since: 1321 },
+  set_furi_always:   { en: 'Always show',       ja: '常に表示',         since: 1321 },
+  set_furi_never:    { en: 'Never show',        ja: '表示しない',       since: 1321 },
+  set_audio:         { en: 'Audio',             ja: '音声',             since: 1321 },
+  set_speech_speed:  { en: 'Speech speed',      ja: '読み上げ速度',     since: 1321 },
+  set_data:          { en: 'Data',              ja: 'データ',           since: 1321 },
+  set_data_hint:     { en: 'Save your progress to a file, or restore it from one.', ja: '学習データをファイルに保存、またはファイルから復元します。', since: 1321 },
+  set_export:        { en: 'Export',            ja: 'エクスポート',     since: 1321 },
+  set_import:        { en: 'Import',            ja: 'インポート',       since: 1321 },
+  set_sync:          { en: 'Sync',              ja: '同期',             since: 1321 },
+  set_sync_soon:     { en: 'Multi-device sync — coming soon', ja: '複数端末の同期 — 近日公開', since: 1321 },
 };
 // window._uiLang ('auto' | 'en' | 'ja', set by App from jlpt_ui_lang) overrides
 // the progressive switch; 'auto' / unset keeps the day-based behavior.

@@ -5,6 +5,7 @@
 function SettingsView(props) {
   var themePrefs = props.themePrefs,
     setThemePrefs = props.setThemePrefs;
+  var L = function (key) { return t(key, props.dayNum); };
   var section = function (id, title) {
     var children = Array.prototype.slice.call(arguments, 2);
     return React.createElement.apply(React, ["section", { className: "settings-section", 'aria-labelledby': id },
@@ -12,11 +13,11 @@ function SettingsView(props) {
   };
   return React.createElement("div", { className: "settings" },
     React.createElement("div", { className: "settings-head" },
-      React.createElement("button", { className: "back-btn", onClick: props.onBack }, "← Back"),
-      React.createElement("h2", null, "Settings")),
-    section("set-appearance", "Appearance",
+      React.createElement("button", { className: "back-btn", onClick: props.onBack }, L("settings_back")),
+      React.createElement("h2", null, L("settings_title"))),
+    section("set-appearance", L("set_appearance"),
       React.createElement("div", { className: "setting-row" },
-        React.createElement("label", { htmlFor: "set-palette" }, "Color palette"),
+        React.createElement("label", { htmlFor: "set-palette" }, L("set_palette")),
         React.createElement("select", {
           id: "set-palette",
           className: "theme-select",
@@ -26,40 +27,40 @@ function SettingsView(props) {
           return React.createElement("option", { key: p.id, value: p.id }, p.k + ' ' + p.name);
         }))),
       React.createElement("div", { className: "setting-row" },
-        React.createElement("span", { id: "set-dark-label" }, "☾ Dark mode"),
+        React.createElement("span", { id: "set-dark-label" }, L("set_dark")),
         React.createElement("button", {
           className: "theme-toggle",
           role: "switch",
           'aria-checked': themePrefs.theme === 'dark',
           'aria-labelledby': "set-dark-label",
           onClick: function () { setThemePrefs({ palette: themePrefs.palette, theme: themePrefs.theme === 'dark' ? 'light' : 'dark' }); }
-        }, themePrefs.theme === 'dark' ? "On" : "Off"))),
-    section("set-language", "Language",
+        }, themePrefs.theme === 'dark' ? L("set_on") : L("set_off")))),
+    section("set-language", L("set_language"),
       React.createElement("div", { className: "setting-row" },
-        React.createElement("label", { htmlFor: "set-ui-lang" }, "Interface language"),
+        React.createElement("label", { htmlFor: "set-ui-lang" }, L("set_ui_lang")),
         React.createElement("select", {
           id: "set-ui-lang",
           className: "theme-select",
           value: props.uiLang,
           onChange: function (e) { props.setUiLang(e.target.value); }
         },
-          React.createElement("option", { value: "auto" }, "Auto — switch to Japanese as you learn"),
+          React.createElement("option", { value: "auto" }, L("set_lang_auto")),
           React.createElement("option", { value: "en" }, "English"),
           React.createElement("option", { value: "ja" }, "日本語"))),
       React.createElement("div", { className: "setting-row" },
-        React.createElement("label", { htmlFor: "set-furigana" }, "Furigana"),
+        React.createElement("label", { htmlFor: "set-furigana" }, L("set_furigana")),
         React.createElement("select", {
           id: "set-furigana",
           className: "theme-select",
           value: props.furiganaMode,
           onChange: function (e) { props.setFuriganaMode(e.target.value); }
         },
-          React.createElement("option", { value: "auto" }, "Auto — on until N1"),
-          React.createElement("option", { value: "true" }, "Always show"),
-          React.createElement("option", { value: "false" }, "Never show")))),
-    section("set-audio", "Audio",
+          React.createElement("option", { value: "auto" }, L("set_furi_auto")),
+          React.createElement("option", { value: "true" }, L("set_furi_always")),
+          React.createElement("option", { value: "false" }, L("set_furi_never"))))),
+    section("set-audio", L("set_audio"),
       React.createElement("div", { className: "setting-row" },
-        React.createElement("label", { htmlFor: "set-tts-rate" }, "Speech speed"),
+        React.createElement("label", { htmlFor: "set-tts-rate" }, L("set_speech_speed")),
         React.createElement("select", {
           id: "set-tts-rate",
           className: "tts-rate-select",
@@ -70,12 +71,12 @@ function SettingsView(props) {
         })))
       // Slot: sound mute toggle (UI sound effects) goes here as another .setting-row.
     ),
-    section("set-data", "Data",
+    section("set-data", L("set_data"),
       React.createElement("div", { className: "setting-row" },
-        React.createElement("span", { className: "setting-hint" }, "Save your progress to a file, or restore it from one."),
+        React.createElement("span", { className: "setting-hint" }, L("set_data_hint")),
         React.createElement("div", { className: "setting-btns" },
-          React.createElement("button", { className: "data-btn", onClick: props.onExport, 'aria-label': "Export progress to file" }, "Export"),
-          React.createElement("button", { className: "data-btn", onClick: props.onImport, 'aria-label': "Import progress from file" }, "Import")))),
-    section("set-sync", "Sync",
-      React.createElement("p", { className: "setting-hint" }, "Multi-device sync — coming soon")));
+          React.createElement("button", { className: "data-btn", onClick: props.onExport, 'aria-label': "Export progress to file" }, L("set_export")),
+          React.createElement("button", { className: "data-btn", onClick: props.onImport, 'aria-label': "Import progress from file" }, L("set_import"))))),
+    section("set-sync", L("set_sync"),
+      React.createElement("p", { className: "setting-hint" }, L("set_sync_soon"))));
 }
