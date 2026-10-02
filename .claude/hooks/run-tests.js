@@ -2,7 +2,8 @@
 /**
  * Headless test runner for jlpt-n5.
  *
- * Loads curriculum.js and lib.js via Node's vm module (so top-level `var`
+ * Loads curriculum/*.js (in filename order — 00-constants.js first, then
+ * 01..32 one per phase) and lib.js via Node's vm module (so top-level `var`
  * declarations become globals) then exercises every pure function that the
  * QUnit suite in tests.html covers.
  *
@@ -24,8 +25,11 @@ const projectDir = process.env.CLAUDE_PROJECT_DIR ||
 global.window = { speechSynthesis: undefined };
 
 // ── load scripts into global scope ───────────────────────────────────────────
-vm.runInThisContext(fs.readFileSync(path.join(projectDir, "curriculum.js"), "utf8"));
-vm.runInThisContext(fs.readFileSync(path.join(projectDir, "lib.js"),        "utf8"));
+const curriculumDir = path.join(projectDir, "curriculum");
+for (const file of fs.readdirSync(curriculumDir).sort()) {
+  vm.runInThisContext(fs.readFileSync(path.join(curriculumDir, file), "utf8"));
+}
+vm.runInThisContext(fs.readFileSync(path.join(projectDir, "lib.js"), "utf8"));
 
 // ── minimal test harness ──────────────────────────────────────────────────────
 var _pass = 0, _fail = 0;
@@ -627,30 +631,23 @@ test("passage: all reading-type days have text_jp and text_en", function (a) {
 });
 
 // ── 20. React render smoke test ───────────────────────────────────────────────
-// Extracts the inline <script> from index.html, runs it in a stubbed browser
+// Loads app-helpers.js, components/*.js and app.js — the same files index.html
+// wires up via <script src> after curriculum/ and lib.js — in a stubbed browser
 // environment, then calls each top-level component to verify no globals are
 // missing and no ReferenceError would blank the page.
 (function () {
-  var html;
-  try {
-    html = fs.readFileSync(path.join(projectDir, "index.html"), "utf8");
-  } catch (e) {
-    test("React render: can read index.html", function (a) {
-      a.ok(false, "Could not read index.html: " + e.message);
-    });
-    return;
-  }
-
-  // Extract the last <script> block (the inline app code, no src= attribute)
-  var allScripts = html.match(/<script>[\s\S]*?<\/script>/g) || [];
-  var appBlock = allScripts[allScripts.length - 1];
-  if (!appBlock) {
-    test("React render: inline script found in index.html", function (a) {
-      a.ok(false, "No inline <script> block found");
-    });
-    return;
-  }
-  var appCode = appBlock.replace(/^<script>/, "").replace(/<\/script>$/, "");
+  // Mirrors the <script src> order in index.html (after curriculum/ and lib.js)
+  var appFiles = [
+    "app-helpers.js",
+    path.join("components", "review-view.js"),
+    path.join("components", "typing-tip.js"),
+    path.join("components", "char-card.js"),
+    path.join("components", "exercises.js"),
+    path.join("components", "day-view.js"),
+    path.join("components", "review-mode.js"),
+    path.join("components", "overview.js"),
+    "app.js",
+  ];
 
   // Minimal browser-API stubs
   global.React = {
@@ -675,12 +672,15 @@ test("passage: all reading-type days have text_jp and text_en", function (a) {
   global.document = { getElementById: function () { return {}; } };
   // window.speechSynthesis is already undefined from the top of this file
 
-  // Run the script — this defines App, DayView, Overview, ReviewMode, etc.
+  // Run the scripts — this defines App, DayView, Overview, ReviewMode, etc.
   // as globals and calls ReactDOM.createRoot(...).render(...) via stubs.
-  test("React render: index.html inline script executes without error", function (a) {
+  test("React render: app-helpers.js + components/*.js + app.js execute without error", function (a) {
     try {
-      vm.runInThisContext(appCode);
-      a.ok(true, "Script executed without throwing");
+      for (var i = 0; i < appFiles.length; i++) {
+        var code = fs.readFileSync(path.join(projectDir, appFiles[i]), "utf8");
+        vm.runInThisContext(code);
+      }
+      a.ok(true, "Scripts executed without throwing");
     } catch (e) {
       a.ok(false, "Script threw: " + e.message);
     }
