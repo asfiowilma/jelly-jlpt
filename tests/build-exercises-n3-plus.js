@@ -28,6 +28,22 @@ QUnit.module('buildExercises (N3+ types)', {
     assert.ok(types.indexOf('conjugation') >= 0 || types.indexOf('pair_match') >= 0, 'generates conjugation or pair_match');
   });
 
+  QUnit.test('pair_match carries word→meaning pairs covering its shuffled items', function (assert) {
+    var lesson = { day: 780, type: 'verbs', chars: [],
+      vocab: [['上げる', 'あげる', 'to raise'], ['下げる', 'さげる', 'to lower'], ['始める', 'はじめる', 'to begin'], ['集める', 'あつめる', 'to gather']] };
+    var pm = null;
+    for (var i = 0; i < 20 && !pm; i++) {
+      pm = buildExercises(lesson).filter(function (e) { return e.type === 'pair_match'; })[0] || null;
+    }
+    assert.ok(pm, 'pair_match generated');
+    var meaning = {};
+    pm.pairs.forEach(function (p) { meaning[p[0]] = p[1]; });
+    pm.items.forEach(function (w) {
+      assert.ok(pm.options.indexOf(meaning[w]) >= 0, w + ' maps to an option');
+    });
+    assert.strictEqual(meaning['上げる'], 'to raise');
+  });
+
   QUnit.test('exercise cap is respected for N3 lessons', function (assert) {
     var lesson = curriculum[700] || curriculum[0]; // N3 lesson or fallback
     var exs = buildExercises(lesson);

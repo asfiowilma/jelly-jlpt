@@ -150,6 +150,11 @@ test("checkTyping: comma alternative (first part)", function (a) { a.ok(checkTyp
 test("checkTyping: comma alternative (second part)", function (a) { a.ok(checkTyping("nose",   ["flower,nose"])); });
 test("checkTyping: matches any entry in answers array", function (a) { a.ok(checkTyping("bird", ["cat", "bird", "fish"])); });
 test("checkTyping: no match fails", function (a) { a.notOk(checkTyping("horse", ["cat", "dog"])); });
+test("checkTyping: undefined/empty answers → false, no throw", function (a) {
+  a.equal(checkTyping("cat", undefined), false);
+  a.equal(checkTyping("cat", []), false);
+  a.equal(checkTyping("cat", [undefined]), false);
+});
 
 // ── 3. cardId ─────────────────────────────────────────────────────────────────
 test("cardId: vocab format", function (a) { a.equal(cardId("v", 1, 0),   "v_1_0");   });
@@ -634,6 +639,22 @@ test("buildExercises N2: exercise cap respected (max 9)", function (a) {
   a.ok(exs.length <= 9, 'N2 exercise count ' + exs.length + ' <= 9');
 });
 
+test("buildExercises N3: pair_match carries word→meaning pairs covering its items", function (a) {
+  var lesson = { day: 780, type: 'verbs', chars: [],
+    vocab: [['上げる', 'あげる', 'to raise'], ['下げる', 'さげる', 'to lower'], ['始める', 'はじめる', 'to begin'], ['集める', 'あつめる', 'to gather']] };
+  var pm = null;
+  for (var i = 0; i < 20 && !pm; i++) {
+    pm = buildExercises(lesson).filter(function (e) { return e.type === 'pair_match'; })[0] || null;
+  }
+  a.ok(pm, 'pair_match generated');
+  var meaning = {};
+  pm.pairs.forEach(function (p) { meaning[p[0]] = p[1]; });
+  pm.items.forEach(function (w) {
+    a.ok(pm.options.indexOf(meaning[w]) >= 0, w + ' maps to an option');
+  });
+  a.equal(meaning['上げる'], 'to raise');
+});
+
 // ── 18. passage field validation ──────────────────────────────────────────────
 test("passage: all reading-type days have text_jp and text_en", function (a) {
   var failures = [];
@@ -773,6 +794,46 @@ test("passage: all reading-type days have text_jp and text_en", function (a) {
     a.equal(typeof tRuby("view_today", 38, true), "object", "ruby element");
     a.equal(tRuby("day_label", 38, true), "だい", "no rt → plain t()");
     window._uiLang = prev;
+  });
+
+  // Render every exercise buildExercises emits for days 661+ (N3–N1), both
+  // unanswered and answered, by forcing Exercises' useState slots in order:
+  // exs, cur, answer, selected, revealed, score, done, started, results, picks.
+  test("React render: Exercises renders every N3+ exercise type without throwing", function (a) {
+    var origUseState = React.useState;
+    var origSpeech = window.speechSynthesis;
+    window.speechSynthesis = {}; // include listen exercises
+    var seen = {}, errors = [];
+    try {
+      curriculum.slice(660).forEach(function (lesson) {
+        var exs = buildExercises(lesson);
+        exs.forEach(function (ex, cur) {
+          seen[ex.type] = true;
+          var n = (ex.items || []).length;
+          var allIdx = Array.apply(null, Array(n)).map(function (_, i) { return i; });
+          [[exs, cur, '', null, false, undefined, false, true, [], []],
+           [exs, cur, 'x', 0, true, undefined, false, true, [], ex.type === 'pair_match' ? allIdx.map(function () { return 0; }) : allIdx]
+          ].forEach(function (slots) {
+            var k = 0;
+            React.useState = function (init) {
+              var v = slots[k++];
+              if (v === undefined) v = typeof init === "function" ? init() : init;
+              return [v, function () {}];
+            };
+            try { Exercises({ lesson: lesson, onStart: noop, onFinish: noop }); }
+            catch (e) { errors.push("day " + lesson.day + " " + ex.type + ": " + e.message); }
+          });
+        });
+      });
+    } finally {
+      React.useState = origUseState;
+      window.speechSynthesis = origSpeech;
+    }
+    a.equal(errors.length, 0, errors.slice(0, 5).join("\n"));
+    ["mc", "listen", "typing", "reading", "conjugation", "pair_match", "fill_blank", "synonym",
+     "reorder", "error_find", "kanji_reading", "passage_cloze", "register", "paraphrase"].forEach(function (t) {
+      a.ok(seen[t], "type " + t + " was rendered");
+    });
   });
 
   test("React render: ErrorBoundary renders children when no error", function (a) {

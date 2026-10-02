@@ -344,6 +344,7 @@ function buildExercises(lesson) {
       question: '',
       items: pairItems,
       answers: pairAnswers,
+      pairs: pairs.map(function (v) { return [v[0], v[2]]; }), // word → meaning (items are shuffled)
       options: rndShuffle(pairAnswers)
     });
   }
@@ -473,7 +474,9 @@ function normAns(s) {
 function checkTyping(userAns, answers) {
   var u = userAns.trim().toLowerCase();
   var uNorm = normAns(userAns);
+  if (!answers || !answers.length) return false;
   return answers.some(function (a) {
+    if (typeof a !== 'string') return false;
     var parts = a.split(/[\/,]/).map(function (s) {
       return s.trim().toLowerCase();
     });

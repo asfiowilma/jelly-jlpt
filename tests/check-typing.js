@@ -75,6 +75,12 @@ QUnit.module('checkTyping', function () {
   QUnit.test('punctuation ignored for slash-separated alternatives', function (assert) {
     assert.ok(checkTyping('sake!', ['sake/salmon']));
   });
+
+  QUnit.test('missing/empty answers returns false instead of throwing', function (assert) {
+    assert.strictEqual(checkTyping('cat', undefined), false);
+    assert.strictEqual(checkTyping('cat', []), false);
+    assert.strictEqual(checkTyping('cat', [undefined]), false);
+  });
 });
 
 
