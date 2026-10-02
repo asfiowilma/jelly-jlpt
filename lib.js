@@ -24,136 +24,110 @@ function furiganaHTML(word, reading) {
   return '<ruby>' + word + '<rt>' + reading + '</rt></ruby>';
 }
 
-// ── Level helper ─────────────────────────────────────────────────────────────
-function dayToLevel(day) {
-  if (day <= 365) return 'N5';
-  if (day <= 660) return 'N4';
-  if (day <= 960) return 'N3';
-  if (day <= 1320) return 'N2';
-  return 'N1';
-}
+// ── Levels ───────────────────────────────────────────────────────────────────
+var LEVELS = ['N5', 'N4', 'N3', 'N2', 'N1'];
+// levelRank: 0 (N5) … 4 (N1); -1 for anything else. "N3+" = levelRank(lv) >= 2.
+function levelRank(level) { return LEVELS.indexOf(level); }
 
-// levelRamp: the N5→N1 ramp shown atop Overview. One segment per level, sized
-// by its day range (derived from dayToLevel, so the two can't drift) and filled
-// up to and including currentDay. `here` = marker position in % of the ramp.
-function levelRamp(currentDay, totalDays) {
-  var segments = [];
-  for (var d = 1; d <= totalDays; d++) {
-    var lv = dayToLevel(d), s = segments[segments.length - 1];
-    if (!s || s.level !== lv) segments.push(s = { level: lv, start: d, len: 0 });
-    s.len++;
+// ── Units: PLAN + CATALOG joined (spec §4) ──────────────────────────────────
+var UNIT_KINDS = ['lesson', 'review', 'prep', 'mock'];
+var UNIT_ITEM_FIELDS = { vocab: 'vocab', kanji: 'kanji', grammar: 'grammar' }; // unit field → item kind
+var REVIEW_SPAN = 3; // review units quiz the previous N lesson units
+
+// validatePlan: every unit well-formed and every referenced id in the catalog
+// with the right kind. Returns { valid, error } (first problem only).
+function validatePlan(plan, catalog) {
+  var seen = {};
+  for (var p = 0; p < plan.length; p++) {
+    var lp = plan[p];
+    if (levelRank(lp.level) < 0) return { valid: false, error: 'plan level ' + lp.level };
+    for (var i = 0; i < lp.units.length; i++) {
+      var u = lp.units[i];
+      if (!/^n[1-5]\.u\d{3}$/.test(u.id || '')) return { valid: false, error: 'bad unit id ' + u.id };
+      if (seen[u.id]) return { valid: false, error: 'duplicate unit id ' + u.id };
+      seen[u.id] = true;
+      if (u.level !== lp.level) return { valid: false, error: u.id + ' level ' + u.level + ' in ' + lp.level + ' plan' };
+      if (UNIT_KINDS.indexOf(u.kind) < 0) return { valid: false, error: u.id + ' kind ' + u.kind };
+      if (!u.title) return { valid: false, error: u.id + ' missing title' };
+      for (var f in UNIT_ITEM_FIELDS) {
+        var ids = u[f] || [];
+        for (var j = 0; j < ids.length; j++) {
+          var it = catalog.items[ids[j]];
+          if (!it) return { valid: false, error: u.id + ' references missing ' + ids[j] };
+          if (it.kind !== UNIT_ITEM_FIELDS[f]) return { valid: false, error: u.id + '.' + f + ' has ' + it.kind + ' ' + ids[j] };
+        }
+      }
+    }
   }
-  segments.forEach(function (s) {
-    s.fill = Math.max(0, Math.min(s.len, currentDay - s.start + 1)) / s.len * 100;
-  });
-  return { segments: segments, here: (currentDay - 0.5) / totalDays * 100 };
+  return { valid: true, error: null };
 }
 
-// furiganaOn: the n5_furigana pref ('true'/'false' string, or null when unset).
-// Unset → on through N2 (day 1320), off for N1.
-function furiganaOn(stored, dayNum) {
+// buildUnits: flat, ordered list of resolved units — plan fields + `index`
+// (global position) with vocab/kanji/grammar as catalog items. A review unit
+// gets the items of the previous REVIEW_SPAN lesson units. Call validatePlan first.
+function buildUnits(plan, catalog) {
+  var out = [];
+  plan.slice().sort(function (a, b) { return levelRank(a.level) - levelRank(b.level); }).forEach(function (lp) {
+    lp.units.forEach(function (u) {
+      var r = Object.assign({}, u, { index: out.length });
+      if (u.kind === 'review') {
+        var prev = out.filter(function (x) { return x.kind === 'lesson'; }).slice(-REVIEW_SPAN);
+        Object.keys(UNIT_ITEM_FIELDS).forEach(function (f) {
+          r[f] = [].concat.apply([], prev.map(function (x) { return x[f]; }));
+        });
+      } else {
+        Object.keys(UNIT_ITEM_FIELDS).forEach(function (f) {
+          r[f] = (u[f] || []).map(function (id) { return catalog.items[id]; });
+        });
+      }
+      out.push(r);
+    });
+  });
+  return out;
+}
+
+// nextUnit: index of the suggested unit = first one not done (nothing is locked, Q22).
+function nextUnit(units, completed) {
+  for (var i = 0; i < units.length; i++) if (!completed.has(units[i].id)) return i;
+  return units.length - 1;
+}
+
+// levelRamp: the N5→N1 ramp atop Overview. One segment per level that has
+// units, sized by unit count, filled up to and including unit `current`
+// (index). `here` = marker position in % of the ramp.
+// ponytail: levels with no units yet ("coming soon") get no segment.
+function levelRamp(units, current) {
+  var segments = [];
+  units.forEach(function (u) {
+    var s = segments[segments.length - 1];
+    if (!s || s.level !== u.level) segments.push(s = { level: u.level, start: u.index, len: 0 });
+    s.len++;
+  });
+  segments.forEach(function (s) {
+    s.fill = Math.max(0, Math.min(s.len, current - s.start + 1)) / s.len * 100;
+  });
+  return { segments: segments, here: units.length ? (current + 0.5) / units.length * 100 : 0 };
+}
+
+// furiganaOn: the furigana pref ('true'/'false' string, or null when unset).
+// Unset → on through N2, off for N1.
+function furiganaOn(stored, level) {
   if (stored === 'true') return true;
   if (stored === 'false') return false;
-  return dayNum <= 1320;
+  return level !== 'N1';
 }
 
-function exerciseCap(day) {
-  if (day <= 660) return 5;
-  if (day <= 960) return 7;
-  return 9;
+function exerciseCap(level) {
+  var r = levelRank(level);
+  return r <= 1 ? 5 : r === 2 ? 7 : 9;
 }
 
-// ── SRS (SM-2) ───────────────────────────────────────────────────────────────
-function sm2Update(card, grade) {
-  var _ref = card || {},
-    _ref$interval = _ref.interval,
-    interval = _ref$interval === void 0 ? 1 : _ref$interval,
-    _ref$ef = _ref.ef,
-    ef = _ref$ef === void 0 ? 2.5 : _ref$ef,
-    _ref$reps = _ref.reps,
-    reps = _ref$reps === void 0 ? 0 : _ref$reps;
-  if (grade >= 3) {
-    if (reps === 0) interval = 1;else if (reps === 1) interval = 6;else interval = Math.round(interval * ef);
-    reps++;
-    ef = Math.max(1.3, ef + 0.1 - (5 - grade) * (0.08 + (5 - grade) * 0.02));
-  } else {
-    reps = 0;
-    interval = 1;
-  }
-  var due = Date.now() + interval * 24 * 60 * 60 * 1000;
-  return {
-    interval: interval,
-    ef: ef,
-    reps: reps,
-    due: due
-  };
-}
-function cardId(type, day, idx) {
-  return "".concat(type, "_").concat(day, "_").concat(idx);
-}
-function addDayCards(srs, lesson) {
-  var now = Date.now();
-  (lesson.vocab || []).forEach(function (v, i) {
-    var id = cardId('v', lesson.day, i);
-    if (!srs[id]) srs[id] = {
-      interval: 1,
-      ef: 2.5,
-      reps: 0,
-      due: now
-    };
-  });
-  (lesson.chars || []).forEach(function (c, i) {
-    var id = cardId('c', lesson.day, i);
-    if (!srs[id]) srs[id] = {
-      interval: 1,
-      ef: 2.5,
-      reps: 0,
-      due: now
-    };
-  });
-  return srs;
-}
-function getDueCards(srs) {
-  var now = Date.now();
-  return Object.entries(srs).filter(function (_ref2) {
-    var _ref3 = _slicedToArray(_ref2, 2),
-      c = _ref3[1];
-    return c.due <= now;
-  }).map(function (_ref4) {
-    var _ref5 = _slicedToArray(_ref4, 1),
-      id = _ref5[0];
-    return id;
-  });
-}
-function cardToItem(id, srs) {
-  var parts = id.split('_');
-  var type = parts[0],
-    day = parseInt(parts[1]),
-    idx = parseInt(parts[2]);
-  var lesson = curriculum[day - 1];
-  if (!lesson) return null;
-  if (type === 'v') {
-    var v = (lesson.vocab || [])[idx];
-    if (!v) return null;
-    return {
-      id: id,
-      type: 'vocab',
-      front: v[0],
-      back: v[2],
-      reading: v[1] !== v[0] ? v[1] : null,
-      day: day
-    };
-  } else {
-    var c = (lesson.chars || [])[idx];
-    if (!c) return null;
-    return {
-      id: id,
-      type: 'char',
-      front: c[0],
-      back: c[1],
-      day: day
-    };
-  }
+// Catalog item → display strings
+function glossText(v) { return v.gloss.join(' / '); }
+function kataToHira(s) { return s.replace(/[ァ-ヶ]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0x60); }); }
+// kanjiReadings: readings as typed/shown (kun okurigana dot dropped, on in katakana).
+function kanjiReadings(k) {
+  return (k.kun || []).map(function (r) { return r.replace('.', ''); }).concat(k.on || []);
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -175,9 +149,10 @@ var GODAN_TE = { 'う': 'って', 'つ': 'って', 'る': 'って', 'く': 'い�
 // ambiguous word (かえる, いる) falls back to ichidan. Extend the list when one bites.
 var GODAN_RU_EXCEPTIONS = /(帰|返|還|入|走|知|要|切|限|減|喋|滑|握|蹴|参|混じ|交じ|照|散|焦|茂|湿|練|遮|覆|陥|蘇|甦|罵|翻|捻|嘲|耽|詰|弄|煎|炒|しゃべ)る$/;
 
-// conjugate(dictForm, reading, form) → { kanji, kana } or null when the word
+// conjugate(dictForm, reading, form, pos?) → { kanji, kana } or null when the word
 // isn't a verb we can conjugate with certainty. form is one of CONJ_FORMS.
-function conjugate(dict, reading, form) {
+// pos ('verb-ichidan' | 'verb-godan', catalog item field) overrides the る-verb guess.
+function conjugate(dict, reading, form, pos) {
   var idx = CONJ_FORMS.indexOf(form);
   if (idx < 0 || !dict || !reading || dict.slice(-1) !== reading.slice(-1)) return null;
   var suffixes, cut = 1;
@@ -190,8 +165,9 @@ function conjugate(dict, reading, form) {
     return { kanji: dict === 'くる' ? kana : dict.slice(0, -1) + k.slice(1), kana: kana };
   } else if (/(ずる|ある)$/.test(reading)) {
     return null; // ponytail: 信ずる-type and ある (ない-form) are irregular; not handled
-  } else if (/る$/.test(reading) && 'いきぎしじちぢにひびみりえけげせぜてでねへべめれ'.indexOf(reading.slice(-2, -1)) >= 0 &&
-             !GODAN_RU_EXCEPTIONS.test(dict)) {
+  } else if (/る$/.test(reading) && (pos === 'verb-ichidan' || pos !== 'verb-godan' &&
+             'いきぎしじちぢにひびみりえけげせぜてでねへべめれ'.indexOf(reading.slice(-2, -1)) >= 0 &&
+             !GODAN_RU_EXCEPTIONS.test(dict))) {
     suffixes = ['て', 'ない', 'た', 'られる', 'られる', 'させる', 'よう'];
   } else {
     var last = reading.slice(-1), row = GODAN_ROWS[last];
@@ -202,30 +178,34 @@ function conjugate(dict, reading, form) {
   return { kanji: dict.slice(0, -cut) + suffixes[idx], kana: reading.slice(0, -cut) + suffixes[idx] };
 }
 
-// Phase-review / practice labels stored in grammar.pattern — not real patterns.
-function isPlaceholderPattern(p) {
-  return /review|practice|復習|comprehensive|^phase\s*\d/i.test(p || '');
+// catalogOf: every catalog item of one kind (distractor pools).
+// ponytail: O(catalog) per call; cache per kind if quizzes ever feel slow.
+function catalogOf(kind) {
+  return Object.keys(CATALOG.items).map(function (k) { return CATALOG.items[k]; }).filter(function (it) {
+    return it.kind === kind;
+  });
 }
 
-function buildExercises(lesson) {
+// buildExercises(unit): a shuffled, capped quiz for one resolved unit (buildUnits).
+function buildExercises(unit) {
   var exs = [];
-  var allVocab = curriculum.flatMap(function (d) {
-    return d.vocab || [];
-  });
-  var allChars = curriculum.flatMap(function (d) {
-    return d.chars || [];
-  });
+  var rank = levelRank(unit.level);
+  var vocabItems = unit.vocab || [];
+  var kanjiItems = unit.kanji || [];
+  var row = function (v) { return [v.word, v.reading, glossText(v)]; };
+  var kRow = function (k) { return [k.char, kanjiReadings(k).join('・')]; };
+  var vocab0 = vocabItems.map(row);
+  var allVocab = catalogOf('vocab').map(row);
+  var allChars = catalogOf('kanji').map(kRow);
 
   // Listening exercise: hear a word, pick its meaning
-  if (lesson.vocab && lesson.vocab.length >= 2 && window.speechSynthesis) {
-    var vocab = rndShuffle(lesson.vocab);
+  if (vocab0.length >= 2 && window.speechSynthesis) {
+    var vocab = rndShuffle(vocab0);
     var v = vocab[0];
     var wrongM = rndShuffle(allVocab.filter(function (w) {
       return w[2] && w[2].trim() && w[2] !== v[2];
     })).slice(0, 3);
-    var opts = rndShuffle([v[2]].concat(_toConsumableArray(wrongM.map(function (w) {
-      return w[2];
-    }))));
+    var opts = rndShuffle([v[2]].concat(wrongM.map(function (w) { return w[2]; })));
     exs.push({
       type: 'listen',
       prompt: 'Listen and choose the meaning:',
@@ -236,18 +216,16 @@ function buildExercises(lesson) {
     });
   }
 
-  // ── Char exercises (hiragana/katakana/kanji days) ──
-  if (lesson.chars && lesson.chars.length > 0) {
-    var chars = rndShuffle(lesson.chars);
+  // ── Kanji exercises ──
+  if (kanjiItems.length > 0) {
+    var ks = rndShuffle(kanjiItems);
 
-    // MC: character → romaji/reading
-    var c0 = chars[0];
+    // MC: kanji → readings
+    var c0 = kRow(ks[0]);
     var wrongs = rndShuffle(allChars.filter(function (c) {
       return c[1] && c[1].trim() && c[1] !== c0[1];
     })).slice(0, 3);
-    var mcOpts = rndShuffle([c0[1]].concat(_toConsumableArray(wrongs.map(function (c) {
-      return c[1];
-    }))));
+    var mcOpts = rndShuffle([c0[1]].concat(wrongs.map(function (c) { return c[1]; })));
     exs.push({
       type: 'mc',
       prompt: 'What is the reading for this character?',
@@ -256,31 +234,29 @@ function buildExercises(lesson) {
       correct: mcOpts.indexOf(c0[1])
     });
 
-    // Typing: character → reading
-    if (chars.length > 1) {
-      var c1 = chars[1];
+    // Typing: kanji → any one reading (on accepted in hiragana too)
+    if (ks.length > 1) {
+      var k1 = ks[1], r1 = kanjiReadings(k1);
       exs.push({
         type: 'typing',
         prompt: 'Type the reading for this character:',
-        question: c1[0],
-        answers: [c1[1]],
-        placeholder: 'e.g. ' + c1[1]
+        question: k1.char,
+        answers: r1.concat((k1.on || []).map(kataToHira)),
+        placeholder: 'e.g. ' + r1[0]
       });
     }
   }
 
   // ── Vocab exercises ──
-  if (lesson.vocab && lesson.vocab.length > 0) {
-    var _vocab = rndShuffle(lesson.vocab);
+  if (vocab0.length > 0) {
+    var _vocab = rndShuffle(vocab0);
 
     // MC: word → meaning
     var v0 = _vocab[0];
     var _wrongM = rndShuffle(allVocab.filter(function (w) {
       return w[2] && w[2].trim() && w[2] !== v0[2];
     })).slice(0, 3);
-    var mcM = rndShuffle([v0[2]].concat(_toConsumableArray(_wrongM.map(function (w) {
-      return w[2];
-    }))));
+    var mcM = rndShuffle([v0[2]].concat(_wrongM.map(function (w) { return w[2]; })));
     exs.push({
       type: 'mc',
       prompt: 'What does this word mean?',
@@ -295,9 +271,7 @@ function buildExercises(lesson) {
       var wrongW = rndShuffle(allVocab.filter(function (w) {
         return w[0] && w[0].trim() && w[0] !== v1[0];
       })).slice(0, 3);
-      var mcW = rndShuffle([v1[0]].concat(_toConsumableArray(wrongW.map(function (w) {
-        return w[0];
-      }))));
+      var mcW = rndShuffle([v1[0]].concat(wrongW.map(function (w) { return w[0]; })));
       exs.push({
         type: 'mc',
         prompt: 'Which word means "' + v1[2] + '"?',
@@ -310,9 +284,7 @@ function buildExercises(lesson) {
     // Typing: word → English meaning
     if (_vocab.length > 2) {
       var v2 = _vocab[2];
-      var answers = v2[2].split(/[\/,]/).map(function (s) {
-        return s.trim();
-      }).filter(Boolean);
+      var answers = v2[2].split(/[\/,]/).map(function (s) { return s.trim(); }).filter(Boolean);
       exs.push({
         type: 'typing',
         prompt: 'What does this word mean? (type in English)',
@@ -321,17 +293,13 @@ function buildExercises(lesson) {
         placeholder: 'English meaning...'
       });
     }
-  }
 
-  // Listening: hear a word, pick meaning
-  if (lesson.vocab && lesson.vocab.length > 0) {
-    var vL = rndShuffle(lesson.vocab)[0];
+    // Listening: hear a word, pick meaning
+    var vL = rndShuffle(vocab0)[0];
     var wrongL = rndShuffle(allVocab.filter(function (w) {
       return w[2] !== vL[2];
     })).slice(0, 3);
-    var mcL = rndShuffle([vL[2]].concat(_toConsumableArray(wrongL.map(function (w) {
-      return w[2];
-    }))));
+    var mcL = rndShuffle([vL[2]].concat(wrongL.map(function (w) { return w[2]; })));
     exs.push({
       type: 'listen',
       prompt: 'Listen and choose the meaning:',
@@ -342,35 +310,24 @@ function buildExercises(lesson) {
     });
   }
 
-  // ── N3+ exercise types (day > 660) ──────────────────────────────────────
-  var day = lesson.day || 0;
+  // ── N3+ exercise types ──────────────────────────────────────────────────
+  // ponytail: no reading-comprehension exercise until passages are catalog
+  // items (spec §1 `passage`); the renderer (typing + ex.passage) stays.
 
-  // Reading comprehension (N3+)
-  if (day > 660 && lesson.passage && lesson.passage.questions && lesson.passage.questions.length > 0) {
-    var q0 = lesson.passage.questions[0];
-    exs.push({
-      type: 'reading',
-      prompt: 'Read the passage and answer:',
-      question: q0.question_jp || q0.question_en,
-      answers: [q0.answer],
-      passage: lesson.passage.text_jp,
-      placeholder: 'Type your answer...'
-    });
-  }
-
-  // Conjugation exercise (N3+, verb days)
-  if (day > 660 && lesson.type === 'verbs' && lesson.vocab && lesson.vocab.length >= 2) {
-    var form = CONJ_FORMS[day % CONJ_FORMS.length];
-    // Only plain verbs: "to …" meanings, not already-inflected entries like "(passive of 読む)"
-    var vConj = rndShuffle(lesson.vocab.filter(function (v) {
-      return /^to /i.test(v[2] || '') && !/passive|potential|causative/i.test(v[2]) && conjugate(v[0], v[1], form);
+  // Conjugation (N3+): verbs by item pos, else the old "to …" gloss heuristic
+  if (rank >= 2) {
+    var form = CONJ_FORMS[(unit.index || 0) % CONJ_FORMS.length];
+    var vConj = rndShuffle(vocabItems.filter(function (v) {
+      var g = glossText(v);
+      var isVerb = v.pos ? /^verb/.test(v.pos) : /^to /i.test(g) && !/passive|potential|causative/i.test(g);
+      return isVerb && conjugate(v.word, v.reading, form, v.pos);
     }))[0];
     if (vConj) {
-      var conj = conjugate(vConj[0], vConj[1], form);
+      var conj = conjugate(vConj.word, vConj.reading, form, vConj.pos);
       exs.push({
         type: 'conjugation',
         prompt: 'Conjugate to ' + form + ':',
-        question: vConj[0] + (vConj[0] !== vConj[1] ? ' (' + vConj[1] + ')' : ''),
+        question: vConj.word + (vConj.word !== vConj.reading ? ' (' + vConj.reading + ')' : ''),
         answers: conj.kanji === conj.kana ? [conj.kana] : [conj.kanji, conj.kana],
         targetForm: form,
         placeholder: form + '...'
@@ -378,45 +335,42 @@ function buildExercises(lesson) {
     }
   }
 
-  // Pair match (N3+, verb days with transitive/intransitive pairs)
-  if (day > 660 && lesson.type === 'verbs' && lesson.vocab && lesson.vocab.length >= 4) {
-    var pairs = lesson.vocab.slice(0, 4);
-    var pairItems = rndShuffle(pairs.map(function (v) { return v[0]; }));
+  // Pair match (N3+): word → meaning
+  if (rank >= 2 && vocab0.length >= 4) {
+    var pairs = vocab0.slice(0, 4);
     var pairAnswers = pairs.map(function (v) { return v[2]; });
     exs.push({
       type: 'pair_match',
       prompt: 'Match each word to its meaning:',
       question: '',
-      items: pairItems,
+      items: rndShuffle(pairs.map(function (v) { return v[0]; })),
       answers: pairAnswers,
       pairs: pairs.map(function (v) { return [v[0], v[2]]; }), // word → meaning (items are shuffled)
       options: rndShuffle(pairAnswers)
     });
   }
 
-  // Fill-in-the-blank (N3+, grammar days)
-  if (day > 660 && lesson.grammar && lesson.grammar.pattern && lesson.grammar.example_jp && !isPlaceholderPattern(lesson.grammar.pattern)) {
-    var gPat = lesson.grammar.pattern;
-    var seenPat = {};
-    var wrongPats = rndShuffle(curriculum.map(function (d) { return d.grammar && d.grammar.pattern; }).filter(function (p) {
-      if (!p || p === gPat || seenPat[p] || isPlaceholderPattern(p)) return false;
-      return seenPat[p] = true;
+  // Fill-in-the-blank (N3+): meaning → pattern
+  var gram = (unit.grammar || [])[0];
+  if (rank >= 2 && gram) {
+    var wrongPats = rndShuffle(catalogOf('grammar').map(function (g) { return g.pattern; }).filter(function (p, i, arr) {
+      return p !== gram.pattern && arr.indexOf(p) === i;
     })).slice(0, 3);
     if (wrongPats.length >= 2) {
-      var fillOpts = rndShuffle([gPat].concat(wrongPats));
+      var fillOpts = rndShuffle([gram.pattern].concat(wrongPats));
       exs.push({
         type: 'fill_blank',
         prompt: 'Choose the correct grammar pattern:',
-        question: lesson.grammar.meaning,
+        question: gram.meaning,
         options: fillOpts,
-        correct: fillOpts.indexOf(gPat)
+        correct: fillOpts.indexOf(gram.pattern)
       });
     }
   }
 
   // Synonym exercise (N2+)
-  if (day > 960 && lesson.vocab && lesson.vocab.length >= 3) {
-    var vSyn = rndShuffle(lesson.vocab)[0];
+  if (rank >= 3 && vocab0.length >= 3) {
+    var vSyn = rndShuffle(vocab0)[0];
     var wrongSyn = rndShuffle(allVocab.filter(function (w) {
       return w[2] && w[2].trim() && w[2] !== vSyn[2] && w[0] !== vSyn[0];
     })).slice(0, 3);
@@ -433,9 +387,9 @@ function buildExercises(lesson) {
   // ponytail: no reorder until the catalog has hand-authored chunks (ticket 11);
   // heuristic splitting broke words (信頼で|きる). The reorder renderer stays.
 
-  // Kanji reading (N2+, kanji days)
-  if (day > 960 && lesson.type === 'kanji' && lesson.chars && lesson.chars.length >= 2) {
-    var kChar = rndShuffle(lesson.chars)[0];
+  // Kanji reading (N2+)
+  if (rank >= 3 && kanjiItems.length >= 2) {
+    var kChar = kRow(rndShuffle(kanjiItems)[0]);
     var wrongK = rndShuffle(allChars.filter(function (c) {
       return c[1] && c[1].trim() && c[1] !== kChar[1];
     })).slice(0, 3);
@@ -449,7 +403,7 @@ function buildExercises(lesson) {
     });
   }
 
-  var cap = exerciseCap(day);
+  var cap = unit.quiz && unit.quiz.cap || exerciseCap(unit.level);
   return rndShuffle(exs).slice(0, cap);
 }
 function normAns(s) {
@@ -534,42 +488,26 @@ function sanitizeSvg(raw) {
 }
 
 // ── SRS: SM-2 ───────────────────────────────────────────────────────────────
-// Cards persist via Store (store.js) as `card:<id>` docs.
-function srsAddCards(dayLesson, cards) {
+// Cards persist via Store (store.js) as `card:<itemId>` docs.
+// srsAddCards(unit, cards): one card per catalog item, keyed by item id (Q10),
+// so the same word in two units is one card. Existing cards are never touched.
+// Returns true when any card was added.
+function srsAddCards(unit, cards) {
   var changed = false;
   var now = Date.now();
-  (dayLesson.vocab || []).forEach(function (v, i) {
-    var id = "v_".concat(dayLesson.day, "_").concat(i);
-    if (!cards[id]) {
-      cards[id] = {
-        id: id,
-        type: 'vocab',
-        front: v[0],
-        back: v[2],
-        reading: v[1],
-        interval: 1,
-        ease: 2.5,
-        due: now,
-        reps: 0
-      };
-      changed = true;
-    }
+  function add(id, fields) {
+    if (cards[id]) return;
+    cards[id] = Object.assign({ id: id }, fields, { interval: 1, ease: 2.5, due: now, reps: 0 });
+    changed = true;
+  }
+  (unit.vocab || []).forEach(function (v) {
+    add(v.id, { type: 'vocab', front: v.word, back: glossText(v), reading: v.reading });
   });
-  (dayLesson.chars || []).forEach(function (c, i) {
-    var id = "c_".concat(dayLesson.day, "_").concat(i);
-    if (!cards[id]) {
-      cards[id] = {
-        id: id,
-        type: 'char',
-        front: c[0],
-        back: c[1],
-        interval: 1,
-        ease: 2.5,
-        due: now,
-        reps: 0
-      };
-      changed = true;
-    }
+  (unit.kanji || []).forEach(function (k) {
+    add(k.id, { type: 'kanji', front: k.char, back: k.meaning.join(', '), reading: kanjiReadings(k).join('・') });
+  });
+  (unit.grammar || []).forEach(function (g) {
+    add(g.id, { type: 'grammar', front: g.pattern, back: g.meaning });
   });
   return changed;
 }
@@ -604,14 +542,15 @@ function srsDueCards(cards) {
 
 // ── Store docs (synced learning data, persisted by store.js) ────────────────
 // One doc per entity; every doc also carries updatedAt (ms) + deviceId.
-//   day:<N>         { done }
-//   card:<id>       SRS card fields (id, type, front, back, reading?, interval,
+//   unit:<unitId>   { done, completedAt (ms | null) }
+//   card:<itemId>   SRS card fields (id, type, front, back, reading?, interval,
 //                   ease, due, reps) + lastReviewedAt (0 = never reviewed)
-//   prefs:learning  { currentDay, furigana (true|false; null/absent = day-based),
+//   prefs:learning  { currentUnit (unit id | null), pace (units/day, default 1),
+//                   examDate (null), furigana (true|false; null/absent = level-based),
 //                   uiLang ('auto'|'en'|'ja') }
 //   log:<YYYY-MM-DD>:<deviceId>   dated activity log, one doc per local date per
-//                   device: { date, lessons: [dayNum marked done], quizzes:
-//                   [{ day, right, total, at }], reviews: { count, again } }.
+//                   device: { date, lessons: [unit ids marked done], quizzes:
+//                   [{ unit, right, total, at }], reviews: { count, again } }.
 //                   Append-only within the day; only its own device writes it,
 //                   so merges never conflict across devices (LWW is fine).
 //                   Readers aggregate across devices and treat missing fields
@@ -620,9 +559,8 @@ function srsDueCards(cards) {
 //   ach:<id>            { unlockedAt }   merge: earliest unlock wins, never deleted
 // Device-only prefs stay in localStorage and never become docs:
 var DEVICE_PREF_KEYS = ['jlpt_palette', 'jlpt_theme', 'jlpt_tts_rate', 'jlpt_sfx_mute'];
-// v1 export / pre-store localStorage keys that now live in docs:
-var LEGACY_SYNCED_KEYS = ['n5_day', 'n5_completed', 'n5_furigana', 'n5_srs', 'jlpt_ui_lang'];
-var STORE_ID_RE = /^(day:[1-9]\d*|card:[vc]_\d+_\d+|prefs:learning|log:\d{4}-\d{2}-\d{2}:[\w-]+)$/;
+var STORE_ID_RE = /^(unit:n[1-5]\.u\d{3}|card:(v:[^|\s]+\|[^|\s]+|k:\S+|g:[\w-]+)|prefs:learning|log:\d{4}-\d{2}-\d{2}:[\w-]+)$/;
+var PREFS_DEFAULTS = { currentUnit: null, pace: 1, examDate: null, furigana: null, uiLang: 'en' };
 
 // ── Activity log (log:* docs) ───────────────────────────────────────────────
 // localDate: the user's local calendar date as 'YYYY-MM-DD' (not UTC).
@@ -643,7 +581,7 @@ function normalizeLog(log) {
 function logDocs(docs) {
   return docs.filter(function (d) { return d._id && d._id.indexOf('log:') === 0; });
 }
-// aggregateLogs: log docs (any devices) → { date: { lessons: [unique day nums],
+// aggregateLogs: log docs (any devices) → { date: { lessons: [unique unit ids],
 // quizzes: [sorted by at], reviews: { count, again } } }.
 function aggregateLogs(logs) {
   var out = {};
@@ -656,7 +594,7 @@ function aggregateLogs(logs) {
     a.reviews.again += l.reviews.again;
   });
   Object.keys(out).forEach(function (k) {
-    out[k].lessons.sort(function (x, y) { return x - y; });
+    out[k].lessons.sort();
     out[k].quizzes.sort(function (x, y) { return x.at - y.at; });
   });
   return out;
@@ -692,18 +630,18 @@ function computeStreak(dates, today) {
   while (have[start - current]) current++;
   return { current: current, longest: longest };
 }
-// firstQuizAttempts: { dayNum: earliest quiz entry for that lesson, across all logs }.
+// firstQuizAttempts: { unitId: earliest quiz entry for that unit, across all logs }.
 // Anti-farm rewards count first attempts only.
 function firstQuizAttempts(logs) {
   var first = {};
   logs.forEach(function (l) {
     normalizeLog(l).quizzes.forEach(function (q) {
-      if (!first[q.day] || q.at < first[q.day].at) first[q.day] = q;
+      if (!first[q.unit] || q.at < first[q.unit].at) first[q.unit] = q;
     });
   });
   return first;
 }
-// activityTotals: lifetime { lessons (distinct days marked done), quizzes,
+// activityTotals: lifetime { lessons (distinct units marked done), quizzes,
 // perfectQuizzes, reviews }.
 function activityTotals(logs) {
   var days = {}, t = { lessons: 0, quizzes: 0, perfectQuizzes: 0, reviews: 0 };
@@ -740,50 +678,18 @@ function pickStoreWinner(a, b) {
   return String(a.deviceId || '') >= String(b.deviceId || '') ? a : b;
 }
 
-// legacyToDocs: pre-store localStorage values → docs. `get(key)` returns the
-// stored string or null (localStorage.getItem, or a v1 export's keys).
-function legacyToDocs(get, deviceId, now) {
-  var docs = [];
-  function add(id, body) {
-    docs.push(Object.assign({ _id: id }, body, { updatedAt: now, deviceId: deviceId }));
-  }
-  function json(k, fallback) {
-    try { return JSON.parse(get(k)) || fallback; } catch (e) { return fallback; }
-  }
-  var done = json('n5_completed', []);
-  if (Array.isArray(done)) done.forEach(function (n) {
-    n = parseInt(n);
-    if (n > 0) add('day:' + n, { done: true });
-  });
-  var cards = json('n5_srs', {});
-  Object.keys(cards).forEach(function (id) {
-    var c = cards[id];
-    if (!c || typeof c !== 'object' || !STORE_ID_RE.test('card:' + id)) return;
-    // Old cards have no review timestamp; srsReview set due = review + interval days.
-    var reviewed = c.lastReviewedAt || (c.reps > 0 ? c.due - c.interval * 86400000 : 0) || 0;
-    add('card:' + id, Object.assign({}, c, { id: id, lastReviewedAt: reviewed }));
-  });
-  var prefs = {};
-  var day = parseInt(get('n5_day'));
-  var furi = get('n5_furigana');
-  var lang = get('jlpt_ui_lang');
-  if (day > 0) prefs.currentDay = day;
-  if (furi === 'true' || furi === 'false') prefs.furigana = furi === 'true';
-  if (lang === 'auto' || lang === 'en' || lang === 'ja') prefs.uiLang = lang;
-  if (Object.keys(prefs).length) add('prefs:learning', prefs);
-  return docs;
-}
-
 // docsToSnapshot: docs → App's synchronous state shape.
 function docsToSnapshot(docs) {
-  var snap = { completed: [], srsCards: {}, dayNum: 1, furiganaPref: null, uiLang: 'en' };
+  var snap = { completed: [], srsCards: {}, currentUnit: null, pace: 1, examDate: null, furiganaPref: null, uiLang: 'en' };
   docs.forEach(function (d) {
-    if (d._id.indexOf('day:') === 0) {
-      if (d.done) snap.completed.push(parseInt(d._id.slice(4)));
+    if (d._id.indexOf('unit:') === 0) {
+      if (d.done) snap.completed.push(d._id.slice(5));
     } else if (d._id.indexOf('card:') === 0) {
       snap.srsCards[d._id.slice(5)] = stripDocMeta(d);
     } else if (d._id === 'prefs:learning') {
-      if (d.currentDay > 0) snap.dayNum = Math.floor(d.currentDay);
+      if (typeof d.currentUnit === 'string') snap.currentUnit = d.currentUnit;
+      if (d.pace > 0) snap.pace = d.pace;
+      if (typeof d.examDate === 'string') snap.examDate = d.examDate;
       if (typeof d.furigana === 'boolean') snap.furiganaPref = String(d.furigana);
       // ponytail: 'en' fallback while under development (see App); 'auto' for release.
       if (d.uiLang === 'auto' || d.uiLang === 'ja') snap.uiLang = d.uiLang;
@@ -792,7 +698,11 @@ function docsToSnapshot(docs) {
   return snap;
 }
 
-// exportProgress: v2 progress file from the store's docs plus device-only
+// Progress file format. v3 = unit/item-keyed docs; older files are rejected
+// (no users before the catalog rebuild, map Q5).
+var PROGRESS_VERSION = 3;
+
+// exportProgress: progress file from the store's docs plus device-only
 // prefs read via `get(key)` (localStorage.getItem).
 function exportProgress(docs, get) {
   var device = {};
@@ -801,7 +711,7 @@ function exportProgress(docs, get) {
     if (v !== null && v !== undefined) device[k] = v;
   });
   return {
-    version: 2,
+    version: PROGRESS_VERSION,
     exported: new Date().toISOString(),
     docs: docs.map(function (d) {
       var c = Object.assign({}, d);
@@ -813,21 +723,18 @@ function exportProgress(docs, get) {
   };
 }
 
-// progressFileToDocs: a validated v1 or v2 progress file → { docs, device }.
-// `device` = localStorage keys to write back as-is (device prefs; v1 legacy extras).
-function progressFileToDocs(data, deviceId, now) {
-  if (data.version === 2) return { docs: data.docs, device: data.device || {} };
-  var keys = data.keys;
-  var device = {};
-  Object.keys(keys).forEach(function (k) {
-    if (LEGACY_SYNCED_KEYS.indexOf(k) === -1) device[k] = keys[k];
-  });
-  var get = function (k) { return Object.prototype.hasOwnProperty.call(keys, k) ? keys[k] : null; };
-  return { docs: legacyToDocs(get, deviceId, now), device: device };
+// progressFileToDocs: a validated progress file → { docs, device }.
+// `device` = localStorage keys to write back as-is (device prefs).
+function progressFileToDocs(data) {
+  return { docs: data.docs, device: data.device || {} };
 }
 
-function validateProgressV2(data) {
-  function bad(msg) { return { valid: false, error: 'version 2: ' + msg }; }
+// validateProgressData: checks that a parsed progress file has the expected
+// shape. Returns { valid: boolean, error: string|null }.
+function validateProgressData(data) {
+  if (!data || typeof data !== 'object') return { valid: false, error: 'not an object' };
+  if (data.version !== PROGRESS_VERSION) return { valid: false, error: 'unsupported version: ' + data.version };
+  function bad(msg) { return { valid: false, error: 'version ' + PROGRESS_VERSION + ': ' + msg }; }
   if (!Array.isArray(data.docs)) return bad('missing docs array');
   for (var i = 0; i < data.docs.length; i++) {
     var d = data.docs[i];
@@ -835,7 +742,7 @@ function validateProgressV2(data) {
       return bad('bad doc id: ' + (d && d._id));
     }
     if (typeof d.updatedAt !== 'number') return bad(d._id + ' missing updatedAt');
-    if (d._id.indexOf('day:') === 0 && typeof d.done !== 'boolean') return bad(d._id + ' missing done');
+    if (d._id.indexOf('unit:') === 0 && typeof d.done !== 'boolean') return bad(d._id + ' missing done');
     if (d._id.indexOf('card:') === 0 && ['interval', 'ease', 'due', 'reps'].some(function (f) {
       return typeof d[f] !== 'number';
     })) return bad(d._id + ' missing SRS fields');
@@ -847,45 +754,6 @@ function validateProgressV2(data) {
     for (var j = 0; j < dk.length; j++) {
       if (DEVICE_PREF_KEYS.indexOf(dk[j]) === -1) return bad('unknown device key: ' + dk[j]);
       if (typeof data.device[dk[j]] !== 'string') return bad('device key ' + dk[j] + ' is not a string');
-    }
-  }
-  return { valid: true, error: null };
-}
-
-// validateProgressData: checks that a parsed progress object (v1 localStorage
-// key dump or v2 doc export) has the expected shape.
-// Returns { valid: boolean, error: string|null }.
-function validateProgressData(data) {
-  if (!data || typeof data !== 'object') return { valid: false, error: 'not an object' };
-  if (data.version === 2) return validateProgressV2(data);
-  if (data.version !== 1) return { valid: false, error: 'unsupported version: ' + data.version };
-  if (!data.keys || typeof data.keys !== 'object') return { valid: false, error: 'missing keys field' };
-  var allowedKeys = ['n5_day', 'n5_completed', 'n5_furigana', 'n5_srs', 'n5_2025', 'jlpt_tts_rate', 'jlpt_palette', 'jlpt_theme', 'jlpt_ui_lang', 'jlpt_sfx_mute'];
-  var found = Object.keys(data.keys);
-  for (var i = 0; i < found.length; i++) {
-    if (allowedKeys.indexOf(found[i]) === -1) return { valid: false, error: 'unknown key: ' + found[i] };
-  }
-  return { valid: true, error: null };
-}
-
-// validateCurriculum: runtime sanity-check on the curriculum array.
-// Returns { valid: boolean, error: string|null }.
-function validateCurriculum(cur) {
-  if (!Array.isArray(cur)) return { valid: false, error: 'curriculum is not an array' };
-  if (cur.length !== 1720) return { valid: false, error: 'curriculum length is ' + cur.length + ', expected 1720' };
-  var required = ['day', 'title', 'type'];
-  var spots = [0, 1, 364, 365, 1719];
-  for (var i = 0; i < spots.length; i++) {
-    var idx = spots[i];
-    var lesson = cur[idx];
-    if (!lesson) return { valid: false, error: 'curriculum[' + idx + '] is missing' };
-    for (var j = 0; j < required.length; j++) {
-      if (lesson[required[j]] === undefined) {
-        return { valid: false, error: 'curriculum[' + idx + '] missing field: ' + required[j] };
-      }
-    }
-    if (lesson.day !== idx + 1) {
-      return { valid: false, error: 'curriculum[' + idx + '].day is ' + lesson.day + ', expected ' + (idx + 1) };
     }
   }
   return { valid: true, error: null };

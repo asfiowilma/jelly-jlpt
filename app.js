@@ -1,8 +1,12 @@
 "use strict";
 
 // Navbar view tabs (label = UI_STRINGS key, icon = ICONS key in app-helpers.js)
+// Catalog + plan → ordered unit list, once at load (data/*.js are loaded before lib.js).
+var PLAN_CHECK = validatePlan(PLAN, CATALOG);
+var UNITS = PLAN_CHECK.valid ? buildUnits(PLAN, CATALOG) : [];
+
 var NAV_TABS = [
-  { view: 'day', label: 'view_today', icon: 'today' },
+  { view: 'unit', label: 'view_today', icon: 'today' },
   { view: 'overview', label: 'view_overview', icon: 'overview' },
   { view: 'review', label: 'view_review', icon: 'review' }
 ];
@@ -13,10 +17,6 @@ function App() {
       return Store.snapshot();
     }),
     snap0 = _React$useStateSnap[0];
-  var _React$useState23 = React.useState(snap0.dayNum),
-    _React$useState24 = _slicedToArray(_React$useState23, 2),
-    dayNum = _React$useState24[0],
-    setDayNum = _React$useState24[1];
   var _React$useState25 = React.useState(snap0.srsCards),
     _React$useState26 = _slicedToArray(_React$useState25, 2),
     srsCards = _React$useState26[0],
@@ -27,22 +27,29 @@ function App() {
     _React$useState28 = _slicedToArray(_React$useState27, 2),
     completed = _React$useState28[0],
     setCompleted = _React$useState28[1];
-  var _React$useState29 = React.useState('day'),
+  // Index into UNITS of the unit being viewed; defaults to the suggested next unit.
+  var _React$useStateUnit = React.useState(function () {
+      var i = UNITS.map(function (u) { return u.id; }).indexOf(snap0.currentUnit);
+      return i >= 0 ? i : nextUnit(UNITS, new Set(snap0.completed));
+    }),
+    unitIdx = _React$useStateUnit[0],
+    setUnitIdx = _React$useStateUnit[1];
+  var _React$useState29 = React.useState('unit'),
     _React$useState30 = _slicedToArray(_React$useState29, 2),
     view = _React$useState30[0],
     setView = _React$useState30[1];
   // View to return to when Settings is closed
-  var _React$useStatePrev = React.useState('day'),
+  var _React$useStatePrev = React.useState('unit'),
     _React$useStatePrev2 = _slicedToArray(_React$useStatePrev, 2),
     prevView = _React$useStatePrev2[0],
     setPrevView = _React$useStatePrev2[1];
-  // Raw furigana pref 'true'|'false' (null = unset → day-based default, see furiganaOn).
-  // Lives here, not in DayView, so the navbar ruby follows the same toggle.
+  // Raw furigana pref 'true'|'false' (null = unset → level-based default, see furiganaOn).
+  // Lives here, not in UnitView, so the navbar ruby follows the same toggle.
   var _React$useStateFuri = React.useState(snap0.furiganaPref),
     _React$useStateFuri2 = _slicedToArray(_React$useStateFuri, 2),
     furiganaPref = _React$useStateFuri2[0],
     setFuriganaPref = _React$useStateFuri2[1];
-  // Interface language: 'auto' (progressive EN→JA by day), 'en' or 'ja'.
+  // Interface language: 'auto' (progressive EN→JA by level), 'en' or 'ja'.
   // ponytail: defaults to 'en' while the app is under development; flip the
   // fallback to 'auto' for release (docsToSnapshot in lib.js).
   var _React$useStateLang = React.useState(snap0.uiLang),
@@ -112,25 +119,23 @@ function App() {
   }, []);
   // ponytail: recomputed every render from all log docs; memoize if it shows up in profiles.
   var streak = computeStreak(studyDates(Store.logs()), localDate()).current;
-  var curriculumCheck = validateCurriculum(curriculum);
-  if (!curriculumCheck.valid) {
+  // Hooks above run unconditionally; bail out here on a broken plan/catalog.
+  if (!PLAN_CHECK.valid || !UNITS.length) {
     return React.createElement('div', { style: { padding: 40, textAlign: 'center', fontFamily: 'sans-serif' } },
       React.createElement('h2', null, 'Curriculum failed to load'),
-      React.createElement('p', { style: { color: 'var(--bad)' } }, curriculumCheck.error),
+      React.createElement('p', { style: { color: 'var(--bad)' } }, PLAN_CHECK.error || 'no units'),
       React.createElement('button', { onClick: function() { location.reload(); } }, 'Reload')
     );
   }
-  var lesson = curriculum[dayNum - 1];
-  var pColor = PHASE_COLORS[lesson.phaseNum] || 'var(--muted)';
-  var pBg = PHASE_BG[lesson.phaseNum] || 'var(--surface2)';
-  var totalDays = curriculum.length;
+  var unit = UNITS[Math.min(unitIdx, UNITS.length - 1)];
+  var level = unit.level;
   var dueCount = srsDueCards(srsCards).length;
-  var showFurigana = furiganaOn(furiganaPref, dayNum);
+  var showFurigana = furiganaOn(furiganaPref, level);
   var toggleFurigana = function toggleFurigana() {
     Store.putPrefs({ furigana: !showFurigana });
     setFuriganaPref(String(!showFurigana));
   };
-  // Settings select: 'auto' clears the stored pref (day-based default), else 'true'/'false'.
+  // Settings select: 'auto' clears the stored pref (level-based default), else 'true'/'false'.
   var setFuriganaMode = function setFuriganaMode(mode) {
     Store.putPrefs({ furigana: mode === 'auto' ? null : mode === 'true' });
     setFuriganaPref(mode === 'auto' ? null : mode);
@@ -141,24 +146,24 @@ function App() {
     setView('settings');
   };
   var toggleDone = function toggleDone() {
-    var wasDone = completed.has(dayNum);
-    Store.putDay(dayNum, !wasDone);
-    if (!wasDone) Store.logLesson(dayNum);
+    var wasDone = completed.has(unit.id);
+    Store.putUnit(unit.id, !wasDone);
+    if (!wasDone) Store.logLesson(unit.id);
     setCompleted(function (prev) {
       var n = new Set(prev);
-      n.has(dayNum) ? n["delete"](dayNum) : n.add(dayNum);
+      n.has(unit.id) ? n["delete"](unit.id) : n.add(unit.id);
       return n;
     });
-    // Un-marking only flips day:N (sync design decision 10) — SRS cards are kept.
+    // Un-marking only flips unit:<id> (sync design decision 10) — SRS cards are kept.
     if (!wasDone) setSrsCards(function (prev) {
       var cards = Object.assign({}, prev);
-      if (srsAddCards(lesson, cards)) Store.putCards(cards);
+      if (srsAddCards(unit, cards)) Store.putCards(cards);
       return cards;
     });
   };
   React.useEffect(function () {
-    Store.putPrefs({ currentDay: dayNum });
-  }, [dayNum]);
+    if (unit) Store.putPrefs({ currentUnit: unit.id });
+  }, [unit && unit.id]);
   function handleExport() {
     var data = exportProgress(Store.docs(), function (k) {
       try { return localStorage.getItem(k); } catch (e) { return null; }
@@ -186,7 +191,7 @@ function App() {
           var check = validateProgressData(parsed);
           if (!check.valid) { alert('Invalid progress file: ' + check.error); return; }
           if (!confirm('This will overwrite your current progress. Continue?')) return;
-          var imported = progressFileToDocs(parsed, Store.deviceId, Date.now());
+          var imported = progressFileToDocs(parsed);
           Object.keys(imported.device).forEach(function (k) {
             safeSave(k, imported.device[k]);
           });
@@ -196,7 +201,8 @@ function App() {
             var s = Store.snapshot();
             setCompleted(new Set(s.completed));
             setSrsCards(s.srsCards);
-            setDayNum(s.dayNum);
+            var i = UNITS.map(function (u) { return u.id; }).indexOf(s.currentUnit);
+            setUnitIdx(i >= 0 ? i : nextUnit(UNITS, new Set(s.completed)));
             setFuriganaPref(s.furiganaPref);
             setUiLang(s.uiLang);
           });
@@ -232,7 +238,7 @@ function App() {
       onClick: function onClick() {
         return setView(tab.view);
       }
-    }, icon(tab.icon), /*#__PURE__*/React.createElement("span", null, tRuby(tab.label, dayNum, showFurigana)), tab.view === 'review' && dueCount > 0 && /*#__PURE__*/React.createElement("span", {
+    }, icon(tab.icon), /*#__PURE__*/React.createElement("span", null, tRuby(tab.label, level, showFurigana)), tab.view === 'review' && dueCount > 0 && /*#__PURE__*/React.createElement("span", {
       className: "pill"
     }, dueCount, /*#__PURE__*/React.createElement("span", {
       className: "sr-only"
@@ -260,7 +266,7 @@ function App() {
     sfxOn: sfxOn,
     setSfxOn: setSfxOn,
     setSpeechRate: setSpeechRate,
-    dayNum: dayNum,
+    level: level,
     uiLang: uiLang,
     setUiLang: setUiLang,
     furiganaMode: furiganaPref === 'true' || furiganaPref === 'false' ? furiganaPref : 'auto',
@@ -272,29 +278,26 @@ function App() {
     }
   }) : view === 'review' ? /*#__PURE__*/React.createElement(ReviewMode, {
     cards: srsCards,
-    dayNum: dayNum,
+    level: level,
     onUpdate: function onUpdate(updated) {
       setSrsCards(updated);
       Store.putCards(updated);
     }
   }) : view === 'overview' ? /*#__PURE__*/React.createElement(Overview, {
-    curriculum: curriculum,
+    units: UNITS,
     completed: completed,
-    dayNum: dayNum,
-    setDay: function setDay(d) {
-      setDayNum(d);
-      setView('day');
-    },
-    currentDay: dayNum
-  }) : /*#__PURE__*/React.createElement(DayView, {
-    lesson: lesson,
-    dayNum: dayNum,
-    totalDays: totalDays,
-    pColor: pColor,
-    pBg: pBg,
+    current: unit.index,
+    suggested: nextUnit(UNITS, completed),
+    setUnit: function setUnit(i) {
+      setUnitIdx(i);
+      setView('unit');
+    }
+  }) : /*#__PURE__*/React.createElement(UnitView, {
+    unit: unit,
+    units: UNITS,
     completed: completed,
     toggleDone: toggleDone,
-    setDay: setDayNum,
+    setUnit: setUnitIdx,
     showFurigana: showFurigana,
     toggleFurigana: toggleFurigana
   })));

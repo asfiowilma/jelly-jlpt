@@ -18,57 +18,29 @@
 <div id="root"></div>
 <!--
   Load order matters — no bundler resolves this automatically:
-  1. curriculum/00-constants.js (declares `curriculum = []` + PHASE_COLORS/PHASE_BG/PHASE_NAMES)
-  2. curriculum/01..32 (each appends its phase's days via curriculum.push())
-  3. lib.js (pure helpers + Babel runtime helpers, no top-level curriculum reads)
+  1. data/catalog.js (declares CATALOG { items, add } + PLAN = [])
+  2. data/<level>/*.js (CATALOG.add([...]) item files + plan.js PLAN.push(...); any order)
+  3. lib.js (pure helpers + Babel runtime helpers; reads CATALOG/PLAN only when called)
   4. store.js (Store: PouchDB-backed persistence for synced learning data; uses lib.js)
-  5. app-helpers.js (t/lsLoad/lsSave/speak/..., reads PHASE_COLORS at load time)
+  5. app-helpers.js (t/tRuby/speak/icons/stroke-order fetch; uses lib.js levelRank)
      sfx.js (playSfx/sfxMuted: quiz + achievement sounds from sfx/)
-  6. components/*.js (any order — only read curriculum/helpers inside render, not at load time)
-  7. app.js (awaits Store.init(), then mounts React — the only script that actually renders the tree)
+  6. components/*.js (any order — only read data/helpers inside render, not at load time)
+  7. app.js (builds UNITS from PLAN + CATALOG, awaits Store.init(), then mounts React)
+  legacy/curriculum/ is the old day-based content, kept as a salvage quarry only — not loaded.
 -->
-<script src="curriculum/00-constants.js"></script>
-<script src="curriculum/01-hiragana.js"></script>
-<script src="curriculum/02-katakana.js"></script>
-<script src="curriculum/03-foundations.js"></script>
-<script src="curriculum/04-vocabulary.js"></script>
-<script src="curriculum/05-verbs.js"></script>
-<script src="curriculum/06-grammar-patterns.js"></script>
-<script src="curriculum/07-kanji.js"></script>
-<script src="curriculum/08-test-prep.js"></script>
-<script src="curriculum/09-n5-review.js"></script>
-<script src="curriculum/10-n4-vocabulary.js"></script>
-<script src="curriculum/11-n4-verbs.js"></script>
-<script src="curriculum/12-n4-grammar-patterns.js"></script>
-<script src="curriculum/13-n4-kanji.js"></script>
-<script src="curriculum/14-n4-test-prep.js"></script>
-<script src="curriculum/15-n4-review.js"></script>
-<script src="curriculum/16-n3-vocabulary.js"></script>
-<script src="curriculum/17-n3-verbs-adjectives.js"></script>
-<script src="curriculum/18-n3-grammar-patterns.js"></script>
-<script src="curriculum/19-n3-kanji.js"></script>
-<script src="curriculum/20-n3-test-prep.js"></script>
-<script src="curriculum/21-n3-review.js"></script>
-<script src="curriculum/22-n2-vocabulary.js"></script>
-<script src="curriculum/23-n2-verbs-expressions.js"></script>
-<script src="curriculum/24-n2-grammar-patterns.js"></script>
-<script src="curriculum/25-n2-kanji.js"></script>
-<script src="curriculum/26-n2-test-prep.js"></script>
-<script src="curriculum/27-n2-review.js"></script>
-<script src="curriculum/28-n1-vocabulary.js"></script>
-<script src="curriculum/29-n1-verbs-expressions.js"></script>
-<script src="curriculum/30-n1-grammar.js"></script>
-<script src="curriculum/31-n1-kanji.js"></script>
-<script src="curriculum/32-n1-test-prep.js"></script>
+<script src="data/catalog.js"></script>
+<script src="data/n5/grammar.js"></script>
+<script src="data/n5/kanji.js"></script>
+<script src="data/n5/plan.js"></script>
+<script src="data/n5/sentences.js"></script>
+<script src="data/n5/vocab.js"></script>
 <script src="lib.js"></script>
 <script src="store.js"></script>
 <script src="app-helpers.js"></script>
 <script src="sfx.js"></script>
-<script src="components/review-view.js"></script>
-<script src="components/typing-tip.js"></script>
 <script src="components/char-card.js"></script>
 <script src="components/exercises.js"></script>
-<script src="components/day-view.js"></script>
+<script src="components/unit-view.js"></script>
 <script src="components/review-mode.js"></script>
 <script src="components/overview.js"></script>
 <script src="components/settings-view.js"></script>

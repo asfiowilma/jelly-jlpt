@@ -8,19 +8,19 @@ var PROMPT_KEYS = {
   'Type the reading for this character:': 'prompt_type_char',
   'What does this word mean? (type in English)': 'prompt_type_word',
 };
-function translatePrompt(prompt, dayNum) {
+function translatePrompt(prompt, level) {
   var key = PROMPT_KEYS[prompt];
   if (!key) return prompt;
-  return t(key, dayNum);
+  return t(key, level);
 }
 
 // ── Exercises ────────────────────────────────────────────────────────────────
 function Exercises(_ref9) {
-  var lesson = _ref9.lesson,
+  var unit = _ref9.unit,
     onStart = _ref9.onStart,
     onFinish = _ref9.onFinish;
   var _React$useState9 = React.useState(function () {
-      return buildExercises(lesson);
+      return buildExercises(unit);
     }),
     _React$useState0 = _slicedToArray(_React$useState9, 2),
     exs = _React$useState0[0],
@@ -77,7 +77,7 @@ function Exercises(_ref9) {
       className: "quiz-start-box"
     }, /*#__PURE__*/React.createElement("div", {
       className: "quiz-start-title"
-    }, t('quiz_title', lesson.day)), /*#__PURE__*/React.createElement("div", {
+    }, t('quiz_title', unit.level)), /*#__PURE__*/React.createElement("div", {
       className: "quiz-start-hint"
     }, "The lesson content above will be hidden while you answer ", exs.length, " questions."), /*#__PURE__*/React.createElement("button", {
       className: "quiz-start-btn",
@@ -85,10 +85,10 @@ function Exercises(_ref9) {
         setStarted(true);
         onStart && onStart();
       }
-    }, t('start_quiz', lesson.day))));
+    }, t('start_quiz', unit.level))));
   }
   var retry = function retry() {
-    setExs(buildExercises(lesson));
+    setExs(buildExercises(unit));
     setCur(0);
     setAnswer('');
     setSelected(null);
@@ -117,7 +117,7 @@ function Exercises(_ref9) {
     setTimeout(function () {
       if (cur + 1 >= exs.length) {
         setDone(true);
-        Store.logQuiz(lesson.day, score.right + (wasRight ? 1 : 0), score.total + 1);
+        Store.logQuiz(unit.id, score.right + (wasRight ? 1 : 0), score.total + 1);
         playSfx('complete');
         onFinish && onFinish();
       } else {
@@ -158,7 +158,7 @@ function Exercises(_ref9) {
       className: "section"
     }, /*#__PURE__*/React.createElement("div", {
       className: "section-label"
-    }, t('section_exercises', lesson.day)), /*#__PURE__*/React.createElement("div", {
+    }, t('section_exercises', unit.level)), /*#__PURE__*/React.createElement("div", {
       className: "exercise-box"
     }, progressBar(), /*#__PURE__*/React.createElement("div", {
       className: "ex-finish"
@@ -167,7 +167,7 @@ function Exercises(_ref9) {
     }, emoji, " ", score.right, " / ", score.total, " correct"), /*#__PURE__*/React.createElement("button", {
       className: "ex-retry-btn",
       onClick: retry
-    }, t('try_again', lesson.day)))));
+    }, t('try_again', unit.level)))));
   }
   var ex = exs[cur];
   var progress = "".concat(cur + 1, " / ").concat(exs.length);
@@ -177,13 +177,13 @@ function Exercises(_ref9) {
       className: "section"
     }, React.createElement("div", {
       className: "section-label"
-    }, t('section_exercises', lesson.day), " ", React.createElement("span", {
+    }, t('section_exercises', unit.level), " ", React.createElement("span", {
       className: "ex-count"
     }, progress)), React.createElement("div", {
       className: "exercise-box"
     }, progressBar(), React.createElement("div", {
       className: "ex-prompt"
-    }, translatePrompt(ex.prompt, lesson.day)), ex.question && React.createElement("div", {
+    }, translatePrompt(ex.prompt, unit.level)), ex.question && React.createElement("div", {
       className: "ex-question"
     }, ex.question), body, revealed && React.createElement("div", {
       className: "ex-feedback ".concat(feedback.right ? 'correct' : 'wrong'),
@@ -199,7 +199,7 @@ function Exercises(_ref9) {
         setRevealed(true);
         advance(isRight);
       }
-    }, t('check_btn', lesson.day));
+    }, t('check_btn', unit.level));
   };
 
   // Reorder: tap tiles to build the sentence, tap a placed tile to remove it
@@ -299,13 +299,13 @@ function Exercises(_ref9) {
       className: "section"
     }, /*#__PURE__*/React.createElement("div", {
       className: "section-label"
-    }, t('section_exercises', lesson.day), " ", /*#__PURE__*/React.createElement("span", {
+    }, t('section_exercises', unit.level), " ", /*#__PURE__*/React.createElement("span", {
       className: "ex-count"
     }, progress)), /*#__PURE__*/React.createElement("div", {
       className: "exercise-box"
     }, progressBar(), /*#__PURE__*/React.createElement("div", {
       className: "ex-prompt"
-    }, translatePrompt(ex.prompt, lesson.day)), ex.type === 'listen' ? /*#__PURE__*/React.createElement("div", {
+    }, translatePrompt(ex.prompt, unit.level)), ex.type === 'listen' ? /*#__PURE__*/React.createElement("div", {
       className: "ex-question"
     }, /*#__PURE__*/React.createElement("button", {
       className: "ex-listen-btn",
@@ -345,13 +345,13 @@ function Exercises(_ref9) {
     className: "section"
   }, /*#__PURE__*/React.createElement("div", {
     className: "section-label"
-  }, t('section_exercises', lesson.day), " ", /*#__PURE__*/React.createElement("span", {
+  }, t('section_exercises', unit.level), " ", /*#__PURE__*/React.createElement("span", {
     className: "ex-count"
   }, progress)), /*#__PURE__*/React.createElement("div", {
     className: "exercise-box"
   }, progressBar(), /*#__PURE__*/React.createElement("div", {
     className: "ex-prompt"
-  }, translatePrompt(ex.prompt, lesson.day)), ex.passage && React.createElement("div", {
+  }, translatePrompt(ex.prompt, unit.level)), ex.passage && React.createElement("div", {
     className: "passage-box"
   }, ex.passage), ex.question && /*#__PURE__*/React.createElement("div", {
     className: "ex-question"
@@ -375,7 +375,7 @@ function Exercises(_ref9) {
     className: "ex-check-btn",
     onClick: handleCheck,
     disabled: !answer.trim() || revealed
-  }, t('check_btn', lesson.day))), revealed && /*#__PURE__*/React.createElement("div", {
+  }, t('check_btn', unit.level))), revealed && /*#__PURE__*/React.createElement("div", {
     className: "ex-feedback ".concat(isRight ? 'correct' : 'wrong'),
     'aria-live': "polite",
     role: "status"

@@ -12,7 +12,7 @@ QUnit.module('activity-log', function () {
   }
   function memStore(backend) {
     return createStore({
-      ls: fakeLs({ jlpt_store_migrated_v1: '1', jlpt_device_id: 'devA' }),
+      ls: fakeLs({ jlpt_device_id: 'devA' }),
       openBackend: function () { return Promise.resolve(backend || memoryBackend()); }
     });
   }
@@ -21,8 +21,8 @@ QUnit.module('activity-log', function () {
   }
   // Two devices, overlapping dates; devB's 05-02 doc is missing fields (older writer).
   var LOGS = [
-    log('2026-05-01', 'devA', { lessons: [1], quizzes: [{ day: 1, right: 3, total: 5, at: 200 }], reviews: { count: 4, again: 1 } }),
-    log('2026-05-01', 'devB', { lessons: [1, 2], quizzes: [{ day: 1, right: 5, total: 5, at: 100 }], reviews: { count: 2, again: 0 } }),
+    log('2026-05-01', 'devA', { lessons: ['n5.u001'], quizzes: [{ unit: 'n5.u001', right: 3, total: 5, at: 200 }], reviews: { count: 4, again: 1 } }),
+    log('2026-05-01', 'devB', { lessons: ['n5.u001', 'n5.u002'], quizzes: [{ unit: 'n5.u001', right: 5, total: 5, at: 100 }], reviews: { count: 2, again: 0 } }),
     log('2026-05-02', 'devB', { reviews: { count: 3 } }),
     log('2026-05-04', 'devA', { lessons: [], quizzes: [], reviews: { count: 0, again: 0 } }) // empty day
   ];
@@ -33,7 +33,7 @@ QUnit.module('activity-log', function () {
 
   QUnit.test('aggregateLogs: merges devices per date, missing fields = empty', function (assert) {
     var agg = aggregateLogs(LOGS);
-    assert.deepEqual(agg['2026-05-01'].lessons, [1, 2], 'unique lessons');
+    assert.deepEqual(agg['2026-05-01'].lessons, ['n5.u001', 'n5.u002'], 'unique lessons');
     assert.deepEqual(agg['2026-05-01'].quizzes.map(function (q) { return q.at; }), [100, 200], 'quizzes sorted by at');
     assert.deepEqual(agg['2026-05-01'].reviews, { count: 6, again: 1 });
     assert.deepEqual(agg['2026-05-02'], { lessons: [], quizzes: [], reviews: { count: 3, again: 0 } });
@@ -62,8 +62,8 @@ QUnit.module('activity-log', function () {
 
   QUnit.test('firstQuizAttempts: earliest entry per lesson across devices', function (assert) {
     var first = firstQuizAttempts(LOGS);
-    assert.deepEqual(Object.keys(first), ['1']);
-    assert.deepEqual([first[1].right, first[1].at], [5, 100], 'devB attempt came first');
+    assert.deepEqual(Object.keys(first), ['n5.u001']);
+    assert.deepEqual([first['n5.u001'].right, first['n5.u001'].at], [5, 100], 'devB attempt came first');
   });
 
   QUnit.test('Store: log writes append to today\'s doc for this device', function (assert) {
@@ -71,9 +71,9 @@ QUnit.module('activity-log', function () {
     var s = memStore(backend);
     var id = 'log:' + localDate() + ':devA';
     return s.init().then(function () {
-      s.logLesson(5);
-      s.logLesson(5); // re-marking the same day is not a second lesson
-      s.logQuiz(5, 4, 5);
+      s.logLesson('n5.u002');
+      s.logLesson('n5.u002'); // re-marking the same unit is not a second lesson
+      s.logQuiz('n5.u002', 4, 5);
       s.logReview(0);
       s.logReview(2);
       return s.flush();
@@ -82,8 +82,8 @@ QUnit.module('activity-log', function () {
     }).then(function (docs) {
       var d = docs.filter(function (x) { return x._id === id; })[0];
       assert.ok(d, 'persisted ' + id);
-      assert.deepEqual(d.lessons, [5]);
-      assert.deepEqual([d.quizzes.length, d.quizzes[0].day, d.quizzes[0].right, d.quizzes[0].total], [1, 5, 4, 5]);
+      assert.deepEqual(d.lessons, ['n5.u002']);
+      assert.deepEqual([d.quizzes.length, d.quizzes[0].unit, d.quizzes[0].right, d.quizzes[0].total], [1, 'n5.u002', 4, 5]);
       assert.strictEqual(typeof d.quizzes[0].at, 'number');
       assert.deepEqual(d.reviews, { count: 2, again: 1 });
       assert.strictEqual(d.deviceId, 'devA');
@@ -91,16 +91,16 @@ QUnit.module('activity-log', function () {
     });
   });
 
-  QUnit.test('Store: export v2 → validate → import round-trips log docs', function (assert) {
+  QUnit.test('Store: export v3 → validate → import round-trips log docs', function (assert) {
     var s = memStore();
     return s.init().then(function () {
-      s.logQuiz(3, 2, 3);
+      s.logQuiz('n5.u003', 2, 3);
       var file = JSON.parse(JSON.stringify(exportProgress(s.docs().concat(LOGS), function () { return null; })));
       var check = validateProgressData(file);
       assert.ok(check.valid, check.error);
       var s2 = memStore();
       return s2.init().then(function () {
-        return s2.replaceAll(progressFileToDocs(file, 'devZ', 1).docs);
+        return s2.replaceAll(progressFileToDocs(file).docs);
       }).then(function () {
         assert.strictEqual(s2.logs().length, LOGS.length + 1, 'all log docs imported');
         assert.deepEqual(activityTotals(s2.logs()), { lessons: 2, quizzes: 3, perfectQuizzes: 1, reviews: 9 });
@@ -109,7 +109,7 @@ QUnit.module('activity-log', function () {
   });
 
   QUnit.test('validateProgressData: log doc id/date checks', function (assert) {
-    function v(doc) { return validateProgressData({ version: 2, docs: [doc] }).valid; }
+    function v(doc) { return validateProgressData({ version: 3, docs: [doc] }).valid; }
     assert.ok(v(log('2026-05-01', 'a1b2-c3', {})));
     assert.notOk(v(Object.assign(log('2026-05-01', 'a', {}), { date: '2026-05-02' })), 'date mismatch');
     assert.notOk(v(log('2026-5-1', 'a', {})), 'bad date in id');

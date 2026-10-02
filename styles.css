@@ -120,15 +120,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .overview{background:var(--surface);border-radius:12px;box-shadow:var(--shadow);padding:24px}
 .overview-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px}
 .overview h2{font-size:1.3rem;font-weight:700}
-.phase-legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
-.legend-item{display:flex;align-items:center;gap:4px;font-size:0.75rem;font-weight:500}
-.legend-dot{width:10px;height:10px;border-radius:50%}
-.cal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(32px,1fr));gap:3px}
-.cal-day{width:100%;aspect-ratio:1;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:600;color:var(--on-color);transition:transform 0.1s,opacity 0.2s;border:2px solid transparent}
-.cal-day:hover{transform:scale(1.15);z-index:1;opacity:0.9}
-.cal-day.current{border-color:var(--text);box-shadow:0 0 0 1px var(--bg)}
-.cal-day.done{opacity:0.7}
-.cal-day.done::after{content:"✓";font-size:0.65rem}
+.level-section{margin-bottom:20px}
+.level-section h3{font-size:1rem;font-weight:800;min-width:2.2em}
+.level-soon{font-size:0.85rem;color:var(--muted);margin:6px 0 0}
+.unit-list{list-style:none;display:grid;gap:6px;margin-top:8px}
+.unit-row{width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-left:4px solid var(--lv);border-radius:8px;background:var(--surface);color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.unit-row:hover{background:var(--surface2)}
+.unit-row.current{outline:2px solid var(--text);outline-offset:-1px}
+.unit-row.next{background:color-mix(in oklab,var(--lv) 14%,var(--surface))}
+.unit-row.done{opacity:0.7}
+.unit-num{font-variant-numeric:tabular-nums;font-weight:700;color:var(--muted);min-width:1.6em}
+.unit-title{flex:1;font-weight:600}
+.unit-next{font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--lv);color:var(--on-color)}
+.unit-done{color:var(--ok);font-weight:700}
 @media(max-width:600px){
   .chars-table{grid-template-columns:repeat(auto-fill,minmax(65px,1fr))}
   .day-title{font-size:1.1rem}
@@ -266,13 +270,6 @@ rt{font-size:0.6em;color:var(--accent-fg);font-weight:400;letter-spacing:0.02em}
 .furigana-toggle:hover{background:var(--border);color:var(--text)}
 .furigana-toggle.active{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
 .hide-furigana rt{visibility:hidden}
-/* Level selector */
-.level-tabs{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}
-.level-tab{padding:6px 14px;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:6px;cursor:pointer;font-size:0.8rem;font-weight:600;transition:all 0.2s;font-family:inherit}
-.level-tab:hover{background:var(--surface2)}
-.level-tab.active{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
-.level-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:700;color:var(--on-color);margin-left:6px}
-.level-progress{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
 .level-progress-item{display:flex;align-items:center;gap:6px;font-size:0.78rem;color:var(--muted)}
 .level-progress-bar{width:60px;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden}
 .level-progress-fill{height:100%;border-radius:3px;transition:width 0.3s}

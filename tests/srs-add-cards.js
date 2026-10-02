@@ -1,61 +1,51 @@
 "use strict";
 
 QUnit.module('srsAddCards', function () {
-
-  var sampleLesson = {
-    day: 5,
-    vocab: [['ねこ', 'ねこ', 'cat'], ['いぬ', 'いぬ', 'dog']],
-    chars: [['な', 'na'], ['に', 'ni']]
+  // A resolved unit (buildUnits shape): catalog items, not day/position rows.
+  var unit = {
+    id: 'n5.u999', level: 'N5',
+    vocab: [{ id: 'v:猫|ねこ', kind: 'vocab', word: '猫', reading: 'ねこ', gloss: ['cat'] }],
+    kanji: [{ id: 'k:人', kind: 'kanji', char: '人', on: ['ジン'], kun: ['ひと'], meaning: ['person'] }],
+    grammar: [{ id: 'g:mo', kind: 'grammar', pattern: '〜も', meaning: '~ too' }]
   };
 
-  QUnit.test('adds vocab cards with embedded front/back/reading', function (assert) {
+  QUnit.test('cards are keyed by item id with embedded front/back/reading', function (assert) {
     var cards = {};
-    srsAddCards(sampleLesson, cards);
-    var card = cards['v_5_0'];
-    assert.ok(card, 'vocab card 0 added');
-    assert.equal(card.front, 'ねこ');
-    assert.equal(card.back, 'cat');
-    assert.equal(card.type, 'vocab');
-  });
-
-  QUnit.test('adds char cards with embedded front/back', function (assert) {
-    var cards = {};
-    srsAddCards(sampleLesson, cards);
-    var card = cards['c_5_0'];
-    assert.ok(card, 'char card 0 added');
-    assert.equal(card.front, 'な');
-    assert.equal(card.back, 'na');
-    assert.equal(card.type, 'char');
+    srsAddCards(unit, cards);
+    assert.deepEqual(Object.keys(cards).sort(), ['g:mo', 'k:人', 'v:猫|ねこ']);
+    var v = cards['v:猫|ねこ'];
+    assert.deepEqual([v.id, v.type, v.front, v.back, v.reading], ['v:猫|ねこ', 'vocab', '猫', 'cat', 'ねこ']);
+    var k = cards['k:人'];
+    assert.deepEqual([k.type, k.front, k.back, k.reading], ['kanji', '人', 'person', 'ひと・ジン']);
+    var g = cards['g:mo'];
+    assert.deepEqual([g.type, g.front, g.back], ['grammar', '〜も', '~ too']);
   });
 
   QUnit.test('new cards start with interval=1, ease=2.5, reps=0', function (assert) {
     var cards = {};
-    srsAddCards(sampleLesson, cards);
-    var card = cards['v_5_0'];
-    assert.equal(card.interval, 1);
-    assert.equal(card.ease, 2.5);
-    assert.equal(card.reps, 0);
+    srsAddCards(unit, cards);
+    var card = cards['v:猫|ねこ'];
+    assert.deepEqual([card.interval, card.ease, card.reps], [1, 2.5, 0]);
   });
 
-  QUnit.test('does not overwrite an existing card', function (assert) {
-    var existing = { interval: 14, ease: 1.9, reps: 8, due: 42, front: 'ねこ', back: 'cat', type: 'vocab', id: 'v_5_0' };
-    var cards = { 'v_5_0': existing };
-    srsAddCards(sampleLesson, cards);
-    assert.deepEqual(cards['v_5_0'], existing, 'existing card data must be preserved');
+  QUnit.test('same item in another unit is the same card (no overwrite)', function (assert) {
+    var existing = { id: 'v:猫|ねこ', interval: 14, ease: 1.9, reps: 8, due: 42, front: '猫', back: 'cat', type: 'vocab' };
+    var cards = { 'v:猫|ねこ': existing };
+    srsAddCards({ vocab: unit.vocab, kanji: [], grammar: [] }, cards);
+    assert.deepEqual(cards['v:猫|ねこ'], existing, 'existing card data must be preserved');
+    assert.strictEqual(Object.keys(cards).length, 1);
   });
 
-  QUnit.test('returns true when new cards were added', function (assert) {
-    var changed = srsAddCards(sampleLesson, {});
-    assert.equal(changed, true);
-  });
-
-  QUnit.test('returns false when all cards already exist', function (assert) {
+  QUnit.test('returns true when cards were added, false when all exist', function (assert) {
     var cards = {};
-    srsAddCards(sampleLesson, cards); // first call adds them
-    var changed = srsAddCards(sampleLesson, cards); // second call: nothing new
-    assert.equal(changed, false);
+    assert.strictEqual(srsAddCards(unit, cards), true);
+    assert.strictEqual(srsAddCards(unit, cards), false);
+  });
+
+  QUnit.test('card ids are valid store doc ids', function (assert) {
+    var cards = {};
+    buildUnits(PLAN, CATALOG).forEach(function (u) { srsAddCards(u, cards); });
+    var bad = Object.keys(cards).filter(function (id) { return !STORE_ID_RE.test('card:' + id); });
+    assert.deepEqual(bad, []);
   });
 });
-
-
-// ── 11. srsDueCards(cards) ───────────────────────────────────────────────────

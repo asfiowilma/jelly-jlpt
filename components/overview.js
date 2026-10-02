@@ -1,128 +1,63 @@
 "use strict";
 
-function Overview(_ref10) {
-  var curriculum = _ref10.curriculum,
-    completed = _ref10.completed,
-    setDay = _ref10.setDay,
-    currentDay = _ref10.currentDay;
-  var _React$useStateLevel = React.useState('all'),
-    _React$useStateLevel2 = _slicedToArray(_React$useStateLevel, 2),
-    levelFilter = _React$useStateLevel2[0],
-    setLevelFilter = _React$useStateLevel2[1];
-  var LEVELS = [
-    { key: 'all', label: 'All', range: [1, 9999] },
-    { key: 'N5', label: 'N5', range: [1, 365] },
-    { key: 'N4', label: 'N4', range: [366, 660] },
-    { key: 'N3', label: 'N3', range: [661, 960] },
-    { key: 'N2', label: 'N2', range: [961, 1320] },
-    { key: 'N1', label: 'N1', range: [1321, 1720] }
-  ];
-  var filteredCurriculum = curriculum.filter(function (l) {
-    if (levelFilter === 'all') return true;
-    var lv = LEVELS.find(function (lv) { return lv.key === levelFilter; });
-    return lv && l.day >= lv.range[0] && l.day <= lv.range[1];
-  });
-  var phases = [];
-  var seen = {};
-  filteredCurriculum.forEach(function (l) {
-    if (!seen[l.phaseNum]) { seen[l.phaseNum] = true; phases.push(l.phaseNum); }
-  });
-  // Per-level progress
-  var levelProgress = LEVELS.slice(1).map(function (lv) {
-    var lvDays = curriculum.filter(function (l) { return l.day >= lv.range[0] && l.day <= lv.range[1]; });
-    var lvDone = lvDays.filter(function (l) { return completed.has(l.day); }).length;
-    return { key: lv.key, label: lv.label, total: lvDays.length, done: lvDone, pct: lvDays.length > 0 ? Math.round(lvDone / lvDays.length * 100) : 0 };
-  });
-  var ramp = levelRamp(currentDay, curriculum.length);
-  return /*#__PURE__*/React.createElement("div", {
-    className: "overview"
-  },
-  // N5→N1 level ramp: segments sized by level day range, filled up to the current day
-  /*#__PURE__*/React.createElement("div", {
-    className: "ramp",
-    role: "img",
-    'aria-label': "Day " + currentDay + " of " + curriculum.length + ", level " + dayToLevel(currentDay)
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "ramp-here",
-    style: { '--here': ramp.here + '%' }
-  }, t('day_label', currentDay), " ", currentDay), /*#__PURE__*/React.createElement("div", {
-    className: "ramp-bars"
-  }, ramp.segments.map(function (s) {
-    return /*#__PURE__*/React.createElement("i", {
-      key: s.level,
-      style: { flex: s.len, '--lv': LEVEL_COLORS[s.level] }
-    }, /*#__PURE__*/React.createElement("b", { style: { width: s.fill + '%' } }));
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "ramp-lbl",
-    'aria-hidden': "true"
-  }, ramp.segments.map(function (s) {
-    return /*#__PURE__*/React.createElement("span", { key: s.level, style: { flex: s.len } }, s.level);
-  }))), /*#__PURE__*/React.createElement("p", {
-    className: "ramp-meta"
-  }, completed.size, " / ", curriculum.length, " completed"), /*#__PURE__*/React.createElement("div", {
-    className: "overview-header"
-  }, /*#__PURE__*/React.createElement("h2", null, "Course Overview \u2014 All ", curriculum.length, " Days"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: '0.85rem',
-      color: 'var(--muted)'
-    }
-  }, "Click a day to jump to it")),
-  // Level filter tabs
-  /*#__PURE__*/React.createElement("div", { className: "level-tabs" }, LEVELS.map(function (lv) {
-    return /*#__PURE__*/React.createElement("button", {
-      key: lv.key,
-      className: "level-tab" + (levelFilter === lv.key ? " active" : ""),
-      onClick: function () { setLevelFilter(lv.key); }
-    }, lv.label);
-  })),
-  // Per-level progress bars
-  /*#__PURE__*/React.createElement("div", { className: "level-progress" }, levelProgress.map(function (lp) {
-    if (lp.total === 0) return null;
-    var color = LEVEL_COLORS[lp.key] || 'var(--muted)';
-    return /*#__PURE__*/React.createElement("div", { key: lp.key, className: "level-progress-item" },
-      /*#__PURE__*/React.createElement("span", null, lp.label),
-      /*#__PURE__*/React.createElement("div", { className: "level-progress-bar" },
-        /*#__PURE__*/React.createElement("div", { className: "level-progress-fill", style: { width: lp.pct + '%', background: color } })
-      ),
-      /*#__PURE__*/React.createElement("span", null, lp.pct + '%'),
-      lp.pct === 100 && /*#__PURE__*/React.createElement("span", { className: "level-badge", style: { background: color } }, "\u2713")
-    );
-  })),
-  /*#__PURE__*/React.createElement("div", {
-    className: "phase-legend"
-  }, phases.map(function (p) {
-    return /*#__PURE__*/React.createElement("div", {
-      key: p,
-      className: "legend-item"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "legend-dot",
-      style: {
-        background: PHASE_COLORS[p]
-      }
-    }), /*#__PURE__*/React.createElement("span", null, PHASE_NAMES[p]));
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "cal-grid"
-  }, filteredCurriculum.map(function (lesson) {
-    var d = lesson.day;
-    var col = PHASE_COLORS[lesson.phaseNum];
-    var isDone = completed.has(d);
-    var isCurrent = d === currentDay;
-    return /*#__PURE__*/React.createElement("div", {
-      key: d,
-      className: "cal-day ".concat(isDone ? 'done' : '', " ").concat(isCurrent ? 'current' : ''),
-      style: {
-        background: col
-      },
-      onClick: function onClick() {
-        return setDay(d);
-      },
-      title: "Day ".concat(d, ": ").concat(lesson.title),
-      'aria-label': "Day " + d + ": " + lesson.title + (isDone ? ", completed" : isCurrent ? ", current day" : ""),
-      role: "button",
-      tabIndex: 0,
-      onKeyDown: function onKeyDown(e) {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDay(d); }
-      }
-    }, isDone ? '✓' : d);
-  })));
+// Overview: units per level. Nothing is locked (Q22): every unit opens; the
+// next suggested unit (first not done) is highlighted. Levels without units
+// yet show "Coming soon" (Q24).
+function Overview(props) {
+  var units = props.units,
+    completed = props.completed,
+    current = props.current,
+    suggested = props.suggested,
+    setUnit = props.setUnit;
+  var ramp = levelRamp(units, current);
+  var cur = units[current];
+  return React.createElement("div", { className: "overview" },
+    // Level ramp: one segment per level with units, filled up to the current unit
+    React.createElement("div", {
+      className: "ramp",
+      role: "img",
+      'aria-label': "Unit " + (current + 1) + " of " + units.length + ", level " + cur.level
+    }, React.createElement("span", {
+      className: "ramp-here",
+      style: { '--here': ramp.here + '%' }
+    }, t('unit_label', cur.level), " ", current + 1), React.createElement("div", {
+      className: "ramp-bars"
+    }, ramp.segments.map(function (s) {
+      return React.createElement("i", { key: s.level, style: { flex: s.len, '--lv': LEVEL_COLORS[s.level] } },
+        React.createElement("b", { style: { width: s.fill + '%' } }));
+    })), React.createElement("div", { className: "ramp-lbl", 'aria-hidden': "true" }, ramp.segments.map(function (s) {
+      return React.createElement("span", { key: s.level, style: { flex: s.len } }, s.level);
+    }))),
+    React.createElement("p", { className: "ramp-meta" }, completed.size, " / ", units.length, " units completed"),
+    React.createElement("div", { className: "overview-header" },
+      React.createElement("h2", null, "Course Overview"),
+      React.createElement("span", { style: { fontSize: '0.85rem', color: 'var(--muted)' } }, "Every unit is open — pick any")),
+    LEVELS.map(function (lv) {
+      var lvUnits = units.filter(function (u) { return u.level === lv; });
+      var done = lvUnits.filter(function (u) { return completed.has(u.id); }).length;
+      var color = LEVEL_COLORS[lv];
+      return React.createElement("section", { key: lv, className: "level-section", 'aria-labelledby': "lv-" + lv },
+        React.createElement("div", { className: "level-progress-item" },
+          React.createElement("h3", { id: "lv-" + lv, style: { color: color } }, lv),
+          lvUnits.length > 0 && React.createElement("div", { className: "level-progress-bar" },
+            React.createElement("div", { className: "level-progress-fill", style: { width: done / lvUnits.length * 100 + '%', background: color } })),
+          lvUnits.length > 0 && React.createElement("span", null, done, " / ", lvUnits.length)),
+        lvUnits.length === 0 ? React.createElement("p", { className: "level-soon" }, "Coming soon")
+          : React.createElement("ol", { className: "unit-list" }, lvUnits.map(function (u) {
+            var isDone = completed.has(u.id);
+            var cls = "unit-row" + (isDone ? " done" : "") + (u.index === current ? " current" : "") + (u.index === suggested ? " next" : "");
+            return React.createElement("li", { key: u.id },
+              React.createElement("button", {
+                className: cls,
+                style: { '--lv': color },
+                'aria-current': u.index === current ? 'true' : undefined,
+                onClick: function () { setUnit(u.index); }
+              },
+                React.createElement("span", { className: "unit-num" }, u.index + 1),
+                React.createElement("span", { className: "unit-title" }, u.title),
+                u.kind !== 'lesson' && React.createElement("span", { className: "week-badge" }, u.kind),
+                u.index === suggested && !isDone && React.createElement("span", { className: "unit-next" }, "Next"),
+                isDone && React.createElement("span", { className: "unit-done", 'aria-label': "completed" }, "✓")));
+          })));
+    }));
 }

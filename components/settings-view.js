@@ -5,7 +5,7 @@
 function SettingsView(props) {
   var themePrefs = props.themePrefs,
     setThemePrefs = props.setThemePrefs;
-  var L = function (key) { return t(key, props.dayNum); };
+  var L = function (key) { return t(key, props.level); };
   var section = function (id, title) {
     var children = Array.prototype.slice.call(arguments, 2);
     return React.createElement.apply(React, ["section", { className: "settings-section", 'aria-labelledby': id },

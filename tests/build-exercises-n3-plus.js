@@ -1,5 +1,7 @@
 "use strict";
 
+// N3+ exercise types. Units are synthetic (no N3+ content ships yet); items are
+// shaped like catalog items but needn't be in CATALOG — only distractors are.
 QUnit.module('buildExercises (N3+ types)', {
   beforeEach: function () {
     this._origSpeech = window.speechSynthesis;
@@ -11,101 +13,87 @@ QUnit.module('buildExercises (N3+ types)', {
     }
   }
 }, function () {
+  function v(word, reading, gloss, pos) {
+    var it = { id: 'v:' + word + '|' + reading, kind: 'vocab', word: word, reading: reading, gloss: [gloss] };
+    if (pos) it.pos = pos;
+    return it;
+  }
+  function unit(level, index, fields) {
+    return Object.assign({ id: 'n5.u999', level: level, kind: 'lesson', index: index, vocab: [], kanji: [], grammar: [] }, fields);
+  }
+  function types(u, runs) {
+    var seen = {};
+    for (var i = 0; i < (runs || 20); i++) buildExercises(u).forEach(function (e) { seen[e.type] = true; });
+    return seen;
+  }
+  var VERBS = [v('上げる', 'あげる', 'to raise', 'verb-ichidan'), v('下げる', 'さげる', 'to lower', 'verb-ichidan'),
+    v('始める', 'はじめる', 'to begin', 'verb-ichidan'), v('集める', 'あつめる', 'to gather', 'verb-ichidan')];
 
-  QUnit.test('N3 grammar lesson generates fill_blank exercise', function (assert) {
-    var lesson = { day: 830, type: 'grammar', vocab: [['試験', 'しけん', 'exam'], ['結果', 'けっか', 'result'], ['合格', 'ごうかく', 'pass']], chars: [],
-      grammar: { pattern: '～おかげで', meaning: 'thanks to', example_jp: '先生のおかげで合格した。', example_en: 'I passed thanks to my teacher.' } };
-    var exs = buildExercises(lesson);
-    var types = exs.map(function (e) { return e.type; });
-    assert.ok(types.indexOf('fill_blank') >= 0 || types.indexOf('mc') >= 0, 'generates fill_blank or mc exercise');
+  QUnit.test('N3 unit with grammar generates fill_blank from catalog patterns', function (assert) {
+    var g = CATALOG.items['g:wa-desu'];
+    var seen = types(unit('N3', 0, { vocab: VERBS.slice(0, 3), grammar: [g] }));
+    assert.ok(seen.fill_blank, 'fill_blank generated');
   });
 
-  QUnit.test('N3 verb lesson generates conjugation exercise', function (assert) {
-    var lesson = { day: 780, type: 'verbs', vocab: [['上げる', 'あげる', 'to raise'], ['下げる', 'さげる', 'to lower'], ['始める', 'はじめる', 'to begin'], ['集める', 'あつめる', 'to gather']], chars: [],
-      grammar: { pattern: 'transitive pairs', meaning: 'verb pairs', example_jp: '手を上げる。', example_en: 'Raise your hand.' } };
-    var exs = buildExercises(lesson);
-    var types = exs.map(function (e) { return e.type; });
-    assert.ok(types.indexOf('conjugation') >= 0 || types.indexOf('pair_match') >= 0, 'generates conjugation or pair_match');
+  QUnit.test('N3 verb unit generates conjugation and pair_match', function (assert) {
+    var seen = types(unit('N3', 0, { vocab: VERBS }));
+    assert.ok(seen.conjugation, 'conjugation');
+    assert.ok(seen.pair_match, 'pair_match');
+  });
+
+  QUnit.test('N5 unit never gets N3+ types', function (assert) {
+    var seen = types(unit('N5', 0, { vocab: VERBS, grammar: [CATALOG.items['g:mo']] }));
+    assert.notOk(seen.conjugation || seen.pair_match || seen.fill_blank || seen.synonym);
   });
 
   QUnit.test('pair_match carries word→meaning pairs covering its shuffled items', function (assert) {
-    var lesson = { day: 780, type: 'verbs', chars: [],
-      vocab: [['上げる', 'あげる', 'to raise'], ['下げる', 'さげる', 'to lower'], ['始める', 'はじめる', 'to begin'], ['集める', 'あつめる', 'to gather']] };
     var pm = null;
-    for (var i = 0; i < 20 && !pm; i++) {
-      pm = buildExercises(lesson).filter(function (e) { return e.type === 'pair_match'; })[0] || null;
+    for (var i = 0; i < 30 && !pm; i++) {
+      pm = buildExercises(unit('N3', 0, { vocab: VERBS })).filter(function (e) { return e.type === 'pair_match'; })[0] || null;
     }
     assert.ok(pm, 'pair_match generated');
     var meaning = {};
     pm.pairs.forEach(function (p) { meaning[p[0]] = p[1]; });
-    pm.items.forEach(function (w) {
-      assert.ok(pm.options.indexOf(meaning[w]) >= 0, w + ' maps to an option');
-    });
+    pm.items.forEach(function (w) { assert.ok(pm.options.indexOf(meaning[w]) >= 0, w + ' maps to an option'); });
     assert.strictEqual(meaning['上げる'], 'to raise');
   });
 
-  QUnit.test('exercise cap is respected for N3 lessons', function (assert) {
-    var lesson = curriculum[700] || curriculum[0]; // N3 lesson or fallback
-    var exs = buildExercises(lesson);
-    var cap = exerciseCap(lesson.day);
-    assert.ok(exs.length <= cap, 'exercises count ' + exs.length + ' <= cap ' + cap);
-  });
-
-  QUnit.test('N2 vocab lesson generates synonym exercise', function (assert) {
-    var lesson = { day: 1050, type: 'vocab', chars: [],
-      vocab: [
-        ['契約', 'けいやく', 'contract'], ['利益', 'りえき', 'profit'], ['投資', 'とうし', 'investment'],
-        ['経営', 'けいえい', 'management'], ['売上', 'うりあげ', 'sales']
-      ] };
-    var exs = buildExercises(lesson);
-    var types = exs.map(function (e) { return e.type; });
-    assert.ok(types.indexOf('synonym') >= 0, 'N2 vocab lesson generates synonym exercise');
-  });
-
-  QUnit.test('N2 grammar lesson no longer generates reorder (needs authored chunks)', function (assert) {
-    var lesson = { day: 1180, type: 'grammar', chars: [],
-      vocab: [['わけだ', 'わけだ', "that's why"]],
-      grammar: { pattern: '～わけだ', meaning: "that's why / no wonder",
-        example_jp: 'だから彼女は怒っているわけだ。', example_en: "So that's why she is angry." } };
-    var exs = buildExercises(lesson);
-    var types = exs.map(function (e) { return e.type; });
-    assert.ok(types.indexOf('reorder') < 0, 'reorder disabled');
-  });
-
-  QUnit.test('conjugation answers are real conjugations; non-verbs skipped', function (assert) {
-    var lesson = { day: 771, type: 'verbs', chars: [], // 771 % 7 = 1 → ない-form
-      vocab: [['書く', 'かく', 'to write'], ['難しい', 'むずかしい', 'difficult']] };
+  QUnit.test('conjugation: form from unit index, uses pos; non-verbs skipped', function (assert) {
+    // index 1 → ない-form. かえる without pos guesses ichidan; pos godan → かえらない.
+    var u = unit('N3', 1, { vocab: [v('かえる', 'かえる', 'to return', 'verb-godan'), v('難しい', 'むずかしい', 'difficult', 'adj-i')] });
+    var n = 0;
     for (var i = 0; i < 10; i++) {
-      buildExercises(lesson).filter(function (e) { return e.type === 'conjugation'; }).forEach(function (c) {
+      buildExercises(u).filter(function (e) { return e.type === 'conjugation'; }).forEach(function (c) {
+        n++;
+        assert.strictEqual(c.question, 'かえる');
+        assert.deepEqual(c.answers, ['かえらない']);
+      });
+    }
+    assert.ok(n > 0, 'conjugation generated');
+  });
+
+  QUnit.test('conjugation falls back to the "to …" gloss heuristic without pos', function (assert) {
+    var u = unit('N3', 1, { vocab: [v('書く', 'かく', 'to write'), v('難しい', 'むずかしい', 'difficult')] });
+    for (var i = 0; i < 10; i++) {
+      buildExercises(u).filter(function (e) { return e.type === 'conjugation'; }).forEach(function (c) {
         assert.strictEqual(c.question, '書く (かく)');
         assert.deepEqual(c.answers, ['書かない', 'かかない']);
       });
     }
   });
 
-  QUnit.test('fill_blank never uses placeholder patterns', function (assert) {
-    curriculum.slice(660).forEach(function (lesson) {
-      buildExercises(lesson).filter(function (e) { return e.type === 'fill_blank'; }).forEach(function (ex) {
-        ex.options.forEach(function (o) { assert.notOk(isPlaceholderPattern(o), 'day ' + lesson.day + ': ' + o); });
-      });
-    });
-    assert.ok(isPlaceholderPattern('Review & Practice') && isPlaceholderPattern('Phase 18 grammar patterns comprehensive review'));
+  QUnit.test('N2 unit generates synonym and kanji_reading; no reorder', function (assert) {
+    var seen = types(unit('N2', 0, { vocab: VERBS, kanji: [CATALOG.items['k:人'], CATALOG.items['k:大']] }));
+    assert.ok(seen.synonym, 'synonym');
+    assert.ok(seen.kanji_reading, 'kanji_reading');
+    assert.notOk(seen.reorder, 'reorder disabled (needs authored chunks)');
   });
 
-  QUnit.test('N2 kanji lesson generates kanji_reading exercise', function (assert) {
-    var lesson = { day: 1240, type: 'kanji', vocab: [],
-      chars: [['裁', 'さい'], ['憲', 'けん'], ['権', 'けん'], ['議', 'ぎ'], ['税', 'ぜい']] };
-    var exs = buildExercises(lesson);
-    var types = exs.map(function (e) { return e.type; });
-    assert.ok(types.indexOf('kanji_reading') >= 0, 'N2 kanji lesson generates kanji_reading exercise');
-  });
-
-  QUnit.test('exercise cap is respected for N2 lessons', function (assert) {
-    var lesson = curriculum[1000] || curriculum[0]; // N2 lesson or fallback
-    var exs = buildExercises(lesson);
-    var cap = exerciseCap(lesson.day);
-    assert.ok(exs.length <= cap, 'exercises count ' + exs.length + ' <= cap ' + cap);
+  QUnit.test('caps: N3 ≤ 7, N2 ≤ 9', function (assert) {
+    var fields = { vocab: VERBS, kanji: [CATALOG.items['k:人'], CATALOG.items['k:大']], grammar: [CATALOG.items['g:mo']] };
+    for (var i = 0; i < 10; i++) {
+      assert.ok(buildExercises(unit('N3', 0, fields)).length <= 7);
+      assert.ok(buildExercises(unit('N2', 0, fields)).length <= 9);
+    }
   });
 });
-
-// ── 15. Passage field validation ────────────────────────────────────────────

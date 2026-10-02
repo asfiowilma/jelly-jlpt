@@ -2,19 +2,18 @@
 
 // ── Store: the one persistence seam for SYNCED learning data ────────────────
 // Sync design: .scratch/roadmap/issues/20-sync-design.md. Doc shapes and the
-// pure merge/migration/export helpers live in lib.js (stripDocMeta,
-// pickStoreWinner, legacyToDocs, docsToSnapshot). Device-only prefs (palette,
-// theme, TTS rate) are NOT here — they stay in localStorage.
+// pure merge/export helpers live in lib.js (stripDocMeta, pickStoreWinner,
+// docsToSnapshot). Device-only prefs (palette, theme, TTS rate) are NOT
+// here — they stay in localStorage.
 //
 // Store.init() → Promise: opens PouchDB (IndexedDB); if PouchDB is missing or
 // fails to open, falls back to an in-memory backend for the session (Node test
-// runner, IndexedDB blocked). Runs the one-time localStorage migration, then
-// holds every doc in a memory mirror. After that, reads are synchronous
-// (snapshot/docs) and writes update the mirror immediately, then persist
-// through a serial async queue (write-through).
+// runner, IndexedDB blocked). Then holds every doc in a memory mirror. After
+// that, reads are synchronous (snapshot/docs) and writes update the mirror
+// immediately, then persist through a serial async queue (write-through).
+// No migration from the old day-keyed 'jlpt' DB or localStorage (map Q5).
 
-var STORE_MIGRATED_KEY = 'jlpt_store_migrated_v1';
-var STORE_DB_NAME = 'jlpt'; // IndexedDB: _pouch_jlpt
+var STORE_DB_NAME = 'jelly'; // IndexedDB: _pouch_jelly (old day-keyed data lives in _pouch_jlpt)
 
 function memoryBackend() {
   var data = {};
@@ -167,26 +166,19 @@ function createStore(opts) {
           delete c._conflicts;
           mirror[d._id] = c;
         });
-        // One-time migration (decision 7). Old keys are left untouched. The flag
-        // is only set once a persistent backend has stored the docs, so an
-        // in-memory session re-reads the old keys next time instead.
-        if (ls.get(STORE_MIGRATED_KEY) === null) {
-          var fresh = legacyToDocs(ls.get, deviceId, Date.now()).filter(function (d) { return !mirror[d._id]; });
-          fresh.forEach(function (d) { mirror[d._id] = d; });
-          if (backend.name !== 'memory') {
-            enqueue(function () {
-              return fresh.reduce(function (p, d) { return p.then(function () { return putNow(d); }); }, Promise.resolve())
-                .then(function () { ls.set(STORE_MIGRATED_KEY, '1'); });
-            });
-          }
-        }
         return store.snapshot();
       });
     },
-    // { completed: [day...], srsCards: {id: card}, dayNum, furiganaPref: 'true'|'false'|null, uiLang }
+    // { completed: [unitId...], srsCards: {itemId: card}, currentUnit, pace, examDate,
+    //   furiganaPref: 'true'|'false'|null, uiLang }
     snapshot: function () { return docsToSnapshot(store.docs()); },
     docs: function () { return Object.keys(mirror).map(function (k) { return mirror[k]; }); },
-    putDay: function (n, done) { return write('day:' + n, { done: !!done }); },
+    // Re-marking with the same done state is a no-op (keeps completedAt).
+    putUnit: function (id, done) {
+      var cur = mirror['unit:' + id];
+      if (cur && cur.done === !!done) return queue;
+      return write('unit:' + id, { done: !!done, completedAt: done ? Date.now() : null });
+    },
     // Writes only the cards that differ from what's stored.
     // ponytail: O(cards) JSON compare per call; track dirty ids if reviews get slow.
     putCards: function (cards) {
@@ -197,18 +189,18 @@ function createStore(opts) {
     putPrefs: function (partial) {
       var cur = mirror['prefs:learning'];
       var body = Object.assign(cur ? stripDocMeta(cur) : {}, partial);
-      var effective = Object.assign({ currentDay: 1, furigana: null, uiLang: 'en' }, cur ? stripDocMeta(cur) : {});
+      var effective = Object.assign({}, PREFS_DEFAULTS, cur ? stripDocMeta(cur) : {});
       var changed = Object.keys(partial).some(function (k) { return effective[k] !== partial[k]; });
       return changed ? write('prefs:learning', body) : queue;
     },
     // Activity log: appends to today's log:<date>:<deviceId> doc (see lib.js).
     // ponytail: two tabs on one device can race on today's doc (409 → LWW drops
     // the other tab's append); merge log docs field-wise if that ever matters.
-    logLesson: function (day) {
-      return appendLog(function (l) { if (l.lessons.indexOf(day) === -1) l.lessons.push(day); });
+    logLesson: function (unitId) {
+      return appendLog(function (l) { if (l.lessons.indexOf(unitId) === -1) l.lessons.push(unitId); });
     },
-    logQuiz: function (day, right, total) {
-      return appendLog(function (l) { l.quizzes.push({ day: day, right: right, total: total, at: Date.now() }); });
+    logQuiz: function (unitId, right, total) {
+      return appendLog(function (l) { l.quizzes.push({ unit: unitId, right: right, total: total, at: Date.now() }); });
     },
     // quality: ReviewMode grade 0–3 (0 = Again, see srsReview).
     logReview: function (quality) {

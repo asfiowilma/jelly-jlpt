@@ -56,6 +56,14 @@ QUnit.module('conjugate', function () {
     assert.strictEqual(conjugate('信じる', 'しんじる', 'ない-form').kana, 'しんじない');
   });
 
+  QUnit.test('item pos overrides the る-verb guess', function (assert) {
+    // かえる (kana only) guesses ichidan; pos says godan (帰る)
+    assert.strictEqual(conjugate('かえる', 'かえる', 'ない-form').kana, 'かえない');
+    assert.strictEqual(conjugate('かえる', 'かえる', 'ない-form', 'verb-godan').kana, 'かえらない');
+    // pos wins over the exception list too
+    assert.strictEqual(conjugate('入る', 'はいる', 'て-form', 'verb-ichidan').kanji, '入て');
+  });
+
   QUnit.test('returns null when not a conjugatable verb', function (assert) {
     assert.strictEqual(conjugate('難しい', 'むずかしい', 'て-form'), null);
     assert.strictEqual(conjugate('ある', 'ある', 'ない-form'), null);

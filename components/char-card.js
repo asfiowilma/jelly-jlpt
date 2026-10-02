@@ -2,8 +2,8 @@
 
 // ── CharCard with Stroke Order ───────────────────────────────────────────────
 function CharCard(_ref9a) {
-  var char = _ref9a.char,
-    isKanji = _ref9a.isKanji;
+  var kanji = _ref9a.kanji, // catalog kanji item
+    ch = kanji.char;
   var _React$useState9a = React.useState(false),
     _React$useState9b = _slicedToArray(_React$useState9a, 2),
     showStroke = _React$useState9b[0],
@@ -24,7 +24,7 @@ function CharCard(_ref9a) {
   var fetchStroke = function() {
     setLoading(true);
     setError(false);
-    loadStrokeOrderSvg(char[0])
+    loadStrokeOrderSvg(ch)
       .then(function(svg) {
         setStrokeSvg(sanitizeSvg(svg));
         setShowStroke(true);
@@ -48,14 +48,16 @@ function CharCard(_ref9a) {
     className: "char-card"
   }, /*#__PURE__*/React.createElement("span", {
     className: "char-jp"
-  }, char[0]), /*#__PURE__*/React.createElement("button", {
+  }, ch), /*#__PURE__*/React.createElement("button", {
     className: "speak-btn speak-btn-char",
-    onClick: function() { return speak(char[0]); },
+    onClick: function() { return speak(ch); },
     title: "Listen to pronunciation",
-    'aria-label': "Listen to pronunciation of " + char[0]
+    'aria-label': "Listen to pronunciation of " + ch
   }, "\uD83D\uDD0A"), /*#__PURE__*/React.createElement("span", {
     className: "char-reading"
-  }, char[1]), isKanji && /*#__PURE__*/React.createElement("button", {
+  }, kanjiReadings(kanji).join('・')), /*#__PURE__*/React.createElement("span", {
+    className: "char-reading"
+  }, kanji.meaning.join(', ')), /*#__PURE__*/React.createElement("button", {
     className: "stroke-toggle" + (showStroke ? " active" : ""),
     onClick: toggleStroke,
     title: "Toggle stroke order"
@@ -66,7 +68,7 @@ function CharCard(_ref9a) {
     className: "stroke-loading"
   }, "Loading..."), error && /*#__PURE__*/React.createElement("div", {
     className: "stroke-error"
-  }, /*#__PURE__*/React.createElement("span", { className: "stroke-error-char" }, char[0]),
+  }, /*#__PURE__*/React.createElement("span", { className: "stroke-error-char" }, ch),
     /*#__PURE__*/React.createElement("p", null, "Stroke order unavailable"),
     /*#__PURE__*/React.createElement("button", { className: "stroke-retry-btn", onClick: fetchStroke }, "Retry")));
 }

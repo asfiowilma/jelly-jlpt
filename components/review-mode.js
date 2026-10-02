@@ -3,7 +3,7 @@
 function ReviewMode(_ref1) {
   var cards = _ref1.cards,
     onUpdate = _ref1.onUpdate,
-    dayNum = _ref1.dayNum || 1;
+    level = _ref1.level || 'N5';
   var _React$useStateQ = React.useState(function() { return rndShuffle(srsDueCards(cards)); }),
     _React$useStateQS = _slicedToArray(_React$useStateQ, 2),
     due = _React$useStateQS[0];
@@ -22,9 +22,9 @@ function ReviewMode(_ref1) {
       className: "review-empty-icon"
     }, "\u2705"), /*#__PURE__*/React.createElement("div", {
       className: "review-empty-title"
-    }, t('all_caught_up', dayNum)), /*#__PURE__*/React.createElement("div", {
+    }, t('all_caught_up', level)), /*#__PURE__*/React.createElement("div", {
       className: "review-empty-sub"
-    }, t('no_cards_due', dayNum)));
+    }, t('no_cards_due', level)));
   }
   if (idx >= due.length) {
     return /*#__PURE__*/React.createElement("div", {
@@ -33,7 +33,7 @@ function ReviewMode(_ref1) {
       className: "review-empty-icon"
     }, "\uD83C\uDF1F"), /*#__PURE__*/React.createElement("div", {
       className: "review-empty-title"
-    }, t('session_done', dayNum)), /*#__PURE__*/React.createElement("div", {
+    }, t('session_done', level)), /*#__PURE__*/React.createElement("div", {
       className: "review-empty-sub"
     }, "Reviewed ", due.length, " card", due.length !== 1 ? 's' : '', "."));
   }
@@ -63,7 +63,7 @@ function ReviewMode(_ref1) {
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "review-card-type"
-  }, card.type === 'char' ? t('card_char', dayNum) : t('card_vocab', dayNum)), /*#__PURE__*/React.createElement("div", {
+  }, t({ kanji: 'section_kanji', grammar: 'section_grammar' }[card.type] || 'card_vocab', level)), /*#__PURE__*/React.createElement("div", {
     className: "review-card-front"
   }, card.front, /*#__PURE__*/React.createElement("button", {
     className: "speak-btn",
@@ -84,29 +84,29 @@ function ReviewMode(_ref1) {
     className: "review-meaning"
   }, card.back)) : /*#__PURE__*/React.createElement("div", {
     className: "review-card-hint"
-  }, t('tap_reveal', dayNum))), flipped && /*#__PURE__*/React.createElement("div", {
+  }, t('tap_reveal', level))), flipped && /*#__PURE__*/React.createElement("div", {
     className: "review-btns"
   }, /*#__PURE__*/React.createElement("button", {
     className: "review-btn again",
     onClick: function onClick() {
       return rate(0);
     }
-  }, t('btn_again', dayNum)), /*#__PURE__*/React.createElement("button", {
+  }, t('btn_again', level)), /*#__PURE__*/React.createElement("button", {
     className: "review-btn hard",
     onClick: function onClick() {
       return rate(1);
     }
-  }, t('btn_hard', dayNum)), /*#__PURE__*/React.createElement("button", {
+  }, t('btn_hard', level)), /*#__PURE__*/React.createElement("button", {
     className: "review-btn good",
     onClick: function onClick() {
       return rate(2);
     }
-  }, t('btn_good', dayNum)), /*#__PURE__*/React.createElement("button", {
+  }, t('btn_good', level)), /*#__PURE__*/React.createElement("button", {
     className: "review-btn easy",
     onClick: function onClick() {
       return rate(3);
     }
-  }, t('btn_easy', dayNum))), !flipped && /*#__PURE__*/React.createElement("div", {
+  }, t('btn_easy', level))), !flipped && /*#__PURE__*/React.createElement("div", {
     className: "review-flip-hint"
-  }, t('click_reveal', dayNum)));
+  }, t('click_reveal', level)));
 }
