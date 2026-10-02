@@ -43,6 +43,58 @@ Then in your repo: **Settings → Pages → Source: Deploy from branch → main 
 
 Your site will be live at `https://YOUR_USERNAME.github.io/jlpt-n5` within a minute.
 
+## Multi-device sync (optional)
+
+Progress always lives in your browser first. To share it between devices, point the app at a CouchDB database you control. The app syncs both ways in the background and keeps working offline. Your palette, theme, speech speed and sound setting stay per device.
+
+**1. Get a CouchDB.** Either:
+
+- [IBM Cloudant](https://cloud.ibm.com/catalog/services/cloudant) Lite plan: free, CouchDB-compatible, HTTPS included.
+- Your own CouchDB 3 (Docker `couchdb:3`, a VPS, a home server). Anything you reach from another device needs HTTPS, so put Caddy or nginx with Let's Encrypt in front. Plain `http://` only works for `http://localhost:5984` on the same machine.
+
+**2. Create a database**, for example `jelly`. The app never creates one for you.
+
+**3. Create a dedicated user for it.** Don't use your admin account. In CouchDB, add a user to `_users`:
+
+```bash
+curl -X PUT https://ADMIN:PASS@HOST/_users/org.couchdb.user:jelly-me \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"jelly-me","password":"a-long-random-password","roles":[],"type":"user"}'
+```
+
+Then make that user the only member of the database, so it can reach nothing else:
+
+```bash
+curl -X PUT https://ADMIN:PASS@HOST/jelly/_security \
+  -H 'Content-Type: application/json' \
+  -d '{"admins":{"names":[],"roles":[]},"members":{"names":["jelly-me"],"roles":[]}}'
+```
+
+On Cloudant, generate an API key under the database's **Permissions** tab and give it `_reader` and `_writer` on that database only.
+
+**4. Allow the site in CORS.** The browser refuses to talk to your database until it lists your Pages origin: scheme and host only, no path (`https://YOUR_USERNAME.github.io`). Credentials must be on, which means you can't use `*`.
+
+```ini
+[chttpd]
+enable_cors = true
+
+[cors]
+origins = https://YOUR_USERNAME.github.io
+credentials = true
+methods = GET, PUT, POST, HEAD, DELETE
+headers = accept, authorization, content-type, origin, referer
+```
+
+In Fauxton that's **Configuration → CORS**; in Cloudant, **Account → CORS**.
+
+**5. Connect.** Open Settings (gear icon) → Sync, paste the full database URL (`https://HOST/jelly`), the username and password, and press **Connect**. The app checks it can read and write the database first and tells you what's wrong if not. If both sides already had progress, they're merged: finished units and settings by latest change, flashcards by latest review. A dot on the gear shows the sync status.
+
+**Remember on this device.** Off by default, so you sign in again each browser session. Turned on, the login is saved in this browser's localStorage. Every GitHub Pages site under `YOUR_USERNAME.github.io` shares that storage, so any other project you publish there could read it. That's why the user above should only be able to reach this one database.
+
+**Disconnect** stops syncing and keeps everything on the device. It never deletes anything on the server.
+
+**Importing a backup while sync is on:** finished units and settings from the file win, but flashcards still follow the most recent review, so a backup can't roll back reviews you did later on another device. Anything not in the file is deleted, and that deletion syncs too.
+
 ## Curriculum overview
 
 ### N5 Course (Days 1–365)
