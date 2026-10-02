@@ -156,6 +156,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 /* Exercises */
 .exercise-box{background:var(--surface);border:2px solid var(--border);border-radius:10px;padding:16px 18px}
 .ex-count{font-size:0.78rem;color:var(--muted);font-weight:400;margin-left:6px;text-transform:none;letter-spacing:0}
+.quiz-progress{display:flex;gap:4px;margin-bottom:14px}
+.quiz-seg{flex:1;height:6px;border-radius:99px;background:var(--surface2);transition:background .25s}
+.quiz-seg.ok{background:var(--ok)}
+.quiz-seg.bad{background:var(--bad)}
+.quiz-seg.now{background:color-mix(in srgb,var(--accent) 45%,var(--surface2))}
+@media (prefers-reduced-motion:reduce){.quiz-seg{transition:none}}
 .ex-prompt{font-size:0.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px}
 .ex-question{font-size:2rem;font-weight:700;color:var(--text);margin-bottom:16px;text-align:center;line-height:1.2;min-height:2.4rem}
 .ex-options{display:grid;grid-template-columns:1fr 1fr;gap:8px}

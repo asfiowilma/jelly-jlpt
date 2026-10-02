@@ -56,6 +56,11 @@ function Exercises(_ref9) {
     _React$useState22 = _slicedToArray(_React$useState21, 2),
     started = _React$useState22[0],
     setStarted = _React$useState22[1];
+  // Per-answer results (true/false) in order, for the segmented progress bar
+  var _React$useStateRes = React.useState([]),
+    _React$useStateRes2 = _slicedToArray(_React$useStateRes, 2),
+    results = _React$useStateRes2[0],
+    setResults = _React$useStateRes2[1];
   var inputRef = React.useRef(null);
   if (exs.length === 0) return null;
 
@@ -87,11 +92,15 @@ function Exercises(_ref9) {
       right: 0,
       total: 0
     });
+    setResults([]);
     setDone(false);
     setStarted(false);
     onFinish && onFinish();
   };
   var advance = function advance(wasRight) {
+    setResults(function (r) {
+      return r.concat([wasRight]);
+    });
     setScore(function (s) {
       return {
         right: s.right + (wasRight ? 1 : 0),
@@ -115,6 +124,23 @@ function Exercises(_ref9) {
       }
     }, 1000);
   };
+  // One segment per question: answered → ok/bad, current → now
+  var progressBar = function progressBar() {
+    return /*#__PURE__*/React.createElement("div", {
+      className: "quiz-progress",
+      role: "progressbar",
+      'aria-label': "Quiz progress",
+      'aria-valuemin': 0,
+      'aria-valuemax': exs.length,
+      'aria-valuenow': results.length
+    }, exs.map(function (_, i) {
+      var state = i < results.length ? results[i] ? ' ok' : ' bad' : !done && i === cur ? ' now' : '';
+      return /*#__PURE__*/React.createElement("i", {
+        key: i,
+        className: "quiz-seg" + state
+      });
+    }));
+  };
   if (done) {
     var pct = score.right / score.total;
     var emoji = pct === 1 ? '🌟' : pct >= 0.6 ? '✅' : '📚';
@@ -124,7 +150,7 @@ function Exercises(_ref9) {
       className: "section-label"
     }, t('section_exercises', lesson.day)), /*#__PURE__*/React.createElement("div", {
       className: "exercise-box"
-    }, /*#__PURE__*/React.createElement("div", {
+    }, progressBar(), /*#__PURE__*/React.createElement("div", {
       className: "ex-finish"
     }, /*#__PURE__*/React.createElement("div", {
       className: "ex-finish-score"
@@ -144,7 +170,7 @@ function Exercises(_ref9) {
       className: "ex-count"
     }, progress)), /*#__PURE__*/React.createElement("div", {
       className: "exercise-box"
-    }, /*#__PURE__*/React.createElement("div", {
+    }, progressBar(), /*#__PURE__*/React.createElement("div", {
       className: "ex-prompt"
     }, translatePrompt(ex.prompt, lesson.day)), ex.type === 'listen' ? /*#__PURE__*/React.createElement("div", {
       className: "ex-question"
@@ -190,7 +216,7 @@ function Exercises(_ref9) {
     className: "ex-count"
   }, progress)), /*#__PURE__*/React.createElement("div", {
     className: "exercise-box"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, progressBar(), /*#__PURE__*/React.createElement("div", {
     className: "ex-prompt"
   }, translatePrompt(ex.prompt, lesson.day)), ex.question && /*#__PURE__*/React.createElement("div", {
     className: "ex-question"
