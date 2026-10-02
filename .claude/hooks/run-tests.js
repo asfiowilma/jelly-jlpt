@@ -139,6 +139,12 @@ test("scripts: lib.js + store.js + app-helpers.js + components/*.js + app.js exe
   a.ok(true);
 });
 
+// ── reference lists for tests/catalog-checks.js: tools/ref/n5.json → REF.N5 ──
+global.REF = {};
+fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { return /\.json$/.test(f); }).forEach(function (f) {
+  global.REF[f.replace(".json", "").toUpperCase()] = JSON.parse(fs.readFileSync(path.join(projectDir, "tools", "ref", f), "utf8"));
+});
+
 // ── tests/*.js through a minimal QUnit shim ──────────────────────────────────
 // QUnit.module(name, [hooks], [fn]): hooks = { beforeEach, afterEach }, run with
 // a fresh `this` per test. A module without fn applies to the tests after it.

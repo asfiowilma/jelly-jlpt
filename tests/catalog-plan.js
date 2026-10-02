@@ -1,40 +1,9 @@
 "use strict";
 
-// Catalog + plan integrity (spec §9) and the lib.js loader (validatePlan,
-// buildUnits, nextUnit, levelRamp).
+// Plan loader (validatePlan, buildUnits, nextUnit, levelRamp) and CATALOG.add.
 QUnit.module('catalog + plan', function () {
   function all() { return Object.keys(CATALOG.items).map(function (k) { return CATALOG.items[k]; }); }
-  function nonEmptyStrings(a) { return Array.isArray(a) && a.length > 0 && a.every(function (s) { return typeof s === 'string' && s; }); }
-
-  QUnit.test('every item: id prefix matches kind, valid level, sources, verified flag', function (assert) {
-    var bad = all().filter(function (it) {
-      return it.id.indexOf(CATALOG_ID_PREFIX[it.kind]) !== 0 || levelRank(it.level) < 0 ||
-        !nonEmptyStrings(it.sources) || typeof it.verified !== 'boolean';
-    });
-    assert.ok(all().length > 0, 'catalog not empty');
-    assert.deepEqual(bad.map(function (it) { return it.id; }), []);
-  });
-
-  QUnit.test('verified:true needs ≥2 sources (map Q1)', function (assert) {
-    var bad = all().filter(function (it) { return it.verified && it.sources.length < 2; });
-    assert.deepEqual(bad.map(function (it) { return it.id; }), []);
-  });
-
-  QUnit.test('required fields per kind; ids are content-keyed', function (assert) {
-    var errors = [];
-    all().forEach(function (it) {
-      var ok;
-      if (it.kind === 'vocab') ok = it.word && it.reading && nonEmptyStrings(it.gloss) && it.id === 'v:' + it.word + '|' + it.reading;
-      else if (it.kind === 'kanji') ok = it.char && Array.isArray(it.on) && Array.isArray(it.kun) && it.on.length + it.kun.length > 0 &&
-        nonEmptyStrings(it.meaning) && it.id === 'k:' + it.char;
-      else if (it.kind === 'grammar') ok = it.pattern && it.meaning && /^g:[a-z0-9-]+$/.test(it.id) &&
-        (it.examples || []).every(function (s) { return CATALOG.items[s] && CATALOG.items[s].kind === 'sentence'; });
-      else if (it.kind === 'sentence') ok = it.jp && it.en && /^s:(own:[a-z0-9-]+|tatoeba:\d+)$/.test(it.id) &&
-        (it.uses || []).every(function (id) { return CATALOG.items[id]; });
-      if (!ok) errors.push(it.id);
-    });
-    assert.deepEqual(errors, []);
-  });
+  // Per-item content checks (fields, readings, sources, sentences): tests/catalog-checks.js.
 
   QUnit.test('CATALOG.add rejects duplicate ids and bad shapes', function (assert) {
     var id = Object.keys(CATALOG.items)[0];
