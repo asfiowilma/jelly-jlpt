@@ -40,7 +40,7 @@ function Overview(_ref10) {
   }, /*#__PURE__*/React.createElement("h2", null, "Course Overview \u2014 All ", curriculum.length, " Days"), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: '0.85rem',
-      color: '#999'
+      color: 'var(--muted)'
     }
   }, completed.size, " completed \xB7 Click a day to jump to it")),
   // Level filter tabs
@@ -54,7 +54,7 @@ function Overview(_ref10) {
   // Per-level progress bars
   /*#__PURE__*/React.createElement("div", { className: "level-progress" }, levelProgress.map(function (lp) {
     if (lp.total === 0) return null;
-    var color = LEVEL_COLORS[lp.key] || '#555';
+    var color = LEVEL_COLORS[lp.key] || 'var(--muted)';
     return /*#__PURE__*/React.createElement("div", { key: lp.key, className: "level-progress-item" },
       /*#__PURE__*/React.createElement("span", null, lp.label),
       /*#__PURE__*/React.createElement("div", { className: "level-progress-bar" },

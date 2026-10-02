@@ -3,8 +3,8 @@
 "use strict";
 
 
-// Level colors: first-phase color for each JLPT level, derived from PHASE_COLORS
-var LEVEL_COLORS = { N5: PHASE_COLORS[1], N4: PHASE_COLORS[10], N3: PHASE_COLORS[16], N2: PHASE_COLORS[22], N1: PHASE_COLORS[28] };
+// Level colors: the active palette's level tokens (styles.css)
+var LEVEL_COLORS = { N5: 'var(--n5)', N4: 'var(--n4)', N3: 'var(--n3)', N2: 'var(--n2)', N1: 'var(--n1)' };
 
 // ── Progressive UI Translations ──────────────────────────────────────────────
 // As learning-related words are taught in the curriculum, the UI progressively

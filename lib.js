@@ -487,6 +487,22 @@ function safeSave(key, value) {
   }
 }
 
+// ── Theme preferences ────────────────────────────────────────────────────────
+// Palette ids match the :root[data-palette] blocks in styles.css.
+var THEME_PALETTES = [
+  { id: 'shu',      k: '朱墨', name: 'Shu & Sumi' },
+  { id: 'ai',       k: '藍染', name: 'Aizome' },
+  { id: 'matcha',   k: '抹茶', name: 'Matcha' },
+  { id: 'yozakura', k: '夜桜', name: 'Yozakura' },
+  { id: 'kokuban',  k: '黒板', name: 'Kokuban' }
+];
+// normalizeThemePrefs: coerces stored (possibly null/garbage) values to a
+// valid { palette, theme }. Default = Aizome dark.
+function normalizeThemePrefs(palette, theme) {
+  var known = THEME_PALETTES.some(function (p) { return p.id === palette; });
+  return { palette: known ? palette : 'ai', theme: theme === 'light' ? 'light' : 'dark' };
+}
+
 // ── SVG sanitization ─────────────────────────────────────────────────────────
 // Strips XSS vectors from untrusted SVG strings before injecting into the DOM.
 // Regex-based (no DOMParser) so it works headlessly in Node test environments.
@@ -589,7 +605,7 @@ function srsDueCards(cards) {
 // Returns null if localStorage is unavailable.
 function exportProgress() {
   try {
-    var KEYS = ['n5_day', 'n5_completed', 'n5_furigana', 'n5_srs', 'n5_2025', 'jlpt_tts_rate'];
+    var KEYS = ['n5_day', 'n5_completed', 'n5_furigana', 'n5_srs', 'n5_2025', 'jlpt_tts_rate', 'jlpt_palette', 'jlpt_theme'];
     var data = { version: 1, exported: new Date().toISOString(), keys: {} };
     KEYS.forEach(function (k) {
       var v = localStorage.getItem(k);
@@ -607,7 +623,7 @@ function validateProgressData(data) {
   if (!data || typeof data !== 'object') return { valid: false, error: 'not an object' };
   if (data.version !== 1) return { valid: false, error: 'unsupported version: ' + data.version };
   if (!data.keys || typeof data.keys !== 'object') return { valid: false, error: 'missing keys field' };
-  var allowedKeys = ['n5_day', 'n5_completed', 'n5_furigana', 'n5_srs', 'n5_2025', 'jlpt_tts_rate'];
+  var allowedKeys = ['n5_day', 'n5_completed', 'n5_furigana', 'n5_srs', 'n5_2025', 'jlpt_tts_rate', 'jlpt_palette', 'jlpt_theme'];
   var found = Object.keys(data.keys);
   for (var i = 0; i < found.length; i++) {
     if (allowedKeys.indexOf(found[i]) === -1) return { valid: false, error: 'unknown key: ' + found[i] };

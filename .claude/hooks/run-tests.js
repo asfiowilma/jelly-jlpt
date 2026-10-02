@@ -957,6 +957,38 @@ test("validateProgressData: all known keys pass", function (a) {
   a.ok(validateProgressData({ version: 1, keys: keys }).valid);
 });
 
+// ── theme (mirrors tests/theme.js) ────────────────────────────────────────────
+test("phaseTone: level agrees with dayToLevel for every lesson", function (a) {
+  var bad = curriculum.filter(function (l) { return phaseTone(l.phaseNum).level !== dayToLevel(l.day); });
+  a.equal(bad.length, 0, "mismatched days: " + bad.map(function (l) { return l.day; }).slice(0, 5).join(","));
+});
+test("phaseTone: steps distinct and centred on 0 within each level; unknown → null", function (a) {
+  Object.keys(LEVEL_PHASES).forEach(function (lv) {
+    var r = LEVEL_PHASES[lv], steps = [];
+    for (var p = r[0]; p <= r[1]; p++) steps.push(phaseTone(p).step);
+    a.equal(steps.reduce(function (x, y) { return x + y; }, 0), 0, lv + " steps sum to 0");
+    a.equal(new Set(steps).size, steps.length, lv + " steps distinct");
+  });
+  a.equal(phaseTone(0), null); a.equal(phaseTone(33), null);
+});
+test("PHASE_COLORS/PHASE_BG derive from the level token", function (a) {
+  for (var p = 1; p <= 32; p++) {
+    var lv = phaseTone(p).level.toLowerCase();
+    a.ok(PHASE_COLORS[p].indexOf("var(--" + lv + ")") !== -1, "phase " + p + " uses --" + lv);
+    a.ok(PHASE_BG[p].indexOf(PHASE_COLORS[p]) !== -1, "PHASE_BG[" + p + "] tints PHASE_COLORS[" + p + "]");
+  }
+  a.ok(PHASE_COLORS[1] !== PHASE_COLORS[2], "neighbouring phases differ");
+});
+test("normalizeThemePrefs: defaults to Aizome dark, keeps valid values", function (a) {
+  a.deepEqual(normalizeThemePrefs(null, null), { palette: "ai", theme: "dark" });
+  a.deepEqual(normalizeThemePrefs("nope", "sepia"), { palette: "ai", theme: "dark" });
+  a.deepEqual(normalizeThemePrefs("kokuban", "light"), { palette: "kokuban", theme: "light" });
+  THEME_PALETTES.forEach(function (p) { a.equal(normalizeThemePrefs(p.id, "dark").palette, p.id); });
+});
+test("validateProgressData: theme keys pass", function (a) {
+  a.ok(validateProgressData({ version: 1, keys: { jlpt_palette: "shu", jlpt_theme: "light" } }).valid);
+});
+
 // ── summary ───────────────────────────────────────────────────────────────────
 var total = _pass + _fail;
 if (_fail === 0) {

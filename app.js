@@ -46,6 +46,24 @@ function App() {
     window._ttsRate = speechRate;
     safeSave('jlpt_tts_rate', String(speechRate));
   }, [speechRate]);
+  var _React$useStateTheme = React.useState(function () {
+      try {
+        return normalizeThemePrefs(localStorage.getItem('jlpt_palette'), localStorage.getItem('jlpt_theme'));
+      } catch (e) {
+        return normalizeThemePrefs(null, null);
+      }
+    }),
+    _React$useStateTheme2 = _slicedToArray(_React$useStateTheme, 2),
+    themePrefs = _React$useStateTheme2[0],
+    setThemePrefs = _React$useStateTheme2[1];
+  // index.html's inline <head> script sets these attributes before first paint;
+  // this keeps them in sync after the user changes a preference.
+  React.useEffect(function () {
+    document.documentElement.setAttribute('data-palette', themePrefs.palette);
+    document.documentElement.setAttribute('data-theme', themePrefs.theme);
+    safeSave('jlpt_palette', themePrefs.palette);
+    safeSave('jlpt_theme', themePrefs.theme);
+  }, [themePrefs.palette, themePrefs.theme]);
   React.useEffect(function () {
     function handleStorageError() { setStorageError(true); }
     window.addEventListener('storage-save-error', handleStorageError);
@@ -55,13 +73,13 @@ function App() {
   if (!curriculumCheck.valid) {
     return React.createElement('div', { style: { padding: 40, textAlign: 'center', fontFamily: 'sans-serif' } },
       React.createElement('h2', null, 'Curriculum failed to load'),
-      React.createElement('p', { style: { color: '#c00' } }, curriculumCheck.error),
+      React.createElement('p', { style: { color: 'var(--bad)' } }, curriculumCheck.error),
       React.createElement('button', { onClick: function() { location.reload(); } }, 'Reload')
     );
   }
   var lesson = curriculum[dayNum - 1];
-  var pColor = PHASE_COLORS[lesson.phaseNum] || '#555';
-  var pBg = PHASE_BG[lesson.phaseNum] || '#f8f9fa';
+  var pColor = PHASE_COLORS[lesson.phaseNum] || 'var(--muted)';
+  var pBg = PHASE_BG[lesson.phaseNum] || 'var(--surface2)';
   var totalDays = curriculum.length;
   var pct = Math.round(completed.size / totalDays * 100);
   var toggleDone = function toggleDone() {
@@ -172,7 +190,19 @@ function App() {
      /*#__PURE__*/React.createElement("option", { value: "0.85" }, "0.85\u00D7"),
      /*#__PURE__*/React.createElement("option", { value: "1" }, "1.0\u00D7"),
      /*#__PURE__*/React.createElement("option", { value: "1.25" }, "1.25\u00D7")
-  )), /*#__PURE__*/React.createElement("button", {
+  )), /*#__PURE__*/React.createElement("select", {
+    className: "theme-select",
+    value: themePrefs.palette,
+    onChange: function(e) { setThemePrefs({ palette: e.target.value, theme: themePrefs.theme }); },
+    'aria-label': "Color palette"
+  }, THEME_PALETTES.map(function (p) {
+    return /*#__PURE__*/React.createElement("option", { key: p.id, value: p.id }, p.k + ' ' + p.name);
+  })), /*#__PURE__*/React.createElement("button", {
+    className: "theme-toggle",
+    'aria-pressed': themePrefs.theme === 'dark',
+    onClick: function() { setThemePrefs({ palette: themePrefs.palette, theme: themePrefs.theme === 'dark' ? 'light' : 'dark' }); },
+    title: "Toggle dark mode"
+  }, "☾ Dark mode"), /*#__PURE__*/React.createElement("button", {
     className: "data-btn",
     onClick: handleExport,
     'aria-label': "Export progress to file",
