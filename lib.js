@@ -1452,10 +1452,10 @@ var THEME_PALETTES = [
   { id: 'kokuban',  k: '黒板', name: 'Kokuban' }
 ];
 // normalizeThemePrefs: coerces stored (possibly null/garbage) values to a
-// valid { palette, theme }. Default = Aizome dark.
+// valid { palette, theme }. Default = Kokuban dark.
 function normalizeThemePrefs(palette, theme) {
   var known = THEME_PALETTES.some(function (p) { return p.id === palette; });
-  return { palette: known ? palette : 'ai', theme: theme === 'light' ? 'light' : 'dark' };
+  return { palette: known ? palette : 'kokuban', theme: theme === 'light' ? 'light' : 'dark' };
 }
 
 // ── SVG sanitization ─────────────────────────────────────────────────────────

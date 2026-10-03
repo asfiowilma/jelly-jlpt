@@ -24,8 +24,6 @@ var UI_STRINGS = {
   nav_prev: { en: '← Previous', ja: '← まえ',   since: 'N4'  },
   nav_next: { en: 'Next →',     ja: 'つぎ →',   since: 'N4' },
   nav_skip: { en: 'Skip →',     ja: 'とばす →', since: 'N4' },
-  nav_quiz: { en: 'Take the quiz ↓', ja: 'クイズ ↓', since: 'N4' },
-  nav_mock: { en: 'Take the mock ↓', ja: 'もぎしけん ↓', since: 'N4' },
   nav_next_stage: { en: 'Next stage →', ja: 'つぎのステージ →', since: 'N4' },
   // Section labels (inside a lesson)
   section_kanji:      { en: 'Kanji',         ja: 'かんじ',     since: 'N4' },
@@ -93,6 +91,18 @@ var UI_STRINGS = {
   // Review completion messages
   all_caught_up:  { en: 'All caught up!',      ja: 'ぜんぶおわった！',  since: 'N4' },
   no_cards_due:   { en: 'No cards due for review right now.', ja: 'いまふくしゅうカードはありません。', since: 'N4' },
+  // Review hub
+  rv_start:    { en: 'Start review',  ja: 'ふくしゅうする', since: 'N4' },
+  rv_cards_due:{ en: 'cards due',     ja: 'まい',           since: 'N4' },
+  rv_card_due: { en: 'card due',      ja: 'まい',           since: 'N4' },
+  rv_all:      { en: 'All',           ja: 'ぜんぶ',         since: 'N4' },
+  rv_next7:    { en: 'Next 7 days',   ja: 'これから7にち',  since: 'N4' },
+  rv_today:    { en: 'Today',         ja: 'きょう',         since: 'N4' },
+  rv_know:     { en: 'What you know', ja: 'おぼえたカード', since: 'N4' },
+  rv_new:      { en: 'New',           ja: 'あたらしい',     since: 'N4' },
+  rv_learning: { en: 'Learning',      ja: 'ならいちゅう',   since: 'N4' },
+  rv_known:    { en: 'Known',         ja: 'おぼえた',       since: 'N4' },
+  rv_back:     { en: '← Review home', ja: '← ふくしゅう',   since: 'N4' },
   session_done:   { en: 'Session complete!',   ja: 'よくできました！',  since: 'N4' },
   // Exercise / quiz labels
   start_quiz:  { en: 'Start Quiz',               ja: 'テストをはじめる',     since: 'N4' },
@@ -114,6 +124,7 @@ var UI_STRINGS = {
   // N1 additions
   editorial:       { en: 'Editorial', ja: '社説', since: 'N1' },
   mock_exam:       { en: 'Mock Exam', ja: '模擬試験', since: 'N1' },
+  furigana_label:  { en: 'Furigana', ja: 'ふりがな', since: 'N3' },
   furigana_show:   { en: 'Show furigana', ja: 'ふりがな表示', since: 'N3' },
   furigana_hide:   { en: 'Hide furigana', ja: 'ふりがな非表示', since: 'N3' },
   // Settings view. These words are never taught as lesson vocabulary, so in
@@ -183,6 +194,7 @@ var UI_STRINGS = {
   set_exam_date:     { en: 'JLPT exam date (optional)', ja: 'JLPT試験日（任意）', since: 'N1' },
   set_exam_hint:     { en: 'Add it to see if your pace gets you there in time. The JLPT is held in July and December.', ja: '入力すると、今のペースで間に合うか確認できます。JLPTは7月と12月に実施されます。', since: 'N1' },
   pace_units:        { en: 'stages',             ja: 'ステージ',         since: 'N1' },
+  pace_unit_one:     { en: 'stage',              ja: 'ステージ',         since: 'N1' },
   pace_finish:       { en: 'Projected finish for', ja: '修了予定',         since: 'N1' },
   pace_all_levels:   { en: 'All levels', ja: '全レベル',      since: 'N1' },
   pace_exam:         { en: 'Exam',              ja: '試験',             since: 'N1' },
@@ -259,6 +271,11 @@ var ICONS = {
   stats: [['path', { d: 'M4 20h16' }], ['path', { d: 'M7 16v-5' }], ['path', { d: 'M12 16V6' }], ['path', { d: 'M17 16v-8' }]],
   review: [['rect', { x: 3, y: 7, width: 14, height: 12, rx: 2 }], ['path', { d: 'M7 4h12a2 2 0 0 1 2 2v10' }]],
   speaker: [['path', { d: 'M4 9v6h4l5 4V5L8 9H4z' }], ['path', { d: 'M16.5 8.5a5 5 0 0 1 0 7' }]],
+  play: [['path', { d: 'M8 5.5v13l11-6.5z' }]],
+  x: [['path', { d: 'M6 6l12 12M18 6 6 18' }]],
+  check: [['path', { d: 'M5 12.5l4.5 4.5L19 7.5' }]],
+  clock: [['circle', { cx: 12, cy: 12, r: 9 }], ['path', { d: 'M12 7v5l3 2' }]],
+  undo: [['path', { d: 'M9 14 4 9l5-5' }], ['path', { d: 'M4 9h10a6 6 0 0 1 0 12h-3' }]],
   bulb: [['path', { d: 'M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z' }]],
   gear: [['circle', { cx: 12, cy: 12, r: 3 }], ['path', { d: 'M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z' }]]
 };

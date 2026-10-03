@@ -1,5 +1,50 @@
 "use strict";
 
+// Review hub (shown before a session): due count + Start, type filter, 7-day
+// forecast, new/learning/known split. Reuses dueForecast / srsStats.
+function ReviewHub(p) {
+  var h = React.createElement, level = p.level;
+  var due = srsDueCards(p.cards);
+  var labels = { kana: 'section_kana', vocab: 'card_vocab', kanji: 'section_kanji', grammar: 'section_grammar' };
+  var byType = {};
+  due.forEach(function (c) { byType[c.type] = (byType[c.type] || 0) + 1; });
+  var types = SRS_TYPES.filter(function (ty) { return byType[ty]; });
+  var filter = byType[p.filter] ? p.filter : 'all';
+  var n = filter === 'all' ? due.length : byType[filter];
+  var fc = dueForecast(p.cards, Date.now(), 7), perDay = fc.perDay.slice();
+  perDay[0] += fc.overdue;
+  var max = Math.max.apply(null, perDay.concat(1));
+  var st = srsStats(p.cards), known = st.young + st.mature;
+  var pct = function (x) { return st.total ? x / st.total * 100 + '%' : '0%'; };
+  var chip = function (key, label, count) {
+    return h('button', { key: key, className: 'rv-chip', 'aria-pressed': filter === key, onClick: function () { p.setFilter(key); } }, label + ' · ' + count);
+  };
+  return h('div', { className: 'rv-hub' },
+    h('div', { className: 'rv-due' },
+      h('div', null, h('strong', null, n), h('span', null, n === 1 ? t('rv_card_due', level) : t('rv_cards_due', level))),
+      h('button', { className: 'ex-retry-btn', disabled: !n, onClick: function () { p.onStart(filter); } }, t('rv_start', level))),
+    n === 0 && h('div', { className: 'rv-caught' }, t('all_caught_up', level)),
+    types.length > 0 && h('div', { className: 'rv-chips', role: 'group' },
+      chip('all', t('rv_all', level), due.length),
+      types.map(function (ty) { return chip(ty, t(labels[ty], level), byType[ty]); })),
+    h('h3', { className: 'rv-h' }, t('rv_next7', level)),
+    h('div', { className: 'rv-fc' }, perDay.map(function (v, i) {
+      var day = i === 0 ? t('rv_today', level) : new Date(dayStart(Date.now(), i)).toLocaleDateString(undefined, { weekday: 'short' });
+      return h('div', { key: i, className: i === 0 ? 'today' : '' }, v, h('i', { style: { height: v / max * 72 } }), day);
+    })),
+    st.total > 0 && h('div', null,
+      h('h3', { className: 'rv-h' }, t('rv_know', level)),
+      h('div', { className: 'rv-mat' },
+        h('i', { style: { width: pct(st['new']), background: 'var(--m-new)' } }),
+        h('i', { style: { width: pct(st.learning), background: 'var(--m-learn)' } }),
+        h('i', { style: { width: pct(known), background: 'var(--m-mature)' } })),
+      h('div', { className: 'rv-leg' },
+        h('span', null, t('rv_new', level) + ' ' + st['new']),
+        h('span', null, t('rv_learning', level) + ' ' + st.learning),
+        h('span', null, t('rv_known', level) + ' ' + known))),
+    p.pendingEl);
+}
+
 function ReviewMode(_ref1) {
   var cards = _ref1.cards,
     onUpdate = _ref1.onUpdate,
@@ -11,9 +56,12 @@ function ReviewMode(_ref1) {
   var pendingEl = pending > 0 && React.createElement("div", { className: "pending-line" },
     pending, pending === 1 ? " new card" : " new cards", " waiting (daily new-card limit). ",
     onLearnExtra && React.createElement("button", { className: "ex-retry-btn", onClick: onLearnExtra }, "Learn extra today"));
-  var _React$useStateQ = React.useState(function() { return rndShuffle(srsDueCards(cards)); }),
-    _React$useStateQS = _slicedToArray(_React$useStateQ, 2),
-    due = _React$useStateQS[0];
+  var _s = React.useState(null),
+    due = _s[0],
+    setDue = _s[1];
+  var _f = React.useState('all'),
+    filter = _f[0],
+    setFilter = _f[1];
   var _React$useState33 = React.useState(0),
     _React$useState34 = _slicedToArray(_React$useState33, 2),
     idx = _React$useState34[0],
@@ -22,17 +70,17 @@ function ReviewMode(_ref1) {
     _React$useState36 = _slicedToArray(_React$useState35, 2),
     flipped = _React$useState36[0],
     setFlipped = _React$useState36[1];
-  if (due.length === 0) {
-    return /*#__PURE__*/React.createElement("div", {
-      className: "review-empty"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "review-empty-icon"
-    }, "\u2705"), /*#__PURE__*/React.createElement("div", {
-      className: "review-empty-title"
-    }, t('all_caught_up', level)), /*#__PURE__*/React.createElement("div", {
-      className: "review-empty-sub"
-    }, t('no_cards_due', level)), pendingEl);
+  if (due === null) {
+    return React.createElement("div", { className: "review-wrap rv-wrap" }, React.createElement(ReviewHub, {
+      cards: cards, level: level, filter: filter, setFilter: setFilter, pendingEl: pendingEl,
+      onStart: function (f) {
+        setIdx(0);
+        setFlipped(false);
+        setDue(rndShuffle(srsDueCards(cards).filter(function (c) { return f === 'all' || c.type === f; })));
+      }
+    }));
   }
+  var backBtn = React.createElement("button", { className: "ex-retry-btn rv-back", onClick: function () { setDue(null); } }, t('rv_back', level));
   if (idx >= due.length) {
     return /*#__PURE__*/React.createElement("div", {
       className: "review-empty"
@@ -42,7 +90,7 @@ function ReviewMode(_ref1) {
       className: "review-empty-title"
     }, t('session_done', level)), /*#__PURE__*/React.createElement("div", {
       className: "review-empty-sub"
-    }, "Reviewed ", due.length, " card", due.length !== 1 ? 's' : '', "."), pendingEl);
+    }, "Reviewed ", due.length, " card", due.length !== 1 ? 's' : '', "."), backBtn);
   }
   var card = due[idx];
   var rate = function rate(quality) {
@@ -67,7 +115,7 @@ function ReviewMode(_ref1) {
   }, t('known_btn', level));
   return /*#__PURE__*/React.createElement("div", {
     className: "review-wrap"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, backBtn, /*#__PURE__*/React.createElement("div", {
     className: "review-progress"
   }, idx + 1, " / ", due.length, " due"), /*#__PURE__*/React.createElement("div", {
     className: "review-card",
