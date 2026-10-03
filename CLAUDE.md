@@ -31,7 +31,7 @@ store.js              Store: PouchDB persistence + optional CouchDB sync
 app-helpers.js        t() progressive UI strings, TTS, icons, stroke-order SVG fetch
 sfx.js                quiz/achievement sounds from sfx/ (Kenney, CC0)
 components/           one React component per file, React.createElement, no JSX
-  char-card.js kanji-section.js exercises.js unit-view.js review-mode.js
+  kanji-section.js kana-section.js exercises.js unit-view.js review-mode.js
   overview.js stats-view.js settings-view.js
 app.js                App: builds UNITS from PLAN + CATALOG, awaits Store.init(), mounts
 kanji-svg/            KanjiVG stroke-order SVGs (<hex codepoint>.svg), CC BY-SA 3.0

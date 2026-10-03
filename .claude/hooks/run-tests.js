@@ -56,7 +56,6 @@ var appFiles = [
   "store.js",
   "app-helpers.js",
   "sfx.js",
-  path.join("components", "char-card.js"),
   path.join("components", "kanji-section.js"),
   path.join("components", "kana-section.js"),
   path.join("components", "exercises.js"),
@@ -206,14 +205,34 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     a.ok(withKanji.length > 0, "units with kanji exist");
     withKanji.forEach(function (u) {
       ["rows", "focus"].forEach(function (view) {
-        try { KanjiSection({ unit: u, kanjiView: view, setKanjiView: noop }); }
+        try { KanjiSection({ unit: u, charView: view, setCharView: noop }); }
         catch (e) { a.ok(false, u.id + " " + view + ": " + e.message); }
       });
     });
   });
 
-  test("React render: CharCard() renders a catalog kanji and kana", function (a) {
-    try { CharCard({ kanji: CATALOG.items["k:人"] }); CharCard({ kanji: CATALOG.items["c:あ"] }); CharCard({ kanji: CATALOG.items["c:きゃ"] }); a.ok(true); } catch (e) { a.ok(false, e.message); }
+  test("React render: KanaSection() renders every kana unit in rows and focus layouts", function (a) {
+    var withKana = units.filter(function (u) { return u.kana.length > 0; });
+    a.ok(withKana.length > 0, "units with kana exist");
+    withKana.forEach(function (u) {
+      ["rows", "focus"].forEach(function (view) {
+        try { KanaSection({ unit: u, charView: view, setCharView: noop }); }
+        catch (e) { a.ok(false, u.id + " " + view + ": " + e.message); }
+      });
+    });
+  });
+
+  test("kanaChart: gojuon rows by vowel column; youon uses ya/yu/yo; ん drops the headers", function (a) {
+    var byId = function (u) { return kanaChart(units.filter(function (x) { return x.id === u; })[0].kana); };
+    var k = byId("n5.u002");
+    a.deepEqual([k.rows.length, k.cols, k.headers, k.youon], [2, [0, 1, 2, 3, 4], true, false], "か + さ rows");
+    var y = byId("n5.u008");
+    a.deepEqual([y.cols, y.headers, y.youon], [[0, 2, 4], true, true], "きゃ rows: three columns");
+    var w = byId("n5.u005");
+    a.equal(w.headers, false, "ん has no vowel column");
+    a.equal(w.rows[w.rows.length - 1].filter(Boolean)[0].char, "ん", "ん sits in its own row");
+    a.deepEqual(kanaLookalikes("し"), ["つ"], "し looks like つ");
+    a.deepEqual(kanaLookalikes("が"), [], "no look-alikes for dakuten kana");
   });
 
   test("React render: Overview() renders units + coming-soon levels", function (a) {
