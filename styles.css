@@ -170,8 +170,6 @@ a.data-btn{display:inline-flex;align-items:center;text-decoration:none}
 .grammar-example .jp{font-weight:600;color:var(--text)}
 .grammar-example .en{color:var(--muted);font-size:0.85rem;margin-top:2px}
 .practice-box{background:color-mix(in srgb,var(--warn) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--warn) 45%,var(--surface));border-radius:8px;padding:12px 16px;font-size:0.9rem;line-height:1.6;color:var(--text);white-space:pre-line}
-.tip-box{background:color-mix(in srgb,var(--ok) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--ok) 45%,var(--surface));border-radius:8px;padding:12px 16px;font-size:0.85rem;line-height:1.6;color:var(--text)}
-.tip-box::before{content:"💡 ";}
 .nav-bar{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-top:1px solid var(--border);background:var(--surface2);gap:12px}
 .nav-btn{padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-size:0.9rem;font-weight:600;transition:all 0.2s}
 .nav-btn.prev{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
@@ -368,6 +366,14 @@ table.data th{color:var(--muted);font-weight:600}
 .kn-chip.hl{border-color:var(--accent-fg);box-shadow:0 0 0 1px var(--accent-fg)}
 @media (max-width:560px){.kn-k{font-size:1.5rem}.kn-chart{gap:4px}.kn-tile{padding:6px 2px}}
 
+/* Lesson note: headline + quiet lines in a tinted box */
+.unit-note{margin-bottom:20px;padding:14px 18px 16px;background:color-mix(in srgb,var(--accent-fg) 7%,var(--surface));border:1px solid color-mix(in srgb,var(--accent-fg) 28%,var(--border));border-radius:12px}
+.unit-note-label{display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:0.7rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent-fg)}
+.unit-note-label svg{width:14px;height:14px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.unit-note-head{margin-bottom:4px;font-size:1.02rem;font-weight:600;line-height:1.45;text-wrap:pretty}
+.unit-note-line{font-size:0.85rem;line-height:1.6;color:var(--muted);text-wrap:pretty}
+.unit-note-line+.unit-note-line{margin-top:6px}
+
 /* Typing tip */
 .typing-tip-box{background:color-mix(in srgb,var(--info) 10%,var(--surface));border:1px solid color-mix(in srgb,var(--info) 45%,var(--surface));border-radius:8px;padding:12px 16px}
 .typing-examples{font-family:'Courier New',monospace;font-size:0.95rem;color:var(--text);line-height:1.8;word-break:break-all}
@@ -511,8 +517,6 @@ rt{font-size:0.6em;color:var(--accent-fg);font-weight:400;letter-spacing:0.02em}
 .level-progress-fill{height:100%;border-radius:3px;background:var(--lv);transition:width 0.3s}
 
 /* ── Timed quizzes + mock exams (ticket 18) ── */
-.tip-para{margin:0 0 6px}
-.tip-para:last-child{margin-bottom:0}
 .quiz-timed-note{display:block;margin-top:6px;color:var(--text)}
 .ex-timer{float:right;font-size:0.85rem;font-variant-numeric:tabular-nums;color:var(--text);text-transform:none;letter-spacing:0}
 .ex-timer.low{color:var(--bad);font-weight:700}
