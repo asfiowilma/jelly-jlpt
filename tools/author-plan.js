@@ -217,6 +217,24 @@ function pickPassage() {
   if (p) usedPassages.add(p.id);
   return p;
 }
+// Listening (ticket 17): each lesson review also gets one listening item whose vocab and grammar
+// are all taught by then, formats in turn (quick, task, utterance, point; the next eligible one when
+// the wanted format has none yet). The rest are kept for test prep and mocks (listeningFor in lib.js).
+const listenItems = items.filter(function (it) { return it.kind === "listening"; });
+const LISTEN_TURN = ["quick", "task", "utterance", "point"];
+const usedListening = new Set();
+let listenTurn = 0;
+function pickListening() {
+  const taughtNow = new Set();
+  units.forEach(function (u) { (u.vocab || []).concat(u.grammar || []).forEach(function (id) { taughtNow.add(id); }); });
+  const ok = listenItems.filter(function (x) {
+    return !usedListening.has(x.id) && x.uses.every(function (id) { return !/^[vg]:/.test(id) || taughtNow.has(id); });
+  });
+  const want = LISTEN_TURN[listenTurn % LISTEN_TURN.length];
+  const p = ok.filter(function (x) { return x.format === want; })[0] || ok[0];
+  if (p) { usedListening.add(p.id); if (p.format === want) listenTurn++; }
+  return p;
+}
 const backlog = [], placed = new Set();
 let sinceReview = [];
 LESSONS.forEach(function (l, n) {
@@ -246,6 +264,8 @@ LESSONS.forEach(function (l, n) {
     const review = { id: uid(), level: "N5", kind: "review", title: "Review: units " + a + "–" + b };
     const p = pickPassage();
     if (p) review.passages = [p.id];
+    const l = pickListening();
+    if (l) review.listening = [l.id];
     units.push(review);
     sinceReview = [];
   }

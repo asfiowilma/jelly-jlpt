@@ -51,6 +51,8 @@ var UNIT_ITEM_FIELDS = { kana: 'kana', vocab: 'vocab', kanji: 'kanji', grammar: 
 // practice: a kana unit's reading-drill words — vocab shown in kana, taught in a later
 // lesson, so not counted as taught and no SRS card here.
 var UNIT_REF_FIELDS = Object.assign({ practice: 'vocab' }, UNIT_ITEM_FIELDS);
+// unit field → item kind asked in its quiz but not taught (review units, tickets 15 / 17)
+var UNIT_QUIZ_FIELDS = { passages: 'passage', listening: 'listening' };
 
 // validatePlan: every unit well-formed and every referenced id in the catalog
 // with the right kind. Returns { valid, error } (first problem only).
@@ -75,11 +77,14 @@ function validatePlan(plan, catalog) {
           if (it.kind !== UNIT_REF_FIELDS[f]) return { valid: false, error: u.id + '.' + f + ' has ' + it.kind + ' ' + ids[j] };
         }
       }
-      // passages: reading texts a unit's quiz asks about (ticket 15); not taught items, no cards
-      var ps = u.passages || [];
-      for (var q = 0; q < ps.length; q++) {
-        var pi = catalog.items[ps[q]];
-        if (!pi || pi.kind !== 'passage') return { valid: false, error: u.id + ' references missing passage ' + ps[q] };
+      // passages / listening: texts and dialogues a unit's quiz asks about (tickets 15, 17);
+      // not taught items, no cards
+      for (var pf in UNIT_QUIZ_FIELDS) {
+        var ps = u[pf] || [];
+        for (var q = 0; q < ps.length; q++) {
+          var pi = catalog.items[ps[q]];
+          if (!pi || pi.kind !== UNIT_QUIZ_FIELDS[pf]) return { valid: false, error: u.id + ' references missing ' + UNIT_QUIZ_FIELDS[pf] + ' ' + ps[q] };
+        }
       }
     }
   }
@@ -904,14 +909,15 @@ function makeQuestion(item, ctx, wantRecall, avoid, strict) {
 
 // buildExercises(unit): a fresh quiz for one resolved unit (buildUnits). Every
 // item once (a review samples 20), then extra questions in other forms up to
-// quizLength; at least RECALL_SHARE typed answers. A unit with passages (reviews) ends
-// with their reading questions, in place of the same number of item questions.
+// quizLength; at least RECALL_SHARE typed answers. A unit with passages / listening (reviews)
+// ends with their reading then listening questions, in place of as many item questions.
 function buildExercises(unit) {
   var ctx = quizContext(unit);
   if (!ctx.items.length) return [];
   var total = quizLength(unit, ctx.items.length);
   var reading = readingExercises(unit, ctx.taughtKanji); // takes slots from the item questions
-  var n = total - reading.length;
+  var listening = listeningExercises(unit, ctx.taughtKanji);
+  var n = total - reading.length - listening.length;
   // grammar first in the first round, so a form point (て-form…) gets its recall
   // (conjugation) question while the recall share is still open
   var gram = rndShuffle(ctx.items.filter(function (it) { return it.kind === 'grammar'; }));
@@ -932,8 +938,8 @@ function buildExercises(unit) {
     var r = makeQuestion(out[i].item, ctx, true, used[out[i].itemId], true) || makeQuestion(out[i].item, ctx, true, [], true);
     if (r) out[i] = r;
   }
-  // reading questions last, as on the test
-  return rndShuffle(out).concat(reading);
+  // reading then listening last, as on the test
+  return rndShuffle(out).concat(reading, listening);
 }
 
 // ── Reading passages (ticket 15) ────────────────────────────────────────────
@@ -965,11 +971,126 @@ function readingExercises(unit, taughtKanji) {
   return out;
 }
 
+// ── Listening (ticket 17) ───────────────────────────────────────────────────
+// Items: data/<lvl>/listening.js (format task | point | utterance | quick). Audio is the
+// browser's speech synthesis (app-helpers.js speakScript); the pure parts live here.
+var LISTEN_PROMPTS = {
+  task: 'Listen, then answer the question.',
+  point: 'Listen, then answer the question.',
+  utterance: 'Listen to the situation. What do you say?',
+  quick: 'Listen and choose the best reply.'
+};
+var LISTEN_SPOKEN_OPTIONS = { utterance: true, quick: true }; // options heard, not printed
+var LISTEN_NUMBERS = ['いち', 'に', 'さん', 'よん'];
+var LISTEN_MOCK_PLAYS = 2; // mocks: play once + one replay; lessons: unlimited (0)
+
+// listeningFor(level, format?): the catalog's listening items of a level, in catalog order.
+// For test prep and mocks (ticket 18): listenQuestion(item, taughtKanji, { mock: true }).
+function listeningFor(level, format) {
+  return Object.keys(CATALOG.items).map(function (k) { return CATALOG.items[k]; }).filter(function (p) {
+    return p.kind === 'listening' && p.level === level && (!format || p.format === format);
+  });
+}
+// speechText: furigana markup → what the voice reads (kana readings, so no kanji is misread).
+function speechText(s) { return furiganaParts(s).map(function (p) { return p.r || p.t; }).join(''); }
+
+// listeningScript(item, order?): the whole play sequence [{ speaker, text }], options in
+// `order` (indexes into item.options). task / point: scene, question, dialogue, question again.
+// utterance: situation, question, then each option (narrator says its number). quick: the line,
+// then each reply.
+function listeningScript(it, order) {
+  order = order || it.options.map(function (_, i) { return i; });
+  var say = function (speaker, s) { return { speaker: speaker, text: speechText(s) }; };
+  var lines = it.lines.map(function (l) { return say(l.speaker, l.furigana); });
+  var q = it.question && say('N', it.question);
+  if (!LISTEN_SPOKEN_OPTIONS[it.format]) return [lines[0], q].concat(lines.slice(1), [q]);
+  var opts = [].concat.apply([], order.map(function (i, n) {
+    return [{ speaker: 'N', text: LISTEN_NUMBERS[n] }, say(it.optionSpeaker, it.options[i])];
+  }));
+  return lines.concat(q ? [q] : [], opts);
+}
+
+// listenQuestion(item, taughtKanji, opts): one MC 'listen_dialog' question. lines / questionParts /
+// optionParts: furigana parts for the transcript (ruby only on kanji not taught yet, Q33), shown
+// after answering. optionSpeech: each option alone, for its play button. maxPlays: 0 = unlimited;
+// opts.mock → LISTEN_MOCK_PLAYS.
+function listenQuestion(it, taughtKanji, opts) {
+  var ruby = function (s) { return quizFurigana(furiganaParts(s), taughtKanji || {}, ''); };
+  var text = function (s) { return furiganaParts(s).map(function (p) { return p.t; }).join(''); };
+  // options keep their authored order (numbered 1-4 as on the test; `en` and `explain` follow it)
+  var order = it.options.map(function (_, i) { return i; });
+  return { type: 'listen_dialog', format: it.format, prompt: LISTEN_PROMPTS[it.format],
+    script: listeningScript(it, order), spokenOptions: !!LISTEN_SPOKEN_OPTIONS[it.format],
+    lines: it.lines.map(function (l) { return { speaker: l.speaker, parts: ruby(l.furigana) }; }),
+    questionParts: it.question ? ruby(it.question) : null,
+    options: order.map(function (i) { return text(it.options[i]); }),
+    optionParts: order.map(function (i) { return ruby(it.options[i]); }),
+    optionSpeech: order.map(function (i) { return { speaker: it.optionSpeaker, text: speechText(it.options[i]) }; }),
+    correct: order.indexOf(it.answer), en: it.en, explain: it.explain,
+    maxPlays: opts && opts.mock ? LISTEN_MOCK_PLAYS : 0,
+    itemId: it.id, form: 'listening', recall: false };
+}
+// listeningExercises(unit, taughtKanji): the questions for unit.listening (review units).
+function listeningExercises(unit, taughtKanji) {
+  return (unit.listening || []).map(function (id) { return CATALOG.items[id]; })
+    .filter(function (it) { return it && it.kind === 'listening'; })
+    .map(function (it) { return listenQuestion(it, taughtKanji); });
+}
+
+// chunkSpeech(text, max): split a line for speech synthesis at sentence ends, then commas /
+// spaces, so no utterance runs long (Chrome's network voices stop after ~15 s). Pieces are
+// merged back up to max characters; a piece with no break point is cut hard.
+var SPEECH_CHUNK = 40; // ~10 s of Japanese at 0.5× rate
+function chunkSpeech(text, max) {
+  max = max || SPEECH_CHUNK;
+  var pieces = (text.match(/[^。！？!?]+[。！？!?]*/g) || []).reduce(function (acc, s) {
+    if (s.length <= max) return acc.concat([s]);
+    var parts = s.match(/[^、　 ]+[、　 ]*/g) || [s];
+    return acc.concat([].concat.apply([], parts.map(function (p) {
+      var cut = [];
+      for (var i = 0; i < p.length; i += max) cut.push(p.slice(i, i + max));
+      return cut;
+    })));
+  }, []);
+  var out = [];
+  pieces.forEach(function (p) {
+    if (out.length && (out[out.length - 1] + p).length <= max) out[out.length - 1] += p;
+    else out.push(p);
+  });
+  return out.map(function (s) { return s.trim(); }).filter(Boolean);
+}
+
+// assignVoices(voices): speaker → { voice, pitch } for M (man), F (woman), N (narrator).
+// Two different ja voices when there are (by name: a male-named voice for M, a female-named one
+// for F), else the same voice with pitch 0.8 (M) / 1.25 (F); a voice already of that gender keeps
+// pitch 1. Local voices first: network ones (Chrome's Google voice) cut out on long lines.
+// Narrator: a third ja voice if any, else F's voice, pitch 1. No ja voice: voice null, pitches
+// only (the browser picks a voice from lang).
+// ponytail: gender by voice name; an unknown name just gets the pitch split.
+var JA_MALE_VOICE = /ichiro|keita|otoya|hattori|daichi|naoki|male|男性/i;
+var JA_FEMALE_VOICE = /haruka|ayumi|nanami|kyoko|sayaka|o-ren|mizuki|aoi|google|female|女性/i;
+function assignVoices(voices) {
+  var ja = (voices || []).filter(function (v) { return /^ja/i.test(v.lang || ''); })
+    .sort(function (a, b) { return (b.localService ? 1 : 0) - (a.localService ? 1 : 0); });
+  var isMale = function (v) { return !!v && JA_MALE_VOICE.test(v.name) && !/female/i.test(v.name); };
+  var isFemale = function (v) { return !!v && JA_FEMALE_VOICE.test(v.name); };
+  var m = ja.filter(isMale)[0], f = ja.filter(function (v) { return v !== m && isFemale(v); })[0];
+  var other = function (not) { return ja.filter(function (v) { return v !== not; })[0] || not; };
+  if (!m && !f) { m = ja[0]; f = ja[1] || ja[0]; } else if (!f) f = other(m); else if (!m) m = other(f);
+  var n = ja.filter(function (v) { return v !== m && v !== f; })[0] || f;
+  return {
+    M: { voice: m || null, pitch: isMale(m) ? 1 : 0.8 },
+    F: { voice: f || null, pitch: isFemale(f) && f !== m ? 1 : 1.25 },
+    N: { voice: n || null, pitch: 1 }
+  };
+}
+
 // requeueExercise(unit, ex): a missed question asked again at the end of the
 // quiz (Q31), same item in another form when there is one. Not scored.
 function requeueExercise(unit, ex) {
   var o = ex.type === 'reading' && rndShuffle(ex.options.map(function (_, i) { return i; })); // same question, options reshuffled
   var r = o ? Object.assign({}, ex, { options: o.map(function (i) { return ex.options[i]; }), optionParts: o.map(function (i) { return ex.optionParts[i]; }), correct: o.indexOf(ex.correct) })
+    : ex.type === 'listen_dialog' ? listenQuestion(CATALOG.items[ex.itemId], quizContext(unit).taughtKanji, { mock: ex.maxPlays > 0 })
     : ex.item && makeQuestion(ex.item, quizContext(unit), null, [ex.form]);
   return r ? Object.assign(r, { requeue: true }) : null;
 }

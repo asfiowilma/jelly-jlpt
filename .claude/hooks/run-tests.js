@@ -294,7 +294,12 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
   test("React render: Exercises plays every exercise type, right and wrong, with correct scoring", function (a) {
     var orig = { useState: React.useState, createElement: React.createElement, useRef: React.useRef, setTimeout: global.setTimeout };
     var origSpeech = window.speechSynthesis;
-    window.speechSynthesis = {}; // include listen exercises
+    // include listen exercises; a speech stub that ends each utterance at once (listen_dialog)
+    var spoken = [];
+    window.speechSynthesis = { getVoices: function () { return [{ name: "Haruka", lang: "ja-JP", localService: true }, { name: "Ichiro", lang: "ja-JP", localService: true }]; },
+      cancel: function () {}, speak: function (u) { spoken.push(u); if (u.onend) u.onend(); } };
+    var origUtt = global.SpeechSynthesisUtterance;
+    global.SpeechSynthesisUtterance = function (text) { this.text = text; };
     var seen = {}, errors = [];
     var sample = units.filter(function (u, i) { return i % 7 === 0; });
     var pool = units.concat([].concat.apply([], ["N4", "N3", "N2", "N1"].map(function (lv) {
@@ -324,7 +329,21 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
         seen[ex.type] = true;
         var right = ex.requeue || (qi + plan.length) % 3 !== 0; // every 3rd first attempt wrong
         plan.push([ex, right]);
-        if (ex.options && typeof ex.correct === "number" && ex.type !== "pair_match") {
+        if (ex.type === "listen_dialog") {
+          // transcript hidden until answered; Play speaks the whole script, option buttons each speak
+          if (find(cls(/listen-script/)).length) errors.push(unit.id + ": listening transcript shown before answering");
+          var before = spoken.length;
+          find(cls(/ex-listen-btn/))[0].props.onClick();
+          if (spoken.length - before < ex.script.length) errors.push(unit.id + ": Play spoke " + (spoken.length - before) + " of " + ex.script.length + " lines");
+          if (ex.spokenOptions) find(cls(/ex-listen-opt/))[0].props.onClick();
+          render();
+          var lopts = find(cls(/ex-option/));
+          var lpick = right ? ex.correct : (ex.correct + 1) % ex.options.length;
+          lopts[lpick].props.onClick();
+          render();
+          if (!find(cls(/listen-script/)).length) errors.push(unit.id + ": no transcript after answering");
+          find(cls(/ex-next-btn/))[0].props.onClick();
+        } else if (ex.options && typeof ex.correct === "number" && ex.type !== "pair_match") {
           var opts = find(cls(/ex-option/));
           var pick = right ? ex.correct : (ex.correct + 1) % ex.options.length;
           if (answerIsRight(ex, pick) !== right) errors.push(unit.id + " " + ex.form + ": answerIsRight disagrees on option " + pick);
@@ -385,12 +404,13 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       React.useRef = orig.useRef;
       global.setTimeout = orig.setTimeout;
       window.speechSynthesis = origSpeech;
+      global.SpeechSynthesisUtterance = origUtt;
     }
     a.equal(errors.length, 0, errors.slice(0, 8).join("\n"));
     // ponytail: no "reading" (passage items, ticket 15); tap-to-order "reorder" stays unused
     // (★ sentence composition is the MC "order" type)
     ["mc", "listen", "typing", "conjugation", "gap", "pair_match", "fill_blank", "synonym", "kanji_reading",
-      "kanji_yomi", "hyouki", "bunmyaku", "order", "iikae", "bunshou"].forEach(function (t) {
+      "kanji_yomi", "hyouki", "bunmyaku", "order", "iikae", "bunshou", "listen_dialog"].forEach(function (t) {
       a.ok(seen[t], "type " + t + " was played");
     });
   });

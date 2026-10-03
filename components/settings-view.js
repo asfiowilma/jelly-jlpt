@@ -99,7 +99,11 @@ function SettingsView(props) {
           'aria-checked': props.sfxOn,
           'aria-labelledby': "set-sfx-label",
           onClick: function () { props.setSfxOn(!props.sfxOn); if (!props.sfxOn) playSfx('correct'); }
-        }, props.sfxOn ? L("set_on") : L("set_off")))
+        }, props.sfxOn ? L("set_on") : L("set_off"))),
+      // Listening in the app is the browser's own voice (ticket 16); the official samples are real audio
+      React.createElement("div", { className: "setting-row" },
+        React.createElement("span", { className: "setting-hint" }, L("set_official_audio_hint")),
+        React.createElement("a", { className: "data-btn", href: "https://www.jlpt.jp/e/samples/sampleindex.html", target: "_blank", rel: "noopener noreferrer" }, L("set_official_audio")))
     ),
     section("set-data", L("set_data"),
       React.createElement("div", { className: "setting-row" },

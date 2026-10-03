@@ -72,6 +72,21 @@ function Exercises(_ref9) {
     picks = _React$useState24[0],
     setPicks = _React$useState24[1];
   var inputRef = React.useRef(null);
+  // listen_dialog (ticket 17): plays used, transcript shown early (no ja voice), voice status
+  var _plays = React.useState(0), plays = _plays[0], setPlays = _plays[1];
+  var _early = React.useState(false), showEarly = _early[0], setShowEarly = _early[1];
+  var _voice = React.useState(function () { return jaVoiceStatus(false); }), voiceStatus = _voice[0], setVoiceStatus = _voice[1];
+  var stopRef = React.useRef(null);
+  var stopAudio = function () { if (stopRef.current) stopRef.current(); stopRef.current = null; };
+  React.useEffect(function () { return stopAudio; }, [cur, started]); // question change / unmount
+  React.useEffect(function () {
+    var ss = window.speechSynthesis;
+    if (!ss || !ss.addEventListener) return undefined;
+    var check = function () { setVoiceStatus(jaVoiceStatus(true)); };
+    ss.addEventListener('voiceschanged', check);
+    var tm = setTimeout(check, 2000); // no voiceschanged at all → settle as 'none' if still empty
+    return function () { ss.removeEventListener('voiceschanged', check); clearTimeout(tm); };
+  }, []);
   if (exs.length === 0) return null;
   var needPct = Math.round(passMark(unit.kind) * 100) + '%';
 
@@ -103,11 +118,16 @@ function Exercises(_ref9) {
     setRevealed(false);
     setPicks([]);
     setResults([]);
+    setPlays(0);
+    setShowEarly(false);
+    stopAudio();
     setDone(false);
     setStarted(false);
     onFinish && onFinish();
   };
-  var advance = function advance(wasRight) {
+  // advance(wasRight, manual): record the answer, then move on after 1 s, or (manual) when the
+  // learner presses Next (listen_dialog: time to read the transcript).
+  var advance = function advance(wasRight, manual) {
     playSfx(wasRight ? 'correct' : 'wrong');
     var ex = exs[cur];
     var again = !wasRight && !ex.requeue ? requeueExercise(unit, ex) : null;
@@ -115,27 +135,31 @@ function Exercises(_ref9) {
     var nextRes = results.concat([wasRight]);
     if (again) setExs(nextExs);
     setResults(nextRes);
-    setTimeout(function () {
-      if (cur + 1 >= nextExs.length) {
-        var s = scoreQuiz(unit.kind, nextExs, nextRes);
-        setDone(true);
-        Store.logQuiz(unit.id, s.right, s.total);
-        playSfx('complete');
-        onFinish && onFinish();
-        onResult && onResult(s);
-      } else {
-        setCur(function (c) {
-          return c + 1;
-        });
-        setAnswer('');
-        setSelected(null);
-        setRevealed(false);
-        setPicks([]);
-        setTimeout(function () {
-          return inputRef.current && inputRef.current.focus();
-        }, 50);
-      }
-    }, 1000);
+    if (!manual) setTimeout(function () { proceed(nextExs, nextRes); }, 1000);
+  };
+  var proceed = function proceed(nextExs, nextRes) {
+    stopAudio();
+    setPlays(0);
+    setShowEarly(false);
+    if (cur + 1 >= nextExs.length) {
+      var s = scoreQuiz(unit.kind, nextExs, nextRes);
+      setDone(true);
+      Store.logQuiz(unit.id, s.right, s.total);
+      playSfx('complete');
+      onFinish && onFinish();
+      onResult && onResult(s);
+    } else {
+      setCur(function (c) {
+        return c + 1;
+      });
+      setAnswer('');
+      setSelected(null);
+      setRevealed(false);
+      setPicks([]);
+      setTimeout(function () {
+        return inputRef.current && inputRef.current.focus();
+      }, 50);
+    }
   };
   // One segment per question: answered → ok/bad, current → now; re-asked ones dashed
   var progressBar = function progressBar() {
@@ -314,6 +338,61 @@ function Exercises(_ref9) {
         return w + ' = ' + meaningOf[w];
       }).join(', ')
     });
+  }
+  // Listening (ticket 17): Play speaks the script (speakScript); the transcript, English and
+  // explanation show after answering, then Next. Spoken options (utterance / quick) are
+  // numbered buttons with their own play button; their text shows only after answering.
+  if (ex.type === 'listen_dialog') {
+    var answered = selected !== null;
+    var playsLeft = ex.maxPlays ? ex.maxPlays - plays : Infinity;
+    var play = function (lines) {
+      if (playsLeft <= 0) return;
+      setPlays(plays + 1);
+      stopAudio();
+      stopRef.current = speakScript(lines);
+    };
+    var SPEAKER = { M: 'Man', F: 'Woman', N: 'Narrator' };
+    var transcript = function () { return React.createElement("div", { key: "script", className: "passage-box listen-script", lang: "ja" },
+      ex.lines.map(function (l, i) {
+        return React.createElement("div", { key: i, className: "listen-line" },
+          React.createElement("span", { className: "listen-who", lang: "en" }, SPEAKER[l.speaker]), partsEl(l.parts));
+      }),
+      ex.questionParts && React.createElement("div", { className: "listen-line" },
+        React.createElement("span", { className: "listen-who", lang: "en" }, SPEAKER.N), partsEl(ex.questionParts)),
+      (answered || !ex.spokenOptions) ? null : React.createElement("div", { className: "ex-hint", lang: "en" }, "The replies show after you answer."),
+      answered && React.createElement("div", { className: "passage-en", lang: "en" }, ex.en)); };
+    return React.createElement("div", { className: "section" }, header(), React.createElement("div", { className: "exercise-box" },
+      progressBar(),
+      React.createElement("div", { className: "ex-prompt" }, ex.prompt),
+      React.createElement("div", { className: "ex-question" },
+        React.createElement("button", {
+          className: "ex-listen-btn", disabled: playsLeft <= 0, onClick: function () { play(ex.script); }
+        }, plays ? "🔊 Play again" : "🔊 Play"),
+        ex.maxPlays ? React.createElement("div", { className: "ex-hint" }, playsLeft > 0 ? playsLeft + (playsLeft === 1 ? " play" : " plays") + " left" : "No replays left") : null),
+      voiceStatus === 'none' && !answered && React.createElement("div", { className: "ex-note listen-warn", role: "status" },
+        "This browser has no Japanese voice, so the audio may be silent or wrong. ",
+        showEarly ? "The transcript is below." : React.createElement("button", { className: "link-btn", onClick: function () { setShowEarly(true); } }, "Read the transcript instead")),
+      (answered || showEarly) && transcript(),
+      React.createElement("div", { className: "ex-options" + (ex.spokenOptions ? " listen-options" : "") }, ex.options.map(function (opt, i) {
+        var cls = 'ex-option';
+        if (answered) {
+          if (i === ex.correct) cls += ' correct';else if (i === selected) cls += ' wrong';
+        }
+        var choose = React.createElement("button", {
+          key: ex.spokenOptions ? "c" : i, className: cls, lang: "ja", disabled: answered,
+          'aria-label': ex.spokenOptions && !answered ? "Choose reply " + (i + 1) : undefined,
+          onClick: function () { stopAudio(); setSelected(i); advance(answerIsRight(ex, i), true); }
+        }, ex.spokenOptions ? [String(i + 1), answered ? React.createElement("span", { key: "t" }, "  ", partsEl(ex.optionParts[i])) : null] : partsEl(ex.optionParts[i]));
+        if (!ex.spokenOptions) return choose;
+        return React.createElement("div", { key: i, className: "listen-option" },
+          React.createElement("button", {
+            className: "ex-listen-opt", 'aria-label': "Play reply " + (i + 1), disabled: playsLeft <= 0,
+            onClick: function () { play([ex.optionSpeech[i]]); }
+          }, "🔊"), choose);
+      })),
+      answered && ex.explain && React.createElement("div", { className: "ex-note", role: "status" }, ex.explain),
+      answered && React.createElement("div", { className: "ex-typing-row" },
+        React.createElement("button", { className: "ex-check-btn ex-next-btn", onClick: function () { proceed(exs, results); } }, t('nav_next', unit.level)))));
   }
   if (ex.options && typeof ex.correct === 'number') {
     return /*#__PURE__*/React.createElement("div", {

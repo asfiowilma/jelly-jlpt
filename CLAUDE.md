@@ -24,7 +24,7 @@ styles.css            all app CSS (palettes + light/dark themes)
 data/
   catalog.js          CATALOG { items, add } + PLAN = [] + CATALOG_ID_PREFIX
   n5/                 one file per item kind + plan.js
-    kana.js vocab.js kanji.js grammar.js sentences.js mondai.js plan.js
+    kana.js vocab.js kanji.js grammar.js sentences.js mondai.js passages.js listening.js plan.js
 lib.js                pure logic (no DOM): units, conjugation, distractors, exercises,
                       SRS, store doc shapes + merge, stats, pace, export/import
 store.js              Store: PouchDB persistence + optional CouchDB sync
@@ -74,6 +74,8 @@ Adding a file means adding its `<script src>` by hand:
   | grammar | `g:<slug>` |
   | sentence | `s:tatoeba:<n>` or `s:own:<slug>` (optional `chunks` for ★ questions) |
   | mondai | `m:<slug>`: authored exam items (`type` iikae / bunshou), not taught, no SRS card |
+  | passage | `p:<level>-<slug>`: own reading texts (`format` short / mid / info), review units list them in `passages` |
+  | listening | `l:<level>-<slug>`: own dialogue scripts (`format` task / point / utterance / quick), review units list one in `listening` |
 
   Items carry `level`, `sources`, `verified`. Vocab has `pos` (drives conjugation).
   A duplicate spelling carries `alt: <id of the spelling the plan teaches>`.
@@ -109,6 +111,7 @@ Device-only prefs (palette, theme, TTS rate, sfx mute) stay in localStorage
 | Quiz | `buildExercises(unit)`, `quizLength`, `passMark`/`quizPassed`, `scoreQuiz`, `pickDistractors`, `checkTyping` |
 | Distractors | `pickDistractors` (+ `DISTRACTOR_RULES`), `kanaDistractors`, `readingFakes`, `spellingFakes` |
 | Exam formats (N5 mondai) | `MONDAI` table, `mondaiQuestions(type, item, ctx)` (for mocks); in quizzes via `formsFor`: kanjiYomi, hyouki, bunmyaku (vocab), hyouki (kanji), gap, order ★ (grammar); iikae / bunshou authored in `mondai.js` |
+| Reading / listening | `passagesFor`, `readingExercises`; `listeningFor(level, format)`, `listenQuestion(item, taughtKanji, { mock })` (mock = 1 replay), `listeningScript`, `chunkSpeech`, `assignVoices` (app-helpers.js `speakScript` plays them with Web Speech) |
 | Grammar | `conjugate(dict, reading, form, pos)` (rule-based, by `pos`) |
 | SRS | `srsAddCards(unit, cards)`, `srsReview(card, quality)`, `srsDueCards`, `srsFlagMissed`, `admitCards` (app.js: `releasePendingCards`, `markUnitsDone`) |
 | Pace | `PACE_MODES`, `todayTarget`, `projectFinish`, `suggestPace`, `newCardCap`, `dailyCardCap` (enforced via pending cards) |

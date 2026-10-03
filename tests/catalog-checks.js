@@ -17,7 +17,7 @@ QUnit.module('catalog checks', function () {
   // lessons carry no grammar, and kanji run out before vocab does.
   var LOAD_GUIDE = { N5: { vocab: 8, kanji: 2, grammar: 1 } };
   var REQUIRED = { vocab: ['word', 'reading', 'pos'], kanji: ['char'], grammar: ['pattern', 'meaning'], sentence: ['jp', 'en'],
-    passage: ['furigana', 'jp', 'en', 'format'], kana: ['char', 'romaji', 'script', 'group'], mondai: ['type', 'en'] };
+    passage: ['furigana', 'jp', 'en', 'format'], listening: ['format', 'en', 'explain'], kana: ['char', 'romaji', 'script', 'group'], mondai: ['type', 'en'] };
   var CHUNK_PUNCT_RE = /[、。？！?!\s「」]/;
   var SCRIPT_RE = { hiragana: /^[ぁ-ゖ]+$/, katakana: /^[ァ-ヺ]+$/ };
 
@@ -33,6 +33,7 @@ QUnit.module('catalog checks', function () {
     if (it.kind === 'kanji') return jp.indexOf(it.char) >= 0;
     if (it.kind === 'vocab') {
       if (jp.indexOf(it.word) >= 0 || jp.indexOf(it.reading) >= 0) return true;
+      if (it.reading === 'する') return /し[てたまな]|さ[せれ]/.test(jp); // irregular: して, しました, しない, させる
       if (!/^(verb|adj-i)/.test(it.pos || '')) return false;
       return [it.word, it.reading].some(function (w) {
         return w.length > 1 && new RegExp(w.slice(0, -1).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[' + HIRA + ']').test(jp);
@@ -65,8 +66,8 @@ QUnit.module('catalog checks', function () {
     if (levelRank(it.level) < 0) err('level ' + it.level);
     if (!nonEmptyStrings(it.sources)) err('no sources');
     if (typeof it.verified !== 'boolean') err('verified not boolean');
-    // own passages are verified by their own rule (map Q1): see passageErrors
-    if (it.verified && nonEmptyStrings(it.sources) && it.kind !== 'passage') {
+    // own passages / listening scripts are verified by their own rule (map Q1): see ownTextErrors
+    if (it.verified && nonEmptyStrings(it.sources) && it.kind !== 'passage' && it.kind !== 'listening') {
       var distinct = it.sources.filter(function (s, i, a) { return a.indexOf(s) === i; });
       if (distinct.length < 2) err('verified needs ≥2 distinct sources');
       if (distinct.indexOf('legacy') >= 0) err("verified can't cite legacy");
@@ -136,6 +137,7 @@ QUnit.module('catalog checks', function () {
         if (!e.length) usesErrors(it.uses, furiganaText(bunshouFilled(it)), items, err);
       } else err('type ' + it.type);
     } else if (it.kind === 'passage') e = e.concat(passageErrors(it, items));
+    else if (it.kind === 'listening') e = e.concat(listeningErrors(it, items));
     return e;
   }
 
@@ -168,14 +170,27 @@ QUnit.module('catalog checks', function () {
     var qs = Array.isArray(it.questions) ? it.questions : [];
     if (qs.length !== f.q) err(qs.length + ' questions (want ' + f.q + ')');
     qs.forEach(function (q, i) {
-      var opts = (q.options || []).map(stripRuby);
       if (!q.q || !q.explain) err('question ' + (i + 1) + ' needs q + explain');
-      if (opts.length !== 4 || opts.some(function (o) { return !o; })) err('question ' + (i + 1) + ' needs 4 options');
-      if (opts.some(function (o, j) { return opts.indexOf(o) !== j; })) err('question ' + (i + 1) + ' options not distinct');
-      if (!(q.answer >= 0 && q.answer < opts.length && q.answer % 1 === 0)) err('question ' + (i + 1) + ' answer out of range');
+      optionErrors(q, 4, function (m) { err('question ' + (i + 1) + ' ' + m); });
     });
     // All the Japanese: passage, questions and options.
     var marked = [].concat.apply([it.furigana], qs.map(function (q) { return [q.q || ''].concat(q.options || []); })).join('\n');
+    return e.concat(ownTextErrors(it, marked, items));
+  }
+  // optionErrors(q, n, err): q.options = n distinct non-empty strings, q.answer an index into them.
+  function optionErrors(q, n, err) {
+    var opts = (q.options || []).map(stripRuby);
+    if (opts.length !== n || opts.some(function (o) { return !o; })) err('needs ' + n + ' options');
+    if (opts.some(function (o, j) { return opts.indexOf(o) !== j; })) err('options not distinct');
+    if (!(q.answer >= 0 && q.answer < opts.length && q.answer % 1 === 0)) err('answer out of range');
+  }
+  // ownTextErrors(it, marked, items): the checks shared by own texts (passages, listening scripts)
+  // over all their Japanese (`marked`, with [漢字|かな] ruby): uses present in the text, kanji on
+  // the level's list + in uses + inside ruby, ruby readings backed, katakana words covered,
+  // verified rule.
+  function ownTextErrors(it, marked, items) {
+    var e = [];
+    function err(msg) { e.push(it.id + ': ' + msg); }
     var plain = stripRuby(marked).replace(/\s/g, '');
     var kana = marked.replace(RUBY_RE, '$2').replace(/\s/g, '');
     var names = it.names || [];
@@ -216,10 +231,35 @@ QUnit.module('catalog checks', function () {
       if (names.indexOf(w) < 0 && !vocab.some(function (x) { return x.word === w || x.reading === w; })) err('katakana ' + w + ' not in uses or names');
     });
     if (it.verified) {
-      if (it.sources.join() !== 'own') err("verified passage must be sources ['own']");
+      if (it.sources.join() !== 'own') err("verified own text must be sources ['own']");
       used.forEach(function (u) { if (!u.verified) err('verified, but uses unverified ' + u.id); });
     }
     return e;
+  }
+
+  // ── Listening scripts (ticket 17) ─────────────────────────────────────────
+  // Per format: options, question wanted, line shape (data/<lvl>/listening.js header).
+  var LISTEN_FORMATS = {
+    task: { n: 4, question: true }, point: { n: 4, question: true },
+    utterance: { n: 3, question: true, spoken: true }, quick: { n: 3, question: false, spoken: true }
+  };
+  function listeningErrors(it, items) {
+    var e = [];
+    function err(msg) { e.push(it.id + ': ' + msg); }
+    var f = LISTEN_FORMATS[it.format];
+    if (!/^l:n[1-5]-[a-z0-9-]+$/.test(it.id)) err('id not l:<level>-<slug>');
+    if (!f) return [it.id + ': format ' + it.format];
+    var lines = Array.isArray(it.lines) ? it.lines : [];
+    var who = lines.map(function (l) { return l.speaker; }).join('');
+    if (lines.some(function (l) { return typeof l.furigana !== 'string' || !l.furigana || ['M', 'F', 'N'].indexOf(l.speaker) < 0; })) err('every line needs speaker M/F/N + furigana');
+    else if (it.format === 'quick' && !/^[MF]$/.test(who)) err('quick: one M or F line');
+    else if (it.format === 'utterance' && !/^N+$/.test(who)) err('utterance: narrator lines only');
+    else if (f.n === 4 && !/^N[MF]+$/.test(who)) err(it.format + ': a narrator scene line, then M/F lines');
+    if (f.question !== (typeof it.question === 'string' && !!it.question)) err(f.question ? 'needs a question' : 'quick has no question');
+    if (f.spoken && ['M', 'F'].indexOf(it.optionSpeaker) < 0) err('spoken options need optionSpeaker M/F');
+    optionErrors(it, f.n, err);
+    var marked = lines.map(function (l) { return l.furigana || ''; }).concat(it.question || '', it.options || []).join('\n');
+    return e.concat(ownTextErrors(it, marked, items));
   }
   function usesErrors(uses, jp, items, err) {
     (uses || []).forEach(function (id) {
@@ -296,14 +336,19 @@ QUnit.module('catalog checks', function () {
       lp.units.forEach(function (u) {
         if (u.kind === 'review') {
           Object.keys(UNIT_REF_FIELDS).forEach(function (f) { if ((u[f] || []).length) e.push(u.id + ': review unit lists ' + f); });
-          // a review's passage: short, used once, every vocab / grammar item in it taught by now
-          (u.passages || []).forEach(function (id) {
-            var p = items[id];
-            if (!p || p.kind !== 'passage') return e.push(u.id + ': passage ' + id + ' missing');
-            if (p.format !== 'short') e.push(u.id + ': review passage ' + id + ' is ' + p.format + ', not short');
-            if (taught[id]) e.push(u.id + ': passage ' + id + ' already in ' + taught[id]);
-            taught[id] = u.id;
-            (p.uses || []).forEach(function (x) { if (/^[vg]:/.test(x) && !taught[x]) e.push(u.id + ': passage ' + id + ' uses ' + x + ', not taught yet'); });
+          // a review's passage (short) / listening item: used once, at most one of each, every
+          // vocab / grammar item in it taught by now
+          Object.keys(UNIT_QUIZ_FIELDS).forEach(function (f) {
+            var kind = UNIT_QUIZ_FIELDS[f];
+            if ((u[f] || []).length > 1) e.push(u.id + ': more than one ' + kind);
+            (u[f] || []).forEach(function (id) {
+              var p = items[id];
+              if (!p || p.kind !== kind) return e.push(u.id + ': ' + kind + ' ' + id + ' missing');
+              if (kind === 'passage' && p.format !== 'short') e.push(u.id + ': review passage ' + id + ' is ' + p.format + ', not short');
+              if (taught[id]) e.push(u.id + ': ' + kind + ' ' + id + ' already in ' + taught[id]);
+              taught[id] = u.id;
+              (p.uses || []).forEach(function (x) { if (/^[vg]:/.test(x) && !taught[x]) e.push(u.id + ': ' + kind + ' ' + id + ' uses ' + x + ', not taught yet'); });
+            });
           });
           lessons = 0;
           return;
@@ -522,6 +567,27 @@ QUnit.module('catalog checks', function () {
     assert.strictEqual(errsFor(mk(text, { verified: false }), items), '', 'unverified is fine');
   });
 
+  QUnit.test('item checks: listening scripts', function (assert) {
+    var g = { id: 'g:ka', kind: 'grammar', level: 'N5', pattern: '〜か', meaning: 'question', sources: ['tanos', 'genki'], verified: true };
+    var items = {}; [v, k, g].forEach(function (it) { items[it.id] = it; });
+    var mk = function (patch) {
+      return Object.assign({ id: 'l:n5-x', kind: 'listening', level: 'N5', format: 'quick', en: 'x', explain: 'x',
+        lines: [{ speaker: 'M', furigana: 'パンを　[食|た]べますか。' }], optionSpeaker: 'F',
+        options: ['[食|た]べます。', 'パンです。', 'パンを　[食|た]べました。'], answer: 0,
+        names: ['パン'], uses: [g.id, v.id, k.id], sources: ['own'], verified: true }, patch);
+    };
+    assert.strictEqual(errsFor(mk({}), items), '', 'good quick item');
+    assert.ok(/needs 3 options/.test(errsFor(mk({ options: ['[食|た]べます。', 'パンです。'] }), items)), 'quick has 3 options');
+    assert.ok(/quick has no question/.test(errsFor(mk({ question: 'パンですか。' }), items)), 'quick has no question');
+    assert.ok(/one M or F line/.test(errsFor(mk({ lines: [{ speaker: 'N', furigana: 'パンですか。' }] }), items)), 'quick line is M/F');
+    assert.ok(/optionSpeaker/.test(errsFor(mk({ optionSpeaker: 'N' }), items)), 'spoken options need a speaker');
+    var task = { format: 'task', question: 'パンを　[食|た]べますか。', options: ['パン', 'パンと　[食|た]べもの', 'パンを　[食|た]べる', 'パンです'] };
+    assert.ok(/narrator scene line/.test(errsFor(mk(task), items)), 'task opens with a narrator line');
+    assert.ok(/kanji outside/.test(errsFor(mk({ options: ['食べます。', 'パンです。', 'パン。'] }), items)), 'option text gets the same kanji checks');
+    assert.ok(/katakana パン not in uses/.test(errsFor(mk({ names: [] }), items)), 'katakana covered');
+    assert.ok(/answer out of range/.test(errsFor(mk({ answer: 3 }), items)), 'answer in range');
+  });
+
   QUnit.test('item checks: kana and alt', function (assert) {
     var a = { id: 'c:し', kind: 'kana', level: 'N5', char: 'し', romaji: 'shi', answers: ['shi', 'si'], script: 'hiragana', group: 'sa-row',
       sources: ['unicode', 'hepburn'], verified: true };
@@ -570,6 +636,11 @@ QUnit.module('catalog checks', function () {
     items['p:n5-x'].format = 'mid';
     assert.ok(/is mid, not short/.test(run([lesson('n5.u001'), rev])), 'review passages are short');
     delete items['p:n5-x'];
+    items['l:n5-x'] = { id: 'l:n5-x', kind: 'listening', level: 'N5', format: 'quick', uses: ['v:青|あお'] };
+    var lrev = { id: 'n5.u002', level: 'N5', kind: 'review', title: 'Review', listening: ['l:n5-x'] };
+    assert.strictEqual(run([lesson('n5.u001'), lrev]), '', 'review listening after its words');
+    assert.ok(/listening l:n5-x uses v:青\|あお, not taught yet/.test(run([lesson('n5.u001', { vocab: ['1', '2', '3', '4', '5', '6'] }), lrev])), 'listening before its words');
+    delete items['l:n5-x'];
     var cov = function (units) { return coverageErrors([{ level: 'N5', units: units }], items).join('\n'); };
     assert.ok(/v:秋\|あき: not taught/.test(cov([lesson('n5.u001')])), 'untaught item');
     items['v:秋|あき'].alt = 'v:青|あお';

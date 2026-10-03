@@ -148,6 +148,8 @@ var UI_STRINGS = {
   sync_err_local:    { en: 'Sync needs this browser’s local database (IndexedDB), which isn’t available here.', ja: '同期にはこのブラウザのローカルデータベース（IndexedDB）が必要ですが、利用できません。', since: 'N1' },
   sync_err_other:    { en: 'Sync failed.',      ja: '同期に失敗しました。', since: 'N1' },
   set_sfx:           { en: 'Sound effects',     ja: '効果音',           since: 'N1' },
+  set_official_audio: { en: 'Practice with official audio', ja: '公式の音声で練習', since: 'N1' },
+  set_official_audio_hint: { en: 'Listening questions here use your browser’s voice. The official JLPT site has real sample audio (opens jlpt.jp in a new tab).', ja: 'このアプリの聴解はブラウザの音声を使います。JLPT公式サイトに本物の音声サンプルがあります（新しいタブでjlpt.jpを開きます）。', since: 'N1' },
   // Pace (Settings + Overview, see PACE_MODES in lib.js)
   set_pace_section:  { en: 'Pace',              ja: 'ペース',           since: 'N1' },
   set_pace:          { en: 'Units per day',     ja: '1日のユニット数',  since: 'N1' },
@@ -208,6 +210,7 @@ function icon(name) {
 window._ttsRate = 0.85;
 function speak(text) {
   if (!window.speechSynthesis) return;
+  _scriptRun++; // stops a playing script (speakScript)
   window.speechSynthesis.cancel();
   var doSpeak = function() {
     var u = new SpeechSynthesisUtterance(text);
@@ -223,6 +226,52 @@ function speak(text) {
   } else {
     window.speechSynthesis.addEventListener('voiceschanged', doSpeak, {once: true});
   }
+}
+
+// speakScript(lines, opts): speak [{ speaker: 'M' | 'F' | 'N', text }] in order, one voice /
+// pitch per speaker (assignVoices), long lines cut by chunkSpeech, a short pause after each
+// line (opts.pause ms, default 600). opts.onEnd fires after the last line. Returns stop().
+// A newer speakScript or speak() call stops this one (the run counter), so cancel()'s error
+// event on the old utterance can't start its next line.
+var _scriptRun = 0, _scriptUtterances = [];
+function speakScript(lines, opts) {
+  opts = opts || {};
+  var ss = window.speechSynthesis, run = ++_scriptRun, timer = null;
+  if (!ss || typeof SpeechSynthesisUtterance === 'undefined') return function () {};
+  ss.cancel();
+  var cast = assignVoices(ss.getVoices ? ss.getVoices() : []);
+  var pause = opts.pause == null ? 600 : opts.pause;
+  var queue = [];
+  lines.forEach(function (l) {
+    chunkSpeech(l.text).forEach(function (c, i, all) { queue.push({ speaker: l.speaker, text: c, pause: i === all.length - 1 ? pause : 0 }); });
+  });
+  var i = 0;
+  var next = function () {
+    if (run !== _scriptRun) return;
+    if (i >= queue.length) { _scriptUtterances = []; if (opts.onEnd) opts.onEnd(); return; }
+    var q = queue[i++], who = cast[q.speaker] || cast.N, u = new SpeechSynthesisUtterance(q.text);
+    u.lang = 'ja-JP';
+    u.rate = window._ttsRate || 0.85;
+    u.pitch = who.pitch;
+    if (who.voice) u.voice = who.voice;
+    u.onend = u.onerror = function () { if (run === _scriptRun) timer = setTimeout(next, q.pause); };
+    _scriptUtterances.push(u); // Chrome drops onend for utterances it has garbage-collected
+    ss.speak(u);
+  };
+  next();
+  return function stop() {
+    clearTimeout(timer);
+    if (run === _scriptRun) { _scriptRun++; ss.cancel(); }
+  };
+}
+// jaVoiceStatus(settled): 'ok' (a Japanese voice), 'none', or 'pending' while the voice list is
+// still empty (Chrome fills it async). settled = stop waiting: an empty list counts as 'none'.
+function jaVoiceStatus(settled) {
+  var ss = window.speechSynthesis;
+  if (!ss || typeof SpeechSynthesisUtterance === 'undefined') return 'none';
+  var vs = ss.getVoices ? ss.getVoices() : [];
+  if (!vs.length) return settled ? 'none' : 'pending';
+  return vs.some(function (v) { return /^ja/i.test(v.lang || ''); }) ? 'ok' : 'none';
 }
 
 // ── Stroke Order ─────────────────────────────────────────────────────────────
