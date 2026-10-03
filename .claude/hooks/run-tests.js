@@ -232,8 +232,14 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     var w = byId("n5.u005");
     a.equal(w.headers, false, "ん has no vowel column");
     a.equal(w.rows[w.rows.length - 1].filter(Boolean)[0].char, "ん", "ん sits in its own row");
-    a.deepEqual(kanaLookalikes("し"), ["つ"], "し looks like つ");
-    a.deepEqual(kanaLookalikes("が"), [], "no look-alikes for dakuten kana");
+    var look = function (u) { return kanaLookSets(units.filter(function (x) { return x.id === u; })[0].kana); };
+    a.ok(look("n5.u002").indexOf("しつ") >= 0, "か/さ rows: し has a look-alike set");
+    a.deepEqual(look("n5.u006"), [], "dakuten kana have no look-alike sets");
+    var irr = function (id) { return kanaIrregular(CATALOG.items[id]); };
+    a.equal(irr("c:し"), "shi, not si", "し is typed si but read shi");
+    a.equal(irr("c:か"), null, "か is regular");
+    a.ok(/object particle/.test(irr("c:を")), "を uses its catalog note");
+    a.equal(irr("c:きゃ"), null, "combos are not flagged");
   });
 
   test("React render: Overview() renders units + coming-soon levels", function (a) {
