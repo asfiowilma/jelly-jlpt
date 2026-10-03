@@ -5,7 +5,8 @@ function ReviewMode(_ref1) {
     onUpdate = _ref1.onUpdate,
     level = _ref1.level || 'N5',
     pending = _ref1.pending || 0,
-    onLearnExtra = _ref1.onLearnExtra;
+    onLearnExtra = _ref1.onLearnExtra,
+    onKnown = _ref1.onKnown;
   // Passed items over the daily new-card cap (Q34): count + 'learn extra today'.
   var pendingEl = pending > 0 && React.createElement("div", { className: "pending-line" },
     pending, pending === 1 ? " new card" : " new cards", " waiting (daily new-card limit). ",
@@ -53,6 +54,17 @@ function ReviewMode(_ref1) {
       return i + 1;
     });
   };
+  // A new card's first appearance: "I already know this" seeds it as known
+  // (ticket 37): back in 3–4 weeks as a real test, no review logged.
+  var isNew = onKnown && !hasRealReviews(card) && !card.imported;
+  var knownEl = isNew && React.createElement("button", {
+    className: "data-btn known-btn",
+    onClick: function () {
+      onKnown(card.id);
+      setFlipped(false);
+      setIdx(function (i) { return i + 1; });
+    }
+  }, t('known_btn', level));
   return /*#__PURE__*/React.createElement("div", {
     className: "review-wrap"
   }, /*#__PURE__*/React.createElement("div", {
@@ -114,5 +126,5 @@ function ReviewMode(_ref1) {
     }
   }, t('btn_easy', level))), !flipped && /*#__PURE__*/React.createElement("div", {
     className: "review-flip-hint"
-  }, t('click_reveal', level)), pendingEl);
+  }, t('click_reveal', level)), knownEl, pendingEl);
 }

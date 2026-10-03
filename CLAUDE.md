@@ -114,6 +114,7 @@ Device-only prefs (palette, theme, TTS rate, sfx mute) stay in localStorage
 | Reading / listening | `passagesFor`, `readingExercises`; `listeningFor(level, format)`, `listenQuestion(item, taughtKanji, { mock })` (mock = 1 replay), `listeningScript`, `chunkSpeech`, `assignVoices` (app-helpers.js `speakScript` plays them with Web Speech) |
 | Grammar | `conjugate(dict, reading, form, pos)` (rule-based, by `pos`) |
 | SRS | `srsAddCards(unit, cards)`, `srsReview(card, quality)`, `srsDueCards`, `srsFlagMissed`, `admitCards` (app.js: `releasePendingCards`, `markUnitsDone`) |
+| Already known (import) | `seedKnownCards` (21–28 day cards, spread under `reviewBudget` = 5 × `dailyCardCap`), `undoImport`, `importBatches`, `knownCount`, `quickSortItems`, `matchCatalogText` (app.js: `seedKnown`, `undoKnown`; UI in `components/import-view.js`) |
 | Pace | `PACE_MODES`, `todayTarget`, `projectFinish`, `suggestPace`, `newCardCap`, `dailyCardCap` (enforced via pending cards) |
 | Store | `docsToSnapshot`, `mergeStoreDocs`, `exportProgress`, `validateProgressData` |
 | Stats | `srsStats`, `dueForecast`, `computeStreak`, `retention`, `studyHeatmap` |

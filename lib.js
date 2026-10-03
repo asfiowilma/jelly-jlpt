@@ -1297,11 +1297,135 @@ function srsDueCards(cards) {
   });
 }
 
+// ── Already-known import (ticket 37, Q35) ───────────────────────────────────
+// Learners who already know items seed them as "known" cards: the known button
+// in review, a quick-sort session per level, or a pasted / uploaded text list.
+// A known card: interval KNOWN_MIN_DAYS–KNOWN_MAX_DAYS, reps 2 (so a pass grows
+// it by ease, a miss lapses it like any card: the first review is a real test),
+// lastReviewedAt 0, no addedAt (not counted against the daily new-card cap),
+// imported: { source, at, batchId, prior? } (prior = the unreviewed card it
+// replaced, put back on undo).
+var KNOWN_MIN_DAYS = 21, KNOWN_MAX_DAYS = 28;
+// Daily review budget = REVIEW_BUDGET_FACTOR × the daily new-card cap
+// (dailyCardCap, Q34): each new card costs ~5 reviews in its first weeks, so a
+// day at full pace already sees about that many. Seeded cards fill a day only up
+// to the budget minus what is already due that day; the rest move later.
+var REVIEW_BUDGET_FACTOR = 5;
+function reviewBudget(newCap) { return REVIEW_BUDGET_FACTOR * newCap; }
+function hasRealReviews(c) { return !!(c && (c.reps > 0 || c.lastReviewedAt)); }
+// seedKnownCards(itemIds, cards, now, opts) → { added, replaced, skipped } (id
+// lists); mutates cards. opts: { source, batchId, budget (due cards per day),
+// rnd (test hook, default Math.random) }. Spread: each card draws a day in
+// [KNOWN_MIN_DAYS, KNOWN_MAX_DAYS]; while that day already holds `budget` due
+// cards (existing + seeded), it moves to the next day. Due = local midnight.
+// Skipped: unknown ids and cards with real reviews (reps > 0 or reviewed once),
+// which includes cards already seeded as known.
+function seedKnownCards(itemIds, cards, now, opts) {
+  var rnd = opts.rnd || Math.random, budget = Math.max(1, opts.budget || 1);
+  var today = dayStart(now, 0), load = {};
+  Object.keys(cards).forEach(function (id) {
+    var d = Math.round((dayStart(cards[id].due, 0) - today) / 86400000);
+    load[d] = (load[d] || 0) + 1;
+  });
+  var out = { added: [], replaced: [], skipped: [] };
+  itemIds.forEach(function (id) {
+    var it = CATALOG.items[id], cur = cards[id];
+    if (!it || hasRealReviews(cur) || out.added.indexOf(id) >= 0 || out.replaced.indexOf(id) >= 0) {
+      out.skipped.push(id);
+      return;
+    }
+    var d = KNOWN_MIN_DAYS + Math.floor(rnd() * (KNOWN_MAX_DAYS - KNOWN_MIN_DAYS + 1));
+    while ((load[d] || 0) >= budget) d++;
+    load[d] = (load[d] || 0) + 1;
+    var c = newCard(it, now);
+    delete c.addedAt;
+    var imported = { source: opts.source, at: now, batchId: opts.batchId };
+    if (cur) { imported.prior = cur; out.replaced.push(id); } else out.added.push(id);
+    cards[id] = Object.assign(c, { interval: d, reps: 2, due: dayStart(now, d), lastReviewedAt: 0, imported: imported });
+  });
+  return out;
+}
+// undoImport(batchId, cards, ids?) → { removed, restored, skipped }; mutates
+// cards. Takes back the batch's cards (only `ids` of them when given): a card
+// that replaced one goes back to it, others are removed. Cards reviewed since
+// the import are kept (skipped): reviews are truth.
+function undoImport(batchId, cards, ids) {
+  var out = { removed: [], restored: [], skipped: [] };
+  Object.keys(cards).forEach(function (id) {
+    var c = cards[id];
+    if (!c.imported || c.imported.batchId !== batchId || (ids && ids.indexOf(id) < 0)) return;
+    if (c.lastReviewedAt) { out.skipped.push(id); return; }
+    if (c.imported.prior) { cards[id] = c.imported.prior; out.restored.push(id); } else { delete cards[id]; out.removed.push(id); }
+  });
+  return out;
+}
+// importBatches(cards) → [{ batchId, source, at, count, reviewed }], newest first.
+function importBatches(cards) {
+  var by = {};
+  Object.keys(cards).forEach(function (id) {
+    var im = cards[id].imported;
+    if (!im || !im.batchId) return;
+    var b = by[im.batchId] || (by[im.batchId] = { batchId: im.batchId, source: im.source, at: im.at, count: 0, reviewed: 0 });
+    b.count++;
+    if (cards[id].lastReviewedAt) b.reviewed++;
+    if (im.at < b.at) b.at = im.at;
+  });
+  return Object.keys(by).map(function (k) { return by[k]; }).sort(function (a, b) { return b.at - a.at; });
+}
+// knownCount(items, cards): how many of the items were seeded as already known.
+function knownCount(items, cards) {
+  return items.filter(function (it) { return cards[it.id] && cards[it.id].imported; }).length;
+}
+// quickSortItems(units, level): the kana / vocab / kanji the level's units teach,
+// in teaching order. Grammar is left out: a pattern can't be judged known in a
+// second, and a wrong "known" hides it for weeks.
+function quickSortItems(units, level) {
+  return unitItems(units.filter(function (u) { return u.level === level; })).filter(function (it) {
+    return it.kind !== 'grammar';
+  });
+}
+// matchCatalogText(text) → item ids found in any text (Anki notes, a word list,
+// a spreadsheet), in order of first appearance: vocab by longest match of its
+// word or reading (readings of 2+ kana only: single kana match everywhere), a
+// duplicate spelling counts as its `alt`; plus every catalog kanji character.
+// ponytail: longest-match scan, no tokenizer; kana-only text can match words
+// inside longer words. The preview lets the learner untick those.
+var _matchIndex = null;
+function matchIndex() {
+  if (_matchIndex) return _matchIndex;
+  var keys = {}, maxLen = 0;
+  var put = function (k, id) {
+    (keys[k] || (keys[k] = [])).indexOf(id) < 0 && keys[k].push(id);
+    maxLen = Math.max(maxLen, k.length);
+  };
+  catalogOf('vocab').forEach(function (v) {
+    var id = v.alt || v.id;
+    put(v.word, id);
+    if (v.reading.length >= 2) put(v.reading, id);
+  });
+  return (_matchIndex = { keys: keys, maxLen: maxLen });
+}
+function matchCatalogText(text) {
+  var ix = matchIndex(), seen = {}, out = [];
+  var add = function (id) { if (!seen[id]) { seen[id] = true; out.push(id); } };
+  for (var i = 0; i < text.length;) {
+    var hit = 0;
+    for (var n = Math.min(ix.maxLen, text.length - i); n > 0 && !hit; n--) {
+      var ids = ix.keys[text.substr(i, n)];
+      if (ids) { ids.forEach(add); hit = n; }
+    }
+    for (var end = i + (hit || 1); i < end; i++) if (CATALOG.items['k:' + text.charAt(i)]) add('k:' + text.charAt(i));
+  }
+  return out;
+}
+
 // ── Store docs (synced learning data, persisted by store.js) ────────────────
 // One doc per entity; every doc also carries updatedAt (ms) + deviceId.
 //   unit:<unitId>   { done, completedAt (ms | null) }
 //   card:<itemId>   SRS card fields (id, type, front, back, reading?, interval,
 //                   ease, due, reps) + lastReviewedAt (0 = never reviewed)
+//                   + imported? { source, at, batchId, prior? } (seeded as
+//                   already known, see seedKnownCards)
 //   prefs:learning  { currentUnit (unit id | null), pace (units/day, default 1),
 //                   examDate (null), furigana (true|false; null/absent = level-based),
 //                   uiLang ('auto'|'en'|'ja'), kanjiView ('rows'|'focus', lesson

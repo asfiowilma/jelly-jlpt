@@ -111,6 +111,8 @@ function SettingsView(props) {
         React.createElement("div", { className: "setting-btns" },
           React.createElement("button", { className: "data-btn", onClick: props.onExport, 'aria-label': "Export progress to file" }, L("set_export")),
           React.createElement("button", { className: "data-btn", onClick: props.onImport, 'aria-label': "Import progress from file" }, L("set_import"))))),
+    section("set-known", L("set_known"),
+      React.createElement(ImportSettings, { L: L, level: props.level, cards: props.cards, units: props.units })),
     section("set-sync", L("set_sync"),
       React.createElement(SyncSettings, { L: L, sync: props.sync, savedCreds: props.savedCreds,
         onConnect: props.onConnect, onDisconnect: props.onDisconnect, onSyncNow: props.onSyncNow })),

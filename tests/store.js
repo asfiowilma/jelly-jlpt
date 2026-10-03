@@ -144,6 +144,21 @@ QUnit.module('store', function () {
     });
   });
 
+  QUnit.test('removeCards: deletes card docs (import undo)', function (assert) {
+    var backend = memoryBackend();
+    var ls = fakeLs();
+    var s = storeOn(ls, backend);
+    var other = Object.assign({}, CARD, { id: 'k:人' });
+    return s.init().then(function () {
+      s.putCards({ 'v:家族|かぞく': CARD, 'k:人': other });
+      return s.removeCards(['v:家族|かぞく', 'k:missing']);
+    }).then(function () {
+      return storeOn(ls, backend).init();
+    }).then(function (snap) {
+      assert.deepEqual(Object.keys(snap.srsCards), ['k:人']);
+    });
+  });
+
   // Browser only: real PouchDB conflict resolution (the Node runner has no PouchDB).
   QUnit.test('pouchBackend.loadAll resolves conflicts by merge rules, removes losers', function (assert) {
     if (typeof PouchDB === 'undefined') { assert.ok(true, 'PouchDB not loaded — skipped'); return; }

@@ -52,6 +52,32 @@ function flagMissedItems(ids, now) {
   notifyStoreChanged();
 }
 
+// ── Already-known import (ticket 37) ────────────────────────────────────────
+// seedKnown(ids, source, batchId): seeds the items as known cards (lib.js
+// seedKnownCards), spread under today's review budget. Returns the result.
+function seedKnown(ids, source, batchId, now) {
+  now = now || Date.now();
+  var snap = Store.snapshot();
+  var cards = Object.assign({}, snap.srsCards);
+  var cap = dailyCardCap(snap.pace, UNITS, nextUnit(UNITS, new Set(snap.completed)));
+  var r = seedKnownCards(ids, cards, now, { source: source, batchId: batchId, budget: reviewBudget(cap) });
+  if (r.added.length || r.replaced.length) {
+    Store.putCards(cards);
+    notifyStoreChanged();
+  }
+  return r;
+}
+// undoKnown(batchId, ids?): takes back a batch (or some of its ids).
+function undoKnown(batchId, ids) {
+  var cards = Object.assign({}, Store.snapshot().srsCards);
+  var r = undoImport(batchId, cards, ids);
+  if (r.removed.length) Store.removeCards(r.removed);
+  if (r.restored.length) Store.putCards(cards);
+  if (r.removed.length || r.restored.length) notifyStoreChanged();
+  return r;
+}
+function newBatchId(source) { return source + ':' + Date.now().toString(36); }
+
 var NAV_TABS = [
   { view: 'unit', label: 'view_today', icon: 'today' },
   { view: 'units', label: 'view_units', icon: 'units' },
@@ -385,6 +411,8 @@ function App() {
     onConnect: connectSync,
     onDisconnect: disconnectSync,
     onSyncNow: Store.syncNow,
+    cards: srsCards,
+    units: UNITS,
     onBack: function onBack() {
       return setView(prevView);
     }
@@ -395,6 +423,7 @@ function App() {
     level: level,
     pending: pendingCards.length,
     onLearnExtra: function () { releasePendingCards(true); },
+    onKnown: function (id) { seedKnown([id], 'known-button', 'known-button:' + localDate()); },
     onUpdate: function onUpdate(updated) {
       setSrsCards(updated);
       Store.putCards(updated);
@@ -410,6 +439,7 @@ function App() {
     pace: pace,
     doneToday: doneToday,
     examDate: examDate,
+    cards: srsCards,
     setUnit: function setUnit(i) {
       setUnitIdx(i);
       setView('unit');
@@ -426,7 +456,8 @@ function App() {
     showFurigana: showFurigana,
     toggleFurigana: toggleFurigana,
     kanjiView: kanjiView,
-    setKanjiView: setKanjiView
+    setKanjiView: setKanjiView,
+    cards: srsCards
   })));
 }
 

@@ -85,6 +85,7 @@ function Overview(props) {
             lvUnits.length > 0 ? ce("span", null, done, " / ", lvUnits.length) : ce("span", null, "Coming soon")),
           lvUnits.length > 0 && ce("ol", { className: "unit-list" }, lvUnits.map(function (u) {
             var isDone = completed.has(u.id);
+            var known = knownCount(unitItems([u]), props.cards || {});
             var cls = "unit-row" + (isDone ? " done" : "") + (u.index === current ? " current" : "") + (u.index === suggested ? " next" : "");
             return ce("li", { key: u.id },
               ce("button", {
@@ -95,6 +96,7 @@ function Overview(props) {
                 ce("span", { className: "unit-num" }, u.index + 1),
                 ce("span", { className: "unit-title" }, u.title),
                 u.kind !== 'lesson' && u.kind !== 'kana' && ce("span", { className: "week-badge" }, u.kind),
+                known > 0 && ce("span", { className: "week-badge" }, t('unit_known', lv).replace('{n}', known)),
                 u.index === suggested && !isDone && ce("span", { className: "unit-next" }, "Up next"),
                 isDone && ce("span", { className: "unit-done", 'aria-label': "completed" }, "✓")));
           })));

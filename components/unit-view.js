@@ -105,6 +105,7 @@ function UnitView(props) {
       }, "🔊"));
   };
   var practice = unit.practice || [];
+  var knownN = knownCount(unitItems([unit]), props.cards || {}); // seeded as already known (ticket 37)
   var last = units.length - 1;
   return React.createElement("div", { className: "day-card" },
     React.createElement("div", { className: "day-header" },
@@ -112,7 +113,8 @@ function UnitView(props) {
         React.createElement("span", { className: "day-num" }, t('unit_label', lv), " ", unit.index + 1),
         React.createElement("span", { className: "phase-badge", style: { background: LEVEL_COLORS[lv] } }, lv),
         unit.kind !== 'lesson' && React.createElement("span", { className: "week-badge" }, unit.kind),
-        isDone && React.createElement("span", { className: "complete-badge" }, t('complete_badge', lv))),
+        isDone && React.createElement("span", { className: "complete-badge" }, t('complete_badge', lv)),
+        knownN > 0 && React.createElement("span", { className: "week-badge" }, t('unit_known', lv).replace('{n}', knownN))),
       React.createElement("h2", { className: "day-title" }, unit.title)),
     React.createElement("div", { className: "day-body" },
       React.createElement("div", { className: "lesson-blurrable" + (quizActive ? ' blurred' : '') },

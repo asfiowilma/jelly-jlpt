@@ -63,6 +63,7 @@ var appFiles = [
   path.join("components", "review-mode.js"),
   path.join("components", "overview.js"),
   path.join("components", "stats-view.js"),
+  path.join("components", "import-view.js"),
   path.join("components", "settings-view.js"),
   "app.js",
 ];
@@ -244,6 +245,23 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       var cards = {};
       units.forEach(function (u) { srsAddCards(u, cards); });
       ReviewMode({ cards: cards, level: "N5", onUpdate: noop });
+      a.ok(true);
+    } catch (e) { a.ok(false, e.message); }
+  });
+
+  test("React render: import UI (ImportSettings, QuickSort, PasteImport, known button) renders", function (a) {
+    var L = function (k) { return t(k, "N5"); };
+    try {
+      var cards = {};
+      srsAddCards(units[0], cards);
+      seedKnownCards(['v:食べる|たべる'], cards, Date.now(), { source: 'paste', batchId: 'paste:x', budget: 50 });
+      ImportSettings({ L: L, level: "N5", cards: {}, units: units });
+      ImportSettings({ L: L, level: "N5", cards: cards, units: units });
+      QuickSort({ L: L, level: "N5", items: quickSortItems(units, "N5"), cards: cards, onClose: noop });
+      QuickSort({ L: L, level: "N1", items: [], cards: cards, onClose: noop });
+      PasteImport({ L: L, level: "N5", cards: cards });
+      ReviewMode({ cards: cards, level: "N5", onUpdate: noop, onKnown: noop });
+      Overview({ units: units, completed: emptySet, current: 0, suggested: 0, setUnit: noop, cards: cards });
       a.ok(true);
     } catch (e) { a.ok(false, e.message); }
   });

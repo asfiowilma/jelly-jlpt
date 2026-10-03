@@ -289,6 +289,16 @@ function createStore(opts) {
       });
       return queue;
     },
+    // Deletes card docs (undo of an already-known import, ticket 37).
+    removeCards: function (ids) {
+      ids.forEach(function (itemId) {
+        var id = 'card:' + itemId;
+        if (!mirror[id]) return;
+        delete mirror[id];
+        enqueue(function () { return backend.remove(id).then(function () { delete revs[id]; }); });
+      });
+      return queue;
+    },
     // Partial update of prefs:learning; values equal to the current (or default) prefs are skipped.
     putPrefs: function (partial) {
       var cur = mirror['prefs:learning'];
