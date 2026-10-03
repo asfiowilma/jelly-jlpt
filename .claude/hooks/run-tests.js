@@ -47,6 +47,7 @@ global.document = { getElementById: function () { return {}; } };
 // ── load scripts into global scope (mirrors index.html) ──────────────────────
 const dataDir = path.join(projectDir, "data");
 load(path.join("data", "catalog.js"));
+load(path.join("data", "stamp-icons.js"));
 for (const lv of fs.readdirSync(dataDir).filter(function (f) { return fs.statSync(path.join(dataDir, f)).isDirectory(); }).sort()) {
   for (const file of fs.readdirSync(path.join(dataDir, lv)).sort()) load(path.join("data", lv, file));
 }
@@ -65,6 +66,8 @@ var appFiles = [
   path.join("components", "review-mode.js"),
   path.join("components", "overview.js"),
   path.join("components", "stats-view.js"),
+  path.join("components", "stamp.js"),
+  path.join("components", "achievements-view.js"),
   path.join("components", "import-view.js"),
   path.join("components", "settings-view.js"),
   path.join("components", "toast-stack.js"),
@@ -286,6 +289,52 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       a.ok(true);
     } catch (e) { a.ok(false, e.message); }
     finally { Store.logs = origLogs; }
+  });
+
+  test("React render: AchievementsView() renders empty and with the fixture list", function (a) {
+    try {
+      AchievementsView({ level: "N5" });
+      AchievementsView({ level: "N5", defs: ACHIEVEMENTS_FIXTURE, unlocks: {} });
+      Stamp({ id: "first-steps", category: "progress", rarity: "common", earned: true, name: "x" });
+      a.ok(true);
+    } catch (e) { a.ok(false, e.message); }
+  });
+
+  test("achievements: groupAchievements counts, orders categories, keeps hidden", function (a) {
+    var g = groupAchievements(ACHIEVEMENTS_FIXTURE, { "first-steps": 1700000000000, comeback: 1700000001000 });
+    a.equal(g.total, 64); a.equal(g.earned, 2);
+    a.deepEqual(g.groups.map(function (x) { return x.category; }), ["progress", "habit", "quiz", "mock", "review", "mastery"]);
+    a.equal(g.groups.reduce(function (n, x) { return n + x.total; }, 0), 64);
+    a.equal(g.groups[0].earned, 1);
+    a.equal(ACHIEVEMENTS_FIXTURE.filter(function (d) { return d.hidden; }).length, 7);
+    a.ok(ACHIEVEMENTS_FIXTURE.filter(function (d) { return d.hidden; }).every(function (d) { return d.revealed; }), "hidden rows carry revealed text");
+  });
+
+  test("stamp icons: one glyph per achievement id", function (a) {
+    ACHIEVEMENTS_FIXTURE.forEach(function (d) { a.ok(STAMP_ICONS[d.id], d.id + " has an icon"); });
+    a.equal(Object.keys(STAMP_ICONS).length, ACHIEVEMENTS_FIXTURE.length);
+  });
+
+  test("stamp ink: category hue fixed, tier steps L/C, level steps hue, light lowers L only", function (a) {
+    var c = stampInkParts("quiz", "common", "n5", false), r = stampInkParts("quiz", "rare", "n5", false), l = stampInkParts("quiz", "common", "n5", true);
+    a.ok(r.l < c.l && r.c > c.c, "higher tier: darker, more chroma");
+    a.equal(l.l, +(c.l - 0.14).toFixed(3)); a.equal(l.c, c.c); a.equal(l.h, c.h);
+    a.equal(stampInkParts("quiz", "common", "n4", false).h, (c.h + 62) % 360);
+    a.notEqual(stampInkParts("quiz", "common", null).h, stampInkParts("mock", "common", null).h, "categories differ");
+    a.equal(stampInk("quiz", "common", "n5", false), "oklch(" + c.l + " " + c.c + " " + c.h + ")");
+  });
+
+  test("stampSVG: rarity ladder, locked, hidden", function (a) {
+    var base = { id: "first-steps", category: "progress", name: "A <b>", earned: true };
+    var svg = function (r, o) { return stampSVG(Object.assign({}, base, { rarity: r }, o || {})); };
+    a.ok(/10円/.test(svg("common")) && /1000円/.test(svg("legendary")));
+    a.ok(!/★/.test(svg("rare")) && /★★★/.test(svg("epic")));
+    a.ok(/foil-/.test(svg("legendary")) && !/foil-/.test(svg("epic")), "foil only on earned legendary");
+    a.ok(!/foil-/.test(svg("legendary", { earned: false })));
+    a.ok(/stroke-dasharray/.test(svg("common", { earned: false })) && /class="stamp locked"/.test(svg("common", { earned: false })));
+    a.ok(/aria-label="\?\?\?"/.test(svg("common", { earned: false, hidden: true })));
+    a.ok(/aria-label="A &lt;b&gt;"/.test(svg("common")), "name escaped");
+    a.ok(/<path d="M2 0h1v1H2z/.test(svg("common")), "glyph from STAMP_ICONS");
   });
 
   test("React render: ReviewMode() renders empty and with due item cards", function (a) {

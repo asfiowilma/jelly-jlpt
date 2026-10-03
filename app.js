@@ -113,7 +113,8 @@ var NAV_TABS = [
   { view: 'unit', label: 'view_today', icon: 'today' },
   { view: 'units', label: 'view_units', icon: 'units' },
   { view: 'stats', label: 'view_stats', icon: 'stats' },
-  { view: 'review', label: 'view_review', icon: 'review' }
+  { view: 'review', label: 'view_review', icon: 'review' },
+  { view: 'achievements', label: 'view_achievements', icon: 'achievements' }
 ];
 
 function App() {
@@ -424,7 +425,6 @@ function App() {
       className: "sr-only"
     }, " due")));
   })
-  // Slot: Achievements tab (実績) joins NAV_TABS once achievements exist.
   ),
   streak > 0 && /*#__PURE__*/React.createElement("span", {
     className: "streak",
@@ -441,7 +441,7 @@ function App() {
     className: "sync-dot sync-" + Store.syncInfo.status,
     'aria-hidden': "true"
   }))), /*#__PURE__*/React.createElement("main", {
-    className: view === 'units' || view === 'stats' ? "main wide" : "main"
+    className: view === 'units' || view === 'stats' || view === 'achievements' ? "main wide" : "main"
   }, view === 'settings' ? /*#__PURE__*/React.createElement(SettingsView, {
     themePrefs: themePrefs,
     setThemePrefs: setThemePrefs,
@@ -482,7 +482,7 @@ function App() {
       setSrsCards(updated);
       Store.putCards(updated);
     }
-  }) : view === 'stats' ? React.createElement(StatsView, {
+  }) : view === 'achievements' ? React.createElement(AchievementsView, { level: level }) : view === 'stats' ? React.createElement(StatsView, {
     cards: srsCards,
     onReview: function () { setView('review'); }
   }) : view === 'units' ? /*#__PURE__*/React.createElement(Overview, {

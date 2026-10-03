@@ -132,6 +132,7 @@ var CREDITS = [
   { name: 'Tatoeba', url: 'https://tatoeba.org/', key: 'cred_tatoeba', license: 'CC BY 2.0 FR', licenseUrl: 'https://creativecommons.org/licenses/by/2.0/fr/' },
   { name: 'elzup/jlpt-word-list', url: 'https://github.com/elzup/jlpt-word-list', key: 'cred_wordlist', license: 'MIT', licenseUrl: 'https://github.com/elzup/jlpt-word-list/blob/master/LICENSE' },
   { name: 'Kenney', url: 'https://kenney.nl/assets/music-jingles', key: 'cred_kenney', license: 'CC0', licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/' },
+  { name: 'DiceBear', url: 'https://www.dicebear.com/', key: 'cred_dicebear', license: 'CC0', licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/' },
   { name: 'React', url: 'https://react.dev/', key: 'cred_react', license: 'MIT', licenseUrl: 'vendor/LICENSE-react.txt' },
   { name: 'PouchDB', url: 'https://pouchdb.com/', key: 'cred_pouchdb', license: 'Apache 2.0', licenseUrl: 'vendor/LICENSE-pouchdb.txt' }
 ];
