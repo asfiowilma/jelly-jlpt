@@ -96,7 +96,7 @@ queue. Doc shapes are documented in `lib.js` above `STORE_ID_RE`:
 |---|---|
 | `unit:<unitId>` | `{ done, completedAt }` |
 | `card:<itemId>` | SM-2 card (`interval`, `ease`, `due`, `reps`, `lastReviewedAt`…). Same item = same card wherever it appears |
-| `prefs:learning` | `{ currentUnit, pace, examDate, furigana, uiLang, kanjiView }` (defaults: `PREFS_DEFAULTS`; `kanjiView` = lesson Kanji layout, `rows` or `focus`) |
+| `prefs:learning` | `{ currentUnit, pace, examDate, furigana, uiLang, charView }` (defaults: `PREFS_DEFAULTS`; `charView` = lesson Kanji and Kana layout, `rows` or `focus`) |
 | `log:<YYYY-MM-DD>:<deviceId>` | daily activity log, written only by its own device |
 
 Every doc also gets `updatedAt` and `deviceId`. Conflicts merge through `mergeStoreDocs`.

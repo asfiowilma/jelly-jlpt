@@ -1428,8 +1428,8 @@ function matchCatalogText(text) {
 //                   already known, see seedKnownCards)
 //   prefs:learning  { currentUnit (unit id | null), pace (units/day, default 1),
 //                   examDate (null), furigana (true|false; null/absent = level-based),
-//                   uiLang ('auto'|'en'|'ja'), kanjiView ('rows'|'focus', lesson
-//                   Kanji layout, default rows), pendingCards ([item ids] passed
+//                   uiLang ('auto'|'en'|'ja'), charView ('rows'|'focus', lesson
+//                   Kanji and Kana layout, default rows), pendingCards ([item ids] passed
 //                   but over the daily new-card cap, added on later days) }
 //   log:<YYYY-MM-DD>:<deviceId>   dated activity log, one doc per local date per
 //                   device: { date, lessons: [unit ids marked done], quizzes:
@@ -1444,7 +1444,7 @@ function matchCatalogText(text) {
 // Device-only prefs stay in localStorage and never become docs:
 var DEVICE_PREF_KEYS = ['jlpt_palette', 'jlpt_theme', 'jlpt_tts_rate', 'jlpt_sfx_mute'];
 var STORE_ID_RE = /^(unit:n[1-5]\.u\d{3}|card:(v:[^|\s]+\|[^|\s]+|k:\S+|g:[\w-]+|c:\S+)|prefs:learning|log:\d{4}-\d{2}-\d{2}:[\w-]+)$/;
-var PREFS_DEFAULTS = { currentUnit: null, pace: 1, examDate: null, furigana: null, uiLang: 'en', kanjiView: 'rows' };
+var PREFS_DEFAULTS = { currentUnit: null, pace: 1, examDate: null, furigana: null, uiLang: 'en', charView: 'rows' };
 
 // ── Activity log (log:* docs) ───────────────────────────────────────────────
 // localDate: the user's local calendar date as 'YYYY-MM-DD' (not UTC).
@@ -1774,7 +1774,7 @@ function newCardCap(pace, upcomingUnits) {
 
 // docsToSnapshot: docs → App's synchronous state shape.
 function docsToSnapshot(docs) {
-  var snap = { completed: [], srsCards: {}, currentUnit: null, pace: 1, examDate: null, furiganaPref: null, uiLang: 'en', kanjiView: 'rows', pendingCards: [] };
+  var snap = { completed: [], srsCards: {}, currentUnit: null, pace: 1, examDate: null, furiganaPref: null, uiLang: 'en', charView: 'rows', pendingCards: [] };
   docs.forEach(function (d) {
     if (d._id.indexOf('unit:') === 0) {
       if (d.done) snap.completed.push(d._id.slice(5));
@@ -1787,7 +1787,7 @@ function docsToSnapshot(docs) {
       if (typeof d.furigana === 'boolean') snap.furiganaPref = String(d.furigana);
       // ponytail: 'en' fallback while under development (see App); 'auto' for release.
       if (d.uiLang === 'auto' || d.uiLang === 'ja') snap.uiLang = d.uiLang;
-      if (d.kanjiView === 'focus') snap.kanjiView = 'focus';
+      if (d.charView === 'focus') snap.charView = 'focus';
       if (Array.isArray(d.pendingCards)) snap.pendingCards = d.pendingCards.slice();
     }
   });
