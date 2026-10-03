@@ -221,16 +221,202 @@ function kanaDistractors(k, n, pool) {
   var like = KANA_LOOKALIKES.filter(function (s) { return s.indexOf(kanaBase(first)) >= 0; }).join('');
   var tier = function (x) {
     var f = x.char.charAt(0);
-    if (kanaBase(f) === kanaBase(first) || like.indexOf(kanaBase(f)) >= 0 && x.char.slice(1) === small) return 0;
-    return pool.indexOf(x) >= 0 ? 1 : 2;
+    var sameSmall = x.char.slice(1) === small;
+    if (like.indexOf(f) >= 0 && sameSmall) return 0; // シ → ツ before ジ/ヅ
+    if (kanaBase(f) === kanaBase(first) || like.indexOf(kanaBase(f)) >= 0 && sameSmall) return 1;
+    return pool.indexOf(x) >= 0 ? 2 : 3;
   };
   var cands = catalogOf('kana').filter(function (x) {
     return x.script === k.script && x.id !== k.id && x.char.length === k.char.length &&
       x.answers.indexOf(k.romaji) < 0 && k.answers.indexOf(x.romaji) < 0;
   });
-  return [0, 1, 2].reduce(function (acc, t) {
+  return [0, 1, 2, 3].reduce(function (acc, t) {
     return acc.concat(rndShuffle(cands.filter(function (x) { return tier(x) === t; })));
   }, []).slice(0, n);
+}
+
+// ── Distractor engine (ticket 09) ───────────────────────────────────────────
+// Sense words: a gloss's content words, so "blue" and "blue / green" overlap
+// (two right answers) but "to eat" and "to drink" don't.
+var SENSE_STOPWORDS = ' a an the to of in on at for by with and or not no is are be it it\'s its i you your one one\'s' +
+  ' someone something sb sth do does doing don\'t that this x y n b please marks thing things etc ';
+var _senseMemo = {}; // glosses are a finite catalog set; memo keeps pickDistractors fast
+function senseWords(s) {
+  return _senseMemo[s] || (_senseMemo[s] = s.toLowerCase().replace(/[^a-z0-9' ]+/g, ' ').split(' ').filter(function (w) {
+    return w && SENSE_STOPWORDS.indexOf(' ' + w + ' ') < 0;
+  }).map(function (w) { return w.length > 3 && !/ss$/.test(w) ? w.replace(/s$/, '') : w; })); // ponytail: plural -s only
+}
+function sharesSense(a, b) {
+  var sa = senseWords(a);
+  return senseWords(b).some(function (w) { return sa.indexOf(w) >= 0; });
+}
+
+// Kanji learners mix up by shape, and kanji that share a category. Only pairs
+// that are both in the pool matter; add sets as levels grow.
+var KANJI_LOOKALIKES = ['日目白百田旦', '木本休体末未', '人入八大火', '土士工王上', '大太犬天夫', '午牛年', '右左石',
+  '千干十', '力刀', '見貝', '間聞門問', '読語話', '男田町', '雨両', '生先', '東車', '小少', '母毎', '北比', '今会',
+  '西四', '円内', '学字', '名各', '外夕', '山出', '子了', '万方', '金全', '校交', '気汽', '電雷'];
+var KANJI_GROUPS = ['一二三四五六七八九十百千万', '日月火水木金土', '東西南北上下左右中前後外', '人子女男母父友',
+  '年時間今午毎週半先後前', '山川天雨水火木土気', '大小高長白安新古', '行来出入見聞読書話食休買', '国語学校名電車'];
+function sameSet(sets, a, b) {
+  return a !== b && sets.some(function (s) { return s.indexOf(a) >= 0 && s.indexOf(b) >= 0; });
+}
+// Grammar points learners confuse (ids). Pairs with the same meaning (から/ので,
+// けど/けれども) drop out via sharesSense while the prompt is the meaning.
+var GRAMMAR_CONFUSABLES = [['g:wa-desu', 'g:ga', 'g:mo'], ['g:de', 'g:ni', 'g:ni-ikimasu', 'g:wo', 'g:to', 'g:made'],
+  ['g:kara', 'g:node', 'g:te-kara', 'g:made'], ['g:te-mo-ii', 'g:te-wa-ikemasen', 'g:nai-de-kudasai', 'g:nakute-wa-ikenai',
+  'g:nakute-wa-naranai', 'g:nakucha-ikenai'], ['g:mashou', 'g:masen-ka', 'g:mashou-ka'], ['g:mada', 'g:mou', 'g:mada-te-imasen'],
+  ['g:kedo', 'g:keredomo', 'g:ga'], ['g:ya', 'g:to', 'g:ka-ka'], ['g:hou-ga-ii', 'g:hou-ga-yori'], ['g:tai', 'g:tsumori'],
+  ['g:no-ga-suki', 'g:no-ga-jouzu', 'g:no-ga-heta'], ['g:ne', 'g:yo', 'g:ka'], ['g:te-iru', 'g:te-kudasai', 'g:te-kara']];
+
+function hiraToKata(s) { return s.replace(/[ぁ-ゖ]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) + 0x60); }); }
+// kanjiValidReadings: every reading of k in hiragana, incl. extra and kun stems (た of た.べる).
+function kanjiValidReadings(k) {
+  return kanjiReadings(k).concat(k.extra || [], (k.kun || []).map(function (r) { return r.split('.')[0]; })).map(kataToHira);
+}
+function scriptShape(s) { return hasKanji(s) ? 'kanji' : /[ァ-ヶ]/.test(s) ? 'kata' : 'hira'; }
+function editDistance(a, b) {
+  var prev = [], i, j;
+  for (j = 0; j <= b.length; j++) prev[j] = j;
+  for (i = 1; i <= a.length; i++) {
+    var cur = [i];
+    for (j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[b.length];
+}
+
+// readingFakes: sound-confuser misreadings of a hiragana reading, one safe edit
+// each — lengthen/shorten a vowel (おばさん/おばあさん), toggle dakuten (か/が),
+// add/remove small っ (きて/きって). Only for "how do you read it" questions.
+var KANA_VOWEL = { a: 'あかさたなはまやらわがざだばぱゃ', i: 'いきしちにひみりぎじぢびぴ', u: 'うくすつぬふむゆるぐずづぶぷゅ',
+  e: 'えけせてねへめれげぜでべぺ', o: 'おこそとのほもよろをごぞどぼぽょ' };
+var LONG_VOWEL = { a: 'あ', i: 'い', u: 'う', e: 'い', o: 'う' };
+function kanaVowel(c) {
+  for (var v in KANA_VOWEL) if (c && KANA_VOWEL[v].indexOf(c) >= 0) return v;
+  return null;
+}
+function readingFakes(s) {
+  var out = [], ch = Array.from(s);
+  var put = function (arr) { var t = arr.join(''); if (t !== s && out.indexOf(t) < 0) out.push(t); };
+  ch.forEach(function (c, i) {
+    var v = kanaVowel(c), next = ch[i + 1], prev = ch[i - 1];
+    if (v && 'ゃゅょ'.indexOf(next) < 0 && next !== LONG_VOWEL[v]) put(ch.slice(0, i + 1).concat(LONG_VOWEL[v], ch.slice(i + 1)));
+    var pv = kanaVowel(prev);
+    if (i > 0 && pv && (c === LONG_VOWEL[pv] || c === 'あいうえお'[['a', 'i', 'u', 'e', 'o'].indexOf(pv)])) put(ch.slice(0, i).concat(ch.slice(i + 1)));
+    var d = c.normalize('NFD');
+    var t = d.length > 1 ? d.charAt(0) : (c + '゙').normalize('NFC');
+    if (t.length === 1 && t !== c && d.charAt(1) !== '゚') put(ch.slice(0, i).concat(t, ch.slice(i + 1)));
+    if (c === 'っ') put(ch.slice(0, i).concat(ch.slice(i + 1)));
+    if (i > 0 && 'かきくけこさしすせそたちつてとぱぴぷぺぽ'.indexOf(c) >= 0 && kanaVowel(prev)) put(ch.slice(0, i).concat('っ', ch.slice(i)));
+  });
+  return out;
+}
+
+// Per field: texts(item, answer) = the option text(s) an item offers; reject(cand,
+// target, answer, prep(target)) = would be a second right answer; score(cand, target, answer)
+// = tuple after [level distance], lower first. cand = { it, text, taught }.
+var lenBucket = function (a, b, step) { return Math.min(3, Math.floor(Math.abs(a.length - b.length) / step)); };
+var posFamily = function (p) { return (p || '').split('-')[0]; };
+var DISTRACTOR_RULES = {
+  gloss: { // vocab meaning
+    texts: function (it) { return [glossText(it)]; },
+    // same word/reading = homograph or homophone: right answer too (and in listening)
+    reject: function (c, t, ans) { return c.it.word === t.word || c.it.reading === t.reading || sharesSense(c.text, ans); },
+    score: function (c, t, ans) {
+      var tags = t.tags || [];
+      return [posFamily(c.it.pos) !== posFamily(t.pos), !c.taught, c.it.pos !== t.pos,
+        !(c.it.tags || []).some(function (x) { return tags.indexOf(x) >= 0; }), lenBucket(c.text, ans, 6)];
+    }
+  },
+  word: { // meaning → word
+    texts: function (it) { return [it.word]; },
+    reject: function (c, t) { return sharesSense(glossText(c.it), glossText(t)); },
+    score: function (c, t, ans) {
+      return [scriptShape(c.text) !== scriptShape(ans), !c.taught, posFamily(c.it.pos) !== posFamily(t.pos),
+        lenBucket(c.text, ans, 1), Math.min(3, editDistance(kataToHira(c.it.reading), kataToHira(t.reading)))];
+    }
+  },
+  reading: { // word → reading; synthesized fakes allowed here only
+    texts: function (it) { return [it.reading]; },
+    fakes: true,
+    prep: function (t) { // every reading of the same spelling (一日: いちにち, ついたち)
+      return catalogOf('vocab').filter(function (v) { return v.word === t.word; }).map(function (v) { return v.reading; });
+    },
+    reject: function (c, t, ans, valid) { return valid.indexOf(c.text) >= 0; },
+    score: function (c, t, ans) {
+      return [scriptShape(c.text) !== scriptShape(ans), Math.min(3, editDistance(c.text, ans)), !c.taught, lenBucket(c.text, ans, 1)];
+    }
+  },
+  kanjiReading: { // kanji → one reading, all options in the answer's script (on/kun swap)
+    texts: function (it, ans) {
+      var conv = /[ァ-ヶ]/.test(ans) ? hiraToKata : kataToHira;
+      return kanjiReadings(it).map(conv);
+    },
+    reject: function (c, t) { return kanjiValidReadings(t).indexOf(kataToHira(c.text)) >= 0; },
+    score: function (c, t, ans) {
+      return [sameSet(KANJI_LOOKALIKES, c.it.char, t.char) ? 0 : sameSet(KANJI_GROUPS, c.it.char, t.char) ? 1 : 2,
+        !c.taught, lenBucket(c.text, ans, 1)];
+    }
+  },
+  kanjiMeaning: {
+    texts: function (it) { return [it.meaning.join(', ')]; },
+    reject: function (c, t, ans) { return sharesSense(c.text, ans); },
+    score: function (c, t, ans) {
+      return [!sameSet(KANJI_GROUPS, c.it.char, t.char), !c.taught, !sameSet(KANJI_LOOKALIKES, c.it.char, t.char), lenBucket(c.text, ans, 6)];
+    }
+  },
+  pattern: { // grammar meaning → pattern
+    texts: function (it) { return [it.pattern]; },
+    reject: function (c, t) { return sharesSense(c.it.meaning, t.meaning); },
+    score: function (c, t) {
+      return [!GRAMMAR_CONFUSABLES.some(function (s) { return s.indexOf(c.it.id) >= 0 && s.indexOf(t.id) >= 0; }), !c.taught];
+    }
+  }
+};
+
+// pickDistractors(target, pool, field, n, opts) → up to n distinct wrong option
+// strings, best first. pool = items of target's kind; field = DISTRACTOR_RULES key.
+// opts: taught ({ id: true }, preferred: learners know them), answer (correct
+// text, default the field's text of target), level (when target has none).
+// Ranking: level distance (same, then ±1, further only if nothing else), then the
+// field's score; random within a tie.
+function pickDistractors(target, pool, field, n, opts) {
+  opts = opts || {};
+  var rule = DISTRACTOR_RULES[field], taught = opts.taught || {};
+  var ans = opts.answer || rule.texts(target, '')[0];
+  var lv = levelRank(target.level || opts.level);
+  var ctx = rule.prep ? rule.prep(target) : null, cands = [];
+  pool.forEach(function (it) {
+    if (it.id === target.id || it.kind !== target.kind) return;
+    rule.texts(it, ans).forEach(function (text) { cands.push({ it: it, text: text, taught: !!taught[it.id] }); });
+  });
+  if (rule.fakes) readingFakes(kataToHira(ans)).forEach(function (text) { cands.push({ it: target, text: text, taught: true }); });
+  var scored = rndShuffle(cands).filter(function (c) {
+    return c.text && c.text !== ans && !rule.reject(c, target, ans, ctx);
+  }).map(function (c) {
+    var l = levelRank(c.it.level || opts.level);
+    return { text: c.text, s: [lv < 0 || l < 0 ? 0 : Math.abs(l - lv)].concat(rule.score(c, target, ans)) };
+  });
+  scored.sort(function (a, b) {
+    for (var i = 0; i < a.s.length; i++) if (+a.s[i] !== +b.s[i]) return +a.s[i] - +b.s[i];
+    return 0;
+  });
+  var out = [];
+  scored.forEach(function (x) { if (out.length < n && out.indexOf(x.text) < 0) out.push(x.text); });
+  return out;
+}
+
+// taughtIds(unit): ids of items taught in this unit or any earlier one (by index).
+function taughtIds(unit) {
+  var ids = {};
+  var add = function (u) {
+    Object.keys(UNIT_ITEM_FIELDS).forEach(function (f) { (u[f] || []).forEach(function (it) { if (it) ids[it.id] = true; }); });
+  };
+  // ponytail: rebuilds the unit list per quiz (~100 units, cheap); cache if it shows up in profiles.
+  if (typeof PLAN !== 'undefined') buildUnits(PLAN, CATALOG).forEach(function (u) { if (u.index <= (unit.index || 0)) add(u); });
+  add(unit);
+  return ids;
 }
 
 // buildExercises(unit): a shuffled, capped quiz for one resolved unit (buildUnits).
@@ -263,47 +449,39 @@ function buildExercises(unit) {
   var rank = levelRank(unit.level);
   var vocabItems = unit.vocab || [];
   var kanjiItems = unit.kanji || [];
-  var row = function (v) { return [v.word, v.reading, glossText(v)]; };
-  var kRow = function (k) { return [k.char, kanjiReadings(k).join('・')]; };
-  var vocab0 = vocabItems.map(row);
-  var allVocab = catalogOf('vocab').map(row);
-  var allChars = catalogOf('kanji').map(kRow);
+  var taught = taughtIds(unit);
+  // pool: the unit's own items (may be outside the catalog) + the catalog's
+  var poolOf = function (kind, own) {
+    return own.concat(catalogOf(kind).filter(function (x) { return own.indexOf(x) < 0; }));
+  };
+  var vPool = poolOf('vocab', vocabItems), kPool = poolOf('kanji', kanjiItems);
+  // mc: one multiple-choice exercise, distractors from the engine; null when < 2.
+  var mc = function (type, prompt, question, item, field, pool, answer, extra) {
+    answer = answer || DISTRACTOR_RULES[field].texts(item, '')[0];
+    var d = pickDistractors(item, pool, field, 3, { taught: taught, answer: answer, level: unit.level });
+    if (d.length < 2) return null;
+    var opts = rndShuffle([answer].concat(d));
+    return Object.assign({ type: type, prompt: prompt, question: question, options: opts, correct: opts.indexOf(answer) }, extra);
+  };
+  var push = function (e) { if (e) exs.push(e); };
 
   // Listening exercise: hear a word, pick its meaning
-  if (vocab0.length >= 2 && window.speechSynthesis) {
-    var vocab = rndShuffle(vocab0);
-    var v = vocab[0];
-    var wrongM = rndShuffle(allVocab.filter(function (w) {
-      return w[2] && w[2].trim() && w[2] !== v[2];
-    })).slice(0, 3);
-    var opts = rndShuffle([v[2]].concat(wrongM.map(function (w) { return w[2]; })));
-    exs.push({
-      type: 'listen',
-      prompt: 'Listen and choose the meaning:',
-      question: v[0],
-      audio: v[0],
-      options: opts,
-      correct: opts.indexOf(v[2])
-    });
+  if (vocabItems.length >= 2 && window.speechSynthesis) {
+    var v = rndShuffle(vocabItems)[0];
+    push(mc('listen', 'Listen and choose the meaning:', v.word, v, 'gloss', vPool, null, { audio: v.word }));
   }
 
   // ── Kanji exercises ──
   if (kanjiItems.length > 0) {
     var ks = rndShuffle(kanjiItems);
 
-    // MC: kanji → readings
-    var c0 = kRow(ks[0]);
-    var wrongs = rndShuffle(allChars.filter(function (c) {
-      return c[1] && c[1].trim() && c[1] !== c0[1];
-    })).slice(0, 3);
-    var mcOpts = rndShuffle([c0[1]].concat(wrongs.map(function (c) { return c[1]; })));
-    exs.push({
-      type: 'mc',
-      prompt: 'What is the reading for this character?',
-      question: c0[0],
-      options: mcOpts,
-      correct: mcOpts.indexOf(c0[1])
-    });
+    // MC: kanji → one of its readings (options all in that reading's script)
+    var r0 = rndShuffle(kanjiReadings(ks[0]))[0];
+    push(mc('mc', 'Which is a reading of this kanji?', ks[0].char, ks[0], 'kanjiReading', kPool, r0));
+
+    // MC: kanji → meaning
+    var kM = ks[ks.length - 1];
+    push(mc('mc', 'What does this kanji mean?', kM.char, kM, 'kanjiMeaning', kPool));
 
     // Typing: kanji → any one reading (on accepted in hiragana too)
     if (ks.length > 1) {
@@ -319,66 +497,36 @@ function buildExercises(unit) {
   }
 
   // ── Vocab exercises ──
-  if (vocab0.length > 0) {
-    var _vocab = rndShuffle(vocab0);
+  if (vocabItems.length > 0) {
+    var _vocab = rndShuffle(vocabItems);
 
     // MC: word → meaning
-    var v0 = _vocab[0];
-    var _wrongM = rndShuffle(allVocab.filter(function (w) {
-      return w[2] && w[2].trim() && w[2] !== v0[2];
-    })).slice(0, 3);
-    var mcM = rndShuffle([v0[2]].concat(_wrongM.map(function (w) { return w[2]; })));
-    exs.push({
-      type: 'mc',
-      prompt: 'What does this word mean?',
-      question: v0[0],
-      options: mcM,
-      correct: mcM.indexOf(v0[2])
-    });
+    push(mc('mc', 'What does this word mean?', _vocab[0].word, _vocab[0], 'gloss', vPool));
 
     // MC: meaning → word (pick the right Japanese)
     if (_vocab.length > 1) {
-      var v1 = _vocab[1];
-      var wrongW = rndShuffle(allVocab.filter(function (w) {
-        return w[0] && w[0].trim() && w[0] !== v1[0];
-      })).slice(0, 3);
-      var mcW = rndShuffle([v1[0]].concat(wrongW.map(function (w) { return w[0]; })));
-      exs.push({
-        type: 'mc',
-        prompt: 'Which word means "' + v1[2] + '"?',
-        question: '',
-        options: mcW,
-        correct: mcW.indexOf(v1[0])
-      });
+      push(mc('mc', 'Which word means "' + glossText(_vocab[1]) + '"?', '', _vocab[1], 'word', vPool));
     }
+
+    // MC: word written in kanji → reading (sound confusers)
+    var vR = _vocab.filter(function (x) { return hasKanji(x.word); })[0];
+    if (vR) push(mc('mc', 'How do you read this word?', vR.word, vR, 'reading', vPool));
 
     // Typing: word → English meaning
     if (_vocab.length > 2) {
       var v2 = _vocab[2];
-      var answers = v2[2].split(/[\/,]/).map(function (s) { return s.trim(); }).filter(Boolean);
       exs.push({
         type: 'typing',
         prompt: 'What does this word mean? (type in English)',
-        question: v2[0],
-        answers: answers,
+        question: v2.word,
+        answers: v2.gloss.slice(),
         placeholder: 'English meaning...'
       });
     }
 
     // Listening: hear a word, pick meaning
-    var vL = rndShuffle(vocab0)[0];
-    var wrongL = rndShuffle(allVocab.filter(function (w) {
-      return w[2] !== vL[2];
-    })).slice(0, 3);
-    var mcL = rndShuffle([vL[2]].concat(wrongL.map(function (w) { return w[2]; })));
-    exs.push({
-      type: 'listen',
-      prompt: 'Listen and choose the meaning:',
-      question: vL[0],
-      audio: vL[0],
-      options: mcL,
-      correct: mcL.indexOf(vL[2])
-    });
+    var vL = rndShuffle(vocabItems)[0];
+    push(mc('listen', 'Listen and choose the meaning:', vL.word, vL, 'gloss', vPool, null, { audio: vL.word }));
   }
 
   // ── N3+ exercise types ──────────────────────────────────────────────────
@@ -407,16 +555,16 @@ function buildExercises(unit) {
   }
 
   // Pair match (N3+): word → meaning
-  if (rank >= 2 && vocab0.length >= 4) {
-    var pairs = vocab0.slice(0, 4);
-    var pairAnswers = pairs.map(function (v) { return v[2]; });
+  if (rank >= 2 && vocabItems.length >= 4) {
+    var pairs = vocabItems.slice(0, 4).map(function (v) { return [v.word, glossText(v)]; });
+    var pairAnswers = pairs.map(function (p) { return p[1]; });
     exs.push({
       type: 'pair_match',
       prompt: 'Match each word to its meaning:',
       question: '',
-      items: rndShuffle(pairs.map(function (v) { return v[0]; })),
+      items: rndShuffle(pairs.map(function (p) { return p[0]; })),
       answers: pairAnswers,
-      pairs: pairs.map(function (v) { return [v[0], v[2]]; }), // word → meaning (items are shuffled)
+      pairs: pairs, // word → meaning (items are shuffled)
       options: rndShuffle(pairAnswers)
     });
   }
@@ -424,35 +572,13 @@ function buildExercises(unit) {
   // Fill-in-the-blank (N3+): meaning → pattern
   var gram = (unit.grammar || [])[0];
   if (rank >= 2 && gram) {
-    var wrongPats = rndShuffle(catalogOf('grammar').map(function (g) { return g.pattern; }).filter(function (p, i, arr) {
-      return p !== gram.pattern && arr.indexOf(p) === i;
-    })).slice(0, 3);
-    if (wrongPats.length >= 2) {
-      var fillOpts = rndShuffle([gram.pattern].concat(wrongPats));
-      exs.push({
-        type: 'fill_blank',
-        prompt: 'Choose the correct grammar pattern:',
-        question: gram.meaning,
-        options: fillOpts,
-        correct: fillOpts.indexOf(gram.pattern)
-      });
-    }
+    push(mc('fill_blank', 'Choose the correct grammar pattern:', gram.meaning, gram, 'pattern', poolOf('grammar', unit.grammar)));
   }
 
   // Synonym exercise (N2+)
-  if (rank >= 3 && vocab0.length >= 3) {
-    var vSyn = rndShuffle(vocab0)[0];
-    var wrongSyn = rndShuffle(allVocab.filter(function (w) {
-      return w[2] && w[2].trim() && w[2] !== vSyn[2] && w[0] !== vSyn[0];
-    })).slice(0, 3);
-    var synOpts = rndShuffle([vSyn[2]].concat(wrongSyn.map(function (w) { return w[2]; })));
-    exs.push({
-      type: 'synonym',
-      prompt: 'Choose the closest meaning to: ' + vSyn[0],
-      question: vSyn[0],
-      options: synOpts,
-      correct: synOpts.indexOf(vSyn[2])
-    });
+  if (rank >= 3 && vocabItems.length >= 3) {
+    var vSyn = rndShuffle(vocabItems)[0];
+    push(mc('synonym', 'Choose the closest meaning to: ' + vSyn.word, vSyn.word, vSyn, 'gloss', vPool));
   }
 
   // ponytail: no reorder until the catalog has hand-authored chunks (ticket 11);
@@ -460,18 +586,8 @@ function buildExercises(unit) {
 
   // Kanji reading (N2+)
   if (rank >= 3 && kanjiItems.length >= 2) {
-    var kChar = kRow(rndShuffle(kanjiItems)[0]);
-    var wrongK = rndShuffle(allChars.filter(function (c) {
-      return c[1] && c[1].trim() && c[1] !== kChar[1];
-    })).slice(0, 3);
-    var kOpts = rndShuffle([kChar[1]].concat(wrongK.map(function (c) { return c[1]; })));
-    exs.push({
-      type: 'kanji_reading',
-      prompt: 'Select the correct reading:',
-      question: kChar[0],
-      options: kOpts,
-      correct: kOpts.indexOf(kChar[1])
-    });
+    var kR = rndShuffle(kanjiItems)[0];
+    push(mc('kanji_reading', 'Select the correct reading:', kR.char, kR, 'kanjiReading', kPool, rndShuffle(kanjiReadings(kR))[0]));
   }
 
   var cap = unit.quiz && unit.quiz.cap || exerciseCap(unit.level);
