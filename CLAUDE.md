@@ -31,7 +31,7 @@ store.js              Store: PouchDB persistence + optional CouchDB sync
 app-helpers.js        t() progressive UI strings, TTS, icons, stroke-order SVG fetch
 sfx.js                quiz/achievement sounds from sfx/ (Kenney, CC0)
 components/           one React component per file, React.createElement, no JSX
-  char-card.js exercises.js unit-view.js review-mode.js
+  char-card.js kanji-section.js exercises.js unit-view.js review-mode.js
   overview.js stats-view.js settings-view.js
 app.js                App: builds UNITS from PLAN + CATALOG, awaits Store.init(), mounts
 kanji-svg/            KanjiVG stroke-order SVGs (<hex codepoint>.svg), CC BY-SA 3.0
@@ -93,7 +93,7 @@ queue. Doc shapes are documented in `lib.js` above `STORE_ID_RE`:
 |---|---|
 | `unit:<unitId>` | `{ done, completedAt }` |
 | `card:<itemId>` | SM-2 card (`interval`, `ease`, `due`, `reps`, `lastReviewedAt`…). Same item = same card wherever it appears |
-| `prefs:learning` | `{ currentUnit, pace, examDate, furigana, uiLang }` (defaults: `PREFS_DEFAULTS`) |
+| `prefs:learning` | `{ currentUnit, pace, examDate, furigana, uiLang, kanjiView }` (defaults: `PREFS_DEFAULTS`; `kanjiView` = lesson Kanji layout, `rows` or `focus`) |
 | `log:<YYYY-MM-DD>:<deviceId>` | daily activity log, written only by its own device |
 
 Every doc also gets `updatedAt` and `deviceId`. Conflicts merge through `mergeStoreDocs`.

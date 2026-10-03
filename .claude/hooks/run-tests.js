@@ -199,6 +199,17 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     a.ok(units.some(function (u) { return u.kind === "review"; }), "a review unit is rendered");
   });
 
+  test("React render: KanjiSection() renders every kanji unit in rows and focus layouts", function (a) {
+    var withKanji = units.filter(function (u) { return u.kanji.length > 0; });
+    a.ok(withKanji.length > 0, "units with kanji exist");
+    withKanji.forEach(function (u) {
+      ["rows", "focus"].forEach(function (view) {
+        try { KanjiSection({ unit: u, kanjiView: view, setKanjiView: noop }); }
+        catch (e) { a.ok(false, u.id + " " + view + ": " + e.message); }
+      });
+    });
+  });
+
   test("React render: CharCard() renders a catalog kanji and kana", function (a) {
     try { CharCard({ kanji: CATALOG.items["k:人"] }); CharCard({ kanji: CATALOG.items["c:あ"] }); CharCard({ kanji: CATALOG.items["c:きゃ"] }); a.ok(true); } catch (e) { a.ok(false, e.message); }
   });
