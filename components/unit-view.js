@@ -144,7 +144,7 @@ function UnitView(props) {
           onClick: toggleFurigana
         }, showFurigana ? t('furigana_hide', lv) : t('furigana_show', lv))),
       // a mock unit is taken as a whole test (MockExam); taking it completes the unit, pass or not
-      unit.kind === 'mock' ? React.createElement(MockExam, {
+      React.createElement("div", { id: "unit-quiz" }, unit.kind === 'mock' ? React.createElement(MockExam, {
         key: unit.id,
         mock: CATALOG.items[unit.mock],
         onTaken: function () { props.onQuizResult({ passed: true, missed: [] }); }
@@ -154,27 +154,33 @@ function UnitView(props) {
         onStart: function () { setQuizActive(true); },
         onFinish: function () { setQuizActive(false); },
         onResult: props.onQuizResult
-      })),
+      }))),
+    // Bottom bar: one action that follows the stage state. Skip only navigates; a stage is done
+    // only by passing its quiz (Q28), and a done stage can be un-marked from the status line.
     React.createElement("div", { className: "nav-bar" },
+      React.createElement("div", { className: "nav-edge", 'aria-hidden': true },
+        React.createElement("i", { style: { width: Math.round(100 * completed.size / units.length) + "%" } })),
       React.createElement("button", {
-        className: "nav-btn prev",
+        className: "nav-arrow",
         onClick: function () { setUnit(Math.max(0, unit.index - 1)); },
         disabled: unit.index === 0,
-        title: "Previous stage"
-      }, t('nav_prev', lv)),
-      React.createElement("div", null,
-        React.createElement("div", { className: "day-counter" }, t('unit_label', lv), " ", unit.index + 1, " / ", units.length),
-        props.pace && React.createElement("div", { className: "day-counter" }, paceTodayLine(props.pace, props.doneToday || 0, lv)),
-        // Completion comes from passing the quiz (Q28); a done stage can be un-marked.
-        isDone ? React.createElement("button", {
-          className: "nav-btn complete done",
-          onClick: unmarkDone
-        }, t('mark_incomplete', lv)) : React.createElement("div", { className: "day-counter" },
-          unit.kind === 'mock' ? "Take the mock to complete" : "Pass the quiz (" + Math.round(passMark(unit.kind) * 100) + "%) to complete")),
-      React.createElement("button", {
-        className: "nav-btn next",
-        onClick: function () { setUnit(Math.min(last, unit.index + 1)); },
-        disabled: unit.index === last,
-        title: "Next stage"
-      }, t('nav_next', lv))));
+        title: "Previous stage", 'aria-label': "Previous stage"
+      }, "←"),
+      React.createElement("div", { className: "nav-mid" },
+        React.createElement("b", null, t('unit_label', lv), " ", unit.index + 1, " ", React.createElement("span", null, "/ ", units.length)),
+        React.createElement("div", { className: "nav-status" }, isDone
+          ? [React.createElement("span", { key: "d", className: "nav-ok" }, t('complete_badge', lv)), " · ",
+            React.createElement("button", { key: "u", className: "nav-link", onClick: unmarkDone }, t('mark_incomplete', lv))]
+          : unit.kind === 'mock' ? "Take the mock to finish" : "Pass the quiz (" + Math.round(passMark(unit.kind) * 100) + "%) to finish"),
+        props.pace && React.createElement("div", { className: "nav-pace" }, paceTodayLine(props.pace, props.doneToday || 0, lv))),
+      React.createElement("div", { className: "nav-act" },
+        !isDone && unit.index < last && React.createElement("button", {
+          className: "nav-skip", onClick: function () { setUnit(unit.index + 1); }
+        }, t('nav_skip', lv)),
+        isDone ? unit.index < last && React.createElement("button", {
+          className: "nav-btn next", onClick: function () { setUnit(unit.index + 1); }
+        }, t('nav_next_stage', lv)) : React.createElement("button", {
+          className: "nav-btn next",
+          onClick: function () { var q = document.getElementById('unit-quiz'); if (q && q.scrollIntoView) q.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        }, t(unit.kind === 'mock' ? 'nav_mock' : 'nav_quiz', lv)))));
 }

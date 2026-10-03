@@ -195,17 +195,28 @@ a.data-btn{display:inline-flex;align-items:center;text-decoration:none}
 @media (max-width:520px){.example-text .jp{font-size:1.15rem}}
 @media (max-width:560px){.grammar-card{grid-template-columns:1fr}.grammar-rail{padding:0 0 14px;border-right:0;border-bottom:1px solid var(--border)}}
 .practice-box{background:color-mix(in srgb,var(--warn) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--warn) 45%,var(--surface));border-radius:8px;padding:12px 16px;font-size:0.9rem;line-height:1.6;color:var(--text);white-space:pre-line}
-.nav-bar{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-top:1px solid var(--border);background:var(--surface2);gap:12px}
-.nav-btn{padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-size:0.9rem;font-weight:600;transition:all 0.2s}
-.nav-btn.prev{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
-.nav-btn.prev:hover{background:var(--border)}
+.nav-bar{position:relative;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:14px 16px 10px;border-top:1px solid var(--border);background:var(--surface2);gap:12px}
+.nav-edge{position:absolute;left:0;right:0;top:-1px;height:3px;background:var(--border)}
+.nav-edge i{display:block;height:100%;background:var(--ok)}
+.nav-arrow{justify-self:start;min-width:44px;min-height:44px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--muted);font:inherit;font-size:1.1rem;cursor:pointer}
+.nav-arrow:hover:not(:disabled){border-color:var(--accent-fg);color:var(--text)}
+.nav-arrow:disabled{opacity:0.3;cursor:not-allowed}
+.nav-mid{text-align:center;line-height:1.35;min-width:0}
+.nav-mid b{display:block;font-size:0.9rem}
+.nav-mid b span,.nav-status,.nav-pace{color:var(--muted)}
+.nav-mid b span{font-weight:400}
+.nav-status{font-size:0.8rem}
+.nav-pace{font-size:0.72rem}
+.nav-ok{color:var(--ok);font-weight:600}
+.nav-link{background:none;border:0;padding:0 2px;min-height:24px;color:var(--muted);font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.nav-link:hover{color:var(--text)}
+.nav-act{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.nav-skip{min-height:44px;padding:0 10px;border:0;border-radius:var(--radius);background:none;color:var(--muted);font:inherit;font-size:0.85rem;cursor:pointer}
+.nav-skip:hover{color:var(--text);background:var(--surface)}
+.nav-btn{min-height:44px;padding:0 20px;border-radius:var(--radius);border:none;cursor:pointer;font-family:inherit;font-size:0.9rem;font-weight:600;white-space:nowrap}
 .nav-btn.next{background:var(--accent);color:var(--on-accent)}
 .nav-btn.next:hover{background:color-mix(in srgb,var(--accent) 85%,var(--text))}
-.nav-btn.complete{background:var(--ok);color:var(--on-color);padding:10px 16px}
-.nav-btn.complete.done{background:var(--bad)}
-.nav-btn.complete:hover{opacity:0.85}
-.nav-btn:disabled{opacity:0.3;cursor:not-allowed}
-.day-counter{font-size:0.85rem;color:var(--muted);text-align:center}
+@media (max-width:720px){.nav-bar{grid-template-columns:44px 1fr;grid-template-areas:"p m" "a a"}.nav-arrow{grid-area:p}.nav-mid{grid-area:m;text-align:left}.nav-act{grid-area:a}.nav-act .nav-btn{flex:1}.nav-pace{display:none}}
 /* Units + Stats tabs (ticket 28): shared card */
 .overview,.stats{display:grid;gap:14px}
 .panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px 16px;min-width:0}

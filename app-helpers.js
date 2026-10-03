@@ -18,11 +18,15 @@ var UI_STRINGS = {
   view_stats:     { en: 'Stats',    ja: '統計', rt: 'とうけい',   since: 'N1' },
   view_review:    { en: 'Review',   ja: '復習', rt: 'ふくしゅう', since: 'N4'   },
   // Day status
-  mark_incomplete: { en: '✕ Mark as not done', ja: '✕ まだ',         since: 'N4'  },
+  mark_incomplete: { en: 'Mark not done', ja: 'まだ',         since: 'N4'  },
   complete_badge:  { en: '✓ Done',         ja: '✓ かんりょう',  since: 'N4' },
   // Navigation buttons
   nav_prev: { en: '← Previous', ja: '← まえ',   since: 'N4'  },
   nav_next: { en: 'Next →',     ja: 'つぎ →',   since: 'N4' },
+  nav_skip: { en: 'Skip →',     ja: 'とばす →', since: 'N4' },
+  nav_quiz: { en: 'Take the quiz ↓', ja: 'クイズ ↓', since: 'N4' },
+  nav_mock: { en: 'Take the mock ↓', ja: 'もぎしけん ↓', since: 'N4' },
+  nav_next_stage: { en: 'Next stage →', ja: 'つぎのステージ →', since: 'N4' },
   // Section labels (inside a lesson)
   section_kanji:      { en: 'Kanji',         ja: 'かんじ',     since: 'N4' },
   section_vocabulary: { en: 'Vocabulary',    ja: 'たんご',     since: 'N4' },
