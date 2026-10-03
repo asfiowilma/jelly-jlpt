@@ -111,6 +111,7 @@ queue. Doc shapes are documented in `lib.js` above `STORE_ID_RE`:
 | `prefs:learning` | `{ currentUnit, pace, examDate, furigana, uiLang, kanjiView }` (defaults: `PREFS_DEFAULTS`; `kanjiView` = lesson Kanji layout, `rows` or `focus`) |
 | `log:<YYYY-MM-DD>:<deviceId>` | daily activity log, written only by its own device |
 | `mock:<mockId>:<takenAt>` | one taken mock (`mockResult`): parts, byMondai, answers, estimate. Write-once |
+| `ach:<achievementId>` | `{ unlockedAt }` one earned achievement. Sticky: written once, merge = earliest unlock wins, `replaceAll` keeps them |
 
 Every doc also gets `updatedAt` and `deviceId`. Conflicts merge through `mergeStoreDocs`.
 Device-only prefs (palette, theme, TTS rate, sfx mute) stay in localStorage
@@ -132,6 +133,7 @@ Device-only prefs (palette, theme, TTS rate, sfx mute) stay in localStorage
 | Pace | `PACE_MODES`, `todayTarget`, `projectFinish`, `suggestPace`, `newCardCap`, `dailyCardCap` (enforced via pending cards) |
 | Store | `docsToSnapshot`, `mergeStoreDocs`, `exportProgress`, `validateProgressData` |
 | Stats | `srsStats`, `dueForecast`, `computeStreak`, `retention`, `studyHeatmap` |
+| Achievements (ticket 08) | `ACHIEVEMENTS` (defs: id, name, desc, category, rarity, hidden, revealed, level), `achievementDefs`, `evaluateAchievements(docs, unlocked, ctx)`, `achievementList`, `achievementBatch` (retro = 1 summary, live = stack + 1 jingle), `unseenUnlocks`; store.js `achievementUnlocks()`, `Store.putUnlocks` |
 | Display | `furiganaHTML`, `furiganaOn(stored, level)` |
 
 UI strings (`t(key, level)` in `app-helpers.js`) switch from English to Japanese

@@ -327,7 +327,16 @@ function createStore(opts) {
     },
     logs: function () { return logDocs(store.docs()); },
     // A taken mock exam (ticket 18): one mock:<mockId>:<takenAt> doc per sitting (mockResult in lib.js).
-    putMock: function (result) { return write('mock:' + result.mockId + ':' + result.takenAt, result); },
+    putMock: function (result) {
+      var p = write('mock:' + result.mockId + ':' + result.takenAt, result);
+      emit('activity-logged'); // mock achievements evaluate after every logged event
+      return p;
+    },
+    // Achievements (ticket 08): list = [{ id, at }]. Sticky: an existing ach:<id> is never rewritten.
+    putUnlocks: function (list) {
+      list.forEach(function (u) { if (!mirror['ach:' + u.id]) write('ach:' + u.id, { unlockedAt: u.at }); });
+      return queue;
+    },
     // Import: replace every doc. Imported docs are re-stamped as this device's
     // fresh write so they win LWW against older copies elsewhere: units, prefs
     // and logs. Cards still merge on lastReviewedAt, so with sync on a restored
@@ -338,7 +347,7 @@ function createStore(opts) {
       var keep = {};
       docs.forEach(function (d) { keep[d._id] = true; });
       Object.keys(mirror).forEach(function (id) {
-        if (keep[id]) return;
+        if (keep[id] || id.indexOf('ach:') === 0) return; // unlocks are sticky: a restore never revokes them
         delete mirror[id];
         enqueue(function () { return backend.remove(id).then(function () { delete revs[id]; }); });
       });
@@ -470,3 +479,6 @@ function disconnectSync(forget) {
 }
 
 var Store = createStore();
+
+// Another file (the achievements screen) reads this: { achievementId: unlockedAt ms } held on this device.
+function achievementUnlocks() { return Store.snapshot().unlocked; }

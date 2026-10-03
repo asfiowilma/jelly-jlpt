@@ -20,7 +20,7 @@
   Load order matters — no bundler resolves this automatically:
   1. data/catalog.js (declares CATALOG { items, add } + PLAN = [])
   2. data/<level>/*.js (CATALOG.add([...]) item files + plan.js PLAN.push(...); any order)
-  3. lib.js (pure helpers + Babel runtime helpers; reads CATALOG/PLAN only when called)
+  3. lib.js (pure helpers + Babel runtime helpers; reads CATALOG/PLAN when called, and once at load for ACHIEVEMENTS)
   4. store.js (Store: PouchDB-backed persistence for synced learning data; uses lib.js)
   5. app-helpers.js (t/tRuby/speak/icons/stroke-order fetch; uses lib.js levelRank)
      sfx.js (playSfx/sfxMuted: quiz + achievement sounds from sfx/)
@@ -55,6 +55,7 @@
 <script src="components/stats-view.js"></script>
 <script src="components/import-view.js"></script>
 <script src="components/settings-view.js"></script>
+<script src="components/toast-stack.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -64,6 +64,7 @@ function seedKnown(ids, source, batchId, now) {
   if (r.added.length || r.replaced.length) {
     Store.putCards(cards);
     notifyStoreChanged();
+    scheduleAchievements('live');
   }
   return r;
 }
@@ -77,6 +78,36 @@ function undoKnown(batchId, ids) {
   return r;
 }
 function newBatchId(source) { return source + ':' + Date.now().toString(36); }
+
+// ── Achievements (ticket 08; mechanics ticket 30) ───────────────────────────
+// scheduleAchievements(mode): debounced evaluation. 'live' = after a logged event (stacked toasts + one
+// jingle); 'retro' = app start / store changed under us (silent, one summary toast). 'live' wins when both
+// land in one window. Unlocks are written as ach:<id> docs; the App listens for 'achievement-batch'.
+var _achTimer = null, _achMode = 'retro';
+function scheduleAchievements(mode) {
+  if (mode === 'live') _achMode = 'live';
+  if (_achTimer) return;
+  _achTimer = setTimeout(function () {
+    var m = _achMode;
+    _achTimer = null;
+    _achMode = 'retro';
+    runAchievements(m);
+  }, 250);
+}
+function runAchievements(mode) {
+  var res = evaluateAchievements(Store.docs(), Store.snapshot().unlocked, { units: UNITS, catalog: CATALOG, now: Date.now() });
+  if (!res.length) return;
+  Store.putUnlocks(res);
+  window.dispatchEvent(new CustomEvent('achievement-batch', { detail: achievementBatch(res, mode) }));
+}
+// Unseen-unlock badge (per device, cleared when the Achievements tab opens): ids opened here live in
+// localStorage, so unlocks synced from another device count too.
+var ACH_SEEN_KEY = 'jlpt_ach_seen';
+function achSeenIds() {
+  try { var v = JSON.parse(localStorage.getItem(ACH_SEEN_KEY)); return Array.isArray(v) ? v : []; } catch (e) { return []; }
+}
+function achievementBadge() { return unseenUnlocks(achievementUnlocks(), achSeenIds()).length; }
+function markAchievementsSeen() { safeSave(ACH_SEEN_KEY, JSON.stringify(Object.keys(achievementUnlocks()))); }
 
 var NAV_TABS = [
   { view: 'unit', label: 'view_today', icon: 'today' },
@@ -216,6 +247,29 @@ function App() {
     return function () {
       window.removeEventListener('activity-logged', bump);
       window.removeEventListener('sync-status', bump);
+    };
+  }, []);
+  // Achievements: evaluate on start, after every logged event and when docs change under us; show the batch.
+  var _React$useStateToast = React.useState(null),
+    toastBatch = _React$useStateToast[0],
+    setToastBatch = _React$useStateToast[1];
+  React.useEffect(function () {
+    function onLogged() { scheduleAchievements('live'); }
+    function onChanged() { scheduleAchievements('retro'); }
+    function onBatch(e) {
+      var b = e.detail;
+      setToastBatch(b);
+      if (b && b.jingle) playSfx('achievement'); // once per batch; playSfx respects mute
+      setLogTick(function (n) { return n + 1; });
+    }
+    window.addEventListener('activity-logged', onLogged);
+    window.addEventListener('store-changed', onChanged);
+    window.addEventListener('achievement-batch', onBatch);
+    scheduleAchievements('retro');
+    return function () {
+      window.removeEventListener('activity-logged', onLogged);
+      window.removeEventListener('store-changed', onChanged);
+      window.removeEventListener('achievement-batch', onBatch);
     };
   }, []);
   // Docs changed under us (another tab, a synced device, a merge): re-read the
@@ -464,7 +518,13 @@ function App() {
     kanjiView: kanjiView,
     setKanjiView: setKanjiView,
     cards: srsCards
-  })));
+  })), React.createElement(ToastStack, {
+    batch: toastBatch,
+    onDone: function () { setToastBatch(null); },
+    // The Achievements screen (ticket 09) listens for 'open-achievements' ({ id? }) and navigates.
+    onOpen: function (id) { setToastBatch(null); window.dispatchEvent(new CustomEvent('open-achievements', { detail: { id: id } })); },
+    onMore: function () { setToastBatch(null); window.dispatchEvent(new CustomEvent('open-achievements', { detail: {} })); }
+  }));
 }
 
 var ErrorBoundary = (function () {

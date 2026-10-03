@@ -832,3 +832,17 @@ body.quiz-open{overflow:hidden}
 .rv-hub .pending-line{margin-top:16px;padding:6px 14px;border:1px dashed var(--border);border-radius:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .rv-hub .pending-line .ex-retry-btn{background:none;color:var(--muted);text-decoration:underline;font-weight:400;font-size:0.85rem;min-height:44px;padding:0 6px}
 .rv-hub .pending-line .ex-retry-btn:hover{background:none;color:var(--text)}
+
+/* Achievement toasts (ticket 08): bottom-right on desktop, above the bottom tab bar on phones */
+.toast-stack{position:fixed;right:16px;bottom:16px;z-index:50;display:flex;flex-direction:column;gap:8px;max-width:min(340px,calc(100vw - 32px))}
+.toast{display:flex;align-items:center;gap:10px;text-align:left;font-family:inherit;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;cursor:pointer;box-shadow:var(--shadow);animation:toast-slam .28s cubic-bezier(.2,1.4,.4,1)}
+.toast-body{display:flex;flex-direction:column;min-width:0}
+.toast-kicker{font-size:.66rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.toast-sub{font-size:.75rem;color:var(--muted)}
+.toast-stamp{flex:none;width:40px;height:40px;display:grid;place-items:center;font-size:1.3rem;font-weight:700;border-radius:4px;background:var(--surface2);color:var(--accent-fg);border:1px dashed currentColor}
+.toast-more{justify-content:center;color:var(--muted)}
+.toast-legendary{border:2px solid #d9a441;background:linear-gradient(110deg,var(--surface) 35%,color-mix(in srgb,#d9a441 30%,var(--surface)) 50%,var(--surface) 65%) 0 0/250% 100%;animation:toast-slam .28s cubic-bezier(.2,1.4,.4,1),toast-shimmer 2.4s linear infinite}
+@keyframes toast-slam{from{transform:scale(1.35);opacity:0}to{transform:none;opacity:1}}
+@keyframes toast-shimmer{to{background-position:-250% 0}}
+@media(max-width:639px){.toast-stack{right:8px;left:8px;max-width:none;bottom:calc(64px + env(safe-area-inset-bottom))}}
+@media(prefers-reduced-motion:reduce){.toast,.toast-legendary{animation:none}}

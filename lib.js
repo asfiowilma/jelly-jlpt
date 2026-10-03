@@ -2083,11 +2083,12 @@ function matchCatalogText(text) {
 //                   { mondai key: [right, total] }, answers: { section: [option index | null] },
 //                   estimate: { lkr, listening, total, passed } }. Written once, never changed:
 //                   the merge rule (last write wins) never has two versions to pick from.
-// Reserved, not written yet (features come later):
-//   ach:<id>            { unlockedAt }   merge: earliest unlock wins, never deleted
+//   ach:<id>        { unlockedAt (ms) }  one earned achievement (ticket 08). Sticky: written once by
+//                   Store.putUnlocks, never deleted by evaluation, un-marking a unit or undoing an
+//                   import; replaceAll keeps them. Merge: earliest unlockedAt wins (mergeAchDocs).
 // Device-only prefs stay in localStorage and never become docs:
 var DEVICE_PREF_KEYS = ['jlpt_palette', 'jlpt_theme', 'jlpt_tts_rate', 'jlpt_sfx_mute'];
-var STORE_ID_RE = /^(unit:n[1-5]\.u\d{3}|card:(v:[^|\s]+\|[^|\s]+|k:\S+|g:[\w-]+|c:\S+)|prefs:learning|log:\d{4}-\d{2}-\d{2}:[\w-]+|mock:x:[\w-]+:\d+)$/;
+var STORE_ID_RE = /^(unit:n[1-5]\.u\d{3}|card:(v:[^|\s]+\|[^|\s]+|k:\S+|g:[\w-]+|c:\S+)|prefs:learning|log:\d{4}-\d{2}-\d{2}:[\w-]+|mock:x:[\w-]+:\d+|ach:[\w-]+)$/;
 var PREFS_DEFAULTS = { currentUnit: null, pace: 1, examDate: null, furigana: null, uiLang: 'en', kanjiView: 'rows' };
 
 // ── Activity log (log:* docs) ───────────────────────────────────────────────
@@ -2326,7 +2327,14 @@ function mergeLogDocs(a, b) {
 }
 // mergeStoreDocs: the merge rule for any two revisions of one doc.
 function mergeStoreDocs(a, b) {
+  if (a._id.indexOf('ach:') === 0) return mergeAchDocs(a, b);
   return a._id.indexOf('log:') === 0 ? mergeLogDocs(a, b) : pickStoreWinner(a, b);
+}
+// mergeAchDocs: two revisions of one ach:* doc → the earlier unlock (ties: higher deviceId).
+function mergeAchDocs(a, b) {
+  var ua = a.unlockedAt || Infinity, ub = b.unlockedAt || Infinity;
+  if (ua !== ub) return ua < ub ? a : b;
+  return String(a.deviceId || '') >= String(b.deviceId || '') ? a : b;
 }
 
 // ── Remote sync helpers (Settings → Sync; PouchDB wiring is in store.js) ────
@@ -2419,7 +2427,7 @@ function newCardCap(pace, upcomingUnits) {
 
 // docsToSnapshot: docs → App's synchronous state shape.
 function docsToSnapshot(docs) {
-  var snap = { completed: [], srsCards: {}, currentUnit: null, pace: 1, examDate: null, furiganaPref: null, uiLang: 'en', kanjiView: 'rows', pendingCards: [], mocks: [] };
+  var snap = { completed: [], srsCards: {}, currentUnit: null, pace: 1, examDate: null, furiganaPref: null, uiLang: 'en', kanjiView: 'rows', pendingCards: [], mocks: [], unlocked: {} };
   docs.forEach(function (d) {
     if (d._id.indexOf('unit:') === 0) {
       if (d.done) snap.completed.push(d._id.slice(5));
@@ -2436,6 +2444,8 @@ function docsToSnapshot(docs) {
       if (Array.isArray(d.pendingCards)) snap.pendingCards = d.pendingCards.slice();
     } else if (d._id.indexOf('mock:') === 0) {
       snap.mocks.push(stripDocMeta(d));
+    } else if (d._id.indexOf('ach:') === 0 && d.unlockedAt > 0) {
+      snap.unlocked[d._id.slice(4)] = d.unlockedAt;
     }
   });
   snap.mocks.sort(function (a, b) { return b.takenAt - a.takenAt; }); // newest first
@@ -2491,6 +2501,7 @@ function validateProgressData(data) {
       return typeof d[f] !== 'number';
     })) return bad(d._id + ' missing SRS fields');
     if (d._id.indexOf('log:') === 0 && d.date !== d._id.split(':')[1]) return bad(d._id + ' date mismatch');
+    if (d._id.indexOf('ach:') === 0 && !(d.unlockedAt > 0)) return bad(d._id + ' missing unlockedAt');
     if (d._id.indexOf('mock:') === 0 && (d._id !== 'mock:' + d.mockId + ':' + d.takenAt || !d.estimate)) return bad(d._id + ' bad mock result');
   }
   if (data.device !== undefined) {
@@ -2502,4 +2513,359 @@ function validateProgressData(data) {
     }
   }
   return { valid: true, error: null };
+}
+
+// ── Achievements (ticket 08; list: .scratch/achievements/achievements-draft.md) ─
+// Pure rule engine. ACHIEVEMENTS = definitions (data + rule functions); evaluateAchievements reads
+// the store docs and returns what is newly earned. Unlocks persist as ach:<id> docs (see above).
+// Categories: progress 進 · habit 習 · quiz 問 · mock 試 · review 復 · mastery 極.
+var MOCK_SCORE_MAX = 180; // scaled estimate: lkr 0-120 + listening 0-60 (mockEstimate)
+var ACH_CATEGORIES = { progress: '進', habit: '習', quiz: '問', mock: '試', review: '復', mastery: '極' };
+
+function dateMs(d) { var p = d.split('-'); return new Date(+p[0], p[1] - 1, +p[2]).getTime(); }
+function realMature(c) { return !!c && c.interval >= 21 && c.lastReviewedAt > 0; } // import-proof
+function cleanPerfect(q) { return q.total >= 5 && q.right === q.total && !q.overrides; }
+function mockCounted(m) { // ≥ 50% of the questions answered (a blank submit doesn't count)
+  var n = 0, got = 0;
+  Object.keys(m.answers || {}).forEach(function (k) {
+    m.answers[k].forEach(function (a) { n++; if (a !== null && a !== undefined) got++; });
+  });
+  return n > 0 && got * 2 >= n;
+}
+
+// achievementState(docs, units, catalog, now): everything the rules read, derived once.
+function achievementState(docs, units, catalog, now) {
+  var s = { units: units, catalog: catalog, now: now, done: {}, cards: {}, mocks: [] };
+  var known = {};
+  units.forEach(function (u) { known[u.id] = true; });
+  docs.forEach(function (d) {
+    if (d._id.indexOf('unit:') === 0) { if (d.done && known[d._id.slice(5)]) s.done[d._id.slice(5)] = d.completedAt || 0; }
+    else if (d._id.indexOf('card:') === 0) s.cards[d._id.slice(5)] = d;
+    else if (d._id.indexOf('mock:') === 0 && catalog.items[d.mockId] && mockCounted(d)) s.mocks.push(d);
+  });
+  s.mocks.sort(function (a, b) { return a.takenAt - b.takenAt; });
+  s.logs = logDocs(docs);
+  s.agg = aggregateLogs(s.logs);
+  s.dates = studyDates(s.logs);
+  s.longest = computeStreak(s.dates, localDate(new Date(now))).longest;
+  s.reviews = activityTotals(s.logs).reviews;
+  s.quizzes = [];
+  s.logs.forEach(function (l) { s.quizzes = s.quizzes.concat(normalizeLog(l).quizzes); });
+  s.quizzes.sort(function (a, b) { return a.at - b.at; });
+  s.byUnit = {};
+  s.quizzes.forEach(function (q) { (s.byUnit[q.unit] || (s.byUnit[q.unit] = [])).push(q); });
+  s.perfectAt = {}; // unit → earliest clean perfect
+  s.quizzes.forEach(function (q) { if (cleanPerfect(q) && !s.perfectAt[q.unit]) s.perfectAt[q.unit] = q.at; });
+  return s;
+}
+
+// A rule returns false, true (earned; date unknown = ship day) or a ms timestamp (earned then).
+function _all(times) { // every entry must be a time; the latest one is when it was complete
+  if (!times.length) return false;
+  var mx = 0;
+  for (var i = 0; i < times.length; i++) { if (times[i] === undefined || times[i] === null) return false; mx = Math.max(mx, times[i]); }
+  return mx || true;
+}
+function _nth(times, n) { times = times.slice().sort(function (a, b) { return a - b; }); return times.length >= n ? times[n - 1] || true : false; }
+function _perDay(s, n) { // earliest moment some day reached n done units
+  var days = {}, best = false;
+  Object.keys(s.done).forEach(function (id) {
+    if (s.done[id]) (days[localDate(new Date(s.done[id]))] = days[localDate(new Date(s.done[id]))] || []).push(s.done[id]);
+  });
+  Object.keys(days).forEach(function (k) {
+    days[k].sort(function (a, b) { return a - b; });
+    if (days[k].length >= n && (!best || days[k][n - 1] < best)) best = days[k][n - 1];
+  });
+  return best;
+}
+function _streakAt(dates, n) { // date a run of n consecutive study dates completed
+  var run = 0, prev = null, hit = false;
+  dates.forEach(function (d) {
+    var i = dateToDayIndex(d);
+    run = prev !== null && i === prev + 1 ? run + 1 : 1;
+    prev = i;
+    if (!hit && run >= n) hit = dateMs(d) || true;
+  });
+  return hit;
+}
+function _matureCount(s, pred) {
+  return Object.keys(s.cards).filter(function (id) { return realMature(s.cards[id]) && (!pred || pred(s.cards[id])); }).length;
+}
+
+// Row builders. A def: { id, category, rarity, hidden, name, desc, revealed, level, test(s) → rule result,
+// progress?(s) → [x, goal] }. _ctr = "at least goal of a count", with a progress bar while locked.
+function _def(id, category, rarity, name, desc, test, extra) {
+  return Object.assign({ id: id, category: category, rarity: rarity, hidden: false, name: name, desc: desc, revealed: '', level: null, test: test }, extra);
+}
+function _ctr(id, category, rarity, name, desc, goal, count, times) {
+  return _def(id, category, rarity, name, desc, function (s) {
+    if (count(s) < goal) return false;
+    return times ? times(s, goal) : true;
+  }, { progress: function (s) { return [Math.min(count(s), goal), goal]; } });
+}
+function _hid(d, revealed) { d.hidden = true; d.revealed = revealed; return d; }
+
+// levelAchievements(L, units, catalog): the per-level template rows for level L (kana rows only at N5).
+// Rows whose unit kind / mock format the level lacks are not instantiated.
+function levelAchievements(L, units, catalog) {
+  var l = L.toLowerCase(), isN5 = L === 'N5';
+  var nm = function (n) { return isN5 ? n : n + ' (' + L + ')'; }; // ponytail: N4+ get a "(N4)" suffix until puns are written
+  var lv = units.filter(function (u) { return u.level === L; });
+  var kindUnits = function (k) { return lv.filter(function (u) { return u.kind === k; }); };
+  var doneAll = function (list) { return function (s) { return _all(list.map(function (u) { return s.done[u.id]; })); }; };
+  var doneProg = function (list) { return function (s) { return [list.filter(function (u) { return s.done[u.id] !== undefined; }).length, list.length]; }; };
+  var mocksOf = function (fmt) {
+    return Object.keys(catalog.items).map(function (k) { return catalog.items[k]; })
+      .filter(function (m) { return m.kind === 'mock' && m.level === L && m.format === fmt; });
+  };
+  var sittings = function (s, mockId) { return s.mocks.filter(function (m) { return m.mockId === mockId; }); };
+  var fullIds = mocksOf('full').map(function (m) { return m.id; });
+  var diagIds = mocksOf('diagnostic').map(function (m) { return m.id; });
+  var fullSittings = function (s) { return s.mocks.filter(function (m) { return fullIds.indexOf(m.mockId) >= 0; }); };
+  var firstSittings = function (s) { return fullIds.map(function (id) { return sittings(s, id)[0]; }).filter(Boolean); };
+  var out = [];
+  var add = function (d) { d.level = L; out.push(d); return d; };
+  var tag = function (id) { return l + '-' + id; };
+  [['all-lessons', 'lesson', 'rare', 'Lesson Learned', 'Pass every {L} lesson unit.'],
+    ['all-reviews', 'review', 'uncommon', 'Déjà Vu All Over Again', 'Pass every {L} review unit.'],
+    ['prep', 'prep', 'uncommon', 'Strategy Session', 'Finish the {L} test-prep block.']].forEach(function (k) {
+    var list = kindUnits(k[1]);
+    if (list.length) add(_def(tag(k[0]), 'progress', k[2], nm(k[3]), k[4].replace('{L}', L), doneAll(list), { progress: doneProg(list) }));
+  });
+  add(_def(tag('clear'), 'progress', 'epic', nm('Go Go N5'), 'Clear every ' + L + ' unit.', doneAll(lv), { progress: doneProg(lv) }));
+  var quizzed = lv.filter(function (u) { return u.kind !== 'mock'; });
+  add(_def(tag('quiz-sweep'), 'quiz', 'legendary', nm('Hanamaru Garden'), 'Ace the quiz of every ' + L + ' unit.',
+    function (s) { return _all(quizzed.map(function (u) { return s.perfectAt[u.id]; })); },
+    { progress: function (s) { return [quizzed.filter(function (u) { return s.perfectAt[u.id]; }).length, quizzed.length]; } }));
+  var firstAt = function (arr) { return arr.length ? arr[0].takenAt : false; };
+  var passed = function (m) { return m.estimate && m.estimate.passed; };
+  if (diagIds.length) {
+    add(_def(tag('diagnostic'), 'mock', 'common', nm('Jiko Shōkai'), 'Sit the ' + L + ' diagnostic.', function (s) {
+      return firstAt(s.mocks.filter(function (x) { return diagIds.indexOf(x.mockId) >= 0; }));
+    }));
+  }
+  if (fullIds.length) {
+    add(_def(tag('mock-sat'), 'mock', 'common', nm('Dress Rehearsal'), 'Sit a full ' + L + ' mock exam.', function (s) { return firstAt(fullSittings(s)); }));
+    add(_def(tag('mock-pass'), 'mock', 'uncommon', nm('Gōkaku!'), 'Pass a full ' + L + ' mock (estimate).', function (s) { return firstAt(fullSittings(s).filter(passed)); }));
+    add(_def(tag('mock-pass-all'), 'mock', 'rare', nm('Double Gōkaku'), 'Pass every full ' + L + ' mock.',
+      function (s) { return _all(fullIds.map(function (id) { var p = sittings(s, id).filter(passed)[0]; return p ? p.takenAt : null; })); },
+      { progress: function (s) { return [fullIds.filter(function (id) { return sittings(s, id).some(passed); }).length, fullIds.length]; } }));
+    add(_def(tag('mock-honors'), 'mock', 'epic', nm('Gōkaku with Honors'), 'Score 80%+ on a full ' + L + ' mock, first try.',
+      function (s) { return firstAt(firstSittings(s).filter(function (m) { return m.estimate.total >= 0.8 * MOCK_SCORE_MAX; })); }));
+    add(_def(tag('mock-perfect'), 'mock', 'legendary', nm('Zenmon Seikai'), 'Perfect score on a full ' + L + ' mock, first try.',
+      function (s) {
+        return firstAt(firstSittings(s).filter(function (m) {
+          return m.estimate.total === MOCK_SCORE_MAX && Object.keys(m.parts).every(function (k) { return m.parts[k][1] > 0 && m.parts[k][0] === m.parts[k][1]; });
+        }));
+      }));
+    add(_def(tag('mock-balanced'), 'mock', 'rare', nm('Four Corners'), '80%+ in all four parts of one full ' + L + ' mock.',
+      function (s) {
+        return firstAt(fullSittings(s).filter(function (m) {
+          return ['vocab', 'grammar', 'reading', 'listening'].every(function (k) { return m.parts[k] && m.parts[k][1] > 0 && m.parts[k][0] / m.parts[k][1] >= 0.8; });
+        }));
+      }));
+  }
+  // Mastery: every taught item a real-mature card (seeded "already known" cards don't count until reviewed).
+  var items = unitItems(lv);
+  var of = function (kind) { return items.filter(function (it) { return it.kind === kind; }); };
+  var matureAll = function (list) { return function (s) { return list.length > 0 && list.every(function (it) { return realMature(s.cards[it.id]); }); }; };
+  var matureProg = function (list) { return function (s) { return [list.filter(function (it) { return realMature(s.cards[it.id]); }).length, list.length]; }; };
+  [['vocab-mature', 'vocab', 'epic', 'Vocab Vault', 'Every {L} vocab word is a real-mature card.'],
+    ['kanji-mature', 'kanji', 'epic', 'Kanji Kaiser', 'Every {L} kanji is a real-mature card.'],
+    ['grammar-mature', 'grammar', 'rare', 'Particle Physicist', 'Every {L} grammar point is a real-mature card.']].forEach(function (k) {
+    if (of(k[1]).length) add(_def(tag(k[0]), 'mastery', k[2], nm(k[3]), k[4].replace('{L}', L), matureAll(of(k[1])), { progress: matureProg(of(k[1])) }));
+  });
+  if (items.length) add(_def(tag('all-mature'), 'mastery', 'legendary', nm('Elephant Graveyard of Doubt'), 'Every ' + L + ' card is real-mature. (Konpurīto for memory.)', matureAll(items), { progress: matureProg(items) }));
+  if (isN5) {
+    var script = function (u, sc) { return u.kana.length > 0 && u.kana.every(function (k) { return k.script === sc; }); };
+    var hira = lv.filter(function (u) { return script(u, 'hiragana'); }), kata = lv.filter(function (u) { return script(u, 'katakana'); });
+    add(_def('n5-hiragana', 'progress', 'common', 'Hira-gone Wild', 'Pass the hiragana units and their review.', doneAll(hira), { progress: doneProg(hira) }));
+    add(_def('n5-katakana', 'progress', 'common', 'Kata-strophe Averted', 'Pass the katakana units and their review.', doneAll(kata), { progress: doneProg(kata) }));
+    var kanaOf = function (sc) { return items.filter(function (it) { return it.kind === 'kana' && it.script === sc; }); };
+    add(_def('hiragana-mastered', 'mastery', 'rare', 'Hiragana Black Belt', 'Every hiragana card real-mature.', matureAll(kanaOf('hiragana')), { progress: matureProg(kanaOf('hiragana')) }));
+    add(_def('katakana-mastered', 'mastery', 'rare', 'Kata Master', 'Every katakana card real-mature. (Kata: also a martial-arts form.)', matureAll(kanaOf('katakana')), { progress: matureProg(kanaOf('katakana')) }));
+    // Zero to Hero in a Day: every hiragana unit has a passing quiz entry (any attempt) on one local date.
+    add(_hid(_def('hiragana-blitz', 'progress', 'rare', 'Zero to Hero in a Day', 'Pass all ten hiragana units in one calendar day.', function (s) {
+      if (!hira.length) return false;
+      var byDate = {}, best = false;
+      hira.forEach(function (u) {
+        (s.byUnit[u.id] || []).forEach(function (q) {
+          if (!quizPassed(q.right, q.total, u.kind)) return;
+          var d = localDate(new Date(q.at)), e = byDate[d] || (byDate[d] = {});
+          if (!e[u.id] || q.at < e[u.id]) e[u.id] = q.at;
+        });
+      });
+      Object.keys(byDate).forEach(function (d) {
+        var t = hira.map(function (u) { return byDate[d][u.id]; });
+        if (t.every(Boolean)) { var mx = Math.max.apply(null, t); if (!best || mx < best) best = mx; }
+      });
+      return best;
+    }), 'Did all of hiragana in a day.'));
+  }
+  return out;
+}
+
+// globalAchievements(): the level-independent rows (completionist last).
+function globalAchievements() {
+  var G = [], c = _ctr, d = _def;
+  var doneTimes = function (s) { return Object.keys(s.done).map(function (k) { return s.done[k]; }); };
+  [['first-steps', 'common', 'Ichi Step at a Time', 'Pass your first unit.', 1], ['units-10', 'common', 'Jū-st Getting Started', 'Pass 10 units.', 10],
+    ['units-25', 'uncommon', 'Nijūgo Strong', 'Pass 25 units.', 25], ['units-50', 'uncommon', 'Gojū-on the Roll', 'Pass 50 units.', 50],
+    ['units-100', 'rare', 'Hyaku Percent Effort', 'Pass 100 units.', 100]].forEach(function (r) {
+    G.push(c(r[0], 'progress', r[1], r[2], r[3], r[4], function (s) { return Object.keys(s.done).length; }, function (s, n) { return _nth(doneTimes(s), n); }));
+  });
+  [['streak-4', 'common', 'Mikka Bōzu Breaker', 'Study 4 days in a row. No three-day monk here.', 4],
+    ['streak-7', 'uncommon', 'Isshūkan Ironclad', 'Study 7 days in a row.', 7], ['streak-30', 'rare', 'Tsuki-ing With It', 'Study 30 days in a row.', 30],
+    ['streak-100', 'epic', 'Hyaku-nichi Hero', 'Study 100 days in a row.', 100], ['streak-365', 'legendary', 'Nen-stop', 'Study every day for a year.', 365]].forEach(function (r) {
+    G.push(c(r[0], 'habit', r[1], r[2], r[3], r[4], function (s) { return s.longest; }, function (s, n) { return _streakAt(s.dates, n); }));
+  });
+  [['study-days-30', 'common', 'Thirty-Something', 'Study on 30 different days.', 30], ['study-days-100', 'uncommon', 'Slow and Steady Kame', 'Study on 100 different days.', 100],
+    ['study-days-200', 'rare', 'Kame Marathon', 'Study on 200 different days.', 200]].forEach(function (r) {
+    G.push(c(r[0], 'habit', r[1], r[2], r[3], r[4], function (s) { return s.dates.length; }, function (s, n) { return dateMs(s.dates[n - 1]) || true; }));
+  });
+  G.push(d('double-feature', 'habit', 'common', 'Double Feature', 'Pass 2 units in one calendar day.', function (s) { return _perDay(s, 2); }));
+  G.push(d('hat-trick', 'habit', 'uncommon', 'Hat Trick', 'Pass 3 units in one day.', function (s) { return _perDay(s, 3); }));
+  G.push(d('binge', 'habit', 'rare', 'Binge Watcher', 'Pass 5 units in one day.', function (s) { return _perDay(s, 5); }));
+  G.push(_hid(d('comeback', 'habit', 'uncommon', 'Nana Korobi Ya Oki', 'Fall down seven times, stand up eight.', function (s) {
+    for (var i = 1; i < s.dates.length; i++) if (dateToDayIndex(s.dates[i]) - dateToDayIndex(s.dates[i - 1]) >= 8) return dateMs(s.dates[i]) || true;
+    return false;
+  }), 'Came back after a week+ away.'));
+  var hourQuiz = function (lo, hi) {
+    return function (s) {
+      var q = s.quizzes.filter(function (x) { var h = new Date(x.at).getHours(); return h >= lo && h <= hi; })[0];
+      return q ? q.at : false;
+    };
+  };
+  G.push(_hid(d('early-bird', 'habit', 'uncommon', 'Hayaoki wa Sanmon no Toku', 'Rise early, gain three mon.', hourQuiz(5, 6)), 'Finished a quiz before 7 a.m.'));
+  G.push(_hid(d('night-owl', 'habit', 'uncommon', 'Yoru no Fukurō', 'Hoot hoot, hiragana.', hourQuiz(0, 3)), 'Finished a quiz after midnight.'));
+  G.push(_hid(d('new-year', 'habit', 'uncommon', 'Akemashite Omedetō', 'Start the year with study.', function (s) {
+    var x = s.dates.filter(function (k) { return k.slice(5) === '01-01'; })[0];
+    return x ? dateMs(x) || true : false;
+  }), "Studied on New Year's Day."));
+  // Quiz
+  G.push(d('first-quiz', 'quiz', 'common', 'Pop Quiz Hot Shot', 'Finish your first quiz.', function (s) { return s.quizzes.length ? s.quizzes[0].at : false; }));
+  var perfTimes = function (s) { return Object.keys(s.perfectAt).map(function (k) { return s.perfectAt[k]; }); };
+  var nPerf = function (s) { return Object.keys(s.perfectAt).length; };
+  var nthPerf = function (s, n) { return _nth(perfTimes(s), n); };
+  G.push(c('first-perfect', 'quiz', 'common', 'Hanamaru', 'Ace a quiz. Have a flower circle. 💮', 1, nPerf, nthPerf));
+  G.push(c('perfect-10', 'quiz', 'uncommon', 'Hanamaru Bouquet', 'Ace the quiz of 10 different units.', 10, nPerf, nthPerf));
+  G.push(c('perfect-50', 'quiz', 'rare', 'Hanami Season', 'Ace the quiz of 50 different units.', 50, nPerf, nthPerf));
+  var firstPerfect = function (s) { return Object.keys(s.byUnit).map(function (u) { return s.byUnit[u][0]; }).filter(cleanPerfect); };
+  G.push(c('ippatsu', 'quiz', 'rare', 'Ippatsu', 'Ace 25 units on the very first attempt.', 25,
+    function (s) { return firstPerfect(s).length; }, function (s, n) { return _nth(firstPerfect(s).map(function (q) { return q.at; }), n); }));
+  G.push(_hid(d('redemption-arc', 'quiz', 'uncommon', 'Redemption Arc', 'Struggle with a quiz, then come back and ace it.', function (s) {
+    var best = false;
+    Object.keys(s.byUnit).forEach(function (u) {
+      var qs = s.byUnit[u], f = qs[0];
+      if (!f.total || f.right / f.total >= 0.6) return;
+      var day = localDate(new Date(f.at));
+      qs.forEach(function (q) { if (cleanPerfect(q) && localDate(new Date(q.at)) > day && (!best || q.at < best)) best = q.at; });
+    });
+    return best;
+  }), 'Aced a quiz you once scored under 60% on.'));
+  // Mock
+  var nMocks = function (s) { return s.mocks.length; };
+  G.push(c('mock-sittings-5', 'mock', 'uncommon', 'Mock-ingbird', 'Sit 5 mock exams.', 5, nMocks, function (s, n) { return s.mocks[n - 1].takenAt; }));
+  G.push(c('mock-sittings-15', 'mock', 'rare', 'Mock Star', 'Sit 15 mock exams.', 15, nMocks, function (s, n) { return s.mocks[n - 1].takenAt; }));
+  // Review
+  var reviewDays = function (s) { return Object.keys(s.agg).filter(function (k) { return s.agg[k].reviews.count > 0; }).sort(); };
+  var nReviews = function (s) { return s.reviews; };
+  G.push(c('first-review', 'review', 'common', 'Flip Side', 'Rate your first flashcard.', 1, nReviews, function (s) { return dateMs(reviewDays(s)[0]) || true; }));
+  G.push(c('reviews-100', 'review', 'common', 'Card Shark', 'Review 100 cards.', 100, nReviews));
+  G.push(c('reviews-1000', 'review', 'uncommon', 'Sen-bazuru', 'Review 1,000 cards.', 1000, nReviews));
+  G.push(c('reviews-5000', 'review', 'epic', 'Go-sen Flips', 'Review 5,000 cards.', 5000, nReviews));
+  var reviewDay = function (n) {
+    return function (s) {
+      var k = reviewDays(s).filter(function (x) { return s.agg[x].reviews.count >= n; })[0];
+      return k ? dateMs(k) || true : false;
+    };
+  };
+  G.push(d('review-day-50', 'review', 'uncommon', 'Zen Deck', 'Rate 50 cards in one calendar day.', reviewDay(50)));
+  G.push(d('review-day-100', 'review', 'rare', 'Marathon Mōdo', 'Rate 100 cards in one calendar day.', reviewDay(100)));
+  var nMature = function (s) { return _matureCount(s); };
+  G.push(c('mature-1', 'review', 'common', 'Graduation Day', 'Grow a card to a 21-day interval.', 1, nMature));
+  G.push(c('mature-100', 'review', 'uncommon', 'Long-Term Memory Lane', 'Have 100 real-mature cards.', 100, nMature));
+  G.push(c('mature-500', 'review', 'epic', 'Elephants Never Wasureru', 'Have 500 real-mature cards.', 500, nMature));
+  G.push(d('interval-365', 'review', 'rare', 'Mata Rainen', 'A card scheduled a full year out.', function (s) {
+    return Object.keys(s.cards).some(function (k) { return s.cards[k].interval >= 365 && s.cards[k].lastReviewedAt > 0; });
+  }));
+  G.push(d('import-first', 'review', 'common', 'Head Start', 'Mark something as already known.', function (s) {
+    return Object.keys(s.cards).some(function (k) { return !!s.cards[k].imported; });
+  }));
+  G.push(c('import-proved', 'review', 'uncommon', 'Told You So', '25 known cards that passed their first real test.', 25, function (s) {
+    return Object.keys(s.cards).filter(function (k) { var x = s.cards[k]; return x.imported && x.lastReviewedAt > 0 && x.reps >= 3; }).length;
+  }));
+  // Mastery by type
+  var kanjiMature = function (s) { return _matureCount(s, function (x) { return x.type === 'kanji'; }); };
+  G.push(c('kanji-mature-25', 'mastery', 'uncommon', 'Kanji-nator', 'Have 25 real-mature kanji cards.', 25, kanjiMature));
+  G.push(c('kanji-mature-50', 'mastery', 'rare', 'Radical Behavior', 'Have 50 real-mature kanji cards.', 50, kanjiMature));
+  // completionist: decided in evaluateAchievements (needs every other row), so its test never fires alone.
+  G.push(_hid(d('completionist', 'progress', 'legendary', 'Konpurīto', 'Unlock every other achievement.', function () { return false; }), 'Unlocked everything. お疲れ様でした。'));
+  return G;
+}
+
+// achievementDefs(units, catalog): global rows + the level template for each level that has units.
+// Order is stable; completionist is last.
+function achievementDefs(units, catalog) {
+  var levels = [], out = [], all = globalAchievements(), end = all.pop();
+  units.forEach(function (u) { if (levels.indexOf(u.level) < 0) levels.push(u.level); });
+  levels.forEach(function (L) { out = out.concat(levelAchievements(L, units, catalog)); });
+  return all.concat(out, [end]);
+}
+// ACHIEVEMENTS: the list for the built content. Rows are { id, name, desc, category, rarity, hidden,
+// revealed, level } plus rule functions (test, progress?). Shown text for a locked hidden row: see achievementList.
+var ACHIEVEMENTS = achievementDefs(allUnits(), CATALOG);
+
+// evaluateAchievements(docs, unlocked, ctx) → [{ id, at }] newly earned, in list order.
+// docs = store docs; unlocked = { id: unlockedAtMs } already held (sticky, never revoked);
+// ctx = { units, catalog, now?, defs? }. `at` = the date the data proves (ms), else `now` (ship day).
+function evaluateAchievements(docs, unlocked, ctx) {
+  var now = ctx.now || Date.now(), defs = ctx.defs || achievementDefs(ctx.units, ctx.catalog);
+  var s = achievementState(docs, ctx.units, ctx.catalog, now), out = [], have = Object.assign({}, unlocked);
+  defs.forEach(function (d) {
+    if (have[d.id] || d.id === 'completionist') return;
+    var r = d.test(s);
+    if (!r) return;
+    var at = typeof r === 'number' ? Math.min(r, now) : now;
+    have[d.id] = at;
+    out.push({ id: d.id, at: at });
+  });
+  if (!have.completionist && defs.some(function (d) { return d.id === 'completionist'; }) &&
+      defs.every(function (d) { return d.id === 'completionist' || have[d.id]; })) {
+    var last = defs.reduce(function (m, d) { return d.id === 'completionist' ? m : Math.max(m, have[d.id]); }, 0);
+    out.push({ id: 'completionist', at: Math.min(last || now, now) });
+  }
+  return out;
+}
+
+// achievementList(docs, unlocked, ctx) → one row per def for the collection screen:
+// { id, category, rarity, hidden, level, unlocked, unlockedAt, name, desc, revealed, progress }.
+// A locked hidden row shows only "???" (no text, no progress); locked counters carry progress [x, goal].
+function achievementList(docs, unlocked, ctx) {
+  var now = ctx.now || Date.now(), defs = ctx.defs || achievementDefs(ctx.units, ctx.catalog);
+  var s = achievementState(docs, ctx.units, ctx.catalog, now);
+  return defs.map(function (d) {
+    var on = !!unlocked[d.id], mask = d.hidden && !on;
+    return { id: d.id, category: d.category, rarity: d.rarity, hidden: d.hidden, level: d.level, unlocked: on, unlockedAt: unlocked[d.id] || null,
+      name: mask ? '???' : d.name, desc: mask ? '' : d.desc, revealed: mask ? '' : d.revealed,
+      progress: !on && !d.hidden && d.progress ? d.progress(s) : null };
+  });
+}
+
+// achievementBatch(newly, mode) → what the toasts show (ticket 30), or null when nothing is new.
+// 'retro' (app start, after sync, new content): silent, ONE summary. 'live' (after a logged event):
+// newest first, max 3 shown + `more`, ONE jingle for the batch. Unlocks that arrive from another
+// device never come through here: they only add to the badge (unseenUnlocks).
+function achievementBatch(newly, mode, maxShown) {
+  maxShown = maxShown || 3;
+  if (!newly.length) return null;
+  if (mode === 'retro') return { summary: newly.length, toasts: [], more: 0, jingle: false };
+  var ids = newly.map(function (n) { return n.id; }).reverse();
+  return { summary: 0, toasts: ids.slice(0, maxShown), more: Math.max(0, ids.length - maxShown), jingle: true };
+}
+
+// unseenUnlocks(unlocked, seen) → ids not yet opened on this device (Achievements tab badge;
+// `seen` = device-local id list, so another device's unlocks count too).
+function unseenUnlocks(unlocked, seen) {
+  return Object.keys(unlocked).filter(function (id) { return (seen || []).indexOf(id) < 0; });
 }

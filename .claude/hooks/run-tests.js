@@ -67,6 +67,7 @@ var appFiles = [
   path.join("components", "stats-view.js"),
   path.join("components", "import-view.js"),
   path.join("components", "settings-view.js"),
+  path.join("components", "toast-stack.js"),
   "app.js",
 ];
 
