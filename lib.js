@@ -406,22 +406,28 @@ function buildExercises(unit) {
   var cap = unit.quiz && unit.quiz.cap || exerciseCap(unit.level);
   return rndShuffle(exs).slice(0, cap);
 }
+// NFKC folds full-width romaji/digits/punctuation to half-width, half-width
+// katakana to full-width, and composes combining marks (か+゙ → が).
+// Hiragana and katakana stay distinct on purpose: wrong script = wrong answer.
+function foldAns(s) {
+  return s.normalize('NFKC').trim().toLowerCase();
+}
 function normAns(s) {
-  return s.trim().toLowerCase().replace(/[!"#$%&'()*+,./:;<=>?@[\]^_`{|}~\\]/g, '').trim();
+  return foldAns(s).replace(/[!"#$%&'()*+,./:;<=>?@[\]^_`{|}~\\]/g, '').trim();
 }
 function checkTyping(userAns, answers) {
-  var u = userAns.trim().toLowerCase();
+  if (userAns.length > 200) return false;
+  var u = foldAns(userAns);
   var uNorm = normAns(userAns);
   if (!answers || !answers.length) return false;
   return answers.some(function (a) {
     if (typeof a !== 'string') return false;
-    var parts = a.split(/[\/,]/).map(function (s) {
-      return s.trim().toLowerCase();
-    });
+    // split before folding so full-width ／ ， in an answer stay literal, as before
+    var parts = a.split(/[\/,]/).map(foldAns);
     var partsNorm = a.split(/[\/,]/).map(function (s) {
       return normAns(s);
     });
-    return a.trim().toLowerCase() === u || parts.includes(u) || partsNorm.includes(uNorm);
+    return foldAns(a) === u || parts.includes(u) || partsNorm.includes(uNorm);
   });
 }
 
