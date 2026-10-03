@@ -105,11 +105,11 @@ Device-only prefs (palette, theme, TTS rate, sfx mute) stay in localStorage
 | Area | Functions |
 |---|---|
 | Units | `validatePlan`, `buildUnits`, `nextUnit`, `levelRamp`, `taughtIds` |
-| Quiz | `buildExercises(unit)`, `checkTyping`, `exerciseCap(level)` |
+| Quiz | `buildExercises(unit)`, `quizLength`, `passMark`/`quizPassed`, `scoreQuiz`, `pickDistractors`, `checkTyping` |
 | Distractors | `pickDistractors` (+ `DISTRACTOR_RULES`), `kanaDistractors`, `readingFakes` |
 | Grammar | `conjugate(dict, reading, form, pos)` (rule-based, by `pos`) |
-| SRS | `srsAddCards(unit, cards)`, `srsReview(card, quality)`, `srsDueCards` |
-| Pace | `PACE_MODES`, `todayTarget`, `projectFinish`, `suggestPace`, `newCardCap` (not enforced yet) |
+| SRS | `srsAddCards(unit, cards)`, `srsReview(card, quality)`, `srsDueCards`, `srsFlagMissed`, `admitCards` (app.js: `releasePendingCards`, `markUnitsDone`) |
+| Pace | `PACE_MODES`, `todayTarget`, `projectFinish`, `suggestPace`, `newCardCap`, `dailyCardCap` (enforced via pending cards) |
 | Store | `docsToSnapshot`, `mergeStoreDocs`, `exportProgress`, `validateProgressData` |
 | Stats | `srsStats`, `dueForecast`, `computeStreak`, `retention`, `studyHeatmap` |
 | Display | `furiganaHTML`, `furiganaOn(stored, level)` |
