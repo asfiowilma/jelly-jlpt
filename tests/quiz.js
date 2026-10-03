@@ -53,17 +53,27 @@ QUnit.module('quiz difficulty model', {
     });
   });
 
-  QUnit.test('Q29 review quiz: 20 questions drawn from the previous 6 lessons', function (assert) {
+  QUnit.test('Q29 review quiz: 20 questions drawn from the lessons since the previous review', function (assert) {
     var units = this.units;
     var rev = units.filter(function (u) { return u.kind === 'review' && u.index > 30; })[0];
-    var prev = units.filter(function (u) { return u.index < rev.index && (u.kind === 'lesson' || u.kind === 'kana'); }).slice(-6);
+    var lastRev = units.filter(function (u) { return u.kind === 'review' && u.index < rev.index; }).pop();
+    var prev = units.filter(function (u) { return u.index < rev.index && u.index > lastRev.index && (u.kind === 'lesson' || u.kind === 'kana'); });
     var allowed = {};
     prev.forEach(function (u) { quizItems(u).forEach(function (it) { allowed[it.id] = true; }); });
     var exs = buildExercises(rev);
     assert.strictEqual(exs.length, 20);
     var extra = (rev.passages || []).concat(rev.listening || []);
-    assert.ok(exs.every(function (e) { return allowed[e.itemId] || ((e.type === 'reading' || e.type === 'listen_dialog') && extra.indexOf(e.itemId) >= 0); }), 'all items from the previous 6 lessons (+ its passage and listening item)');
+    assert.ok(exs.every(function (e) { return allowed[e.itemId] || ((e.type === 'reading' || e.type === 'listen_dialog') && extra.indexOf(e.itemId) >= 0); }), 'all items from the lessons since the previous review (+ its passage and listening item)');
     assert.strictEqual(exs.slice(-2).map(function (e) { return e.type; }).join(), 'reading,listen_dialog', 'reading then listening come last');
+  });
+
+  QUnit.test('kana review covers every unit of its script, from the first', function (assert) {
+    var units = this.units;
+    var firstKanaReview = units.filter(function (u) { return u.kind === 'review'; })[0];
+    var ids = {};
+    quizItems(firstKanaReview).forEach(function (it) { ids[it.id] = true; });
+    var first = units.filter(function (u) { return u.kind === 'kana'; })[0];
+    quizItems(first).forEach(function (it) { assert.ok(ids[it.id], firstKanaReview.id + ' covers ' + it.id + ' from ' + first.id); });
   });
 
   QUnit.test('Q30 at least 40% recall questions in every shipped quiz, and at N4/N3/N1', function (assert) {

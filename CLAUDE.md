@@ -93,6 +93,10 @@ Adding a file means adding its `<script src>` by hand:
 - `lib.js` joins them: `validatePlan(PLAN, CATALOG)` checks every reference resolves,
   `buildUnits` resolves items and gives a review unit the items of the units since the
   previous review. `app.js` does this once at load into `UNITS`.
+- **Kana units** teach their kana plus 2–5 real vocab words written only in kana learned so far
+  (moved out of later lessons; read-only `practice` words fill gaps). Their quiz is ~60%
+  characters / ~40% words and passes only with ≥90% on characters and ≥80% on words
+  (`scoreQuiz` split). A review quizzes every kana/lesson unit since the previous review.
 
 ### Persistence (store.js)
 

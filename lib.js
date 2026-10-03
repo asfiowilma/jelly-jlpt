@@ -583,13 +583,17 @@ function unitItems(units) {
   });
   return out;
 }
-// quizItems(unit): what a quiz asks about. A review mixes the previous 6
-// kana/lesson units (Q29), else its own items.
+// quizItems(unit): what a quiz asks about. A review mixes every
+// kana/lesson unit since the previous review (Q29), else its own items.
 function quizItems(unit) {
+  // A review quizzes every kana/lesson unit since the previous review (so the
+  // hiragana review covers all hiragana units, not just the last 6).
   if (unit.kind === 'review') {
-    var prev = allUnits().filter(function (u) {
-      return u.index < unit.index && (u.kind === 'lesson' || u.kind === 'kana');
-    }).slice(-6);
+    var before = allUnits().filter(function (u) { return u.index < unit.index; });
+    var lastRev = before.filter(function (u) { return u.kind === 'review'; }).pop();
+    var prev = before.filter(function (u) {
+      return (!lastRev || u.index > lastRev.index) && (u.kind === 'lesson' || u.kind === 'kana');
+    });
     if (prev.length) return unitItems(prev);
   }
   return unitItems([unit]);
