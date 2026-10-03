@@ -98,7 +98,8 @@ function UnitView(props) {
         disabled: !hidden,
         'aria-label': hidden ? t('tap_reveal', lv) : glossText(v)
       }, hidden ? React.createElement("span", { className: "vocab-tap" }, t('tap_reveal', lv)) : [
-        glossText(v), " ", React.createElement("span", { key: "pos", className: "pos-chip" }, posChip(v.pos))]),
+        glossText(v), v.usage && React.createElement("span", { key: "use", className: "vocab-usage", lang: "ja" }, v.usage),
+        " ", React.createElement("span", { key: "pos", className: "pos-chip" }, posChip(v.pos))]),
       React.createElement("button", {
         className: "speak-btn speak-btn-row", onClick: function () { speak(v.word); },
         title: "Listen to pronunciation", 'aria-label': "Listen to " + v.word

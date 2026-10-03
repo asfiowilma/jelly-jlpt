@@ -637,7 +637,7 @@ function mondaiQuestions(type, item, ctx) {
   if (type === 'bunshou') return item.blanks.map(function (_, i) { return tag(bunshouQuestion(item, i + 1, ctx.taughtKanji)); });
   var fm = formsFor(item, ctx).filter(function (x) { return x.name === type; })[0];
   var ex = fm && fm.make();
-  return ex ? [tag(ex)] : [];
+  return ex && !answerLeaks(tag(ex)) ? [ex] : [];
 }
 
 // ── Quiz composition (Q29-Q31) ──────────────────────────────────────────────
@@ -759,13 +759,13 @@ function formsFor(item, ctx) {
       }),
       f('readingType', true, function () {
         return kanjiWord ? typing('Type the reading of this word in hiragana:', v.word, [kataToHira(v.reading), v.reading].filter(function (a, i, arr) { return arr.indexOf(a) === i; }),
-          'ひらがな…', { hint: IME_HINT }) : null;
+          'hiragana…', { hint: IME_HINT }) : null;
       }),
       f('enToJp', true, function () {
         // only when no other taught word shares a sense (else two right answers)
         var clash = ctx.vPool.some(function (x) { return x !== v && ctx.taught[x.id] && x.word !== v.word && sharesSense(glossText(x), glossText(v)); });
         var ans = [v.reading, kataToHira(v.reading), v.word].filter(function (a, i, arr) { return arr.indexOf(a) === i; });
-        return clash ? null : typing('Type the Japanese for "' + glossText(v) + '":', '', ans, 'にほんご…', { hint: IME_HINT });
+        return clash ? null : typing('Type the Japanese for "' + glossText(v) + '":', '', ans, 'in Japanese…', { hint: IME_HINT });
       }),
       f('meaningMc', false, function () { return mc('mc', 'What does this word mean?', v.word, 'gloss', ctx.vPool, null, { parts: wordParts(v) }); }),
       f('wordMc', false, function () { return mc('mc', 'Which word means "' + glossText(v) + '"?', '', 'word', ctx.vPool); }),
@@ -821,9 +821,9 @@ function formsFor(item, ctx) {
   if (item.kind === 'kanji') {
     var kj = item, rs = kanjiReadings(kj);
     return [
-      // any one reading; on accepted in hiragana too
+      // any one reading; on accepted in hiragana too (no sample reading as placeholder: it'd be an answer)
       f('kanjiReadType', true, function () {
-        return typing('Type the reading for this character:', kj.char, rs.concat((kj.on || []).map(kataToHira)), 'e.g. ' + rs[0], { hint: IME_HINT });
+        return typing('Type the reading for this character:', kj.char, rs.concat((kj.on || []).map(kataToHira)), 'reading…', { hint: IME_HINT });
       }),
       f('kanjiMeanType', true, function () { return typing('What does this kanji mean? (type in English)', kj.char, meaningAnswers(kj.meaning), 'English meaning...'); }),
       f('kanjiReadMc', false, function () {
@@ -887,6 +887,37 @@ function formsFor(item, ctx) {
   return [];
 }
 
+// ── Answer-leak guard ───────────────────────────────────────────────────────
+var JA_CHARS = /[぀-ヿ㐀-鿿]/;
+// Types whose sentence body may repeat a particle or chunk of the answer: only the
+// instructions and English note count there. Listening shows only its prompt.
+var LEAK_BODY_OK = { gap: true, order: true, bunshou: true, iikae: true, reading: true, listen_dialog: true };
+// answerLeaks(ex): the accepted answer ex shows before it is answered, else null. A Japanese
+// answer (and a word answer's reading, except in 表記, which shows it on purpose) must not be
+// in the prompt / note / hint / placeholder, nor (2+ chars) in the shown question; an English
+// answer not as a whole word in the shown question (prompts are fixed English instructions).
+// MC: no other option may equal the answer. makeQuestion and mondaiQuestions skip a leaking
+// question, so every generator goes through it.
+function answerLeaks(ex) {
+  if (ex.type === 'pair_match') return null;
+  var shown = function (ps) { return ps.map(function (p) { return p.t + ' ' + (p.r || ''); }).join(' '); };
+  var answers = ex.answers ? ex.answers.slice() : [ex.options[ex.correct]], it = ex.item;
+  if (it && it.kind === 'vocab' && ex.type !== 'hyouki' && answers.indexOf(it.word) >= 0) answers.push(it.reading);
+  var en = [ex.prompt, ex.note, ex.hint, ex.placeholder].join('\n');
+  var body = LEAK_BODY_OK[ex.type] ? '' : (ex.parts ? shown(ex.parts) : ex.question || '').toLowerCase();
+  var hit = answers.filter(function (a) {
+    if (JA_CHARS.test(a)) return en.indexOf(a) >= 0 || (a.length > 1 && body.indexOf(a) >= 0);
+    var at = body.indexOf(a.toLowerCase()); // ponytail: first hit only
+    return at >= 0 && !/[a-z]/.test(body.charAt(at - 1)) && !/[a-z]/.test(body.charAt(at + a.length));
+  })[0];
+  if (hit) return hit;
+  if (!ex.answers && ex.options) {
+    var ans = kataToHira(ex.options[ex.correct]);
+    if (ex.options.some(function (o, i) { return i !== ex.correct && kataToHira(o) === ans; })) return ans;
+  }
+  return null;
+}
+
 // makeQuestion(item, ctx, wantRecall, avoid): one exercise for item — a form
 // of the wanted kind (true recall / false MC / null any) not in avoid if
 // possible, then any other fresh form, then a repeat. Tagged with itemId, form,
@@ -898,7 +929,7 @@ function makeQuestion(item, ctx, wantRecall, avoid, strict) {
     var list = rndShuffle(fs);
     for (var i = 0; i < list.length; i++) {
       var ex = list[i].make();
-      if (ex) return Object.assign(ex, { itemId: item.id, item: item, form: list[i].name, recall: list[i].recall });
+      if (ex && !answerLeaks(Object.assign(ex, { item: item }))) return Object.assign(ex, { itemId: item.id, item: item, form: list[i].name, recall: list[i].recall });
     }
     return null;
   };

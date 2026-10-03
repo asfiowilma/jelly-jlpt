@@ -73,6 +73,10 @@ QUnit.module('catalog checks', function () {
       if (distinct.indexOf('legacy') >= 0) err("verified can't cite legacy");
     }
     (REQUIRED[it.kind] || []).forEach(function (f) { if (typeof it[f] !== 'string' || !it[f]) err('missing ' + f); });
+    // glosses / meanings are English only: quiz prompts show them (vocab hints go in usage, grammar in notes)
+    if (/^(vocab|kanji|grammar)$/.test(it.kind)) [].concat(it.gloss || it.meaning || []).forEach(function (g) {
+      if (/[぀-ヿ㐀-鿿～〜]/.test(g)) err('Japanese in gloss/meaning: ' + g);
+    });
     if (e.length) return e;
 
     if (it.kind === 'vocab') {
@@ -456,6 +460,9 @@ QUnit.module('catalog checks', function () {
     assert.ok(/id ≠/.test(errsFor(with_(v, { reading: 'たべます', id: 'v:食べる|たべる' }))), 'id ≠ content');
     assert.ok(/missing pos/.test(errsFor(with_(v, { pos: undefined }))), 'vocab pos');
     assert.ok(/gloss/.test(errsFor(with_(v, { gloss: [] }))), 'vocab gloss');
+    assert.ok(/Japanese in gloss/.test(errsFor(with_(v, { gloss: ['Mr., Ms. (～さん)'] }))), 'Japanese in vocab gloss');
+    assert.ok(/Japanese in gloss/.test(errsFor(with_(k, { meaning: ['eat (食べる)'] }))), 'Japanese in kanji meaning');
+    assert.strictEqual(errsFor(with_(v, { usage: '～さん' })), '', 'Japanese in usage is fine');
     assert.ok(/k:<one char>/.test(errsFor(with_(k, { id: 'k:食べ', char: '食べ' }))), 'kanji char');
   });
 

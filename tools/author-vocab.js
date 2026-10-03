@@ -8,7 +8,8 @@
 // Inputs:
 //   tools/ref/n5.json            one item per distinct word|reading (array entries = one item per
 //                                alternative, minus overrides.skip)
-//   tools/n5-vocab-overrides.json  gloss/tags (own wording, required per item) and optional pos,
+//   tools/n5-vocab-overrides.json  gloss/tags (own wording, English only, required per item) and optional
+//                                usage (Japanese usage hint shown in lessons, never in quiz prompts), pos,
 //                                notes, q (Jisho keyword), jmWord / jmReading (form to match in JMdict),
 //                                alt (word|reading of the spelling the plan teaches instead)
 //   D:/…/.scratch/content-audit/research/data/vocab-n5.json  list sources (tanos/elzup) per row
@@ -123,6 +124,7 @@ keys.forEach(function (k) {
   const it = { id: "v:" + k, kind: "vocab", level: "N5", word: w, reading: r, gloss: o.gloss, pos: c.pos || o.pos || "noun", tags: o.tags,
     sources: (listSources[k] || ["tanos"]).concat(c.ok ? ["jmdict"] : []), verified: !!c.ok };
   const notes = [o.notes, c.ok ? null : "unverified: " + c.reason].filter(Boolean).join(" ");
+  if (o.usage) it.usage = o.usage;
   if (notes) it.notes = notes;
   if (o.alt) it.alt = "v:" + o.alt; // duplicate spelling: not taught, covered by the alt item (ticket 34)
   if (!c.ok) reasons[c.reason.replace(/ for .*| is .*/, "")] = (reasons[c.reason.replace(/ for .*| is .*/, "")] || 0) + 1;
