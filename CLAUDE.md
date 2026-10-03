@@ -132,6 +132,10 @@ progressively by level; the `uiLang` pref overrides.
 
 ## Content pipeline
 
+**Building a new level? Read `docs/level-playbook.md` first**: every N5 mistake (data
+errors, loose sentence matching, answer leaks, bound-morpheme questions, strict typed answers…)
+and the rule that prevents it.
+
 | Step | Tool |
 |---|---|
 | Reference list per level (list membership only) | `node tools/build-ref.js <research/data dir> N5` → `tools/ref/n5.json` |
