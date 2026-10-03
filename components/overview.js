@@ -11,7 +11,7 @@ function showDate(d) {
 }
 // paceTodayLine: "Today: 1 / 2 units" (also shown in UnitView).
 function paceTodayLine(pace, doneToday, lv) {
-  return t('view_today', lv) + ": " + doneToday + " / " + todayTarget(pace).units + " " + t('pace_units', lv);
+  return t('view_today', lv) + ": " + doneToday + " / " + todayTarget(pace).units + " " + t(todayTarget(pace).units === 1 ? 'pace_unit_one' : 'pace_units', lv);
 }
 
 // PacePanel: today target, projected finish (current level + all available
@@ -37,10 +37,12 @@ function PacePanel(props) {
     exam);
 }
 
-// Overview = the Units tab: course progress card (level ramp + Pace panel side
-// by side) and the units grid per level. Nothing is locked (Q22): every unit
+// Overview = the Stages tab: course progress card (level ramp + Pace panel side
+// by side), the "Up next" card, then a level picker over the stage list (a few stages
+// from the first not done, "Show all" for the rest). Nothing is locked (Q22): every unit
 // opens; the next suggested unit (first not done) is highlighted. Levels
 // without units yet collapse to "Coming soon" (Q24).
+var UP_AHEAD = 6; // stages listed from the first one not done, before "Show all"
 function Overview(props) {
   var units = props.units,
     completed = props.completed,
@@ -50,12 +52,25 @@ function Overview(props) {
   var ramp = levelRamp(units, current);
   var cur = units[current];
   var ce = React.createElement;
+  var next = units[suggested];
+  var nextUnits = units.filter(function (u) { return u.level === next.level; });
+  var nextDone = nextUnits.filter(function (u) { return completed.has(u.id); }).length;
+  // Level picker: starts on the level of the suggested stage; the list shows a few stages from
+  // the first one not done, earlier done ones fold into one line, "Show all" opens the lot.
+  var levelState = React.useState(next.level), level = levelState[0], setLevel = levelState[1];
+  var allState = React.useState(false), all = allState[0], setAll = allState[1];
+  var lvUnits = units.filter(function (u) { return u.level === level; });
+  var firstOpen = lvUnits.findIndex(function (u) { return !completed.has(u.id); });
+  var start = firstOpen < 0 ? Math.max(0, lvUnits.length - UP_AHEAD) : firstOpen;
+  var windowEnd = Math.min(lvUnits.length, start + UP_AHEAD);
+  var shown = all ? lvUnits : lvUnits.slice(start, windowEnd);
+  var hidden = start;
   var head = function (label, right) {
     return ce("h2", { className: "panel-h" }, label, ce("span", { className: "r" }, right));
   };
   return ce("div", { className: "overview" },
     ce("section", { className: "panel", 'aria-label': "Course progress" },
-      head("Course progress", completed.size + " / " + units.length + " stages"),
+      head("Course progress", completed.size + " of " + units.length + " stages done"),
       ce("div", { className: "course" },
         // Level ramp: one segment per level with units, filled up to the current unit
         ce("div", {
@@ -71,37 +86,51 @@ function Overview(props) {
           }))),
         ce(PacePanel, { units: units, completed: completed, level: cur.level, pace: props.pace || 1,
           doneToday: props.doneToday || 0, examDate: props.examDate }))),
-    props.onDiagnostic && DiagnosticPanel({ onStart: props.onDiagnostic }),
+    // Up next: gradient entry card (same look as the stage quiz entry), hidden once every stage is done
+    completed.size < units.length && ce("section", { className: "qz-entry up-next", 'aria-label': "Up next" },
+      ce("div", { className: "txt" },
+        ce("div", { className: "eyebrow" }, "Up next · ", t('unit_label', next.level), " ", suggested + 1),
+        ce("h3", null, next.title),
+        ce("p", null, next.level, " · ", nextDone, " of ", nextUnits.length, " stages done")),
+      ce("button", { className: "quiz-start-btn", onClick: function () { setUnit(suggested); } }, "Start stage " + (suggested + 1))),
     ce("section", { className: "panel", 'aria-label': "Stages" },
       head("Stages", "Every stage is open. Start anywhere."),
-      LEVELS.map(function (lv) {
-        var lvUnits = units.filter(function (u) { return u.level === lv; });
-        var done = lvUnits.filter(function (u) { return completed.has(u.id); }).length;
-        var color = LEVEL_COLORS[lv];
-        return ce("section", { key: lv, className: "level-section", style: { '--lv': color }, 'aria-labelledby': "lv-" + lv },
-          ce("div", { className: "level-progress-item" },
-            ce("h3", { id: "lv-" + lv }, lv),
-            lvUnits.length > 0 && ce("div", { className: "level-progress-bar" },
-              ce("div", { className: "level-progress-fill", style: { width: done / lvUnits.length * 100 + '%' } })),
-            lvUnits.length > 0 ? ce("span", null, done, " / ", lvUnits.length) : ce("span", null, "Coming soon")),
-          lvUnits.length > 0 && ce("ol", { className: "unit-list" }, lvUnits.map(function (u) {
-            var isDone = completed.has(u.id);
-            var known = knownCount(unitItems([u]), props.cards || {});
-            var cls = "unit-row" + (isDone ? " done" : "") + (u.index === current ? " current" : "") + (u.index === suggested ? " next" : "");
-            return ce("li", { key: u.id },
-              ce("button", {
-                className: cls,
-                'aria-current': u.index === current ? 'true' : undefined,
-                onClick: function () { setUnit(u.index); }
-              },
-                ce("span", { className: "unit-num" }, u.index + 1),
-                ce("span", { className: "unit-title" }, u.title),
-                u.kind !== 'lesson' && u.kind !== 'kana' && ce("span", { className: "week-badge" }, u.kind),
-                known > 0 && ce("span", { className: "week-badge" }, t('unit_known', lv).replace('{n}', known)),
-                u.index === suggested && !isDone && ce("span", { className: "unit-next" }, "Up next"),
-                isDone && ce("span", { className: "unit-done", 'aria-label': "completed" }, "✓")));
-          })));
-      })));
+      // Level picker: one card per level; levels without stages yet are disabled ("Coming soon")
+      ce("div", { className: "lv-cards", role: "group", 'aria-label': "Level" }, LEVELS.map(function (lv) {
+        var us = units.filter(function (u) { return u.level === lv; });
+        var d = us.filter(function (u) { return completed.has(u.id); }).length;
+        return ce("button", {
+          key: lv, className: "lv-card", disabled: us.length === 0, style: { '--lv': LEVEL_COLORS[lv] },
+          'aria-pressed': lv === level ? "true" : "false",
+          onClick: function () { setLevel(lv); setAll(false); }
+        }, ce("b", null, lv),
+          us.length ? ce("small", null, d, " of ", us.length, " done") : ce("small", null, "Coming soon"),
+          us.length > 0 && ce("span", { className: "level-progress-bar" },
+            ce("span", { className: "level-progress-fill", style: { width: d / us.length * 100 + '%' } })));
+      })),
+      ce("ol", { className: "unit-list", style: { '--lv': LEVEL_COLORS[level] } },
+        !all && hidden > 0 && ce("li", { className: "unit-fold-li" },
+          ce("button", { className: "unit-fold", onClick: function () { setAll(true); } }, "✓ Show ", hidden, " completed ", hidden === 1 ? "stage" : "stages")),
+        shown.map(function (u) {
+          var isDone = completed.has(u.id);
+          var known = knownCount(unitItems([u]), props.cards || {});
+          var cls = "unit-row" + (isDone ? " done" : "") + (u.index === current ? " current" : "") + (u.index === suggested ? " next" : "");
+          return ce("li", { key: u.id },
+            ce("button", {
+              className: cls,
+              'aria-current': u.index === current ? 'true' : undefined,
+              onClick: function () { setUnit(u.index); }
+            },
+              ce("span", { className: "unit-num" }, u.index + 1),
+              ce("span", { className: "unit-title" }, u.title),
+              u.kind !== 'lesson' && u.kind !== 'kana' && ce("span", { className: "week-badge" }, u.kind),
+              known > 0 && ce("span", { className: "week-badge" }, t('unit_known', level).replace('{n}', known)),
+              u.index === suggested && !isDone && ce("span", { className: "unit-next" }, "Up next"),
+              isDone && ce("span", { className: "unit-done", 'aria-label': "completed" }, "✓")));
+        })),
+      lvUnits.length > windowEnd - start && ce("button", { className: "unit-showall", 'aria-expanded': all ? "true" : "false", onClick: function () { setAll(!all); } },
+        all ? "Show fewer" : "Show all " + lvUnits.length + " stages")),
+    props.onDiagnostic && DiagnosticPanel({ onStart: props.onDiagnostic }));
 }
 
 // DiagnosticPanel: the anytime diagnostic mock (ticket 18, x:n5-mock-3) and its last result.
@@ -111,9 +140,9 @@ function DiagnosticPanel(props) {
   if (!m) return null;
   var last = (Store.snapshot().mocks || []).filter(function (x) { return x.mockId === m.id; })[0];
   var mins = mockSections(m).reduce(function (n, s) { return n + Math.round(s.seconds / 60); }, 0);
-  return ce("section", { className: "panel diagnostic", 'aria-label': "Diagnostic test" },
-    ce("h2", { className: "panel-h" }, "Diagnostic test (N5)", ce("span", { className: "r" }, "anytime · about " + mins + " min")),
-    ce("p", null, "A half-length N5 test in the real format, timed and scored with an estimate of the real result. Take it any time to see where you stand.",
-      last ? " Last time: " + last.estimate.total + " / 180 (" + (last.estimate.passed ? "would pass" : "not a pass yet") + ")." : ""),
-    ce("button", { className: "quiz-start-btn", onClick: props.onStart }, last ? "Open the diagnostic" : "Start the diagnostic"));
+  return ce("section", { className: "panel diagnostic", 'aria-label': "N5 diagnostic test" },
+    ce("h2", { className: "panel-h" }, "N5 diagnostic test", ce("span", { className: "r" }, "About " + mins + " min · take it anytime")),
+    ce("p", null, "A timed, half-length N5 test in the exam format. You get an estimated score and every missed question explained.",
+      last ? " Last score: " + last.estimate.total + " / 180, " + (last.estimate.passed ? "a pass." : "below the pass mark.") : ""),
+    ce("button", { className: "btn-outline", onClick: props.onStart }, last ? "Retake diagnostic" : "Start diagnostic"));
 }
