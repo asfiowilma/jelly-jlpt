@@ -29,6 +29,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 /* Navbar (sketch option A): brand · tabs · gear. <640px: tabs → fixed bottom bar */
 .header{background:var(--surface);color:var(--text);border-bottom:1px solid var(--border);padding:0 16px;height:60px;display:flex;align-items:center;gap:22px}
 .brand{font-family:'Yu Mincho','Hiragino Mincho ProN','Noto Serif JP',serif;font-size:1.15rem;font-weight:600;white-space:nowrap;display:flex;align-items:baseline;gap:6px}
+/* Jelly mascot colours per palette (both modes). Bare :root = Kokuban lemon. l=centre, m=body, d=edge, g=base glow, rim=outline, eye */
+:root,:root[data-palette="kokuban"]{--jl:#fff1a0;--jm:#f2cf5b;--jd:#c9971c;--jg:#fff8d6;--jrim:#fffbe8;--jeye:#2b2005}
+:root[data-palette="shu"]{--jl:#ffb89a;--jm:#ee6f45;--jd:#b8401f;--jg:#ffe3d6;--jrim:#fff1ea;--jeye:#2d0f06}
+:root[data-palette="ai"]{--jl:#a8e0ff;--jm:#5bb4ee;--jd:#2a76b8;--jg:#e0f4ff;--jrim:#eef9ff;--jeye:#0c2438}
+:root[data-palette="matcha"]{--jl:#dcff9a;--jm:#9fdc4a;--jd:#5f9a1c;--jg:#f0ffd0;--jrim:#f8ffe8;--jeye:#142405}
+:root[data-palette="yozakura"]{--jl:#ffd6ea;--jm:#f59cc8;--jd:#c4659a;--jg:#ffeaf4;--jrim:#fff5fa;--jeye:#35122a}
+.jelly{flex:none;overflow:visible}
+.brand .jelly{align-self:center;margin-right:2px}
+.jelly-wob{transform-origin:50% 100%;animation:jelly-wob 3.2s ease-in-out infinite}
+@keyframes jelly-wob{0%,100%{transform:scale(1,1)}50%{transform:scale(1.03,.97)}}
+@media (prefers-reduced-motion:reduce){.jelly-wob{animation:none}}
 .brand small{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:0.7rem;color:var(--muted);font-weight:500}
 .nav-tabs{display:flex;gap:4px;align-self:stretch}
 .tab{border:0;background:transparent;cursor:pointer;color:var(--muted);display:inline-flex;align-items:center;gap:7px;font-family:inherit;font-size:0.86rem;white-space:nowrap;padding:0 12px;position:relative;min-height:44px}

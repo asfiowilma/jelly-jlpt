@@ -284,6 +284,83 @@ function icon(name) {
     ICONS[name].map(function (el, i) { return React.createElement(el[0], Object.assign({ key: i }, el[1])); }));
 }
 
+// ── Jelly mascot ─────────────────────────────────────────────────────────────
+// Glass-jelly blob + two eyes, never a mouth. A mood is a vector of numbers (silhouette + eyes),
+// so any two moods can be interpolated (see JellyExcited). Colours come from --jl/--jm/--jd/--jg/
+// --jrim/--jeye, set per palette in styles.css, so the mascot follows the active theme.
+// Silhouette: superellipse (n: 2 = ellipse) with a wider base (w), a lean and wobbly lobes (a, ph).
+// The base sits on y=492 in every mood so swapping moods reads as one jelly changing shape.
+// Eyes: ex/ey = offset from the body centre, er = dot radius, dot/arc = which eye style shows,
+// bend = arc curve (up < 0 < down), shine = highlight on the dots, z = sleepy "z"s.
+var JELLY_MOODS = {
+  idle:   { rx: 228, ry: 218, n: 2.7, w: 0.07, lean: 0,    a: 0,     ph: 0, ex: 62, ey: 26, er: 30, cx: 0, dot: 1, arc: 0, bend: 0,   shine: 1, z: 0 },
+  hello:  { rx: 222, ry: 226, n: 2.7, w: 0.07, lean: 0.55, a: 0,     ph: 0, ex: 63, ey: 14, er: 30, cx: 8, dot: 1, arc: 0, bend: 0,   shine: 1, z: 0 },
+  happy:  { rx: 242, ry: 192, n: 2.5, w: 0.1,  lean: 0,    a: 0,     ph: 0, ex: 70, ey: 24, er: 26, cx: 0, dot: 0, arc: 1, bend: -36, shine: 1, z: 0 },
+  cheer:  { rx: 204, ry: 238, n: 2.7, w: -0.1, lean: 0,    a: 0,     ph: 0, ex: 62, ey: 2,  er: 38, cx: 0, dot: 1, arc: 0, bend: 0,   shine: 1, z: 0 },
+  sleepy: { rx: 236, ry: 162, n: 2.4, w: 0.15, lean: 0,    a: 0,     ph: 0, ex: 72, ey: 16, er: 26, cx: 0, dot: 0, arc: 1, bend: 26,  shine: 1, z: 1 },
+  oops:   { rx: 244, ry: 196, n: 2.5, w: 0.1,  lean: -0.3, a: 0.035, ph: 1, ex: 84, ey: 52, er: 20, cx: 0, dot: 1, arc: 0, bend: 0,   shine: 0, z: 0 }
+};
+var JELLY_KEYS = Object.keys(JELLY_MOODS.idle);
+function jellyLerp(A, B, t) {
+  var o = {};
+  JELLY_KEYS.forEach(function (k) { o[k] = A[k] + (B[k] - A[k]) * t; });
+  return o;
+}
+function jellyPathOf(S) {
+  var cy = 492 - S.ry, pts = [];
+  for (var i = 0; i < 120; i++) {
+    var t = i / 120 * 2 * Math.PI, c = Math.cos(t), s = Math.sin(t);
+    var x = S.rx * (c < 0 ? -1 : 1) * Math.pow(Math.abs(c), 2 / S.n);
+    var y = S.ry * (s < 0 ? -1 : 1) * Math.pow(Math.abs(s), 2 / S.n);
+    x *= 1 + S.a * Math.sin(3 * t + S.ph);
+    y *= 1 + S.a * 0.6 * Math.sin(2 * t + S.ph);
+    x *= 1 + S.w * (y / S.ry + 1) / 2;
+    x += S.lean * (-y / S.ry) * 40;
+    pts.push((256 + x).toFixed(1) + ',' + (cy + y).toFixed(1));
+  }
+  return 'M' + pts.join('L') + 'Z';
+}
+var JELLY_PATHS = {};
+function jellyPath(mood) { return JELLY_PATHS[mood] || (JELLY_PATHS[mood] = jellyPathOf(JELLY_MOODS[mood])); }
+
+// One renderer for static moods and animated frames: S = mood vector, id = unique gradient/clip prefix.
+function jellyFrom(S, size, id, d, wobble) {
+  var h = React.createElement, ry = S.ry, cy = 492 - ry, eyeCy = cy + S.ey;
+  var sc = function (k, v) { var o = {}; o[k] = v; return { style: o }; };
+  var stop = function (off, v, op) { return h('stop', Object.assign({ offset: off, stopOpacity: op }, sc('stopColor', 'var(' + v + ')'))); };
+  var eyes = [];
+  [-1, 1].forEach(function (side) {
+    var x = 256 + S.cx + side * S.ex;
+    if (S.dot > 0) {
+      eyes.push(h('circle', Object.assign({ key: 'e' + side, cx: x, cy: eyeCy, r: S.er, opacity: S.dot }, sc('fill', 'var(--jeye)'))));
+      if (S.shine > 0) eyes.push(h('circle', { key: 's' + side, cx: x + S.er * 0.32, cy: eyeCy - S.er * 0.34, r: S.er * 0.28, fill: '#fff', opacity: 0.92 * S.shine * S.dot }));
+    }
+    if (S.arc > 0) {
+      eyes.push(h('path', Object.assign({ key: 'a' + side, d: 'M' + (x - 30) + ' ' + eyeCy + ' Q' + x + ' ' + (eyeCy + S.bend) + ' ' + (x + 30) + ' ' + eyeCy, fill: 'none', strokeWidth: 14, strokeLinecap: 'round', opacity: S.arc }, sc('stroke', 'var(--jeye)'))));
+    }
+  });
+  if (S.z > 0) {
+    eyes.push(h('text', Object.assign({ key: 'z1', x: 404, y: 180, fontSize: 64, fontWeight: 700, opacity: 0.85 * S.z, fontFamily: 'sans-serif' }, sc('fill', 'var(--jrim)')), 'z'));
+    eyes.push(h('text', Object.assign({ key: 'z2', x: 440, y: 120, fontSize: 44, fontWeight: 700, opacity: 0.6 * S.z, fontFamily: 'sans-serif' }, sc('fill', 'var(--jrim)')), 'z'));
+  }
+  return h('svg', { className: 'jelly' + (wobble ? ' jelly-wob' : ''), viewBox: '0 0 512 512', width: size, height: size, 'aria-hidden': 'true', focusable: 'false' },
+    h('defs', null,
+      h('radialGradient', { id: id + 'b', cx: 0.5, cy: 0.4, r: 0.7 }, stop(0, '--jl'), stop(0.65, '--jm'), stop(1, '--jd')),
+      h('radialGradient', { id: id + 'g', cx: 0.5, cy: 1.05, r: 0.7 }, stop(0, '--jg', 0.85), stop(1, '--jg', 0)),
+      h('clipPath', { id: id + 'c' }, h('path', { d: d }))),
+    h('path', { d: d, fill: 'url(#' + id + 'b)' }),
+    h('g', { clipPath: 'url(#' + id + 'c)' },
+      h('rect', { x: 0, y: cy + ry * 0.1, width: 512, height: ry * 1.2, fill: 'url(#' + id + 'g)' }),
+      h('path', Object.assign({ d: d, fill: 'none', strokeOpacity: 0.7, strokeWidth: 10 }, sc('stroke', 'var(--jrim)'))),
+      h('ellipse', { cx: 176 + Math.max(S.lean, 0) * 55, cy: cy - ry * 0.6, rx: 92, ry: 34, fill: '#fff', opacity: 0.8, transform: 'rotate(-22 176 ' + (cy - ry * 0.6) + ')' }),
+      h('circle', { cx: 256 + S.rx * 0.5, cy: cy - ry * 0.7, r: 14, fill: '#fff', opacity: 0.7 })),
+    eyes);
+}
+function jelly(mood, size, wobble) {
+  mood = JELLY_MOODS[mood] ? mood : 'idle';
+  return jellyFrom(JELLY_MOODS[mood], size, 'jl-' + mood, jellyPath(mood), wobble);
+}
+
 // ── TTS ──────────────────────────────────────────────────────────────────────
 window._ttsRate = 0.85;
 function speak(text) {

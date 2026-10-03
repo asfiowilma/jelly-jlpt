@@ -352,7 +352,7 @@ function App() {
     className: "header"
   }, /*#__PURE__*/React.createElement("h1", {
     className: "brand"
-  }, "日本語 ", /*#__PURE__*/React.createElement("small", null, "N5 → N1")), /*#__PURE__*/React.createElement("nav", {
+  }, jelly('idle', 30), "日本語 ", /*#__PURE__*/React.createElement("small", null, "N5 → N1")), /*#__PURE__*/React.createElement("nav", {
     className: "nav-tabs",
     role: "navigation",
     'aria-label': "View navigation"
