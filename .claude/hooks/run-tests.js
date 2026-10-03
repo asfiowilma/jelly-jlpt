@@ -59,6 +59,7 @@ var appFiles = [
   path.join("components", "kanji-section.js"),
   path.join("components", "kana-section.js"),
   path.join("components", "exercises.js"),
+  path.join("components", "mock-exam.js"),
   path.join("components", "unit-view.js"),
   path.join("components", "review-mode.js"),
   path.join("components", "overview.js"),
@@ -238,7 +239,8 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
   test("React render: Overview() renders units + coming-soon levels", function (a) {
     try {
       Overview({ units: units, completed: emptySet, current: 0, suggested: 0, setUnit: noop });
-      Overview({ units: units, completed: new Set([units[0].id]), current: units.length - 1, suggested: 1, setUnit: noop });
+      Overview({ units: units, completed: new Set([units[0].id]), current: units.length - 1, suggested: 1, setUnit: noop, onDiagnostic: noop });
+      DiagnosticPanel({ onStart: noop });
       a.ok(true);
     } catch (e) { a.ok(false, e.message); }
   });
@@ -339,8 +341,9 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     var origUtt = global.SpeechSynthesisUtterance;
     global.SpeechSynthesisUtterance = function (text) { this.text = text; };
     var seen = {}, errors = [];
-    var sample = units.filter(function (u, i) { return i % 7 === 0; });
-    var pool = units.concat([].concat.apply([], ["N4", "N3", "N2", "N1"].map(function (lv) {
+    var playable = units.filter(function (u) { return u.kind !== "mock"; }); // mock units run MockExam (played below)
+    var sample = playable.filter(function (u, i) { return i % 7 === 0 && u.kind !== "prep"; });
+    var pool = playable.concat([].concat.apply([], ["N4", "N3", "N2", "N1"].map(function (lv) {
       return sample.map(function (u) { return Object.assign({}, u, { level: lv }); });
     })));
     var play = function (unit, qi, build) {
@@ -451,6 +454,103 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       "kanji_yomi", "hyouki", "bunmyaku", "order", "iikae", "bunshou", "listen_dialog"].forEach(function (t) {
       a.ok(seen[t], "type " + t + " was played");
     });
+  });
+
+  // Ticket 18: sit the whole diagnostic mock through the real MockExam component — hook emulator
+  // with effects, a fake clock and a captured setInterval, a speech stub. Part 1: some right, one
+  // wrong, one flagged, finished by hand; part 2 all right; part 3: one replay used up, two answers,
+  // then the clock runs out. The saved mock: doc must score exactly that.
+  testAsync("MockExam: full diagnostic playthrough (navigation, flags, replay limit, time-out, saved result)", function (a) {
+    var before = Store.docs();
+    var orig = { useState: React.useState, createElement: React.createElement, useRef: React.useRef, useEffect: React.useEffect,
+      setInterval: global.setInterval, clearInterval: global.clearInterval };
+    var origSpeech = window.speechSynthesis, origUtt = global.SpeechSynthesisUtterance;
+    var spoken = 0;
+    window.speechSynthesis = { getVoices: function () { return []; }, cancel: function () {}, speak: function (u) { spoken++; if (u.onend) u.onend(); } };
+    global.SpeechSynthesisUtterance = function (text) { this.text = text; };
+    var clock = 1000000, intervals = [];
+    var mock = CATALOG.items["x:n5-mock-3"], taken = null;
+    var state = [], refs = [], deps = [], cleanups = [], k = 0, r = 0, e = 0, els = [];
+    React.useState = function (init) {
+      var i = k++;
+      if (!(i in state)) state[i] = typeof init === "function" ? init() : init;
+      return [state[i], function (v) { state[i] = typeof v === "function" ? v(state[i]) : v; }];
+    };
+    React.useRef = function (init) { var i = r++; if (!(i in refs)) refs[i] = { current: init === undefined ? null : init }; return refs[i]; };
+    var pending = [];
+    React.useEffect = function (fn, d) {
+      var i = e++;
+      if (deps[i] && d && d.every(function (x, j) { return x === deps[i][j]; })) return;
+      deps[i] = d;
+      pending.push(function () { if (cleanups[i]) cleanups[i](); cleanups[i] = fn(); });
+    };
+    React.createElement = function (type, props) {
+      var el = { type: type, props: props || {}, children: [].slice.call(arguments, 2) };
+      els.push(el);
+      return el;
+    };
+    global.setInterval = function (fn) { intervals.push(fn); return intervals.length; };
+    global.clearInterval = function (id) { intervals[id - 1] = null; };
+    var render = function () {
+      k = 0; r = 0; e = 0; els = []; pending = [];
+      MockExam({ mock: mock, now: function () { return clock; }, onTaken: function (x) { taken = x; } });
+      pending.forEach(function (f) { f(); });
+      return els;
+    };
+    var find = function (re) { return els.filter(function (el) { return re.test(el.props.className || ""); }); };
+    var click = function (re, n) { var b = find(re)[n || 0]; if (!b) throw new Error("no " + re); b.props.onClick(); render(); };
+    try {
+      var secs = mockSections(mock), want = {};
+      render();
+      click(/quiz-start-btn/);
+      // part 1 (vocab): answer every question; question 2 wrong, question 3 flagged
+      secs[0].questions.forEach(function (ex, i) {
+        click(/mock-nav-btn/, i);
+        click(/mock-option/, i === 1 ? (ex.correct + 1) % ex.options.length : ex.correct);
+        if (i === 2) click(/mock-flag/);
+      });
+      a.ok(find(/mock-nav-btn/)[2].props.className.indexOf("flagged") >= 0, "flag shows in the question list");
+      click(/mock-nav-btn/, 1);
+      a.ok(find(/mock-option/)[(secs[0].questions[1].correct + 1) % 4].props.className.indexOf("selected") >= 0, "answer kept when coming back");
+      click(/mock-end/);
+      a.ok(find(/quiz-start-btn/).length === 1 && !find(/mock-option/).length, "between parts: start screen, no questions");
+      click(/quiz-start-btn/);
+      // part 2 (grammar + reading): all right
+      secs[1].questions.forEach(function (ex, i) { click(/mock-nav-btn/, i); click(/mock-option/, ex.correct); });
+      click(/mock-end/);
+      click(/quiz-start-btn/);
+      // part 3 (listening): play twice (1 replay), then the button is spent; two answers, then time out
+      var before3 = spoken;
+      click(/ex-listen-btn/); click(/ex-listen-btn/);
+      a.ok(spoken > before3, "the dialogue is spoken");
+      a.ok(find(/ex-listen-btn/)[0].props.disabled, "no third play");
+      click(/mock-option/, secs[2].questions[0].correct);
+      click(/mock-nav-btn/, 1);
+      click(/mock-option/, secs[2].questions[1].correct);
+      a.ok(!taken, "not finished before time is up");
+      clock += secs[2].seconds * 1000 + 1;
+      intervals.filter(Boolean).slice(-1)[0]();
+      render();
+      a.ok(taken, "time-out ends the test");
+      want = { vocab: [secs[0].questions.length - 1, secs[0].questions.length], grammar: [10, 10], reading: [4, 4], listening: [2, secs[2].questions.length] };
+      a.deepEqual(taken.parts, want, "scored: one vocab miss, unanswered listening wrong");
+      a.deepEqual(taken.estimate, mockEstimate({ vocab: want.vocab[0] / want.vocab[1], grammar: 1, reading: 1, listening: 2 / want.listening[1] }));
+      a.ok(find(/mock-estimate/).length && find(/mock-missed/).length, "results: estimate + missed list");
+      var saved = Store.snapshot().mocks.filter(function (m) { return m.mockId === mock.id; });
+      a.equal(saved.length, 1, "one mock: doc saved");
+      a.ok(STORE_ID_RE.test("mock:" + saved[0].mockId + ":" + saved[0].takenAt), "doc id shape");
+      // a later visit lists the attempt in the history
+      state = []; refs = []; deps = []; cleanups = [];
+      render();
+      a.ok(find(/link-btn/).length === 1, "history lists the attempt");
+    } catch (err) {
+      a.ok(false, err.stack);
+    } finally {
+      React.useState = orig.useState; React.createElement = orig.createElement; React.useRef = orig.useRef; React.useEffect = orig.useEffect;
+      global.setInterval = orig.setInterval; global.clearInterval = orig.clearInterval;
+      window.speechSynthesis = origSpeech; global.SpeechSynthesisUtterance = origUtt;
+    }
+    return Store.replaceAll(before);
   });
 
   // app.js: a passed quiz → markUnitsDone; cap + pending + learn extra + miss flag (Q31/Q34)

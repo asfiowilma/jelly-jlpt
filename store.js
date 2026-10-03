@@ -321,6 +321,8 @@ function createStore(opts) {
       return appendLog(function (l) { l.reviews.count++; if (quality === 0) l.reviews.again++; });
     },
     logs: function () { return logDocs(store.docs()); },
+    // A taken mock exam (ticket 18): one mock:<mockId>:<takenAt> doc per sitting (mockResult in lib.js).
+    putMock: function (result) { return write('mock:' + result.mockId + ':' + result.takenAt, result); },
     // Import: replace every doc. Imported docs are re-stamped as this device's
     // fresh write so they win LWW against older copies elsewhere: units, prefs
     // and logs. Cards still merge on lastReviewedAt, so with sync on a restored

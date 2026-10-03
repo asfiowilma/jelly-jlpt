@@ -71,6 +71,7 @@ function Overview(props) {
           }))),
         ce(PacePanel, { units: units, completed: completed, level: cur.level, pace: props.pace || 1,
           doneToday: props.doneToday || 0, examDate: props.examDate }))),
+    props.onDiagnostic && DiagnosticPanel({ onStart: props.onDiagnostic }),
     ce("section", { className: "panel", 'aria-label': "Units" },
       head("Units", "Every unit is open. Start anywhere."),
       LEVELS.map(function (lv) {
@@ -101,4 +102,18 @@ function Overview(props) {
                 isDone && ce("span", { className: "unit-done", 'aria-label': "completed" }, "✓")));
           })));
       })));
+}
+
+// DiagnosticPanel: the anytime diagnostic mock (ticket 18, x:n5-mock-3) and its last result.
+var DIAGNOSTIC_MOCK = 'x:n5-mock-3';
+function DiagnosticPanel(props) {
+  var ce = React.createElement, m = CATALOG.items[DIAGNOSTIC_MOCK];
+  if (!m) return null;
+  var last = (Store.snapshot().mocks || []).filter(function (x) { return x.mockId === m.id; })[0];
+  var mins = mockSections(m).reduce(function (n, s) { return n + Math.round(s.seconds / 60); }, 0);
+  return ce("section", { className: "panel diagnostic", 'aria-label': "Diagnostic test" },
+    ce("h2", { className: "panel-h" }, "Diagnostic test (N5)", ce("span", { className: "r" }, "anytime · about " + mins + " min")),
+    ce("p", null, "A half-length N5 test in the real format, timed and scored with an estimate of the real result. Take it any time to see where you stand.",
+      last ? " Last time: " + last.estimate.total + " / 180 (" + (last.estimate.passed ? "would pass" : "not a pass yet") + ")." : ""),
+    ce("button", { className: "quiz-start-btn", onClick: props.onStart }, last ? "Open the diagnostic" : "Start the diagnostic"));
 }

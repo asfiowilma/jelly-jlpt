@@ -7,9 +7,10 @@ alanfwilliams/jlpt but is now a separate project: upstream is no longer synced a
 content is being rebuilt level by level from reference datasets.
 
 - **N5** is built: kana from zero (hiragana, katakana), then vocab, kanji and grammar lessons
-  with review units. N5 is not released yet (needs the difficulty model, test prep, import, README).
+  with review units (timed mini-mocks), then a test-prep block (strategy units with timed drills,
+  two fixed full mocks) and an anytime diagnostic mock. N5 is not released yet (needs README).
 - **N4–N1** show as "Coming soon" in the Overview until each level is rebuilt.
-- Content is organised in **units** (`kana`, `lesson`, `review`; `prep`, `mock` reserved).
+- Content is organised in **units** (`kana`, `lesson`, `review`, `prep`, `mock`).
   "Day" is not a unit. The learner picks a **pace** (units per calendar day: 0.5 / 1 / 2 / 3)
   that only drives targets and projections. Nothing is locked; every unit is open.
 
@@ -24,7 +25,7 @@ styles.css            all app CSS (palettes + light/dark themes)
 data/
   catalog.js          CATALOG { items, add } + PLAN = [] + CATALOG_ID_PREFIX
   n5/                 one file per item kind + plan.js
-    kana.js vocab.js kanji.js grammar.js sentences.js mondai.js passages.js listening.js plan.js
+    kana.js vocab.js kanji.js grammar.js sentences.js mondai.js passages.js listening.js mocks.js plan.js
 lib.js                pure logic (no DOM): units, conjugation, distractors, exercises,
                       SRS, store doc shapes + merge, stats, pace, export/import
 store.js              Store: PouchDB persistence + optional CouchDB sync
@@ -32,7 +33,7 @@ app-helpers.js        t() progressive UI strings, TTS, icons, stroke-order SVG f
 sfx.js                quiz/achievement sounds from sfx/ (Kenney, CC0)
 components/           one React component per file, React.createElement, no JSX
   kanji-section.js kana-section.js exercises.js unit-view.js review-mode.js
-  overview.js stats-view.js settings-view.js
+  overview.js stats-view.js settings-view.js mock-exam.js
 app.js                App: builds UNITS from PLAN + CATALOG, awaits Store.init(), mounts
 kanji-svg/            KanjiVG stroke-order SVGs (<hex codepoint>.svg), CC BY-SA 3.0
 tools/                zero-dep Node authoring scripts + checks (dev only, outputs committed)
@@ -74,6 +75,7 @@ Adding a file means adding its `<script src>` by hand:
   | grammar | `g:<slug>` |
   | sentence | `s:tatoeba:<n>` or `s:own:<slug>` (optional `chunks` for ★ questions) |
   | mondai | `m:<slug>`: authored exam items (`type` iikae / bunshou), not taught, no SRS card |
+  | mock | `x:<lvl>-mock-<n>`: a fixed mock exam (`format` full / diagnostic), sections of fixed questions |
   | passage | `p:<level>-<slug>`: own reading texts (`format` short / mid / info), review units list them in `passages` |
   | listening | `l:<level>-<slug>`: own dialogue scripts (`format` task / point / utterance / quick), review units list one in `listening` |
 
@@ -98,6 +100,7 @@ queue. Doc shapes are documented in `lib.js` above `STORE_ID_RE`:
 | `card:<itemId>` | SM-2 card (`interval`, `ease`, `due`, `reps`, `lastReviewedAt`…). Same item = same card wherever it appears |
 | `prefs:learning` | `{ currentUnit, pace, examDate, furigana, uiLang, charView }` (defaults: `PREFS_DEFAULTS`; `charView` = lesson Kanji and Kana layout, `rows` or `focus`) |
 | `log:<YYYY-MM-DD>:<deviceId>` | daily activity log, written only by its own device |
+| `mock:<mockId>:<takenAt>` | one taken mock (`mockResult`): parts, byMondai, answers, estimate. Write-once |
 
 Every doc also gets `updatedAt` and `deviceId`. Conflicts merge through `mergeStoreDocs`.
 Device-only prefs (palette, theme, TTS rate, sfx mute) stay in localStorage
@@ -110,6 +113,7 @@ Device-only prefs (palette, theme, TTS rate, sfx mute) stay in localStorage
 | Units | `validatePlan`, `buildUnits`, `nextUnit`, `levelRamp`, `taughtIds` |
 | Quiz | `buildExercises(unit)`, `quizLength`, `passMark`/`quizPassed`, `scoreQuiz`, `pickDistractors`, `checkTyping` |
 | Distractors | `pickDistractors` (+ `DISTRACTOR_RULES`), `kanaDistractors`, `readingFakes`, `spellingFakes` |
+| Mocks + timing (ticket 18) | `MOCK_BLUEPRINT`, `MOCK_PACE` (real N5 pacing), `quizSeconds`, `isTimedQuiz`, `mockSections`, `mockResult`, `mockEstimate` (linear scaled-score estimate, `JLPT_PASS`), `prepDrill` |
 | Exam formats (N5 mondai) | `MONDAI` table, `mondaiQuestions(type, item, ctx)` (for mocks); in quizzes via `formsFor`: kanjiYomi, hyouki, bunmyaku (vocab), hyouki (kanji), gap, order ★ (grammar); iikae / bunshou authored in `mondai.js` |
 | Reading / listening | `passagesFor`, `readingExercises`; `listeningFor(level, format)`, `listenQuestion(item, taughtKanji, { mock })` (mock = 1 replay), `listeningScript`, `chunkSpeech`, `assignVoices` (app-helpers.js `speakScript` plays them with Web Speech) |
 | Grammar | `conjugate(dict, reading, form, pos)` (rule-based, by `pos`) |

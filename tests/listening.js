@@ -55,7 +55,7 @@ QUnit.module('listening', function () {
   });
 
   QUnit.test('counts by format and listenQuestion', function (assert) {
-    assert.deepEqual(['task', 'point', 'utterance', 'quick'].map(function (f) { return listeningFor('N5', f).length; }), [12, 12, 8, 12]);
+    assert.deepEqual(['task', 'point', 'utterance', 'quick'].map(function (f) { return listeningFor('N5', f).length; }), [19, 17, 15, 24]);
     assert.strictEqual(listeningFor('N4').length, 0, 'none at N4 yet');
     var it = listeningFor('N5', 'point')[0];
     var ex = listenQuestion(it, {});

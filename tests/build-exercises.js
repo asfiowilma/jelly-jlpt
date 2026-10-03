@@ -108,7 +108,7 @@ QUnit.module('buildExercises', {
   });
 
   QUnit.test('every shipped unit builds a quiz', function (assert) {
-    buildUnits(PLAN, CATALOG).forEach(function (u) {
+    buildUnits(PLAN, CATALOG).filter(function (u) { return u.kind !== 'mock'; }).forEach(function (u) {
       assert.ok(buildExercises(u).length > 0, u.id);
     });
   });

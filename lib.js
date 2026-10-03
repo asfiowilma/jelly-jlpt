@@ -77,6 +77,12 @@ function validatePlan(plan, catalog) {
           if (it.kind !== UNIT_REF_FIELDS[f]) return { valid: false, error: u.id + '.' + f + ' has ' + it.kind + ' ' + ids[j] };
         }
       }
+      // prep: a timed drill per blueprint key (prepDrill); mock: the fixed mock it runs (ticket 18)
+      if (u.kind === 'prep' && !Object.keys(u.drill || {}).length) return { valid: false, error: u.id + ' prep without a drill' };
+      for (var dk in u.drill || {}) {
+        if (!MONDAI[dk] && ['short', 'mid', 'info'].indexOf(dk) < 0 && !LISTEN_PROMPTS[dk]) return { valid: false, error: u.id + ' drill ' + dk };
+      }
+      if (u.kind === 'mock' && !(catalog.items[u.mock] && catalog.items[u.mock].kind === 'mock')) return { valid: false, error: u.id + ' references missing mock ' + u.mock };
       // passages / listening: texts and dialogues a unit's quiz asks about (tickets 15, 17);
       // not taught items, no cards
       for (var pf in UNIT_QUIZ_FIELDS) {
@@ -590,33 +596,35 @@ function spellingFakes(v) {
   rndShuffle(tiers[0]).concat(rndShuffle(tiers[1])).forEach(function (w) { if (out.indexOf(w) < 0) out.push(w); });
   return out;
 }
-// orderQuestion(s, taughtKanji): ★ sentence composition from s.chunks. The ★ goes in one
-// of the slots the author marked as fixed by grammar (default all four).
-function orderQuestion(s, taughtKanji) {
+// orderQuestion(s, taughtKanji, star?, order?): ★ sentence composition from s.chunks. The ★ goes
+// in one of the slots the author marked as fixed by grammar (default all four). star / order
+// (chunk indexes as shown) fix the question for a mock; random when left out.
+function orderQuestion(s, taughtKanji, fixedStar, fixedOrder) {
   var c = s.chunks, raw = quizFurigana(furiganaParts(s.furigana || s.jp), taughtKanji, '');
-  var star = rndShuffle(c.star || [0, 1, 2, 3])[0], at = c.pre.length;
+  var star = fixedStar !== undefined ? fixedStar : rndShuffle(c.star || [0, 1, 2, 3])[0], at = c.pre.length;
   var chunkParts = c.move.map(function (m) { var p = sliceParts(raw, at, at + m.length); at += m.length; return p; });
   var slots = STAR_SLOTS.map(function (x, i) { return i === star ? '＿★＿' : x; }).join(' ');
-  var order = rndShuffle([0, 1, 2, 3]);
+  var order = fixedOrder || rndShuffle([0, 1, 2, 3]);
   return { type: 'order', prompt: 'Which goes in the ★ slot?', question: c.pre + ' ' + slots + ' ' + c.post,
     parts: sliceParts(raw, 0, c.pre.length).concat({ t: ' ' + slots + ' ' }, sliceParts(raw, at, Infinity)),
     options: order.map(function (i) { return c.move[i]; }), optionParts: order.map(function (i) { return chunkParts[i]; }),
     correct: order.indexOf(star), star: star, sentence: s.id };
 }
-// mcFromAuthored(options, answer): shuffled options + the answer's new index.
-function mcFromAuthored(options, answer) {
-  var opts = rndShuffle(options);
+// mcFromAuthored(options, answer, order?): options shuffled (or in `order`, indexes into
+// options: a mock's fixed order) + the answer's new index.
+function mcFromAuthored(options, answer, order) {
+  var opts = order ? order.map(function (i) { return options[i]; }) : rndShuffle(options);
   return { options: opts, correct: opts.indexOf(options[answer]) };
 }
-function iikaeQuestion(m, taughtKanji) {
+function iikaeQuestion(m, taughtKanji, order) {
   var raw = quizFurigana(furiganaParts(m.furigana || m.jp), taughtKanji, ''), at = m.jp.indexOf(m.underline);
   var parts = spliceParts(raw, at, at + m.underline.length, [{ t: m.underline, u: true }]);
   return Object.assign({ type: 'iikae', prompt: 'Which sentence means about the same? (look at the underlined part)', question: m.jp, parts: parts },
-    mcFromAuthored(m.options, m.answer));
+    mcFromAuthored(m.options, m.answer, order));
 }
-// bunshouQuestion(m, n, taughtKanji): blank n (1-based) of a text with blanks; the
+// bunshouQuestion(m, n, taughtKanji, order?): blank n (1-based) of a text with blanks; the
 // passage shows every blank as （ k ）, the asked one underlined.
-function bunshouQuestion(m, n, taughtKanji) {
+function bunshouQuestion(m, n, taughtKanji, order) {
   var passage = [];
   quizFurigana(furiganaParts(m.text), taughtKanji, '').forEach(function (p) {
     if (p.r) return passage.push(p);
@@ -628,7 +636,7 @@ function bunshouQuestion(m, n, taughtKanji) {
   });
   var b = m.blanks[n - 1];
   return Object.assign({ type: 'bunshou', prompt: 'Which fits blank (' + n + ')?', question: '（ ' + n + ' ）', passageParts: passage, blank: n },
-    mcFromAuthored(b.options, b.answer));
+    mcFromAuthored(b.options, b.answer, order));
 }
 // mondaiQuestions(type, item, ctx) → [question] (bunshou: one per blank; [] when the
 // item can't make that type). type = a MONDAI key; ctx = quizContext(unit).
@@ -976,6 +984,7 @@ function makeQuestion(item, ctx, wantRecall, avoid, strict) {
 // quizLength; at least RECALL_SHARE typed answers. A unit with passages / listening (reviews)
 // ends with their reading then listening questions, in place of as many item questions.
 function buildExercises(unit) {
+  if (unit.kind === 'prep') return prepDrill(unit); // ticket 18; a mock unit runs MockExam instead
   var ctx = quizContext(unit);
   if (!ctx.items.length) return [];
   var total = quizLength(unit, ctx.items.length);
@@ -1019,20 +1028,24 @@ function passagesFor(level, format) {
 // taught yet (Q33); options shuffled. Not tied to an SRS card (itemId is the passage id).
 function readingExercises(unit, taughtKanji) {
   var out = [];
-  var ruby = function (s) { return quizFurigana(furiganaParts(s), taughtKanji || {}, ''); };
-  var text = function (s) { return furiganaParts(s).map(function (p) { return p.t; }).join(''); };
   (unit.passages || []).forEach(function (id) {
     var p = CATALOG.items[id];
     if (!p || p.kind !== 'passage') return;
-    p.questions.forEach(function (q) {
-      var order = rndShuffle(q.options.map(function (_, i) { return i; }));
-      out.push({ type: 'reading', prompt: 'Read the text and answer the question.', passage: ruby(p.furigana),
-        question: text(q.q), parts: ruby(q.q), options: order.map(function (i) { return text(q.options[i]); }),
-        optionParts: order.map(function (i) { return ruby(q.options[i]); }), correct: order.indexOf(q.answer),
-        explain: q.explain, itemId: p.id, form: 'reading', recall: false });
-    });
+    p.questions.forEach(function (q, qi) { out.push(readingQuestion(p, qi, taughtKanji)); });
   });
   return out;
+}
+// readingQuestion(p, qi, taughtKanji, order?): question qi of passage p; options shuffled, or in
+// `order` (indexes into the authored options: a mock's fixed order).
+function readingQuestion(p, qi, taughtKanji, order) {
+  var ruby = function (s) { return quizFurigana(furiganaParts(s), taughtKanji || {}, ''); };
+  var text = function (s) { return furiganaParts(s).map(function (x) { return x.t; }).join(''); };
+  var q = p.questions[qi];
+  order = order || rndShuffle(q.options.map(function (_, i) { return i; }));
+  return { type: 'reading', prompt: 'Read the text and answer the question.', passage: ruby(p.furigana),
+    question: text(q.q), parts: ruby(q.q), options: order.map(function (i) { return text(q.options[i]); }),
+    optionParts: order.map(function (i) { return ruby(q.options[i]); }), correct: order.indexOf(q.answer),
+    explain: q.explain, itemId: p.id, form: 'reading', recall: false };
 }
 
 // ── Listening (ticket 17) ───────────────────────────────────────────────────
@@ -1099,6 +1112,181 @@ function listeningExercises(unit, taughtKanji) {
   return (unit.listening || []).map(function (id) { return CATALOG.items[id]; })
     .filter(function (it) { return it && it.kind === 'listening'; })
     .map(function (it) { return listenQuestion(it, taughtKanji); });
+}
+
+// ── Timed quizzes, test prep and mock exams (ticket 18, Q32 / Q36-Q39) ──────
+// Pacing per question from the real N5 test (jlpt.jp, item counts since 2020; research:
+// .scratch/roadmap/research/jlpt-scoring.md): 文字・語彙 20 min / 21 items; 文法・読解 40 min for
+// 17 grammar + 5 reading items, 1 min per grammar item leaving 23 min for reading; 聴解 30 min /
+// 24 items. A full mock's sections come out at exactly 20 / 40 / 30 minutes.
+// ponytail: N5 pacing at every level; add per-level paces when N4 gets mocks.
+var MOCK_PACE = { vocab: 1200 / 21, grammar: 60, reading: 1380 / 5, listening: 1800 / 24 };
+var MOCK_SECTIONS = [
+  { key: 'vocab', name: '文字・語彙', en: 'Vocabulary' },
+  { key: 'grammar', name: '文法・読解', en: 'Grammar · Reading' },
+  { key: 'listening', name: '聴解', en: 'Listening' }
+];
+// Questions per mondai (jlpt-scoring.md §3, N5). Reading and listening count by item format.
+// diagnostic: about half a full mock, every mondai kept.
+var MOCK_BLUEPRINT = {
+  full: { vocab: { kanjiYomi: 7, hyouki: 5, bunmyaku: 6, iikae: 3 },
+    grammar: { gap: 9, order: 4, bunshou: 4, short: 2, mid: 2, info: 1 },
+    listening: { task: 7, point: 6, utterance: 5, quick: 6 } },
+  diagnostic: { vocab: { kanjiYomi: 4, hyouki: 3, bunmyaku: 3, iikae: 2 },
+    grammar: { gap: 5, order: 2, bunshou: 3, short: 1, mid: 2, info: 1 },
+    listening: { task: 3, point: 3, utterance: 2, quick: 3 } }
+};
+var MOCK_LABELS = { short: '内容理解（短文）', mid: '内容理解（中文）', info: '情報検索', task: '課題理解', point: 'ポイント理解',
+  utterance: '発話表現', quick: '即時応答' };
+// JLPT pass rules (jlpt.jp): total pass mark + sectional minimums, N5 scoring sections
+// 言語知識・読解 0-120 and 聴解 0-60.
+var JLPT_PASS = { N5: { total: 80, lkr: 38, listening: 19 } };
+
+// paceKind(ex): which pacing a question gets. Exam formats by their section; typed recall
+// and other quiz questions at the vocabulary pace.
+function paceKind(ex) {
+  if (ex.type === 'listen_dialog') return 'listening';
+  if (ex.type === 'reading') return 'reading';
+  return MONDAI[ex.form] && MONDAI[ex.form].section === 'bunpou' ? 'grammar' : 'vocab';
+}
+// quizSeconds(exs): time limit for a timed quiz or mock section (re-asked questions are free).
+function quizSeconds(exs) {
+  return Math.round(exs.reduce(function (n, e) { return e.requeue ? n : n + MOCK_PACE[paceKind(e)]; }, 0));
+}
+// isTimedQuiz(unit): lesson reviews (mini-mocks, Q36) and prep drills run against the clock;
+// lessons, kana units and kana reviews stay untimed (Q32).
+function isTimedQuiz(unit) {
+  if (unit.kind === 'prep') return true;
+  return unit.kind === 'review' && quizItems(unit).every(function (it) { return it.kind !== 'kana'; });
+}
+// timeUpResults(exs, results): results once the clock runs out — every unanswered question wrong.
+function timeUpResults(exs, results) {
+  return results.concat(exs.slice(results.length).map(function () { return false; }));
+}
+
+// mockItemIds(): passage / listening / mondai ids some mock uses (prep drills leave them alone).
+function mockItemIds() {
+  var ids = {};
+  catalogOf('mock').forEach(function (m) {
+    MOCK_SECTIONS.forEach(function (s) {
+      m.sections[s.key].forEach(function (q) { ids[q.p || q.l || q.item || ''] = true; });
+    });
+  });
+  delete ids[''];
+  return ids;
+}
+// levelKanji(level): { char: true } for every kanji at or below the level (a mock assumes the
+// whole level is taught, so ruby shows only on harder kanji, Q33).
+function levelKanji(level) {
+  var out = {};
+  catalogOf('kanji').forEach(function (k) { if (levelRank(k.level) <= levelRank(level)) out[k.char] = true; });
+  return out;
+}
+// mondaiKey(q): blueprint key of a fixed mock question (reading / listening: the item's format).
+function mondaiKey(q) {
+  return q.m === 'reading' ? CATALOG.items[q.p].format : q.m === 'listening' ? CATALOG.items[q.l].format : q.m;
+}
+
+// mockQuestion(q, taughtKanji): a fixed mock question (data/<lvl>/mocks.js) → an exercise in the
+// shape Exercises renders, with `mondai` (blueprint key) and `explain` (shown in the results).
+// Options are in the authored order, so the same mock always shows the same test.
+function mockQuestion(q, tk) {
+  var it = function (id) { return CATALOG.items[id]; };
+  var ruby = function (s) { return quizFurigana(furiganaParts(s), tk, ''); };
+  var text = function (s) { return furiganaParts(s).map(function (p) { return p.t; }).join(''); };
+  var ex;
+  if (q.m === 'kanjiYomi' || q.m === 'hyouki') {
+    var s = it(q.s), w = it(q.w), raw = furiganaParts(s.furigana || s.jp), sp = wordSpan(raw, w.word, w.reading);
+    var yomi = q.m === 'kanjiYomi';
+    ex = { type: yomi ? 'kanji_yomi' : 'hyouki', prompt: yomi ? 'How is the underlined word read?' : 'How is the underlined word written?',
+      question: s.jp, parts: spliceParts(quizFurigana(raw, tk, w.word), sp.at, sp.end, [{ t: yomi ? w.word : w.reading, u: true }]),
+      options: q.o.slice(), correct: q.a, itemId: w.id,
+      explain: '「' + w.word + '」 is read ' + w.reading + ': "' + glossText(w) + '". ' + s.en };
+  } else if (q.m === 'bunmyaku' || q.m === 'gap') {
+    ex = { type: q.m, prompt: q.m === 'gap' ? 'Choose what fills the gap:' : 'Which word fits the gap?', question: text(q.f),
+      parts: ruby(q.f), options: q.o.map(text), optionParts: q.o.map(ruby), correct: q.a, explain: q.en + ' ' + q.explain };
+  } else if (q.m === 'order') {
+    var os = it(q.s);
+    ex = Object.assign(orderQuestion(os, tk, q.star, q.o), { itemId: os.id, explain: os.jp + ' "' + os.en + '"' });
+  } else if (q.m === 'iikae') {
+    var im = it(q.item);
+    ex = Object.assign(iikaeQuestion(im, tk, q.o), { itemId: im.id, explain: im.underline + ' → ' + im.options[im.answer] + ' "' + im.en + '"' + (im.notes ? ' ' + im.notes : '') });
+  } else if (q.m === 'bunshou') {
+    var bm = it(q.item), b = bm.blanks[q.blank - 1];
+    ex = Object.assign(bunshouQuestion(bm, q.blank, tk, q.o), { itemId: bm.id, explain: '(' + q.blank + ') ' + b.options[b.answer] + '. "' + bm.en + '"' + (bm.notes ? ' ' + bm.notes : '') });
+  } else if (q.m === 'reading') {
+    ex = readingQuestion(it(q.p), q.q, tk, q.o);
+  } else if (q.m === 'listening') {
+    ex = listenQuestion(it(q.l), tk, { mock: true });
+  }
+  return Object.assign(ex, { mondai: mondaiKey(q), form: ex.form || q.m, recall: false });
+}
+// mockSections(mock) → [{ key, name, en, seconds, questions: [exercise] }] in test order.
+function mockSections(mock) {
+  var tk = levelKanji(mock.level);
+  return MOCK_SECTIONS.map(function (s) {
+    var qs = mock.sections[s.key].map(function (q) { return mockQuestion(q, tk); });
+    return Object.assign({}, s, { questions: qs, seconds: quizSeconds(qs) });
+  });
+}
+
+// mockEstimate(p, level): estimated scaled scores from raw accuracy (0-1) per part
+// { vocab, grammar, reading, listening }. Linear proxy (labelled an estimate in the UI): the
+// real test scores answer patterns with IRT and equates sessions, so no exact conversion
+// exists. 言語知識・読解 (0-120) weights the three parts by their official N5 item counts
+// (21 / 17 / 5), so a short diagnostic counts each part as much as the real test does:
+//   lkr = 120 × (21·vocab + 17·grammar + 5·reading) / 43,  listening = 60 × listening,
+// each rounded; pass = total ≥ 80 and lkr ≥ 38 and listening ≥ 19 (JLPT_PASS).
+function mockEstimate(p, level) {
+  var rule = JLPT_PASS[level || 'N5'];
+  var lkr = Math.round(120 * (21 * p.vocab + 17 * p.grammar + 5 * p.reading) / 43);
+  var lis = Math.round(60 * p.listening);
+  return { lkr: lkr, listening: lis, total: lkr + lis, passed: lkr + lis >= rule.total && lkr >= rule.lkr && lis >= rule.listening };
+}
+// mockResult(mock, sections, answers, now) → the mock:<mockId>:<takenAt> doc body.
+// answers[sectionKey][i] = chosen option index, or null (unanswered or out of time = wrong).
+// parts: { vocab | grammar | reading | listening: [right, total] }; byMondai: { key: [right, total] }.
+function mockResult(mock, sections, answers, now) {
+  var parts = { vocab: [0, 0], grammar: [0, 0], reading: [0, 0], listening: [0, 0] }, byMondai = {};
+  sections.forEach(function (s) {
+    s.questions.forEach(function (ex, i) {
+      var ok = answers[s.key][i] === ex.correct ? 1 : 0;
+      var part = s.key === 'grammar' && ex.type === 'reading' ? 'reading' : s.key;
+      parts[part][0] += ok; parts[part][1]++;
+      var m = byMondai[ex.mondai] || (byMondai[ex.mondai] = [0, 0]);
+      m[0] += ok; m[1]++;
+    });
+  });
+  var acc = {};
+  Object.keys(parts).forEach(function (k) { acc[k] = parts[k][1] ? parts[k][0] / parts[k][1] : 0; });
+  return { mockId: mock.id, takenAt: now, parts: parts, byMondai: byMondai, answers: answers, estimate: mockEstimate(acc, mock.level) };
+}
+
+// prepDrill(unit): a prep unit's timed section drill (unit.drill = { blueprint key: count }):
+// `count` catalog items per mondai, random each time, in test order. Passages, listening items
+// and authored mondai that a mock uses are left out, so the mocks stay unseen.
+function prepDrill(unit) {
+  var ctx = quizContext(unit), skip = mockItemIds(), out = [];
+  var fresh = function (xs) { return rndShuffle(xs.filter(function (x) { return !skip[x.id]; })); };
+  var order = ['kanjiYomi', 'hyouki', 'bunmyaku', 'iikae', 'gap', 'order', 'bunshou', 'short', 'mid', 'info', 'task', 'point', 'utterance', 'quick'];
+  order.forEach(function (key) {
+    var n = (unit.drill || {})[key];
+    if (!n) return;
+    var got = 0, add = function (qs) { if (qs.length && got < n) { out = out.concat(qs); got++; } };
+    if (key === 'iikae' || key === 'bunshou') {
+      fresh(catalogOf('mondai').filter(function (m) { return m.type === key; })).forEach(function (m) { add(mondaiQuestions(key, m, ctx)); });
+    } else if (['short', 'mid', 'info'].indexOf(key) >= 0) {
+      fresh(passagesFor(unit.level, key)).forEach(function (p) { add(p.questions.map(function (_, i) { return readingQuestion(p, i, ctx.taughtKanji); })); });
+    } else if (LISTEN_PROMPTS[key]) {
+      fresh(listeningFor(unit.level, key)).forEach(function (l) { add([listenQuestion(l, ctx.taughtKanji, { mock: true })]); });
+    } else {
+      var kind = MONDAI[key].section === 'bunpou' ? 'grammar' : 'vocab';
+      fresh(catalogOf(kind).filter(function (x) { return x.level === unit.level && !x.alt; })).forEach(function (x) {
+        if (got < n) add(mondaiQuestions(key, x, ctx));
+      });
+    }
+  });
+  return out;
 }
 
 // chunkSpeech(text, max): split a line for speech synthesis at sentence ends, then commas /
@@ -1503,11 +1691,16 @@ function matchCatalogText(text) {
 //                   field-wise (mergeLogDocs).
 //                   Readers aggregate across devices and treat missing fields
 //                   as empty, so fields can be added without migration.
+//   mock:<mockId>:<takenAt ms>   one taken mock exam (ticket 18, mockResult): { mockId, takenAt,
+//                   parts: { vocab | grammar | reading | listening: [right, total] }, byMondai:
+//                   { mondai key: [right, total] }, answers: { section: [option index | null] },
+//                   estimate: { lkr, listening, total, passed } }. Written once, never changed:
+//                   the merge rule (last write wins) never has two versions to pick from.
 // Reserved, not written yet (features come later):
 //   ach:<id>            { unlockedAt }   merge: earliest unlock wins, never deleted
 // Device-only prefs stay in localStorage and never become docs:
 var DEVICE_PREF_KEYS = ['jlpt_palette', 'jlpt_theme', 'jlpt_tts_rate', 'jlpt_sfx_mute'];
-var STORE_ID_RE = /^(unit:n[1-5]\.u\d{3}|card:(v:[^|\s]+\|[^|\s]+|k:\S+|g:[\w-]+|c:\S+)|prefs:learning|log:\d{4}-\d{2}-\d{2}:[\w-]+)$/;
+var STORE_ID_RE = /^(unit:n[1-5]\.u\d{3}|card:(v:[^|\s]+\|[^|\s]+|k:\S+|g:[\w-]+|c:\S+)|prefs:learning|log:\d{4}-\d{2}-\d{2}:[\w-]+|mock:x:[\w-]+:\d+)$/;
 var PREFS_DEFAULTS = { currentUnit: null, pace: 1, examDate: null, furigana: null, uiLang: 'en', charView: 'rows' };
 
 // ── Activity log (log:* docs) ───────────────────────────────────────────────
@@ -1838,7 +2031,7 @@ function newCardCap(pace, upcomingUnits) {
 
 // docsToSnapshot: docs → App's synchronous state shape.
 function docsToSnapshot(docs) {
-  var snap = { completed: [], srsCards: {}, currentUnit: null, pace: 1, examDate: null, furiganaPref: null, uiLang: 'en', charView: 'rows', pendingCards: [] };
+  var snap = { completed: [], srsCards: {}, currentUnit: null, pace: 1, examDate: null, furiganaPref: null, uiLang: 'en', charView: 'rows', pendingCards: [], mocks: [] };
   docs.forEach(function (d) {
     if (d._id.indexOf('unit:') === 0) {
       if (d.done) snap.completed.push(d._id.slice(5));
@@ -1853,8 +2046,11 @@ function docsToSnapshot(docs) {
       if (d.uiLang === 'auto' || d.uiLang === 'ja') snap.uiLang = d.uiLang;
       if (d.charView === 'focus') snap.charView = 'focus';
       if (Array.isArray(d.pendingCards)) snap.pendingCards = d.pendingCards.slice();
+    } else if (d._id.indexOf('mock:') === 0) {
+      snap.mocks.push(stripDocMeta(d));
     }
   });
+  snap.mocks.sort(function (a, b) { return b.takenAt - a.takenAt; }); // newest first
   return snap;
 }
 
@@ -1907,6 +2103,7 @@ function validateProgressData(data) {
       return typeof d[f] !== 'number';
     })) return bad(d._id + ' missing SRS fields');
     if (d._id.indexOf('log:') === 0 && d.date !== d._id.split(':')[1]) return bad(d._id + ' date mismatch');
+    if (d._id.indexOf('mock:') === 0 && (d._id !== 'mock:' + d.mockId + ':' + d.takenAt || !d.estimate)) return bad(d._id + ' bad mock result');
   }
   if (data.device !== undefined) {
     if (!data.device || typeof data.device !== 'object') return bad('device is not an object');

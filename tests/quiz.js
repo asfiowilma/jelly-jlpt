@@ -41,7 +41,7 @@ QUnit.module('quiz difficulty model', {
   });
 
   QUnit.test('Q29 every shipped kana/lesson quiz has its length and asks every taught item', function (assert) {
-    this.units.filter(function (u) { return u.kind !== 'review'; }).forEach(function (u) {
+    this.units.filter(function (u) { return u.kind === 'kana' || u.kind === 'lesson'; }).forEach(function (u) {
       var items = quizItems(u);
       var exs = buildExercises(u);
       assert.strictEqual(exs.length, quizLength(u, items.length), u.id + ' length');
@@ -66,7 +66,7 @@ QUnit.module('quiz difficulty model', {
   });
 
   QUnit.test('Q30 at least 40% recall questions in every shipped quiz, and at N4/N3/N1', function (assert) {
-    var units = this.units;
+    var units = this.units.filter(function (u) { return u.kind !== 'prep' && u.kind !== 'mock'; }); // prep drills are exam-format MC (ticket 18)
     var pool = units.concat(['N4', 'N3', 'N1'].map(function (lv) { return lessonAt(units, lv); }));
     pool.forEach(function (u) {
       var exs = buildExercises(u);

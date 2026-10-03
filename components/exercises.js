@@ -87,8 +87,43 @@ function Exercises(_ref9) {
     var tm = setTimeout(check, 2000); // no voiceschanged at all → settle as 'none' if still empty
     return function () { ss.removeEventListener('voiceschanged', check); clearTimeout(tm); };
   }, []);
+  // Timed quizzes (ticket 18, Q36): lesson reviews (mini-mocks) and prep drills run against a clock
+  // at real N5 pacing (quizSeconds); when it runs out, every unanswered question counts as wrong.
+  var timed = isTimedQuiz(unit);
+  var _dl = React.useState(null), deadline = _dl[0], setDeadline = _dl[1];
+  var _to = React.useState(false), timedOut = _to[0], setTimedOut = _to[1];
+  var _tick = React.useState(0), setTick = _tick[1];
+  var latest = React.useRef(null);
+  latest.current = { exs: exs, results: results };
+  var finishedRef = React.useRef(false);
+  React.useEffect(function () {
+    if (!deadline || done) return undefined;
+    var id = setInterval(function () {
+      if (Date.now() < deadline) return setTick(function (n) { return n + 1; });
+      clearInterval(id);
+      var L = latest.current;
+      setTimedOut(true);
+      finish(L.exs, timeUpResults(L.exs, L.results));
+    }, 1000);
+    return function () { clearInterval(id); };
+  }, [deadline, done]);
   if (exs.length === 0) return null;
   var needPct = Math.round(passMark(unit.kind) * 100) + '%';
+  var limit = timed ? quizSeconds(exs) : 0;
+  var clock = function (s) { return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+  // finish(exs, results): score, log and report the quiz (last answer or time up), once.
+  var finish = function finish(nextExs, nextRes) {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    stopAudio();
+    var s = scoreQuiz(unit.kind, nextExs, nextRes);
+    setResults(nextRes);
+    setDone(true);
+    Store.logQuiz(unit.id, s.right, s.total);
+    playSfx('complete');
+    onFinish && onFinish();
+    onResult && onResult(s);
+  };
 
   // ── Not started: show Start Quiz button ──────────────────────────────────
   if (!started) {
@@ -101,10 +136,14 @@ function Exercises(_ref9) {
     }, t('quiz_title', unit.level)), /*#__PURE__*/React.createElement("div", {
       className: "quiz-start-hint"
     }, "The lesson content above will be hidden while you answer ", exs.length, " questions. Score ", needPct,
-      " or more to complete this unit."), /*#__PURE__*/React.createElement("button", {
+      " or more to complete this unit.", timed && React.createElement("span", { className: "quiz-timed-note" },
+        " Timed like the real N5 test: ", clock(limit), " for these questions. When time runs out, unanswered questions count as wrong.")),
+      /*#__PURE__*/React.createElement("button", {
       className: "quiz-start-btn",
       onClick: function onClick() {
         setStarted(true);
+        finishedRef.current = false;
+        if (timed) setDeadline(Date.now() + limit * 1000);
         onStart && onStart();
       }
     }, t('start_quiz', unit.level))));
@@ -123,6 +162,9 @@ function Exercises(_ref9) {
     stopAudio();
     setDone(false);
     setStarted(false);
+    setDeadline(null);
+    setTimedOut(false);
+    finishedRef.current = false;
     onFinish && onFinish();
   };
   // advance(wasRight, manual): record the answer, then move on after 1 s, or (manual) when the
@@ -141,13 +183,9 @@ function Exercises(_ref9) {
     stopAudio();
     setPlays(0);
     setShowEarly(false);
+    if (finishedRef.current) return; // the clock already ended the quiz
     if (cur + 1 >= nextExs.length) {
-      var s = scoreQuiz(unit.kind, nextExs, nextRes);
-      setDone(true);
-      Store.logQuiz(unit.id, s.right, s.total);
-      playSfx('complete');
-      onFinish && onFinish();
-      onResult && onResult(s);
+      finish(nextExs, nextRes);
     } else {
       setCur(function (c) {
         return c + 1;
@@ -195,7 +233,8 @@ function Exercises(_ref9) {
     React.createElement("div", {
       className: "ex-finish-verdict " + (s.passed ? 'pass' : 'fail'),
       role: "status"
-    }, s.passed ? "Passed (pass mark " + needPct + ") — unit complete." : "Not passed yet: you need " + needPct + ". Retake with new questions."),
+    }, timedOut ? "Time is up: unanswered questions count as wrong. " : "",
+      s.passed ? "Passed (pass mark " + needPct + ") — unit complete." : "Not passed yet: you need " + needPct + ". Retake with new questions."),
     /*#__PURE__*/React.createElement("button", {
       className: "ex-retry-btn",
       onClick: retry
@@ -224,7 +263,9 @@ function Exercises(_ref9) {
       key: "label", className: "section-label"
     }, t('section_exercises', unit.level), " ", React.createElement("span", {
       className: "ex-count"
-    }, progress), ex.requeue && React.createElement("span", { className: "ex-count" }, " · again, not scored"))];
+    }, progress), ex.requeue && React.createElement("span", { className: "ex-count" }, " · again, not scored"),
+      deadline && React.createElement("span", { className: "ex-timer", role: "timer", 'aria-label': "Time left" },
+        "⏱ ", clock(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)))))];
   };
   // Shared frame for the reorder / pair_match branches below
   var frame = function frame(body, feedback) {

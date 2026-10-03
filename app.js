@@ -443,7 +443,11 @@ function App() {
     setUnit: function setUnit(i) {
       setUnitIdx(i);
       setView('unit');
-    }
+    },
+    onDiagnostic: function () { setView('diagnostic'); }
+  }) : view === 'diagnostic' ? React.createElement(MockExam, {
+    mock: CATALOG.items[DIAGNOSTIC_MOCK],
+    onClose: function () { setView('units'); }
   }) : /*#__PURE__*/React.createElement(UnitView, {
     unit: unit,
     units: UNITS,

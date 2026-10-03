@@ -119,7 +119,10 @@ function UnitView(props) {
       React.createElement("h2", { className: "day-title" }, unit.title)),
     React.createElement("div", { className: "day-body" },
       React.createElement("div", { className: "lesson-blurrable" + (quizActive ? ' blurred' : '') },
-        unit.notes && React.createElement("div", { className: "tip-box" }, unit.notes),
+        // prep / mock notes run to several paragraphs (one per line, ticket 18)
+        unit.notes && React.createElement("div", { className: "tip-box" }, unit.notes.split('\n').map(function (para, i) {
+          return React.createElement("p", { key: i, className: "tip-para" }, para);
+        })),
         unit.kana.length > 0 && React.createElement(KanaSection, {
           key: unit.id, unit: unit, charView: charView, setCharView: setCharView
         }),
@@ -155,7 +158,12 @@ function UnitView(props) {
           className: "furigana-toggle" + (showFurigana ? " active" : ""),
           onClick: toggleFurigana
         }, showFurigana ? t('furigana_hide', lv) : t('furigana_show', lv))),
-      React.createElement(Exercises, {
+      // a mock unit is taken as a whole test (MockExam); taking it completes the unit, pass or not
+      unit.kind === 'mock' ? React.createElement(MockExam, {
+        key: unit.id,
+        mock: CATALOG.items[unit.mock],
+        onTaken: function () { props.onQuizResult({ passed: true, missed: [] }); }
+      }) : React.createElement(Exercises, {
         key: unit.id,
         unit: unit,
         onStart: function () { setQuizActive(true); },
@@ -177,7 +185,7 @@ function UnitView(props) {
           className: "nav-btn complete done",
           onClick: unmarkDone
         }, t('mark_incomplete', lv)) : React.createElement("div", { className: "day-counter" },
-          "Pass the quiz (", Math.round(passMark(unit.kind) * 100), "%) to complete")),
+          unit.kind === 'mock' ? "Take the mock to complete" : "Pass the quiz (" + Math.round(passMark(unit.kind) * 100) + "%) to complete")),
       React.createElement("button", {
         className: "nav-btn next",
         onClick: function () { setUnit(Math.min(last, unit.index + 1)); },

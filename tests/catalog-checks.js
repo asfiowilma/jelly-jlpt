@@ -17,7 +17,7 @@ QUnit.module('catalog checks', function () {
   // lessons carry no grammar, and kanji run out before vocab does.
   var LOAD_GUIDE = { N5: { vocab: 8, kanji: 2, grammar: 1 } };
   var REQUIRED = { vocab: ['word', 'reading', 'pos'], kanji: ['char'], grammar: ['pattern', 'meaning'], sentence: ['jp', 'en'],
-    passage: ['furigana', 'jp', 'en', 'format'], listening: ['format', 'en', 'explain'], kana: ['char', 'romaji', 'script', 'group'], mondai: ['type', 'en'] };
+    passage: ['furigana', 'jp', 'en', 'format'], listening: ['format', 'en', 'explain'], kana: ['char', 'romaji', 'script', 'group'], mondai: ['type', 'en'], mock: ['format', 'title'] };
   var CHUNK_PUNCT_RE = /[、。？！?!\s「」]/;
   var SCRIPT_RE = { hiragana: /^[ぁ-ゖ]+$/, katakana: /^[ァ-ヺ]+$/ };
 
@@ -142,6 +142,12 @@ QUnit.module('catalog checks', function () {
       } else err('type ' + it.type);
     } else if (it.kind === 'passage') e = e.concat(passageErrors(it, items));
     else if (it.kind === 'listening') e = e.concat(listeningErrors(it, items));
+    // mock (ticket 18): its authored gap / bunmyaku sentences, blank filled, plus options, as an own text
+    else if (it.kind === 'mock') {
+      var authored = [].concat.apply([], ['vocab', 'grammar', 'listening'].map(function (k) { return (it.sections || {})[k] || []; }))
+        .filter(function (q) { return q.f; });
+      e = e.concat(ownTextErrors(it, authored.map(function (q) { return q.f.replace('（　）', q.o[q.a]) + '\n' + q.o.join('\n'); }).join('\n'), items));
+    }
     return e;
   }
 

@@ -206,7 +206,11 @@ const soon = function (k, n) { return lessonText.slice(n + 1, n + 7).some(functi
 // Reading (ticket 15): each lesson review gets the first unused short passage (passages.js
 // order) whose vocab and grammar are all taught by then; kanji may be untaught (the quiz shows
 // their furigana). mid / info passages are kept for test prep and mocks (passagesFor in lib.js).
-const shortPassages = items.filter(function (it) { return it.kind === "passage" && it.format === "short"; });
+// items a mock uses (data/n5/mocks.js) never go into a review
+const inMock = new Set([].concat.apply([], items.filter(function (it) { return it.kind === "mock"; }).map(function (m) {
+  return [].concat(m.sections.vocab, m.sections.grammar, m.sections.listening).map(function (q) { return q.p || q.l || q.item; });
+})));
+const shortPassages = items.filter(function (it) { return it.kind === "passage" && it.format === "short" && !inMock.has(it.id); });
 const usedPassages = new Set();
 function pickPassage() {
   const taughtNow = new Set();
@@ -220,7 +224,7 @@ function pickPassage() {
 // Listening (ticket 17): each lesson review also gets one listening item whose vocab and grammar
 // are all taught by then, formats in turn (quick, task, utterance, point; the next eligible one when
 // the wanted format has none yet). The rest are kept for test prep and mocks (listeningFor in lib.js).
-const listenItems = items.filter(function (it) { return it.kind === "listening"; });
+const listenItems = items.filter(function (it) { return it.kind === "listening" && !inMock.has(it.id); });
 const LISTEN_TURN = ["quick", "task", "utterance", "point"];
 const usedListening = new Set();
 let listenTurn = 0;
@@ -269,6 +273,52 @@ LESSONS.forEach(function (l, n) {
     units.push(review);
     sinceReview = [];
   }
+});
+
+// ── 4. Test prep (ticket 18) ───────────────────────────────────────────────
+// After the last lesson review: strategy units, each with a timed section drill (lib.js prepDrill;
+// drill = questions per mondai, or passages / listening items per format), then the two fixed full
+// mocks (data/n5/mocks.js), with a mixed drill between them. The diagnostic mock (x:n5-mock-3) is
+// not a unit: it opens from the Units tab anytime. Unit ids continue after the lessons (n5.u106…).
+const PREP = [
+  ["Exam strategy: vocabulary (文字・語彙)", { kanjiYomi: 3, hyouki: 3, bunmyaku: 3, iikae: 3 },
+    "The N5 test has three timed parts: vocabulary (文字・語彙, 20 minutes), grammar and reading (文法・読解, 40 minutes) and listening (聴解, 30 minutes). You may not go back to a part once its time is over.\n" +
+    "Vocabulary has about 21 questions in 20 minutes, so a little under a minute each. Four kinds of question (もんだい):\n" +
+    "1. 漢字読み: a word in kanji is underlined; choose its reading. The wrong choices differ by one sound: a missing ゛, a short vowel instead of a long one (きょねん / きょうねん), a missing small っ. Say each choice in your head, slowly.\n" +
+    "2. 表記: a word in hiragana is underlined; choose its kanji. Wrong choices swap one kanji for one that looks alike (休 / 体) or sounds alike. Check every kanji of the word, not just the first.\n" +
+    "3. 文脈規定: a sentence with a gap; choose the word that fits. Read the whole sentence first: the reason (〜から) or the object (まどを, でんきを) usually decides it.\n" +
+    "4. 言い換え類義: choose the sentence that means about the same as the underlined part. The right one often says it another way (たかくない = やすい); wrong ones change who, when or the opposite.\n" +
+    "Time: answer what you know at once and come back to flagged questions at the end. Never leave a question blank: a wrong answer costs nothing more than an empty one."],
+  ["Exam strategy: grammar (文法)", { gap: 5, order: 3, bunshou: 1 },
+    "Grammar has about 17 questions; give them about 1 minute each, so most of the 40 minutes are left for reading.\n" +
+    "1. 文の文法1: a gap in a sentence; choose the particle or form. Look at the words on both sides of the gap: the verb after it decides the particle (コーヒーを のむ), the form before it decides the ending (ねた ほうがいい, して から).\n" +
+    "2. 文の文法2 (★): four pieces to put in order; answer with the piece that lands on ★. Build the whole sentence first, write the order down (1-3-4-2), then read off the ★ slot. Particles stick to the word before them (かばん + を).\n" +
+    "3. 文章の文法: a short text with numbered gaps. Read the sentence before and after each gap: the right choice must fit the story (past or future, but or so).\n" +
+    "If two choices both seem fine, one of them usually breaks a rule only the full sentence shows. Read it once more with each choice in place."],
+  ["Exam strategy: reading (読解)", { short: 2, mid: 1, info: 1 },
+    "Reading has about 5 questions in the same 40 minutes as grammar: plan about 20 minutes for it. In this course the clock gives each reading question about 4½ minutes.\n" +
+    "1. 内容理解（短文）: a note, an email or a notice of a few lines, one question. Read the question first, then find the sentence that answers it; the wrong choices use words from the text in the wrong place.\n" +
+    "2. 内容理解（中文）: a longer text with two questions. The questions follow the order of the text. Watch for でも, しかし and the end of the text: the writer's real point is often there.\n" +
+    "3. 情報検索: a timetable, a price list or a flyer. Don't read it all: note the conditions in the question (day, time, price, who) and scan for the one line that meets all of them.\n" +
+    "Kanji from the N5 list show no furigana here, so read them as you would on the day."],
+  ["Exam strategy: listening (聴解)", { task: 1, point: 2, utterance: 2, quick: 2 },
+    "Listening has about 24 questions in 30 minutes and moves at the speed of the audio. On the real test you hear everything once; here you get one replay per question so the computer voice is fair.\n" +
+    "1. 課題理解: the question comes first (what will the man buy?), then the talk. People change plans: listen for でも, じゃあ and いりません. The answer is the final decision, not the first idea.\n" +
+    "2. ポイント理解: you hear what to listen for (いつ, どこ, どうして, いくつ) before the talk. Keep that one word in mind and ignore the rest.\n" +
+    "3. 発話表現: on the test you see a picture; here the narrator describes the situation. Ask yourself who speaks to whom: asking a favour (〜てください), offering (〜ましょうか) or asking permission (〜てもいいですか).\n" +
+    "4. 即時応答: one short line and three replies, nothing printed. Answer at once and move on; dwelling on one costs the next.\n" +
+    "The voices here are computer speech, slower and flatter than the real recording. Practise with the official sample audio too (link in Settings and on the mock results)."],
+  ["Full mock exam 1", null, "A full N5 test: 67 questions in three timed parts (20 / 40 / 30 minutes), scored with an estimate of the real scaled score and pass rules. Set aside about 90 minutes; you can rest between parts.", "x:n5-mock-1"],
+  ["After the mock: find and fix weak spots", { kanjiYomi: 2, hyouki: 2, bunmyaku: 2, iikae: 1, gap: 3, order: 2, short: 1, info: 1, point: 1, quick: 2 },
+    "Open your mock results: the table per もんだい shows where points were lost. Missed words go back to your reviews sooner, so do your SRS reviews first.\n" +
+    "Then sort each miss: did you not know it (study the word or grammar point again), misread it (slow down on that もんだい), or run out of time (move on sooner and come back)?\n" +
+    "The mixed drill below has every part of the test at real pacing. Take mock 2 when you can pass it with time to spare."],
+  ["Full mock exam 2", null, "The second full N5 test, with all new questions. Take it a few days before the exam, under exam conditions: one sitting, no notes.", "x:n5-mock-2"]
+];
+PREP.forEach(function (p) {
+  const u = { id: uid(), level: "N5", kind: p[3] ? "mock" : "prep", title: p[0], notes: p[2] };
+  if (p[3]) u.mock = p[3]; else u.drill = p[1];
+  units.push(u);
 });
 
 // ── report ─────────────────────────────────────────────────────────────────
