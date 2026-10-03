@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Coverage report (tickets 05 + 26): per level, how much of the reference list
-// (tools/ref/<level>.json) the catalog has and the plan teaches, verified vs
+// (tools/ref/<level>.json) the catalog has and the plan teaches (a duplicate spelling with
+// alt: <taught id> counts as taught), how many catalog items the plan teaches, verified vs
 // unverified counts, and the first 50 missing ref items. Dev only; always exits 0.
 //
 //   node tools/coverage.js
@@ -17,7 +18,9 @@ fs.readdirSync(path.join(root, "data")).filter(function (d) { return fs.statSync
 
 const items = Object.keys(CATALOG.items).map(function (k) { return CATALOG.items[k]; });
 const planned = new Set();
-PLAN.forEach(function (lp) { lp.units.forEach(function (u) { ["vocab", "kanji", "grammar"].forEach(function (f) { (u[f] || []).forEach(function (id) { planned.add(id); }); }); }); });
+PLAN.forEach(function (lp) { lp.units.forEach(function (u) { ["kana", "vocab", "kanji", "grammar"].forEach(function (f) { (u[f] || []).forEach(function (id) { planned.add(id); }); }); }); });
+// A duplicate spelling (alt: <taught id>, ticket 34) is covered when the spelling it points at is taught.
+const covered = function (it) { return planned.has(it.id) || (!!it.alt && planned.has(it.alt)); };
 // The ref keys an item covers: vocab word|reading, kanji char, grammar its `ref` names.
 const keysOf = function (it) { return it.kind === "vocab" ? [it.word + "|" + it.reading] : it.kind === "kanji" ? [it.char] : (it.ref || []); };
 
@@ -28,11 +31,20 @@ const keysOf = function (it) { return it.kind === "vocab" ? [it.word + "|" + it.
   const refFile = path.join(__dirname, "ref", lv.toLowerCase() + ".json");
   if (!fs.existsSync(refFile)) { console.log("  no reference list (tools/ref/" + lv.toLowerCase() + ".json)"); return; }
   const ref = JSON.parse(fs.readFileSync(refFile, "utf8"));
+  // Catalog side: every item taught, or covered through its alt.
+  ["kana", "vocab", "kanji", "grammar"].forEach(function (kind) {
+    const all = mine.filter(function (it) { return it.kind === kind; });
+    if (!all.length) return;
+    const viaAlt = all.filter(function (it) { return !planned.has(it.id) && covered(it); });
+    const n = all.filter(covered).length;
+    console.log("  catalog " + kind.padEnd(8) + n + " / " + all.length + " taught (" + (100 * n / all.length).toFixed(1) + "%)" +
+      (viaAlt.length ? ", " + viaAlt.length + " of them as a duplicate spelling (alt)" : ""));
+  });
   const missing = [];
   ["vocab", "kanji", "grammar"].forEach(function (kind) {
     const inCatalog = new Set(), inPlan = new Set();
     mine.filter(function (it) { return it.kind === kind; }).forEach(function (it) {
-      keysOf(it).forEach(function (k) { inCatalog.add(k); if (planned.has(it.id)) inPlan.add(k); });
+      keysOf(it).forEach(function (k) { inCatalog.add(k); if (covered(it)) inPlan.add(k); });
     });
     let cat = 0, taught = 0;
     ref[kind].forEach(function (entry) {

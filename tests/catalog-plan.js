@@ -53,6 +53,29 @@ QUnit.module('catalog + plan', function () {
     assert.deepEqual(units[2].kanji, []);
   });
 
+  QUnit.test('buildUnits: a review covers every kana/lesson unit since the previous review; practice resolves', function (assert) {
+    var v = all().filter(function (it) { return it.kind === 'vocab'; }).map(function (it) { return it.id; });
+    var lesson = function (id, vocab) { return { id: id, level: 'N5', kind: 'lesson', title: id, vocab: vocab }; };
+    var units = buildUnits([{ level: 'N5', units: [
+      { id: 'n5.u001', level: 'N5', kind: 'kana', title: 'k', kana: ['c:あ', 'c:い'], practice: [v[0]] },
+      { id: 'n5.u002', level: 'N5', kind: 'review', title: 'r1' },
+      lesson('n5.u003', [v[1]]), lesson('n5.u004', [v[2]]), lesson('n5.u005', [v[3]]), lesson('n5.u006', [v[4]]),
+      { id: 'n5.u007', level: 'N5', kind: 'review', title: 'r2' }] }], CATALOG);
+    assert.deepEqual(units[0].practice.map(function (it) { return it.id; }), [v[0]], 'practice words resolved');
+    assert.deepEqual(units[1].kana.map(function (it) { return it.char; }), ['あ', 'い'], 'kana review');
+    assert.deepEqual(units[1].vocab, [], 'practice words are not reviewed');
+    assert.deepEqual(units[6].vocab.map(function (it) { return it.id; }), v.slice(1, 5), 'all 4 lessons since r1');
+    assert.deepEqual(units[6].kana, [], 'nothing from before r1');
+  });
+
+  QUnit.test('the shipped N5 plan starts with kana units, then lessons', function (assert) {
+    var units = buildUnits(PLAN, CATALOG).filter(function (u) { return u.level === 'N5'; });
+    var firstLesson = units.map(function (u) { return u.kind; }).indexOf('lesson');
+    assert.ok(firstLesson > 10, 'kana first');
+    assert.ok(units.slice(0, firstLesson).every(function (u) { return u.kind === 'kana' || u.kind === 'review'; }), 'only kana + reviews before lessons');
+    assert.ok(units.slice(firstLesson).every(function (u) { return u.kind !== 'kana'; }), 'no kana after');
+  });
+
   QUnit.test('nextUnit: first unit not done (nothing locked)', function (assert) {
     var units = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
     assert.strictEqual(nextUnit(units, new Set()), 0);

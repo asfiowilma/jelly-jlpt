@@ -197,8 +197,8 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     a.ok(units.some(function (u) { return u.kind === "review"; }), "a review unit is rendered");
   });
 
-  test("React render: CharCard() renders a catalog kanji", function (a) {
-    try { CharCard({ kanji: CATALOG.items["k:人"] }); a.ok(true); } catch (e) { a.ok(false, e.message); }
+  test("React render: CharCard() renders a catalog kanji and kana", function (a) {
+    try { CharCard({ kanji: CATALOG.items["k:人"] }); CharCard({ kanji: CATALOG.items["c:あ"] }); CharCard({ kanji: CATALOG.items["c:きゃ"] }); a.ok(true); } catch (e) { a.ok(false, e.message); }
   });
 
   test("React render: Overview() renders units + coming-soon levels", function (a) {

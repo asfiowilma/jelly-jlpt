@@ -42,6 +42,15 @@ QUnit.module('srsAddCards', function () {
     assert.strictEqual(srsAddCards(unit, cards), false);
   });
 
+  QUnit.test('kana units add kana cards (char → romaji); practice words get no card', function (assert) {
+    var cards = {};
+    var kanaUnit = buildUnits(PLAN, CATALOG).filter(function (u) { return u.kind === 'kana'; })[0];
+    srsAddCards(kanaUnit, cards);
+    var a = cards['c:あ'];
+    assert.deepEqual([a.type, a.front, a.back], ['kana', 'あ', 'a']);
+    assert.ok(Object.keys(cards).every(function (id) { return id.indexOf('c:') === 0; }), 'only kana cards: ' + Object.keys(cards).join(' '));
+  });
+
   QUnit.test('card ids are valid store doc ids', function (assert) {
     var cards = {};
     buildUnits(PLAN, CATALOG).forEach(function (u) { srsAddCards(u, cards); });

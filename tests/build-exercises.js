@@ -6,7 +6,7 @@ QUnit.module('buildExercises', {
   beforeEach: function () {
     this._origSpeech = window.speechSynthesis;
     try { delete window.speechSynthesis; } catch (e) { window.speechSynthesis = undefined; }
-    this.unit = buildUnits(PLAN, CATALOG)[0]; // N5 lesson: vocab + kanji + grammar
+    this.unit = buildUnits(PLAN, CATALOG).filter(function (u) { return u.kind === 'lesson'; })[0]; // vocab + kanji + grammar
   },
   afterEach: function () {
     if (this._origSpeech !== undefined) {
@@ -57,6 +57,45 @@ QUnit.module('buildExercises', {
     }
     assert.ok(typing, 'typing generated');
     ['ひと', 'ジン', 'じん'].forEach(function (a) { assert.ok(checkTyping(a, typing.answers), a); });
+  });
+
+  QUnit.test('kana unit: kana → romaji MC, romaji typing, romaji → kana MC; unambiguous same-script options', function (assert) {
+    var kanaUnit = buildUnits(PLAN, CATALOG).filter(function (u) { return u.kind === 'kana'; })[1]; // か/さ rows
+    var types = {};
+    for (var run = 0; run < 20; run++) {
+      buildExercises(kanaUnit).forEach(function (e) {
+        var k = CATALOG.items['c:' + e.question] || catalogOf('kana').filter(function (x) { return x.script === 'hiragana' && x.romaji === e.question; })[0];
+        assert.ok(k && k.kind === 'kana', 'question is a unit kana or its romaji: ' + e.question);
+        if (e.type === 'typing') {
+          types.typing = true;
+          assert.ok(checkTyping(k.romaji, e.answers) && checkTyping(k.answers[k.answers.length - 1], e.answers), 'accepts every romaji spelling');
+          return;
+        }
+        var toRomaji = e.question === k.char;
+        types[toRomaji ? 'toRomaji' : 'toKana'] = true;
+        assert.strictEqual(e.options.length, 4, '4 options');
+        assert.strictEqual(new Set(e.options).size, 4, 'distinct options');
+        assert.strictEqual(e.options[e.correct], toRomaji ? k.romaji : k.char, 'correct option');
+        if (!toRomaji) {
+          assert.ok(e.options.every(function (c) { return /^[ぁ-ゖ]+$/.test(c); }), 'same script');
+          assert.ok(e.options.every(function (c, i) { return i === e.correct || CATALOG.items['c:' + c].answers.indexOf(k.romaji) < 0; }), 'no other option reads ' + k.romaji);
+        }
+      });
+    }
+    assert.deepEqual(Object.keys(types).sort(), ['toKana', 'toRomaji', 'typing']);
+    assert.strictEqual(buildExercises(kanaUnit).length, 10, 'quiz.cap 10 for a 10-kana unit');
+  });
+
+  QUnit.test('kanaDistractors: look-alikes and dakuten siblings first, never a same-sounding kana', function (assert) {
+    var c = function (ch) { return CATALOG.items['c:' + ch]; };
+    var shi = kanaDistractors(c('シ'), 3, []).map(function (x) { return x.char; });
+    assert.ok(shi.indexOf('ツ') >= 0, 'シ → ツ: ' + shi.join(''));
+    for (var i = 0; i < 20; i++) {
+      assert.ok(kanaDistractors(c('じ'), 3, []).every(function (x) { return x.char !== 'ぢ'; }), 'じ never gets ぢ (both ji)');
+    }
+    var kya = kanaDistractors(c('きゃ'), 3, []);
+    assert.ok(kya.every(function (x) { return x.char.length === 2 && x.script === 'hiragana'; }), 'combos get combos');
+    assert.ok(kya.some(function (x) { return x.char.charAt(0) === 'き' || x.char.charAt(0) === 'ぎ'; }), 'きゃ → きゅ/きょ/ぎゃ…');
   });
 
   QUnit.test('every shipped unit builds a quiz', function (assert) {

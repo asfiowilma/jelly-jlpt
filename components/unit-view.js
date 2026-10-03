@@ -28,6 +28,40 @@ function UnitView(props) {
       ? React.createElement("ruby", null, v.word, React.createElement("rt", null, v.reading))
       : v.word;
   };
+  // A sentence with furigana (Tatoeba-style `furigana` field) when the toggle is on.
+  var sentence = function (s) {
+    var jp = showFurigana && s.furigana ? furiganaParts(s.furigana).map(function (p, i) {
+      return p.r ? React.createElement("ruby", { key: i }, p.t, React.createElement("rt", null, p.r)) : p.t;
+    }) : s.jp;
+    return React.createElement("div", { key: s.id, className: "grammar-example" },
+      React.createElement("div", { className: "jp" }, jp, React.createElement("button", {
+        className: "speak-btn", onClick: function () { speak(s.jp); }, title: "Listen", 'aria-label': "Listen to " + s.jp
+      }, "🔊")),
+      React.createElement("div", { className: "en" }, s.en));
+  };
+  var grammarExamples = function (g) {
+    return (g.examples || []).map(function (id) { return CATALOG.items[id]; }).filter(Boolean).slice(0, 2);
+  };
+  // Lesson units: up to 3 more sentences using this unit's words / kanji (alt spellings count),
+  // most matches first, skipping the grammar examples shown above.
+  var examples = [];
+  if (unit.kind === 'lesson') {
+    var shown = {}, weight = {};
+    unit.grammar.forEach(function (g) { grammarExamples(g).forEach(function (s) { shown[s.id] = true; }); });
+    unit.vocab.forEach(function (v) { weight[v.id] = 2; });
+    unit.kanji.forEach(function (k) { weight[k.id] = 1; });
+    catalogOf('vocab').forEach(function (v) { if (v.alt && weight[v.alt]) weight[v.id] = 2; });
+    // only sentences whose grammar is taught by this unit or earlier
+    var later = {};
+    units.slice(unit.index + 1).forEach(function (u) { (u.grammar || []).forEach(function (g) { if (u.kind === 'lesson') later[g.id] = true; }); });
+    examples = catalogOf('sentence').filter(function (s) {
+      return !(s.uses || []).some(function (id) { return later[id]; });
+    }).map(function (s) {
+      return { s: s, w: (s.uses || []).reduce(function (n, id) { return n + (weight[id] || 0); }, 0) };
+    }).filter(function (x) { return x.w > 0 && !shown[x.s.id]; })
+      .sort(function (a, b) { return b.w - a.w; }).slice(0, 3).map(function (x) { return x.s; });
+  }
+  var practice = unit.practice || [];
   var last = units.length - 1;
   return React.createElement("div", { className: "day-card" },
     React.createElement("div", { className: "day-header" },
@@ -39,6 +73,21 @@ function UnitView(props) {
       React.createElement("h2", { className: "day-title" }, unit.title)),
     React.createElement("div", { className: "day-body" },
       React.createElement("div", { className: "lesson-blurrable" + (quizActive ? ' blurred' : '') },
+        unit.notes && React.createElement("div", { className: "tip-box" }, unit.notes),
+        unit.kana.length > 0 && section(t('section_kana', lv),
+          React.createElement("div", { className: "chars-table" }, unit.kana.map(function (k) {
+            return React.createElement(CharCard, { key: k.id, kanji: k });
+          }))),
+        practice.length > 0 && section(t('section_read', lv),
+          React.createElement("table", { className: "vocab-table" },
+            React.createElement("tbody", null, practice.map(function (v) {
+              return React.createElement("tr", { key: v.id },
+                React.createElement("td", null, v.reading, React.createElement("button", {
+                  className: "speak-btn", onClick: function () { speak(v.reading); },
+                  title: "Listen to pronunciation", 'aria-label': "Listen to " + v.reading
+                }, "🔊")),
+                React.createElement("td", null, glossText(v)));
+            })))),
         unit.vocab.length > 0 && section(t('section_vocabulary', lv),
           React.createElement("table", { className: "vocab-table" },
             React.createElement("thead", null, React.createElement("tr", null,
@@ -64,14 +113,10 @@ function UnitView(props) {
               React.createElement("div", { className: "grammar-pattern" }, g.pattern),
               React.createElement("div", { className: "grammar-meaning" }, g.meaning),
               g.formation && React.createElement("div", { className: "grammar-meaning" }, g.formation),
-              (g.examples || []).map(function (sid) {
-                var s = CATALOG.items[sid];
-                return s && React.createElement("div", { key: sid, className: "grammar-example" },
-                  React.createElement("div", { className: "jp" }, s.jp),
-                  React.createElement("div", { className: "en" }, s.en));
-              }))));
+              grammarExamples(g).map(sentence))));
         }),
-        unit.vocab.some(function (v) { return hasKanji(v.word); }) && React.createElement("button", {
+        examples.length > 0 && section(t('section_examples', lv), examples.map(sentence)),
+        (unit.vocab.some(function (v) { return hasKanji(v.word); }) || examples.length > 0 || unit.grammar.length > 0) && React.createElement("button", {
           className: "furigana-toggle" + (showFurigana ? " active" : ""),
           onClick: toggleFurigana
         }, showFurigana ? t('furigana_hide', lv) : t('furigana_show', lv))),

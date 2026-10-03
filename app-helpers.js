@@ -28,6 +28,9 @@ var UI_STRINGS = {
   section_grammar:    { en: 'Grammar Point', ja: 'ぶんぽう',   since: 'N4' },
   section_practice:   { en: 'Practice',      ja: 'れんしゅう', since: 'N4' },
   section_exercises:  { en: 'Exercises',     ja: 'もんだい',   since: 'N4' },
+  section_kana:       { en: 'Kana',          ja: 'かな',       since: 'N4' },
+  section_read:       { en: 'Read these words', ja: 'よんでみよう', since: 'N4' },
+  section_examples:   { en: 'Example sentences', ja: 'れいぶん', since: 'N4' },
   // Vocabulary table headers
   vocab_word:    { en: 'Word',    ja: 'ことば', since: 'N4' },
   vocab_reading: { en: 'Reading', ja: 'よみ',   since: 'N4'  },

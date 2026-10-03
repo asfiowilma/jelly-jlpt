@@ -2,8 +2,10 @@
 
 // ── CharCard with Stroke Order ───────────────────────────────────────────────
 function CharCard(_ref9a) {
-  var kanji = _ref9a.kanji, // catalog kanji item
-    ch = kanji.char;
+  var kanji = _ref9a.kanji, // catalog kanji or kana item
+    ch = kanji.char,
+    isKana = kanji.kind === 'kana',
+    single = Array.from(ch).length === 1; // stroke SVGs are per character (KanjiVG has kana too); none for きゃ
   var _React$useState9a = React.useState(false),
     _React$useState9b = _slicedToArray(_React$useState9a, 2),
     showStroke = _React$useState9b[0],
@@ -55,9 +57,9 @@ function CharCard(_ref9a) {
     'aria-label': "Listen to pronunciation of " + ch
   }, "\uD83D\uDD0A"), /*#__PURE__*/React.createElement("span", {
     className: "char-reading"
-  }, kanjiReadings(kanji).join('・')), /*#__PURE__*/React.createElement("span", {
+  }, isKana ? kanji.romaji : kanjiReadings(kanji).join('・')), !isKana && /*#__PURE__*/React.createElement("span", {
     className: "char-reading"
-  }, kanji.meaning.join(', ')), /*#__PURE__*/React.createElement("button", {
+  }, kanji.meaning.join(', ')), single && /*#__PURE__*/React.createElement("button", {
     className: "stroke-toggle" + (showStroke ? " active" : ""),
     onClick: toggleStroke,
     title: "Toggle stroke order"

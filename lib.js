@@ -24,15 +24,33 @@ function furiganaHTML(word, reading) {
   return '<ruby>' + word + '<rt>' + reading + '</rt></ruby>';
 }
 
+// furiganaParts: sentence furigana ('[毎日|まい|にち]ここで[食|た]べる', Tatoeba style:
+// one reading for the block, or one per kanji) → [{ t: text, r: ruby? }, ...].
+function furiganaParts(s) {
+  var out = [], re = /\[([^|\]]+)((?:\|[^|\]]*)+)\]/g, last = 0, m;
+  while (m = re.exec(s)) {
+    if (m.index > last) out.push({ t: s.slice(last, m.index) });
+    var chars = Array.from(m[1]), rs = m[2].slice(1).split('|');
+    if (rs.length > 1 && rs.length === chars.length) {
+      chars.forEach(function (c, i) { out.push(rs[i] ? { t: c, r: rs[i] } : { t: c }); });
+    } else out.push({ t: m[1], r: rs.join('') });
+    last = re.lastIndex;
+  }
+  if (last < s.length) out.push({ t: s.slice(last) });
+  return out;
+}
+
 // ── Levels ───────────────────────────────────────────────────────────────────
 var LEVELS = ['N5', 'N4', 'N3', 'N2', 'N1'];
 // levelRank: 0 (N5) … 4 (N1); -1 for anything else. "N3+" = levelRank(lv) >= 2.
 function levelRank(level) { return LEVELS.indexOf(level); }
 
 // ── Units: PLAN + CATALOG joined (spec §4) ──────────────────────────────────
-var UNIT_KINDS = ['lesson', 'review', 'prep', 'mock'];
-var UNIT_ITEM_FIELDS = { vocab: 'vocab', kanji: 'kanji', grammar: 'grammar' }; // unit field → item kind
-var REVIEW_SPAN = 3; // review units quiz the previous N lesson units
+var UNIT_KINDS = ['kana', 'lesson', 'review', 'prep', 'mock'];
+var UNIT_ITEM_FIELDS = { kana: 'kana', vocab: 'vocab', kanji: 'kanji', grammar: 'grammar' }; // unit field → item kind (taught)
+// practice: a kana unit's reading-drill words — vocab shown in kana, taught in a later
+// lesson, so not counted as taught and no SRS card here.
+var UNIT_REF_FIELDS = Object.assign({ practice: 'vocab' }, UNIT_ITEM_FIELDS);
 
 // validatePlan: every unit well-formed and every referenced id in the catalog
 // with the right kind. Returns { valid, error } (first problem only).
@@ -49,12 +67,12 @@ function validatePlan(plan, catalog) {
       if (u.level !== lp.level) return { valid: false, error: u.id + ' level ' + u.level + ' in ' + lp.level + ' plan' };
       if (UNIT_KINDS.indexOf(u.kind) < 0) return { valid: false, error: u.id + ' kind ' + u.kind };
       if (!u.title) return { valid: false, error: u.id + ' missing title' };
-      for (var f in UNIT_ITEM_FIELDS) {
+      for (var f in UNIT_REF_FIELDS) {
         var ids = u[f] || [];
         for (var j = 0; j < ids.length; j++) {
           var it = catalog.items[ids[j]];
           if (!it) return { valid: false, error: u.id + ' references missing ' + ids[j] };
-          if (it.kind !== UNIT_ITEM_FIELDS[f]) return { valid: false, error: u.id + '.' + f + ' has ' + it.kind + ' ' + ids[j] };
+          if (it.kind !== UNIT_REF_FIELDS[f]) return { valid: false, error: u.id + '.' + f + ' has ' + it.kind + ' ' + ids[j] };
         }
       }
     }
@@ -63,22 +81,26 @@ function validatePlan(plan, catalog) {
 }
 
 // buildUnits: flat, ordered list of resolved units — plan fields + `index`
-// (global position) with vocab/kanji/grammar as catalog items. A review unit
-// gets the items of the previous REVIEW_SPAN lesson units. Call validatePlan first.
+// (global position) with kana/vocab/kanji/grammar/practice as catalog items.
+// A review unit gets the items of every kana/lesson unit since the previous
+// review. Call validatePlan first.
 function buildUnits(plan, catalog) {
   var out = [];
+  var since = [];
   plan.slice().sort(function (a, b) { return levelRank(a.level) - levelRank(b.level); }).forEach(function (lp) {
     lp.units.forEach(function (u) {
       var r = Object.assign({}, u, { index: out.length });
       if (u.kind === 'review') {
-        var prev = out.filter(function (x) { return x.kind === 'lesson'; }).slice(-REVIEW_SPAN);
         Object.keys(UNIT_ITEM_FIELDS).forEach(function (f) {
-          r[f] = [].concat.apply([], prev.map(function (x) { return x[f]; }));
+          r[f] = [].concat.apply([], since.map(function (x) { return x[f]; }));
         });
+        r.practice = [];
+        since = [];
       } else {
-        Object.keys(UNIT_ITEM_FIELDS).forEach(function (f) {
+        Object.keys(UNIT_REF_FIELDS).forEach(function (f) {
           r[f] = (u[f] || []).map(function (id) { return catalog.items[id]; });
         });
+        if (u.kind === 'lesson' || u.kind === 'kana') since.push(r);
       }
       out.push(r);
     });
@@ -186,9 +208,58 @@ function catalogOf(kind) {
   });
 }
 
+// ── Kana distractors ────────────────────────────────────────────────────────
+// Shapes learners mix up (same script only), one string per look-alike set.
+var KANA_LOOKALIKES = ['あおめぬ', 'いりこに', 'うらつ', 'きさち', 'くへ', 'けはほま', 'しつ', 'たなに', 'ねれわ', 'るろ', 'まも', 'せや',
+  'シツミ', 'ソンリノ', 'クケタワウフ', 'スヌフラ', 'コロユヨ', 'チテナ', 'アマヤ', 'セヒサ', 'ノメソ', 'オホ', 'エニ', 'ルレ'];
+function kanaBase(ch) { return ch.normalize('NFD').charAt(0); } // が → か, ぱ → は
+// kanaDistractors(k, n, pool): n same-script kana of the same size (single / combo)
+// whose romaji can't be confused with k's: look-alikes and dakuten siblings first
+// (し/つ, か/が, きゃ/きゅ, しゃ/ちゃ), then the unit's own kana (pool), then any.
+function kanaDistractors(k, n, pool) {
+  var first = k.char.charAt(0), small = k.char.slice(1);
+  var like = KANA_LOOKALIKES.filter(function (s) { return s.indexOf(kanaBase(first)) >= 0; }).join('');
+  var tier = function (x) {
+    var f = x.char.charAt(0);
+    if (kanaBase(f) === kanaBase(first) || like.indexOf(kanaBase(f)) >= 0 && x.char.slice(1) === small) return 0;
+    return pool.indexOf(x) >= 0 ? 1 : 2;
+  };
+  var cands = catalogOf('kana').filter(function (x) {
+    return x.script === k.script && x.id !== k.id && x.char.length === k.char.length &&
+      x.answers.indexOf(k.romaji) < 0 && k.answers.indexOf(x.romaji) < 0;
+  });
+  return [0, 1, 2].reduce(function (acc, t) {
+    return acc.concat(rndShuffle(cands.filter(function (x) { return tier(x) === t; })));
+  }, []).slice(0, n);
+}
+
 // buildExercises(unit): a shuffled, capped quiz for one resolved unit (buildUnits).
 function buildExercises(unit) {
   var exs = [];
+
+  // ── Kana: char → romaji (MC), type the romaji, romaji → char (MC), in turn ──
+  var kanaItems = unit.kana || [];
+  rndShuffle(kanaItems).forEach(function (k, i) {
+    if (i % 3 === 1) {
+      exs.push({ type: 'typing', prompt: 'Type the romaji for this kana:', question: k.char, answers: k.answers, placeholder: 'romaji…' });
+      return;
+    }
+    var d = kanaDistractors(k, 3, kanaItems);
+    // romaji → kana only when the romaji names one kana (not ji: じ/ぢ, o: お/を)
+    var toRomaji = i % 3 === 0 || catalogOf('kana').some(function (x) {
+      return x.script === k.script && x.id !== k.id && x.answers.indexOf(k.romaji) >= 0;
+    });
+    var right = toRomaji ? k.romaji : k.char;
+    var opts = rndShuffle([right].concat(d.map(function (x) { return toRomaji ? x.romaji : x.char; })));
+    exs.push({
+      type: 'mc',
+      prompt: toRomaji ? 'How do you read this kana?' : 'Which kana is "' + k.romaji + '"?',
+      question: toRomaji ? k.char : k.romaji,
+      options: opts,
+      correct: opts.indexOf(right)
+    });
+  });
+
   var rank = levelRank(unit.level);
   var vocabItems = unit.vocab || [];
   var kanjiItems = unit.kanji || [];
@@ -515,6 +586,9 @@ function srsAddCards(unit, cards) {
   (unit.grammar || []).forEach(function (g) {
     add(g.id, { type: 'grammar', front: g.pattern, back: g.meaning });
   });
+  (unit.kana || []).forEach(function (k) {
+    add(k.id, { type: 'kana', front: k.char, back: k.romaji });
+  });
   return changed;
 }
 function srsReview(card, quality) {
@@ -566,7 +640,7 @@ function srsDueCards(cards) {
 //   ach:<id>            { unlockedAt }   merge: earliest unlock wins, never deleted
 // Device-only prefs stay in localStorage and never become docs:
 var DEVICE_PREF_KEYS = ['jlpt_palette', 'jlpt_theme', 'jlpt_tts_rate', 'jlpt_sfx_mute'];
-var STORE_ID_RE = /^(unit:n[1-5]\.u\d{3}|card:(v:[^|\s]+\|[^|\s]+|k:\S+|g:[\w-]+)|prefs:learning|log:\d{4}-\d{2}-\d{2}:[\w-]+)$/;
+var STORE_ID_RE = /^(unit:n[1-5]\.u\d{3}|card:(v:[^|\s]+\|[^|\s]+|k:\S+|g:[\w-]+|c:\S+)|prefs:learning|log:\d{4}-\d{2}-\d{2}:[\w-]+)$/;
 var PREFS_DEFAULTS = { currentUnit: null, pace: 1, examDate: null, furigana: null, uiLang: 'en' };
 
 // ── Activity log (log:* docs) ───────────────────────────────────────────────

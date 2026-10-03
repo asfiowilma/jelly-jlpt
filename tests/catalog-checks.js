@@ -13,8 +13,12 @@ QUnit.module('catalog checks', function () {
   var PLACEHOLDER_RE = /review|practice|復習|comprehensive|^phase\s*\d|^day\s*\d|todo|tbd|placeholder|lorem/i;
   // Load guide per lesson unit (map Q13), upper bound = guide + 25%.
   // ponytail: no lower bound — kanji/grammar run out long before vocab does.
+  // Lower bound (guide − 25%) for vocab only: 59 grammar points over 74 lessons means some
+  // lessons carry no grammar, and kanji run out before vocab does.
   var LOAD_GUIDE = { N5: { vocab: 8, kanji: 2, grammar: 1 } };
-  var REQUIRED = { vocab: ['word', 'reading', 'pos'], kanji: ['char'], grammar: ['pattern', 'meaning'], sentence: ['jp', 'en'] };
+  var REQUIRED = { vocab: ['word', 'reading', 'pos'], kanji: ['char'], grammar: ['pattern', 'meaning'], sentence: ['jp', 'en'],
+    kana: ['char', 'romaji', 'script', 'group'] };
+  var SCRIPT_RE = { hiragana: /^[ぁ-ゖ]+$/, katakana: /^[ァ-ヺ]+$/ };
 
   function nonEmptyStrings(a) { return Array.isArray(a) && a.length > 0 && a.every(function (s) { return typeof s === 'string' && s; }); }
   function hira(s) { return kataToHira(s); }
@@ -76,6 +80,19 @@ QUnit.module('catalog checks', function () {
       // reading; each non-kana run (kanji, 々) stands for ≥1 kana.
       var shape = hira(it.word).replace(new RegExp('[^' + HIRA + ']+', 'g'), '\u0000').split('\u0000').join('.+');
       if (!new RegExp('^' + shape + '$').test(hira(it.reading))) err('reading ' + it.reading + " doesn't fit " + it.word);
+      // alt: a duplicate spelling the plan doesn't teach; it points at the one it does
+      if (it.alt !== undefined) {
+        var to = items[it.alt];
+        if (!to || to.kind !== 'vocab' || to.alt) err('alt ' + it.alt + ' is not a taught vocab item');
+        // same word: same written form (背|せ / 背|せい) or one reading inside the other (ふろ / おふろ)
+        else if (to.word !== it.word && to.reading.indexOf(it.reading) < 0 && it.reading.indexOf(to.reading) < 0) err('alt ' + it.alt + ' is a different word');
+      }
+    } else if (it.kind === 'kana') {
+      if (it.id !== 'c:' + it.char || Array.from(it.char).length > 2) err('id ≠ c:<kana (1-2 chars)>');
+      if (!SCRIPT_RE[it.script]) err('script ' + it.script);
+      else if (!SCRIPT_RE[it.script].test(it.char)) err(it.char + ' is not ' + it.script);
+      if (!nonEmptyStrings(it.answers) || it.answers[0] !== it.romaji) err('answers must start with romaji');
+      else it.answers.forEach(function (a) { if (!/^[a-z]+$/.test(a)) err('answer not romaji: ' + a); });
     } else if (it.kind === 'kanji') {
       if (it.id !== 'k:' + it.char || Array.from(it.char).length !== 1) err('id ≠ k:<one char>');
       if (!Array.isArray(it.on) || !Array.isArray(it.kun) || it.on.length + it.kun.length === 0) err('no readings');
@@ -132,22 +149,83 @@ QUnit.module('catalog checks', function () {
     return e;
   }
 
-  function planErrors(plan) {
+  // Kana-only text readable with the kana in `learned` (combos like きゃ count as one).
+  function readable(s, learned) {
+    for (var i = 0; i < s.length;) {
+      if (learned[s.substr(i, 2)]) i += 2;
+      else if (learned[s.charAt(i)]) i++;
+      else return false;
+    }
+    return true;
+  }
+
+  // planErrors(plan, items): per-unit rules for the shipped plan (items = catalog items).
+  //   lessons: no placeholder titles; vocab within guide ±25%, kanji / grammar ≤ guide +25%;
+  //            a kanji only at or after a lesson teaching a word written with it.
+  //   kana units: 2–5 practice words, each readable with the kana (and marks っ ー) learned so far.
+  //   reviews: list no items; at most 6 lessons between reviews. Nothing taught twice.
+  function planErrors(plan, items) {
+    items = items || CATALOG.items;
     var e = [], taught = {};
     plan.forEach(function (lp) {
       var guide = LOAD_GUIDE[lp.level];
+      var learned = {}, written = '', lessons = 0;
       lp.units.forEach(function (u) {
-        if (u.kind !== 'lesson') return;
+        if (u.kind === 'review') {
+          Object.keys(UNIT_REF_FIELDS).forEach(function (f) { if ((u[f] || []).length) e.push(u.id + ': review unit lists ' + f); });
+          lessons = 0;
+          return;
+        }
         if (PLACEHOLDER_RE.test(u.title || '')) e.push(u.id + ': placeholder title ' + u.title);
+        if (u.kind === 'lesson' && ++lessons > 6) e.push(u.id + ': more than 6 lessons since the last review');
+        (u.kana || []).forEach(function (id) { if (items[id]) learned[items[id].char] = true; });
+        (u.marks || []).forEach(function (m) { learned[m] = true; });
+        if (u.kind === 'kana') {
+          var p = u.practice || [];
+          if (p.length < 2 || p.length > 5) e.push(u.id + ': ' + p.length + ' practice words (want 2–5)');
+          p.forEach(function (id) {
+            if (items[id] && !readable(items[id].reading, learned)) e.push(u.id + ': practice ' + id + ' uses kana not learned yet');
+          });
+        }
+        (u.vocab || []).forEach(function (id) { if (items[id]) written += items[id].word + ' '; });
+        (u.kanji || []).forEach(function (id) {
+          if (items[id] && written.indexOf(items[id].char) < 0) e.push(u.id + ': kanji ' + items[id].char + ' before any word written with it');
+        });
+        if (u.kind === 'lesson' && guide) {
+          ['vocab', 'kanji', 'grammar'].forEach(function (f) {
+            var n = (u[f] || []).length;
+            if (n > Math.ceil(guide[f] * 1.25)) e.push(u.id + ': ' + n + ' ' + f + ' > guide ' + guide[f] + ' +25%');
+            if (f === 'vocab' && n < Math.floor(guide[f] * 0.75)) e.push(u.id + ': ' + n + ' vocab < guide ' + guide[f] + ' −25%');
+          });
+        }
         Object.keys(UNIT_ITEM_FIELDS).forEach(function (f) {
-          var ids = u[f] || [];
-          if (guide && ids.length > Math.ceil(guide[f] * 1.25)) e.push(u.id + ': ' + ids.length + ' ' + f + ' > guide ' + guide[f] + ' +25%');
-          ids.forEach(function (id) {
+          (u[f] || []).forEach(function (id) {
             if (taught[id]) e.push(u.id + ': ' + id + ' already taught in ' + taught[id]);
             else taught[id] = u.id;
           });
         });
       });
+    });
+    return e;
+  }
+
+  // coverageErrors: every catalog kana / vocab / kanji / grammar item of a level with a plan is
+  // taught exactly once — or, for a duplicate spelling, carries alt: <taught id> and is not taught.
+  function coverageErrors(plan, items) {
+    var e = [], taught = {};
+    plan.forEach(function (lp) {
+      lp.units.forEach(function (u) {
+        Object.keys(UNIT_ITEM_FIELDS).forEach(function (f) { (u[f] || []).forEach(function (id) { taught[id] = lp.level; }); });
+      });
+    });
+    var levels = plan.map(function (lp) { return lp.level; });
+    Object.keys(items).forEach(function (id) {
+      var it = items[id];
+      if (!(it.kind in UNIT_ITEM_FIELDS) || levels.indexOf(it.level) < 0) return;
+      if (it.alt) {
+        if (taught[id]) e.push(id + ': has alt but is taught');
+        if (!taught[it.alt]) e.push(id + ': alt ' + it.alt + ' is not taught');
+      } else if (!taught[id]) e.push(id + ': not taught in the ' + it.level + ' plan');
     });
     return e;
   }
@@ -160,6 +238,10 @@ QUnit.module('catalog checks', function () {
 
   QUnit.test('shipped plan: no item taught twice, load within guide, no placeholder titles', function (assert) {
     assert.deepEqual(planErrors(PLAN), []);
+  });
+
+  QUnit.test('shipped plan teaches every kana / vocab / kanji / grammar item of its levels (or its alt)', function (assert) {
+    assert.deepEqual(coverageErrors(PLAN, CATALOG.items), []);
   });
 
   QUnit.test('shipped catalog levels match the reference lists (tools/ref)', function (assert) {
@@ -244,9 +326,58 @@ QUnit.module('catalog checks', function () {
     assert.ok(/placeholder/.test(errsFor(with_(g, { pattern: 'Phase 6 review' }), items)), 'placeholder pattern');
   });
 
+  QUnit.test('item checks: kana and alt', function (assert) {
+    var a = { id: 'c:し', kind: 'kana', level: 'N5', char: 'し', romaji: 'shi', answers: ['shi', 'si'], script: 'hiragana', group: 'sa-row',
+      sources: ['unicode', 'hepburn'], verified: true };
+    assert.strictEqual(errsFor(a), '');
+    assert.strictEqual(errsFor(with_(a, { id: 'c:シャ', char: 'シャ', romaji: 'sha', answers: ['sha'], script: 'katakana', group: 'youon' })), '', 'katakana combo');
+    assert.ok(/not katakana/.test(errsFor(with_(a, { script: 'katakana' }))), 'script vs Unicode range');
+    assert.ok(/id ≠/.test(errsFor(with_(a, { id: 'c:さ' }))), 'id ≠ char');
+    assert.ok(/start with romaji/.test(errsFor(with_(a, { answers: ['si', 'shi'] }))), 'romaji first');
+    assert.ok(/not romaji/.test(errsFor(with_(a, { answers: ['shi', 'し'] }))), 'answers are romaji');
+    var kana = with_(v, { id: 'v:たべる|たべる', word: 'たべる' });
+    var items = {}; items[kana.id] = kana;
+    assert.strictEqual(errsFor(with_(v, { alt: kana.id }), items), '', 'alt to the kana spelling');
+    assert.ok(/not a taught vocab/.test(errsFor(with_(v, { alt: 'v:nope|nope' }), items)), 'dangling alt');
+    items['v:飲む|のむ'] = with_(v, { id: 'v:飲む|のむ', word: '飲む', reading: 'のむ' });
+    assert.ok(/different word/.test(errsFor(with_(v, { alt: 'v:飲む|のむ' }), items)), 'alt to another word');
+  });
+
+  QUnit.test('plan checks: kana practice, kanji order, reviews, coverage', function (assert) {
+    var items = {};
+    [{ id: 'c:あ', kind: 'kana', char: 'あ' }, { id: 'c:お', kind: 'kana', char: 'お' }, { id: 'c:き', kind: 'kana', char: 'き' },
+     { id: 'c:きゃ', kind: 'kana', char: 'きゃ' }, { id: 'c:く', kind: 'kana', char: 'く' },
+     { id: 'v:青|あお', kind: 'vocab', word: '青', reading: 'あお' }, { id: 'v:秋|あき', kind: 'vocab', word: '秋', reading: 'あき' },
+     { id: 'v:来た|きゃっく', kind: 'vocab', word: 'x', reading: 'きゃっく' }, { id: 'k:青', kind: 'kanji', char: '青' }]
+      .forEach(function (it) { it.level = 'N5'; items[it.id] = it; });
+    var kanaU = function (id, kana, practice, marks) { return { id: id, level: 'N5', kind: 'kana', title: 't', kana: kana, practice: practice, marks: marks }; };
+    var ok = kanaU('n5.u001', ['c:あ', 'c:お'], ['v:青|あお', 'v:青|あお']);
+    var run = function (units) { return planErrors([{ level: 'N5', units: units }], items).join('\n'); };
+    assert.strictEqual(run([ok]), '');
+    assert.ok(/practice v:秋\|あき uses kana not learned/.test(run([kanaU('n5.u001', ['c:あ'], ['v:青|あお', 'v:秋|あき'])])), 'unlearned kana');
+    assert.ok(/1 practice words/.test(run([kanaU('n5.u001', ['c:あ', 'c:お'], ['v:青|あお'])])), '2–5 practice words');
+    assert.strictEqual(run([kanaU('n5.u001', ['c:きゃ', 'c:く'], ['v:来た|きゃっく', 'v:来た|きゃっく'], ['っ'])]), '', 'combo + っ mark');
+    assert.ok(/uses kana not learned/.test(run([kanaU('n5.u001', ['c:きゃ', 'c:く'], ['v:来た|きゃっく', 'v:来た|きゃっく'])])), 'っ needs its mark');
+    var lesson = function (id, patch) {
+      return Object.assign({ id: id, level: 'N5', kind: 'lesson', title: 'Colours', vocab: ['1', '2', '3', '4', '5', 'v:青|あお'] }, patch);
+    };
+    assert.ok(/kanji 青 before any word/.test(run([lesson('n5.u001', { vocab: ['1', '2', '3', '4', '5', '6'], kanji: ['k:青'] })])), 'kanji before its word');
+    assert.strictEqual(run([lesson('n5.u001'), lesson('n5.u002', { vocab: ['a', 'b', 'c', 'd', 'e', 'f'], kanji: ['k:青'] })]), '', 'kanji after its word');
+    assert.ok(/5 vocab < guide/.test(run([lesson('n5.u001', { vocab: ['1', '2', '3', '4', '5'] })])), 'underload');
+    var seven = '1234567'.split('').map(function (n) { return lesson('n5.u00' + n, { vocab: [n + 'a', n + 'b', n + 'c', n + 'd', n + 'e', n + 'f'] }); });
+    assert.ok(/n5.u007: more than 6 lessons/.test(run(seven)), 'review cadence');
+    assert.ok(/review unit lists vocab/.test(run([{ id: 'n5.u001', level: 'N5', kind: 'review', title: 'Review', vocab: ['v:青|あお'] }])), 'review teaches nothing');
+    var cov = function (units) { return coverageErrors([{ level: 'N5', units: units }], items).join('\n'); };
+    assert.ok(/v:秋\|あき: not taught/.test(cov([lesson('n5.u001')])), 'untaught item');
+    items['v:秋|あき'].alt = 'v:青|あお';
+    assert.ok(!/v:秋/.test(cov([lesson('n5.u001')])), 'alt covered by its taught item');
+    assert.ok(/has alt but is taught/.test(cov([lesson('n5.u001', { vocab: ['v:秋|あき'] })])), 'alt item taught');
+  });
+
   QUnit.test('plan checks: taught twice, overload, placeholder title', function (assert) {
-    var u = function (id, patch) { return Object.assign({ id: id, level: 'N5', kind: 'lesson', title: 'Food', vocab: ['v:a|a'] }, patch); };
-    assert.deepEqual(planErrors([{ level: 'N5', units: [u('n5.u001'), u('n5.u002', { vocab: ['v:b|b'] }), u('n5.u003', { kind: 'review', title: 'Review', vocab: ['v:a|a'] })] }]), []);
+    var six = function (c) { return '123456'.split('').map(function (n) { return 'v:' + c + n + '|' + c; }); };
+    var u = function (id, patch) { return Object.assign({ id: id, level: 'N5', kind: 'lesson', title: 'Food', vocab: six('a') }, patch); };
+    assert.deepEqual(planErrors([{ level: 'N5', units: [u('n5.u001'), u('n5.u002', { vocab: six('b') }), u('n5.u003', { kind: 'review', title: 'Review', vocab: [] })] }]), []);
     assert.ok(/already taught in n5.u001/.test(planErrors([{ level: 'N5', units: [u('n5.u001'), u('n5.u002')] }]).join()), 'taught twice');
     assert.ok(/11 vocab > guide/.test(planErrors([{ level: 'N5', units: [u('n5.u001', { vocab: '01234567890'.split('').map(function (c) { return 'v:' + c + '|' + c; }) })] }]).join()), 'overload');
     assert.ok(/placeholder title/.test(planErrors([{ level: 'N5', units: [u('n5.u001', { title: 'Grammar practice' })] }]).join()), 'placeholder');

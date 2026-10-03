@@ -63,7 +63,7 @@ function ReviewMode(_ref1) {
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "review-card-type"
-  }, t({ kanji: 'section_kanji', grammar: 'section_grammar' }[card.type] || 'card_vocab', level)), /*#__PURE__*/React.createElement("div", {
+  }, t({ kanji: 'section_kanji', grammar: 'section_grammar', kana: 'section_kana' }[card.type] || 'card_vocab', level)), /*#__PURE__*/React.createElement("div", {
     className: "review-card-front"
   }, card.front, /*#__PURE__*/React.createElement("button", {
     className: "speak-btn",
