@@ -45,6 +45,15 @@ var UI_STRINGS = {
   vocab_reveal_all: { en: 'Reveal all', ja: 'ぜんぶみる', since: 'N4' },
   vocab_cover_all:  { en: 'Cover all',  ja: 'かくす',     since: 'N4' },
   vocab_listen_all: { en: 'Listen to all', ja: 'ぜんぶきく', since: 'N4' },
+  // Lesson Kanji section
+  kanji_view_focus:   { en: 'View one at a time', ja: 'ひとつずつみる', since: 'N4' },
+  kanji_view_rows:    { en: 'View all',           ja: 'ぜんぶみる',     since: 'N4' },
+  kanji_words:        { en: "This lesson's words", ja: 'このレッスンのことば', since: 'N4' },
+  kanji_strokes:      { en: 'strokes',            ja: 'かく',           since: 'N4' },
+  kanji_strokes_show: { en: 'Show stroke order',  ja: 'かきじゅんをみる', since: 'N4' },
+  kanji_strokes_hide: { en: 'Hide stroke order',  ja: 'かきじゅんをかくす', since: 'N4' },
+  kanji_looked:       { en: 'looked at',          ja: 'みた',           since: 'N4' },
+  kanji_next:         { en: 'Next kanji →',  ja: 'つぎのかんじ →', since: 'N4' },
   // SRS review buttons
   btn_again: { en: 'Again', ja: 'もういちど',  since: 'N4'  },
   btn_hard:  { en: 'Hard',  ja: 'むずかしい', since: 'N4'  },

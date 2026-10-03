@@ -9,7 +9,10 @@ function UnitView(props) {
     setUnit = props.setUnit,
     // Furigana pref is owned by App (shared with the navbar ruby labels)
     showFurigana = props.showFurigana,
-    toggleFurigana = props.toggleFurigana;
+    toggleFurigana = props.toggleFurigana,
+    // Kanji layout pref ('rows' | 'focus'), owned by App
+    kanjiView = props.kanjiView,
+    setKanjiView = props.setKanjiView;
   var lv = unit.level;
   var isDone = completed.has(unit.id);
   var _React$useStateQuiz = React.useState(false),
@@ -144,10 +147,9 @@ function UnitView(props) {
               vocabGroups.length > 1 && React.createElement("h4", { className: "vocab-group-label" }, g.label),
               React.createElement("ul", { className: "vocab-list" }, g.items.map(vocabRow)));
           })),
-        unit.kanji.length > 0 && section(t('section_kanji', lv),
-          React.createElement("div", { className: "chars-table" }, unit.kanji.map(function (k) {
-            return React.createElement(CharCard, { key: k.id, kanji: k });
-          }))),
+        unit.kanji.length > 0 && React.createElement(KanjiSection, {
+          key: unit.id, unit: unit, kanjiView: kanjiView, setKanjiView: setKanjiView
+        }),
         unit.grammar.map(function (g) {
           return React.createElement(React.Fragment, { key: g.id }, section(t('section_grammar', lv),
             React.createElement("div", { className: "grammar-box" },
