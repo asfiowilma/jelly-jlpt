@@ -43,6 +43,19 @@ function UnitView(props) {
       }, "🔊")),
       React.createElement("div", { className: "en" }, s.en));
   };
+  // Lesson "Example sentences" section: a tinted card per sentence, quiet audio icon at the right
+  var exampleCard = function (s) {
+    var jp = showFurigana && s.furigana ? furiganaParts(s.furigana).map(function (p, i) {
+      return p.r ? React.createElement("ruby", { key: i }, p.t, React.createElement("rt", null, p.r)) : p.t;
+    }) : s.jp;
+    return React.createElement("div", { key: s.id, className: "example-card" },
+      React.createElement("div", { className: "example-text" },
+        React.createElement("div", { className: "jp", lang: "ja" }, jp),
+        React.createElement("div", { className: "en" }, s.en)),
+      React.createElement("button", {
+        className: "example-speak", onClick: function () { speak(s.jp); }, title: "Listen", 'aria-label': "Listen to " + s.jp
+      }, icon('speaker')));
+  };
   var grammarExamples = function (g) {
     return (g.examples || []).map(function (id) { return CATALOG.items[id]; }).filter(Boolean).slice(0, 3);
   };
@@ -125,7 +138,7 @@ function UnitView(props) {
                 g.notes && React.createElement("p", { className: "grammar-notes" }, g.notes),
                 React.createElement("div", { className: "grammar-examples" }, grammarExamples(g).map(function (s) { return sentence(s, toks); }))))));
         }),
-        examples.length > 0 && section(t('section_examples', lv), examples.map(function (s) { return sentence(s); })),
+        examples.length > 0 && section(t('section_examples', lv), React.createElement("div", { className: "example-list" }, examples.map(exampleCard))),
         (examples.length > 0 || unit.grammar.length > 0) && React.createElement("button", {
           className: "furigana-toggle" + (showFurigana ? " active" : ""),
           onClick: toggleFurigana

@@ -181,6 +181,17 @@ a.data-btn{display:inline-flex;align-items:center;text-decoration:none}
 .grammar-example .jp{font-size:1.05rem;font-weight:600;color:var(--text)}
 .grammar-example mark{background:none;color:var(--accent-fg);font-weight:700;border-bottom:2px solid color-mix(in srgb,var(--accent-fg) 45%,transparent)}
 .grammar-example .en{color:var(--muted);font-size:0.85rem;margin-top:2px}
+.example-list{display:grid;gap:10px}
+.example-card{display:flex;align-items:center;gap:8px;padding:10px 6px 10px 18px;background:var(--surface2);border-radius:12px}
+.example-text{flex:1;min-width:0}
+.example-text .jp{font-size:1.35rem;font-weight:600;letter-spacing:0.02em;line-height:2}
+.example-text .jp rt{font-size:0.55em;font-weight:400;color:var(--muted)}
+.example-text .en{color:var(--muted);font-size:0.9rem}
+.example-speak{width:44px;height:44px;flex:none;display:grid;place-items:center;border:0;border-radius:50%;background:none;color:var(--muted);cursor:pointer}
+.example-speak:hover{color:var(--accent-fg);background:var(--surface)}
+.example-speak:focus-visible{outline:2px solid var(--accent-fg);outline-offset:2px}
+.example-speak svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+@media (max-width:520px){.example-text .jp{font-size:1.15rem}}
 @media (max-width:560px){.grammar-card{grid-template-columns:1fr}.grammar-rail{padding:0 0 14px;border-right:0;border-bottom:1px solid var(--border)}}
 .practice-box{background:color-mix(in srgb,var(--warn) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--warn) 45%,var(--surface));border-radius:8px;padding:12px 16px;font-size:0.9rem;line-height:1.6;color:var(--text);white-space:pre-line}
 .nav-bar{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-top:1px solid var(--border);background:var(--surface2);gap:12px}
