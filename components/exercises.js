@@ -21,63 +21,92 @@ function rubyEls(parts) {
   });
 }
 
+// ── Quiz helpers (pure) ─────────────────────────────────────────────────────
+var QZ_SENTENCE = ['gap', 'kanji_yomi', 'hyouki', 'bunmyaku', 'order', 'iikae', 'bunshou'];
+var QZ_SPEAKER = { M: 'Man', F: 'Woman', N: 'Narrator' };
+var QZ_JA = /[぀-ヿ一-鿿]/;
+var QZ_RING = 2 * Math.PI * 60;
+
+// The right answer as text, for the feedback dock and the missed list.
+function exAnswer(ex) {
+  if (ex.type === 'pair_match') {
+    var meaningOf = {};
+    (ex.pairs || []).forEach(function (p) { meaningOf[p[0]] = p[1]; });
+    return ex.items.map(function (w) { return w + ' = ' + meaningOf[w]; }).join(' · ');
+  }
+  if (ex.type === 'reorder') return ex.answer;
+  if (ex.options && typeof ex.correct === 'number') return ex.options[ex.correct];
+  return (ex.answers || [])[0] || '';
+}
+// A short label for the question (missed list).
+function exQuestionText(ex) {
+  if (ex.type === 'listen_dialog' || ex.type === 'listen') return 'Listening';
+  if (ex.type === 'reading') return ex.prompt;
+  if (ex.parts) return ex.parts.map(function (p) { return p.t; }).join('');
+  return ex.question || ex.prompt;
+}
+// What the dock speaker reads out after answering: the word or kana asked about. '' = none.
+function exSpeech(ex) {
+  var it = ex.item;
+  if (!it || ex.type === 'listen_dialog' || ex.type === 'listen') return '';
+  if (it.kind === 'vocab') return it.reading || it.word;
+  if (it.kind === 'kana') return it.char || it.kana || '';
+  return '';
+}
+// Size class for the asked text: a lone kanji is huge, a word medium, a phrase small.
+function exBigClass(text) {
+  var n = Array.from(String(text)).length;
+  return n <= 2 ? '' : n <= 6 ? ' md' : ' sm';
+}
+
 // ── Exercises: the unit quiz (ticket 35) ────────────────────────────────────
 // Pass mark gates completion (Q28); a missed question comes back once at the
 // end in another form, unscored (Q31). onResult(scoreQuiz(...)) when finished.
 // build(unit) → questions (default buildExercises; mocks pass their own section list).
+//
+// Starting the quiz opens a full-screen layer (.ql) over the app: body scroll is locked, the
+// lesson is just covered. Layout is fixed: top bar (✕, progress, count, clock), the question,
+// and a dock that holds Skip + Check while asking, then the feedback + Continue. Choices are
+// selected first and checked after (Enter checks, 1-4 pick); nothing auto-advances.
+// onNextStage: optional, shows "Next stage" on a passed result.
 function Exercises(_ref9) {
+  var h = React.createElement;
   var unit = _ref9.unit,
     onStart = _ref9.onStart,
     onFinish = _ref9.onFinish,
     onResult = _ref9.onResult,
+    onNextStage = _ref9.onNextStage,
+    passed = _ref9.passed, // the stage is already done: the entry card offers a retake
     build = _ref9.build || buildExercises;
-  var _React$useState9 = React.useState(function () {
-      return build(unit);
-    }),
-    _React$useState0 = _slicedToArray(_React$useState9, 2),
-    exs = _React$useState0[0],
-    setExs = _React$useState0[1];
-  var _React$useState1 = React.useState(0),
-    _React$useState10 = _slicedToArray(_React$useState1, 2),
-    cur = _React$useState10[0],
-    setCur = _React$useState10[1];
-  var _React$useState11 = React.useState(''),
-    _React$useState12 = _slicedToArray(_React$useState11, 2),
-    answer = _React$useState12[0],
-    setAnswer = _React$useState12[1];
-  var _React$useState13 = React.useState(null),
-    _React$useState14 = _slicedToArray(_React$useState13, 2),
-    selected = _React$useState14[0],
-    setSelected = _React$useState14[1];
-  var _React$useState15 = React.useState(false),
-    _React$useState16 = _slicedToArray(_React$useState15, 2),
-    revealed = _React$useState16[0],
-    setRevealed = _React$useState16[1];
-  var _React$useState19 = React.useState(false),
-    _React$useState20 = _slicedToArray(_React$useState19, 2),
-    done = _React$useState20[0],
-    setDone = _React$useState20[1];
-  var _React$useState21 = React.useState(false),
-    _React$useState22 = _slicedToArray(_React$useState21, 2),
-    started = _React$useState22[0],
-    setStarted = _React$useState22[1];
+  var lv = unit.level;
+  var _exs = React.useState(function () { return build(unit); }), exs = _exs[0], setExs = _exs[1];
+  var _cur = React.useState(0), cur = _cur[0], setCur = _cur[1];
+  var _answer = React.useState(''), answer = _answer[0], setAnswer = _answer[1];
+  var _selected = React.useState(null), selected = _selected[0], setSelected = _selected[1]; // checked option (-1 = skipped)
+  var _revealed = React.useState(false), revealed = _revealed[0], setRevealed = _revealed[1]; // this question is checked
+  var _done = React.useState(false), done = _done[0], setDone = _done[1];
+  var _started = React.useState(false), started = _started[0], setStarted = _started[1];
   // Per-answer results (true/false) in order, parallel to exs (scoreQuiz)
-  var _React$useStateRes = React.useState([]),
-    _React$useStateRes2 = _slicedToArray(_React$useStateRes, 2),
-    results = _React$useStateRes2[0],
-    setResults = _React$useStateRes2[1];
+  var _results = React.useState([]), results = _results[0], setResults = _results[1];
   // reorder: picked item indices in order; pair_match: picks[itemIdx] = optionIdx
-  var _React$useState23 = React.useState([]),
-    _React$useState24 = _slicedToArray(_React$useState23, 2),
-    picks = _React$useState24[0],
-    setPicks = _React$useState24[1];
+  var _picks = React.useState([]), picks = _picks[0], setPicks = _picks[1];
   var inputRef = React.useRef(null);
   // listen_dialog (ticket 17): plays used, transcript shown early (no ja voice), voice status
   var _plays = React.useState(0), plays = _plays[0], setPlays = _plays[1];
   var _early = React.useState(false), showEarly = _early[0], setShowEarly = _early[1];
   var _voice = React.useState(function () { return jaVoiceStatus(false); }), voiceStatus = _voice[0], setVoiceStatus = _voice[1];
   var stopRef = React.useRef(null);
-  var stopAudio = function () { if (stopRef.current) stopRef.current(); stopRef.current = null; };
+  // Timed quizzes (ticket 18, Q36): lesson reviews (mini-mocks) and prep drills run against a clock
+  // at real N5 pacing (quizSeconds); when it runs out, every unanswered question counts as wrong.
+  var timed = isTimedQuiz(unit);
+  var _dl = React.useState(null), deadline = _dl[0], setDeadline = _dl[1];
+  var _to = React.useState(false), timedOut = _to[0], setTimedOut = _to[1];
+  var _tick = React.useState(0), setTick = _tick[1];
+  var _pick = React.useState(null), pick = _pick[0], setPick = _pick[1]; // chosen option, not checked yet
+  var _leaving = React.useState(false), leaving = _leaving[0], setLeaving = _leaving[1]; // "Leave the quiz?"
+  var _left = React.useState(null), pairLeft = _left[0], setPairLeft = _left[1]; // pair_match: word waiting for its meaning
+  var _speaking = React.useState(false), speaking = _speaking[0], setSpeaking = _speaking[1];
+  var stopAudio = function () { if (stopRef.current) stopRef.current(); stopRef.current = null; setSpeaking(false); };
   React.useEffect(function () { return stopAudio; }, [cur, started]); // question change / unmount
   React.useEffect(function () {
     var ss = window.speechSynthesis;
@@ -87,12 +116,6 @@ function Exercises(_ref9) {
     var tm = setTimeout(check, 2000); // no voiceschanged at all → settle as 'none' if still empty
     return function () { ss.removeEventListener('voiceschanged', check); clearTimeout(tm); };
   }, []);
-  // Timed quizzes (ticket 18, Q36): lesson reviews (mini-mocks) and prep drills run against a clock
-  // at real N5 pacing (quizSeconds); when it runs out, every unanswered question counts as wrong.
-  var timed = isTimedQuiz(unit);
-  var _dl = React.useState(null), deadline = _dl[0], setDeadline = _dl[1];
-  var _to = React.useState(false), timedOut = _to[0], setTimedOut = _to[1];
-  var _tick = React.useState(0), setTick = _tick[1];
   var latest = React.useRef(null);
   latest.current = { exs: exs, results: results };
   var finishedRef = React.useRef(false);
@@ -107,9 +130,36 @@ function Exercises(_ref9) {
     }, 1000);
     return function () { clearInterval(id); };
   }, [deadline, done]);
+  // The layer covers the page and locks its scroll while the quiz is open.
+  React.useEffect(function () {
+    var b = typeof document !== 'undefined' && document.body;
+    if (!started || !b || !b.classList) return undefined;
+    b.classList.add('quiz-open');
+    return function () { b.classList.remove('quiz-open'); };
+  }, [started]);
+  // Keyboard: Esc leaves, Enter checks / continues, 1-9 pick an option. The handler is replaced
+  // every render (keyRef) so it sees the current question.
+  var keyRef = React.useRef(null);
+  var layerRef = React.useRef(null);
+  React.useEffect(function () {
+    if (!started || typeof document === 'undefined' || !document.addEventListener) return undefined;
+    var on = function (e) { if (keyRef.current) keyRef.current(e); };
+    document.addEventListener('keydown', on);
+    return function () { document.removeEventListener('keydown', on); };
+  }, [started]);
+  // Focus: into the layer on open, into the dialog when "Leave?" opens; back on the Start button on close.
+  React.useEffect(function () {
+    if (!started || typeof document === 'undefined' || !document.querySelector) return undefined;
+    var l = layerRef.current;
+    if (l && l.focus && !(l.contains && l.contains(document.activeElement))) l.focus();
+    return function () { setTimeout(function () { var b = document.querySelector('#unit-quiz .quiz-start-btn'); if (b && b.focus) b.focus(); }, 0); };
+  }, [started]);
+  React.useEffect(function () {
+    var d = leaving && typeof document !== 'undefined' && document.querySelector && document.querySelector('.qz-dlg button');
+    if (d) d.focus();
+  }, [leaving]);
   if (exs.length === 0) return null;
   var needPct = Math.round(passMark(unit.kind) * 100) + '%';
-  var limit = timed ? quizSeconds(exs) : 0;
   var clock = function (s) { return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
   // finish(exs, results): score, log and report the quiz (last answer or time up), once.
   var finish = function finish(nextExs, nextRes) {
@@ -118,66 +168,83 @@ function Exercises(_ref9) {
     stopAudio();
     var s = scoreQuiz(unit.kind, nextExs, nextRes);
     setResults(nextRes);
+    setLeaving(false);
     setDone(true);
     Store.logQuiz(unit.id, s.right, s.total);
     playSfx('complete');
-    onFinish && onFinish();
     onResult && onResult(s);
   };
 
-  // ── Not started: show Start Quiz button ──────────────────────────────────
-  if (!started) {
-    return /*#__PURE__*/React.createElement("div", {
-      className: "quiz-start-section"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "quiz-start-box"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "quiz-start-title"
-    }, t('quiz_title', unit.level)), /*#__PURE__*/React.createElement("div", {
-      className: "quiz-start-hint"
-    }, "The lesson content above will be hidden while you answer ", exs.length, " questions. Score ", needPct,
-      " or more to complete this stage.", timed && React.createElement("span", { className: "quiz-timed-note" },
-        " Timed like the real N5 test: ", clock(limit), " for these questions. When time runs out, unanswered questions count as wrong.")),
-      /*#__PURE__*/React.createElement("button", {
-      className: "quiz-start-btn",
-      onClick: function onClick() {
-        setStarted(true);
-        finishedRef.current = false;
-        if (timed) setDeadline(Date.now() + limit * 1000);
-        onStart && onStart();
-      }
-    }, t('start_quiz', unit.level))));
-  }
-  // Retake: a fresh set of questions (Q28)
-  var retry = function retry() {
+  // launch(questions): a fresh run of the quiz, clock started when timed.
+  var launch = function launch(nextExs) {
+    stopAudio();
+    setExs(nextExs);
+    setCur(0);
+    setAnswer('');
+    setSelected(null);
+    setPick(null);
+    setRevealed(false);
+    setPicks([]);
+    setPairLeft(null);
+    setResults([]);
+    setPlays(0);
+    setShowEarly(false);
+    setDone(false);
+    setLeaving(false);
+    setTimedOut(false);
+    setDeadline(timed ? Date.now() + quizSeconds(nextExs) * 1000 : null);
+    finishedRef.current = false;
+    setStarted(true);
+    onStart && onStart();
+  };
+  // Back to the lesson: the quiz is dropped, the Start banner comes back (Q28: retake = new questions).
+  var leaveQuiz = function leaveQuiz() {
+    stopAudio();
     setExs(build(unit));
     setCur(0);
     setAnswer('');
     setSelected(null);
+    setPick(null);
     setRevealed(false);
     setPicks([]);
+    setPairLeft(null);
     setResults([]);
     setPlays(0);
     setShowEarly(false);
-    stopAudio();
     setDone(false);
+    setLeaving(false);
     setStarted(false);
     setDeadline(null);
     setTimedOut(false);
     finishedRef.current = false;
     onFinish && onFinish();
   };
-  // advance(wasRight, manual): record the answer, then move on after 1 s, or (manual) when the
-  // learner presses Next (listen_dialog: time to read the transcript).
-  var advance = function advance(wasRight, manual) {
+
+  // ── Not started: the Start banner (the quiz itself is the layer below) ─────
+  if (!started) {
+    // The one filled button on the stage page until the stage is passed; after that the stage bar's
+    // "Next stage" is, and this card turns quiet (a retake).
+    return h("div", { className: "qz-entry" },
+      h("div", { className: "txt" },
+        h("div", { className: "eyebrow" }, "Stage quiz", passed && " · passed"),
+        h("h3", null, passed ? "Want another go?" : t('quiz_title', lv)),
+        h("div", { className: "chips" },
+          h("span", { className: "chip" }, exs.length, " questions"),
+          h("span", { className: "chip" }, "Pass mark ", needPct),
+          timed && h("span", { className: "chip" }, "Timed · ", clock(quizSeconds(exs)))),
+        h("p", { className: "note" }, passed ? "A retake uses new questions. Your stage stays complete."
+          : timed ? "Like the real test: unanswered questions count as wrong when time runs out." : "Opens full screen. Esc leaves.")),
+      h("button", { className: "qz-cta" + (passed ? " quiet" : "") + " quiz-start-btn", onClick: function () { launch(exs); } },
+        !passed && icon('play'), passed ? "Retake quiz" : t('start_quiz', lv)));
+  }
+
+  // advance(wasRight): record the answer and queue a re-ask of a miss. The learner moves on with Continue.
+  var advance = function advance(wasRight) {
     playSfx(wasRight ? 'correct' : 'wrong');
     var ex = exs[cur];
     var again = !wasRight && !ex.requeue ? requeueExercise(unit, ex) : null;
-    var nextExs = again ? exs.concat([again]) : exs;
-    var nextRes = results.concat([wasRight]);
-    if (again) setExs(nextExs);
-    setResults(nextRes);
-    if (!manual) setTimeout(function () { proceed(nextExs, nextRes); }, 1000);
+    if (again) setExs(exs.concat([again]));
+    setResults(results.concat([wasRight]));
   };
   var proceed = function proceed(nextExs, nextRes) {
     stopAudio();
@@ -187,337 +254,333 @@ function Exercises(_ref9) {
     if (cur + 1 >= nextExs.length) {
       finish(nextExs, nextRes);
     } else {
-      setCur(function (c) {
-        return c + 1;
-      });
+      setCur(function (c) { return c + 1; });
       setAnswer('');
       setSelected(null);
+      setPick(null);
       setRevealed(false);
       setPicks([]);
-      setTimeout(function () {
-        return inputRef.current && inputRef.current.focus();
-      }, 50);
+      setPairLeft(null);
+      setTimeout(function () { return inputRef.current && inputRef.current.focus(); }, 50);
     }
   };
-  // One segment per question: answered → ok/bad, current → now; re-asked ones dashed
-  var progressBar = function progressBar() {
-    return /*#__PURE__*/React.createElement("div", {
-      className: "quiz-progress",
-      role: "progressbar",
-      'aria-label': "Quiz progress",
-      'aria-valuemin': 0,
-      'aria-valuemax': exs.length,
-      'aria-valuenow': results.length
-    }, exs.map(function (_, i) {
-      var state = i < results.length ? results[i] ? ' ok' : ' bad' : !done && i === cur ? ' now' : '';
-      return /*#__PURE__*/React.createElement("i", {
-        key: i,
-        className: "quiz-seg" + state
-      });
-    }));
+  var clockLeft = deadline ? Math.max(0, Math.ceil((deadline - Date.now()) / 1000)) : 0;
+  // One segment per question: answered → ok/bad, current → now; re-asked ones are longer than the quiz
+  var topBar = function (label, ex) {
+    return h("div", { className: "qz-top" },
+      h("button", {
+        className: "qz-x", 'aria-label': "Leave quiz",
+        onClick: function () { if (done) leaveQuiz(); else setLeaving(true); }
+      }, icon('x')),
+      h("div", {
+        className: "qz-prog", role: "progressbar", 'aria-label': "Quiz progress",
+        'aria-valuemin': 0, 'aria-valuemax': exs.length, 'aria-valuenow': results.length
+      }, exs.map(function (_, i) {
+        var state = i < results.length ? results[i] ? ' ok' : ' bad' : !done && i === cur ? ' now' : '';
+        return h("i", { key: i, className: "qz-seg" + state });
+      })),
+      h("div", { className: "qz-meta" },
+        ex && ex.requeue && h("span", { className: "qz-again" }, "Again · not scored"),
+        h("span", null, label),
+        deadline && !done && h("span", { className: "qz-timer" + (clockLeft < 60 ? " low" : ""), role: "timer", 'aria-label': "Time left" }, icon('clock'), clock(clockLeft))));
   };
+  var leaveDialog = leaving && h("div", { className: "qz-scrim" },
+    h("div", { className: "qz-dlg", role: "alertdialog", 'aria-label': "Leave the quiz" },
+      h("b", null, "Leave the quiz?"),
+      h("p", null, "Your answers so far won’t be saved. You can retake it with new questions."),
+      h("div", { className: "qz-row" },
+        h("button", { className: "qz-gb", onClick: function () { setLeaving(false); } }, "Keep going"),
+        h("button", { className: "qz-btn bad", onClick: leaveQuiz }, "Leave"))));
+  // Tab stays inside the layer (inside the dialog while it is open): wraps at both ends, and pulls
+  // focus back in when it was lost (a clicked button that left the page).
+  var trapTab = function (e) {
+    var root = layerRef.current;
+    if (e.key !== 'Tab' || !root) return false;
+    var scope = root.querySelector('.qz-dlg') || root;
+    var f = [].slice.call(scope.querySelectorAll('button,input,[tabindex="0"]')).filter(function (el) { return !el.disabled && el.getClientRects().length; });
+    var a = document.activeElement;
+    e.preventDefault();
+    if (!f.length) return true;
+    if (!scope.contains(a)) f[e.shiftKey ? f.length - 1 : 0].focus();
+    else if (e.shiftKey && a === f[0]) f[f.length - 1].focus();
+    else if (!e.shiftKey && a === f[f.length - 1]) f[0].focus();
+    else f[f.indexOf(a) + (e.shiftKey ? -1 : 1)].focus();
+    return true;
+  };
+  var layer = function (top, main, dock, wide) {
+    return h("div", { className: "ql", ref: layerRef, tabIndex: -1, role: "dialog", 'aria-modal': "true", 'aria-label': t('section_exercises', lv) },
+      top, h("div", { className: "qz-main" }, h("div", { className: "qz-col" + (wide ? " wide" : "") }, main)), dock, leaveDialog);
+  };
+
+  // ── Result ────────────────────────────────────────────────────────────────
   if (done) {
     var s = scoreQuiz(unit.kind, exs, results);
-    var pct = Math.round(s.right / s.total * 100);
-    return /*#__PURE__*/React.createElement("div", {
-      className: "section"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "section-label"
-    }, t('section_exercises', unit.level)), /*#__PURE__*/React.createElement("div", {
-      className: "exercise-box"
-    }, progressBar(), /*#__PURE__*/React.createElement("div", {
-      className: "ex-finish"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "ex-finish-score"
-    }, s.passed ? (pct === 100 ? '🌟' : '✅') : '📚', " ", s.right, " / ", s.total, " correct (", pct, "%)"),
-    React.createElement("div", {
-      className: "ex-finish-verdict " + (s.passed ? 'pass' : 'fail'),
-      role: "status"
-    }, timedOut ? "Time is up: unanswered questions count as wrong. " : "",
-      s.passed ? "Passed (pass mark " + needPct + ") — stage complete." : "Not passed yet: you need " + needPct + ". Retake with new questions."),
-    /*#__PURE__*/React.createElement("button", {
-      className: "ex-retry-btn",
-      onClick: retry
-    }, t('try_again', unit.level)))));
+    var pct = s.total ? Math.round(s.right / s.total * 100) : 0;
+    var missed = [];
+    exs.forEach(function (e, i) { if (results[i] === false && !e.requeue) missed.push(e); });
+    var shown = missed.slice(0, 8);
+    var retake = function () { launch(build(unit)); };
+    keyRef.current = function (e) { if (trapTab(e)) return; if (e.key === 'Escape') leaveQuiz(); };
+    return layer(topBar("Done"), [
+      h("div", { key: "res", className: "qz-res" },
+        h("div", { className: "qz-ring" },
+          h("svg", { viewBox: "0 0 140 140", 'aria-hidden': "true" },
+            h("circle", { className: "t", cx: 70, cy: 70, r: 60 }),
+            h("circle", { className: "v " + (s.passed ? 'pass' : 'fail'), cx: 70, cy: 70, r: 60, strokeDasharray: (QZ_RING * pct / 100) + " " + QZ_RING })),
+          h("b", null, s.right, " / ", s.total)),
+        h("div", null,
+          h("h3", { className: "qz-verdict " + (s.passed ? 'pass' : 'fail'), role: "status" }, s.passed ? "Passed — stage complete" : "Not passed yet"),
+          h("p", null, pct, "% · pass mark ", needPct, s.passed ? "." : ". Retake with new questions."),
+          timedOut && h("p", { className: "qz-timeup" }, "Time is up: unanswered questions count as wrong."))),
+      missed.length > 0 && h("div", { key: "mh", className: "qz-miss-h" }, "Missed (", missed.length, ")"),
+      missed.length > 0 && h("ul", { key: "ml", className: "qz-miss" }, shown.map(function (e, i) {
+        var say = exSpeech(e);
+        return h("li", { key: i },
+          h("span", { className: "q", lang: "ja" }, exQuestionText(e)),
+          h("span", { className: "a", lang: QZ_JA.test(exAnswer(e)) ? "ja" : "en" }, exAnswer(e)),
+          say ? h("button", { className: "qz-gb", 'aria-label': "Hear it", onClick: function () { speak(say); } }, icon('speaker')) : h("span", null));
+      })),
+      missed.length > shown.length && h("p", { key: "more", className: "qz-more" }, "and ", missed.length - shown.length, " more")
+    ], h("div", { className: "qz-dock resd" }, h("div", { className: "qz-in" },
+      h("button", { className: "qz-gb", onClick: leaveQuiz }, "Back to lesson"),
+      s.passed && h("button", { className: "qz-gb", onClick: retake }, "Retake"),
+      h("span", { className: "qz-sp" }),
+      s.passed ? onNextStage && h("button", { className: "qz-btn ok", onClick: onNextStage }, "Next stage →")
+        : h("button", { className: "qz-btn", onClick: retake }, "Retake with new questions"))));
   }
+
+  // ── A question ────────────────────────────────────────────────────────────
   var ex = exs[cur];
-  var progress = "".concat(cur + 1, " / ").concat(exs.length);
-  // Furigana parts (quiz rules, Q33) → ruby; u = the underlined / asked part (mondai).
+  var isOpt = !!ex.options && typeof ex.correct === 'number' && ex.type !== 'pair_match';
+  var isPair = ex.type === 'pair_match', isReorder = ex.type === 'reorder';
+  var isListen = ex.type === 'listen_dialog';
+  var isType = !isOpt && !isPair && !isReorder;
+  var ready = isOpt ? pick !== null
+    : isReorder ? picks.length === ex.items.length
+    : isPair ? ex.items.every(function (_, i) { return typeof picks[i] === 'number'; })
+    : answer.trim() !== '';
+  var okNow = revealed && results[cur] === true;
+  var tone = !revealed ? '' : okNow ? ' ok' : ' bad';
+  // Check: kana answers take a lone trailing n as ん (it waits for a vowel while typing)
+  var check = function () {
+    if (revealed || !ready) return;
+    var resp = isOpt ? pick : isReorder || isPair ? picks : (ex.kana ? answer.replace(/n$/, 'ん') : answer);
+    if (typeof resp === 'string') setAnswer(resp);
+    if (isOpt) setSelected(pick);
+    stopAudio();
+    setRevealed(true);
+    advance(answerIsRight(ex, resp));
+  };
+  var skip = function () {
+    if (revealed) return;
+    stopAudio();
+    if (isOpt) setSelected(-1);
+    setRevealed(true);
+    advance(false);
+  };
+  var next = function () { proceed(exs, results); };
+  keyRef.current = function (e) {
+    if (trapTab(e)) return;
+    if (e.key === 'Escape') { if (leaving) setLeaving(false); else setLeaving(true); return; }
+    if (leaving) return;
+    var tag = e.target && e.target.tagName;
+    if (e.key === 'Enter') {
+      if (tag === 'BUTTON' || (tag === 'INPUT' && !revealed) || (e.nativeEvent || e).isComposing) return;
+      e.preventDefault();
+      return revealed ? next() : check();
+    }
+    if (tag === 'INPUT' || tag === 'SELECT') return;
+    var n = /^[1-9]$/.test(e.key) ? Number(e.key) - 1 : -1;
+    if (isOpt && !revealed && n >= 0 && n < ex.options.length) { stopAudio(); setPick(n); }
+  };
+
+  // Furigana parts (quiz rules, Q33) → ruby; u = the underlined / asked part (mondai). The （　）
+  // of a gap question shows the chosen option; the ★ slot of an order question does too.
+  var chosen = revealed ? (selected !== null && selected >= 0 ? selected : ex.correct) : pick;
   var partsEl = function partsEl(parts) {
     return parts.map(function (p, i) {
-      var el = p.r ? React.createElement("ruby", { key: i }, p.t, React.createElement("rt", null, p.r)) : p.t;
-      return p.u ? React.createElement("u", { key: i, className: "ex-u" }, el) : el;
-    });
-  };
-  var SENTENCE_TYPES = ['gap', 'kanji_yomi', 'hyouki', 'bunmyaku', 'order', 'iikae', 'bunshou'];
-  // The question line (plus the passage of a text-with-blanks, and the English of a
-  // gap sentence).
-  var questionEl = function questionEl() {
-    return [ex.passageParts && React.createElement("div", { key: "p", className: "passage-box", lang: "ja" }, partsEl(ex.passageParts)),
-      !ex.passageParts && (ex.question || ex.parts) && React.createElement("div", {
-        key: "q", className: "ex-question" + (SENTENCE_TYPES.indexOf(ex.type) >= 0 ? ' sentence' : ''), lang: "ja"
-      }, ex.parts ? partsEl(ex.parts) : ex.question), ex.note && React.createElement("div", { key: "n", className: "ex-note" }, ex.note)];
-  };
-  var header = function header() {
-    return [React.createElement("div", {
-      key: "label", className: "section-label"
-    }, t('section_exercises', unit.level), " ", React.createElement("span", {
-      className: "ex-count"
-    }, progress), ex.requeue && React.createElement("span", { className: "ex-count" }, " · again, not scored"),
-      deadline && React.createElement("span", { className: "ex-timer", role: "timer", 'aria-label': "Time left" },
-        "⏱ ", clock(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)))))];
-  };
-  // Shared frame for the reorder / pair_match branches below
-  var frame = function frame(body, feedback) {
-    return React.createElement("div", {
-      className: "section"
-    }, header(), React.createElement("div", {
-      className: "exercise-box"
-    }, progressBar(), React.createElement("div", {
-      className: "ex-prompt"
-    }, translatePrompt(ex.prompt, unit.level)), questionEl(), body, revealed && React.createElement("div", {
-      className: "ex-feedback ".concat(feedback.right ? 'correct' : 'wrong'),
-      'aria-live': "polite",
-      role: "status"
-    }, feedback.right ? '✓ Correct!' : "✗  Answer: ".concat(feedback.answer))));
-  };
-  var checkBtn = function checkBtn(ready, isRight) {
-    return React.createElement("button", {
-      className: "ex-check-btn",
-      disabled: !ready || revealed,
-      onClick: function onClick() {
-        setRevealed(true);
-        advance(isRight);
+      if (ex.type === 'gap' && p.t === GAP_BLANK) {
+        return h("span", { key: i, className: "qz-blank" + (revealed && selected === -1 ? ' ok' : tone) }, chosen === null ? " " : ex.options[chosen]);
       }
-    }, t('check_btn', unit.level));
-  };
-
-  // Reorder: tap tiles to build the sentence, tap a placed tile to remove it
-  if (ex.type === 'reorder') {
-    var builtRight = answerIsRight(ex, picks);
-    return frame([React.createElement("div", {
-      key: "built",
-      className: "ex-options ex-reorder-built"
-    }, picks.map(function (itemIdx, pos) {
-      return React.createElement("button", {
-        key: pos,
-        className: "ex-option",
-        disabled: revealed,
-        onClick: function onClick() {
-          setPicks(picks.filter(function (_, p) {
-            return p !== pos;
-          }));
-        }
-      }, ex.items[itemIdx]);
-    })), React.createElement("div", {
-      key: "pool",
-      className: "ex-options"
-    }, ex.items.map(function (item, i) {
-      return picks.indexOf(i) === -1 && React.createElement("button", {
-        key: i,
-        className: "ex-option",
-        disabled: revealed,
-        onClick: function onClick() {
-          setPicks(picks.concat([i]));
-        }
-      }, item);
-    })), React.createElement("div", {
-      key: "actions",
-      className: "ex-typing-row"
-    }, React.createElement("button", {
-      className: "ex-check-btn",
-      disabled: !picks.length || revealed,
-      onClick: function onClick() {
-        setPicks([]);
+      if (ex.type === 'order' && /＿/.test(p.t)) {
+        return h("span", { key: i, className: "qz-slots" }, p.t.trim().split(' ').map(function (slot, k) {
+          if (slot.indexOf('★') < 0) return h("span", { key: k, className: "qz-slot" }, k + 1);
+          return h("span", { key: k, className: "qz-slot star" + (chosen !== null ? ' f' : '') + tone },
+            chosen === null ? '★' : ex.optionParts ? partsEl(ex.optionParts[chosen]) : ex.options[chosen]);
+        }));
       }
-    }, "Reset"), checkBtn(picks.length === ex.items.length, builtRight))], {
-      right: builtRight,
-      answer: ex.answer
+      var el = p.r ? h("ruby", { key: i }, p.t, h("rt", null, p.r)) : p.t;
+      return p.u ? h("u", { key: i, className: "ex-u" }, el) : el;
     });
-  }
+  };
+  var promptEl = h("p", { key: "pr", className: "qz-prompt" }, translatePrompt(ex.prompt, lv));
+  // The question line, the passage of a text-with-blanks, and the English of a gap sentence.
+  var questionEl = function () {
+    var q = ex.parts ? ex.parts.map(function (p) { return p.t; }).join('') : ex.question;
+    var sentence = QZ_SENTENCE.indexOf(ex.type) >= 0;
+    return [
+      ex.passageParts && h("div", { key: "ps", className: "qz-passage", lang: "ja" }, partsEl(ex.passageParts)),
+      !ex.passageParts && (ex.question || ex.parts) && h("div", {
+        key: "q", className: sentence ? "qz-sent" : "qz-big" + exBigClass(q), lang: "ja"
+      }, ex.parts ? partsEl(ex.parts) : ex.question),
+      ex.note && h("p", { key: "n", className: "qz-gloss" }, ex.note),
+      ex.type === 'order' && revealed && ex.sentence && CATALOG.items[ex.sentence] &&
+        h("p", { key: "solved", className: "qz-solved", lang: "ja" }, CATALOG.items[ex.sentence].jp)];
+  };
+  var optClass = function (i) {
+    var c = 'qz-opt';
+    if (!revealed) { if (pick === i) c += ' sel'; } else if (i === ex.correct) c += ' ok'; else if (i === selected) c += ' bad'; else c += ' dim';
+    return c;
+  };
+  var optionsList = function () {
+    var long = ex.options.length % 2 === 1 || ex.options.some(function (o) { return String(o).length > 8; });
+    return h("div", { key: "opts", className: "qz-opts " + (long ? 'g1' : 'g2') }, ex.options.map(function (opt, i) {
+      return h("button", {
+        key: i, className: optClass(i), disabled: revealed, 'aria-pressed': !revealed && pick === i,
+        lang: QZ_JA.test(opt) ? "ja" : "en", onClick: function () { stopAudio(); setPick(i); }
+      }, h("kbd", null, i + 1), h("span", null, ex.optionParts ? partsEl(ex.optionParts[i]) : opt));
+    }));
+  };
+  var main, wide = false, extra = null;
 
-  // Pair match: pick a meaning for each (shuffled) word
-  if (ex.type === 'pair_match') {
-    var meaningOf = {};
-    (ex.pairs || []).forEach(function (p) {
-      meaningOf[p[0]] = p[1];
-    });
-    var allPicked = ex.items.every(function (_, i) {
-      return typeof picks[i] === 'number';
-    });
-    var pairsRight = answerIsRight(ex, picks);
-    return frame([ex.items.map(function (w, i) {
-      return React.createElement("div", {
-        key: i,
-        className: "ex-typing-row"
-      }, React.createElement("span", {
-        className: "ex-pair-word"
-      }, w), React.createElement("select", {
-        className: "ex-input",
-        'aria-label': 'Meaning of ' + w,
-        value: typeof picks[i] === 'number' ? String(picks[i]) : '',
-        disabled: revealed,
-        onChange: function onChange(e) {
-          var next = picks.slice();
-          next[i] = e.target.value === '' ? undefined : Number(e.target.value);
-          setPicks(next);
-        }
-      }, React.createElement("option", {
-        value: ""
-      }, "—"), ex.options.map(function (opt, oi) {
-        return React.createElement("option", {
-          key: oi,
-          value: String(oi)
-        }, opt);
-      })));
-    }), React.createElement("div", {
-      key: "actions",
-      className: "ex-typing-row"
-    }, checkBtn(allPicked, pairsRight))], {
-      right: pairsRight,
-      answer: ex.items.map(function (w) {
-        return w + ' = ' + meaningOf[w];
-      }).join(', ')
-    });
-  }
-  // Listening (ticket 17): Play speaks the script (speakScript); the transcript, English and
-  // explanation show after answering, then Next. Spoken options (utterance / quick) are
-  // numbered buttons with their own play button; their text shows only after answering.
-  if (ex.type === 'listen_dialog') {
-    var answered = selected !== null;
+  if (isListen) {
+    // Listening (ticket 17): Play speaks the script (speakScript); the transcript, English and
+    // explanation show after checking. Spoken options (utterance / quick) are numbered rows with
+    // their own play button; their text shows only after checking.
     var playsLeft = ex.maxPlays ? ex.maxPlays - plays : Infinity;
     var play = function (lines) {
       if (playsLeft <= 0) return;
       setPlays(plays + 1);
       stopAudio();
-      stopRef.current = speakScript(lines);
+      setSpeaking(true);
+      stopRef.current = speakScript(lines, { onEnd: function () { setSpeaking(false); } });
     };
-    var SPEAKER = { M: 'Man', F: 'Woman', N: 'Narrator' };
-    var transcript = function () { return React.createElement("div", { key: "script", className: "passage-box listen-script", lang: "ja" },
+    var transcript = function () { return h("div", { key: "script", className: "qz-script", lang: "ja" },
       ex.lines.map(function (l, i) {
-        return React.createElement("div", { key: i, className: "listen-line" },
-          React.createElement("span", { className: "listen-who", lang: "en" }, SPEAKER[l.speaker]), partsEl(l.parts));
+        return h("div", { key: i }, h("span", { className: "who", lang: "en" }, QZ_SPEAKER[l.speaker]), partsEl(l.parts));
       }),
-      ex.questionParts && React.createElement("div", { className: "listen-line" },
-        React.createElement("span", { className: "listen-who", lang: "en" }, SPEAKER.N), partsEl(ex.questionParts)),
-      (answered || !ex.spokenOptions) ? null : React.createElement("div", { className: "ex-hint", lang: "en" }, "The replies show after you answer."),
-      answered && React.createElement("div", { className: "passage-en", lang: "en" }, ex.en)); };
-    return React.createElement("div", { className: "section" }, header(), React.createElement("div", { className: "exercise-box" },
-      progressBar(),
-      React.createElement("div", { className: "ex-prompt" }, ex.prompt),
-      React.createElement("div", { className: "ex-question" },
-        React.createElement("button", {
-          className: "ex-listen-btn", disabled: playsLeft <= 0, onClick: function () { play(ex.script); }
-        }, plays ? "🔊 Play again" : "🔊 Play"),
-        ex.maxPlays ? React.createElement("div", { className: "ex-hint" }, playsLeft > 0 ? playsLeft + (playsLeft === 1 ? " play" : " plays") + " left" : "No replays left") : null),
-      voiceStatus === 'none' && !answered && React.createElement("div", { className: "ex-note listen-warn", role: "status" },
-        "This browser has no Japanese voice, so the audio may be silent or wrong. ",
-        showEarly ? "The transcript is below." : React.createElement("button", { className: "link-btn", onClick: function () { setShowEarly(true); } }, "Read the transcript instead")),
-      (answered || showEarly) && transcript(),
-      React.createElement("div", { className: "ex-options" + (ex.spokenOptions ? " listen-options" : "") }, ex.options.map(function (opt, i) {
-        var cls = 'ex-option';
-        if (answered) {
-          if (i === ex.correct) cls += ' correct';else if (i === selected) cls += ' wrong';
-        }
-        var choose = React.createElement("button", {
-          key: ex.spokenOptions ? "c" : i, className: cls, lang: "ja", disabled: answered,
-          'aria-label': ex.spokenOptions && !answered ? "Choose reply " + (i + 1) : undefined,
-          onClick: function () { stopAudio(); setSelected(i); advance(answerIsRight(ex, i), true); }
-        }, ex.spokenOptions ? [String(i + 1), answered ? React.createElement("span", { key: "t" }, "  ", partsEl(ex.optionParts[i])) : null] : partsEl(ex.optionParts[i]));
-        if (!ex.spokenOptions) return choose;
-        return React.createElement("div", { key: i, className: "listen-option" },
-          React.createElement("button", {
-            className: "ex-listen-opt", 'aria-label': "Play reply " + (i + 1), disabled: playsLeft <= 0,
+      ex.questionParts && h("div", null, h("span", { className: "who", lang: "en" }, QZ_SPEAKER.N), partsEl(ex.questionParts)),
+      revealed && h("span", { className: "en", lang: "en" }, ex.en)); };
+    var list = ex.spokenOptions
+      ? [h("div", { key: "opts", className: "qz-opts g1" }, ex.options.map(function (opt, i) {
+        return h("div", { key: i, className: "qz-srow" },
+          h("button", {
+            className: "qz-rp", 'aria-label': "Play reply " + (i + 1), disabled: playsLeft <= 0,
             onClick: function () { play([ex.optionSpeech[i]]); }
-          }, "🔊"), choose);
+          }, icon('speaker')),
+          h("button", {
+            className: optClass(i), lang: "ja", disabled: revealed, 'aria-pressed': !revealed && pick === i,
+            'aria-label': !revealed ? "Choose reply " + (i + 1) : undefined, onClick: function () { stopAudio(); setPick(i); }
+          }, h("kbd", null, i + 1), h("span", null, revealed ? partsEl(ex.optionParts[i]) : "Reply " + (i + 1))));
+      })), !revealed && h("p", { key: "hint", className: "qz-hint", lang: "en" }, "The replies show after you answer.")]
+      : optionsList();
+    main = [promptEl,
+      h("div", { key: "player", className: "qz-player" },
+        h("button", {
+          className: "qz-play" + (speaking ? " on" : ""), disabled: playsLeft <= 0, 'aria-label': "Play audio",
+          onClick: function () { play(ex.script); }
+        }, icon('speaker')),
+        ex.maxPlays ? h("div", { className: "qz-pips" },
+          Array.from({ length: ex.maxPlays }, function (_, i) { return h("i", { key: i, className: "qz-pip" + (i >= playsLeft ? " off" : "") }); }),
+          h("span", null, playsLeft > 0 ? playsLeft + (playsLeft === 1 ? " play" : " plays") + " left" : "No replays left")) : null),
+      voiceStatus === 'none' && !revealed && h("div", { key: "warn", className: "qz-warn", role: "status" },
+        "This browser has no Japanese voice, so the audio may be silent or wrong. ",
+        showEarly ? "The transcript is below." : h("button", { className: "link-btn", onClick: function () { setShowEarly(true); } }, "Read the transcript instead")),
+      (revealed || showEarly) && transcript(), list];
+  } else if (isReorder) {
+    // Reorder: tap tiles to build the sentence, tap a placed tile to remove it
+    main = [promptEl, questionEl(),
+      h("div", { key: "built", className: "qz-answerline" + tone, lang: "ja" }, picks.map(function (itemIdx, pos) {
+        return h("button", {
+          key: pos, className: "qz-tile", disabled: revealed,
+          onClick: function () { setPicks(picks.filter(function (_, p) { return p !== pos; })); }
+        }, ex.items[itemIdx]);
       })),
-      answered && ex.explain && React.createElement("div", { className: "ex-note", role: "status" }, ex.explain),
-      answered && React.createElement("div", { className: "ex-typing-row" },
-        React.createElement("button", { className: "ex-check-btn ex-next-btn", onClick: function () { proceed(exs, results); } }, t('nav_next', unit.level)))));
-  }
-  if (ex.options && typeof ex.correct === 'number') {
-    return /*#__PURE__*/React.createElement("div", {
-      className: "section"
-    }, header(), /*#__PURE__*/React.createElement("div", {
-      className: "exercise-box"
-    }, progressBar(), /*#__PURE__*/React.createElement("div", {
-      className: "ex-prompt"
-    }, translatePrompt(ex.prompt, unit.level)), ex.type === 'reading' && React.createElement("div", {
-      className: "passage-box", lang: "ja"
-    }, rubyEls(ex.passage)), ex.type === 'listen' ? /*#__PURE__*/React.createElement("div", {
-      className: "ex-question"
-    }, /*#__PURE__*/React.createElement("button", {
-      className: "ex-listen-btn",
-      onClick: function onClick() {
-        return speak(ex.audio);
-      },
-      'aria-label': "Listen to audio"
-    }, "🔊 Play")) : questionEl(), /*#__PURE__*/React.createElement("div", {
-      className: "ex-options"
-    }, ex.options.map(function (opt, i) {
-      var cls = 'ex-option';
-      if (selected !== null) {
-        if (i === ex.correct) cls += ' correct';else if (i === selected) cls += ' wrong';
-      }
-      return /*#__PURE__*/React.createElement("button", {
-        key: i,
-        className: cls,
-        lang: SENTENCE_TYPES.indexOf(ex.type) >= 0 ? "ja" : undefined,
-        disabled: selected !== null,
-        onClick: function onClick() {
-          setSelected(i);
-          advance(answerIsRight(ex, i));
-        }
-      }, ex.optionParts ? partsEl(ex.optionParts[i]) : opt);
-    })), selected !== null && ex.explain && React.createElement("div", {
-      className: "ex-note", role: "status"
-    }, ex.explain)));
+      h("div", { key: "bank", className: "qz-bank", lang: "ja" }, ex.items.map(function (item, i) {
+        return h("button", {
+          key: i, className: "qz-tile" + (picks.indexOf(i) >= 0 ? " used" : ""), disabled: revealed || picks.indexOf(i) >= 0,
+          onClick: function () { setPicks(picks.concat([i])); }
+        }, item);
+      }))];
+    extra = h("button", { className: "qz-gb", disabled: !picks.length, onClick: function () { setPicks([]); } }, icon('undo'), "Reset");
+  } else if (isPair) {
+    // Pair match: tap a word, then its meaning; a linked pair shares a number. Tap a linked word to undo.
+    var owner = {};
+    picks.forEach(function (o, i) { if (typeof o === 'number') owner[o] = i; });
+    var meaningOf = {};
+    ex.pairs.forEach(function (p) { meaningOf[p[0]] = p[1]; });
+    main = [promptEl,
+      h("div", { key: "pair", className: "qz-pair" },
+        h("div", null, ex.items.map(function (w, i) {
+          var linked = typeof picks[i] === 'number', c = 'qz-pc l';
+          if (revealed) c += ex.options[picks[i]] === meaningOf[w] ? ' ok' : ' bad'; else if (linked) c += ' linked'; else if (pairLeft === i) c += ' focus';
+          return h("button", {
+            key: i, className: c, disabled: revealed, 'data-n': (i % 4) + 1, lang: "ja",
+            onClick: function () {
+              if (linked) { var np = picks.slice(); np[i] = undefined; setPicks(np); setPairLeft(null); } else setPairLeft(i);
+            }
+          }, h("span", null, w), linked && h("span", { className: "pn" }, i + 1));
+        })),
+        h("div", null, ex.options.map(function (opt, j) {
+          var o = owner[j], c = 'qz-pc r';
+          if (revealed && o !== undefined) c += ex.options[j] === meaningOf[ex.items[o]] ? ' ok' : ' bad'; else if (o !== undefined) c += ' linked';
+          return h("button", {
+            key: j, className: c, disabled: revealed || pairLeft === null && o === undefined, 'data-n': o !== undefined ? (o % 4) + 1 : undefined,
+            onClick: function () {
+              if (pairLeft === null) return;
+              var np = picks.slice();
+              np.forEach(function (x, k) { if (x === j) np[k] = undefined; });
+              np[pairLeft] = j;
+              setPicks(np);
+              setPairLeft(null);
+            }
+          }, h("span", null, opt), o !== undefined && h("span", { className: "pn" }, o + 1));
+        }))),
+      h("p", { key: "hint", className: "qz-hint" }, "Tap a word, then its meaning. Tap a linked word to undo.")];
+  } else if (isOpt) {
+    // Choice (mc, gap, ★ order, iikae …), a single audio clip (listen), or a reading passage
+    var isReading = ex.type === 'reading';
+    var sound = ex.type === 'listen' && h("div", { key: "player", className: "qz-player" },
+      h("button", { className: "qz-play", 'aria-label': "Listen to audio", onClick: function () { speak(ex.audio); } }, icon('speaker')));
+    if (isReading) {
+      wide = true;
+      main = h("div", { className: "qz-split" },
+        h("div", null, promptEl, h("div", { className: "qz-passage", lang: "ja" }, rubyEls(ex.passage))),
+        h("div", null, optionsList()));
+    } else main = [promptEl, sound || questionEl(), optionsList()];
+  } else {
+    // Typing exercise (typing, conjugation)
+    main = [promptEl,
+      ex.passage && h("div", { key: "pg", className: "qz-passage" }, ex.passage),
+      questionEl(),
+      h("input", {
+        key: "in", ref: inputRef, className: "qz-input" + tone, type: "text", value: answer, 'aria-label': ex.prompt, lang: "ja",
+        placeholder: ex.placeholder || 'Type your answer...', disabled: revealed, autoFocus: true,
+        autoComplete: "off", autoCapitalize: "off", spellCheck: false,
+        onChange: function (e) { setAnswer(ex.kana ? romajiToKana(e.target.value) : e.target.value); },
+        // Enter while an IME is composing confirms the kana, not the answer
+        onKeyDown: function (e) { if (e.key === 'Enter' && !(e.nativeEvent && e.nativeEvent.isComposing)) { e.stopPropagation(); check(); } }
+      }),
+      ex.hint && h("p", { key: "hint", className: "qz-hint" }, ex.hint)];
   }
 
-  // Typing exercise (typing, conjugation)
-  var handleCheck = function handleCheck() {
-    if (!answer.trim() || revealed) return;
-    var final = ex.kana ? answer.replace(/n$/, 'ん') : answer; // a lone trailing n waits for a vowel while typing
-    setAnswer(final);
-    setRevealed(true);
-    advance(answerIsRight(ex, final));
-  };
-  var isRight = revealed && answerIsRight(ex, answer);
-  return /*#__PURE__*/React.createElement("div", {
-    className: "section"
-  }, header(), /*#__PURE__*/React.createElement("div", {
-    className: "exercise-box"
-  }, progressBar(), /*#__PURE__*/React.createElement("div", {
-    className: "ex-prompt"
-  }, translatePrompt(ex.prompt, unit.level)), ex.passage && React.createElement("div", {
-    className: "passage-box"
-  }, ex.passage), questionEl(), /*#__PURE__*/React.createElement("div", {
-    className: "ex-typing-row"
-  }, /*#__PURE__*/React.createElement("input", {
-    ref: inputRef,
-    className: "ex-input",
-    type: "text",
-    value: answer,
-    onChange: function onChange(e) {
-      return setAnswer(ex.kana ? romajiToKana(e.target.value) : e.target.value);
-    },
-    onKeyDown: function onKeyDown(e) {
-      // Enter while an IME is composing confirms the kana, not the answer
-      if (e.key === 'Enter' && !(e.nativeEvent && e.nativeEvent.isComposing)) handleCheck();
-    },
-    placeholder: ex.placeholder || 'Type your answer...',
-    'aria-label': ex.prompt,
-    disabled: revealed,
-    autoFocus: true
-  }), /*#__PURE__*/React.createElement("button", {
-    className: "ex-check-btn",
-    onClick: handleCheck,
-    disabled: !answer.trim() || revealed
-  }, t('check_btn', unit.level))), ex.hint && React.createElement("div", {
-    className: "ex-hint"
-  }, ex.hint), revealed && /*#__PURE__*/React.createElement("div", {
-    className: "ex-feedback ".concat(isRight ? 'correct' : 'wrong'),
-    'aria-live': "polite",
-    role: "status"
-  }, isRight ? '✓ Correct!' : "✗  Answer: ".concat((ex.answers || [])[0] || ''))));
+  // The dock: Skip + Check while asking; feedback + Continue once checked
+  var say = revealed ? exSpeech(ex) : '';
+  var dock;
+  if (!revealed) {
+    dock = h("div", { className: "qz-dock" }, h("div", { className: "qz-in" },
+      h("button", { className: "qz-gb", onClick: skip }, "Skip"),
+      extra,
+      h("span", { className: "qz-sp" }, isOpt && h("span", { className: "qz-keys" }, h("kbd", null, "1–" + ex.options.length), " choose ", h("kbd", null, "Enter"), " check")),
+      h("button", { className: "qz-btn qz-check", disabled: !ready, onClick: check }, t('check_btn', lv))));
+  } else {
+    dock = h("div", { className: "qz-dock " + (okNow ? 'right' : 'wrong') }, h("div", { className: "qz-in" },
+      h("div", { className: "qz-fb", role: "status", 'aria-live': "polite" },
+        h("b", null, icon(okNow ? 'check' : 'x'), okNow ? "Correct" : "Not quite"),
+        !okNow && h("div", { className: "ans" }, "Answer: ", h("span", { lang: QZ_JA.test(exAnswer(ex)) ? "ja" : "en" }, exAnswer(ex))),
+        ex.explain && h("p", null, ex.explain)),
+      say && h("button", { className: "qz-gb", 'aria-label': "Hear it", onClick: function () { speak(say); } }, icon('speaker')),
+      h("button", { className: "qz-btn qz-next " + (okNow ? 'ok' : 'bad'), onClick: next }, "Continue")));
+  }
+  return layer(topBar(cur + 1 + " / " + exs.length, ex), main, dock, wide);
 }

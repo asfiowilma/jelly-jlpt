@@ -396,44 +396,47 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
         seen[ex.type] = true;
         var right = ex.requeue || (qi + plan.length) % 3 !== 0; // every 3rd first attempt wrong
         plan.push([ex, right]);
+        // Choices are picked, then checked (Check button), then the learner presses Continue.
+        var click = function (re, n) { var b = find(cls(re))[n || 0]; if (!b) throw new Error("no " + re); b.props.onClick(); render(); };
         if (ex.type === "listen_dialog") {
-          // transcript hidden until answered; Play speaks the whole script, option buttons each speak
-          if (find(cls(/listen-script/)).length) errors.push(unit.id + ": listening transcript shown before answering");
+          // transcript hidden until checked; Play speaks the whole script, reply buttons each speak
+          if (find(cls(/qz-script/)).length) errors.push(unit.id + ": listening transcript shown before answering");
           var before = spoken.length;
-          find(cls(/ex-listen-btn/))[0].props.onClick();
+          click(/qz-play/);
           if (spoken.length - before < ex.script.length) errors.push(unit.id + ": Play spoke " + (spoken.length - before) + " of " + ex.script.length + " lines");
-          if (ex.spokenOptions) find(cls(/ex-listen-opt/))[0].props.onClick();
-          render();
-          var lopts = find(cls(/ex-option/));
-          var lpick = right ? ex.correct : (ex.correct + 1) % ex.options.length;
-          lopts[lpick].props.onClick();
-          render();
-          if (!find(cls(/listen-script/)).length) errors.push(unit.id + ": no transcript after answering");
-          find(cls(/ex-next-btn/))[0].props.onClick();
+          if (ex.spokenOptions) click(/qz-rp/);
+          click(/qz-opt( |$)/, right ? ex.correct : (ex.correct + 1) % ex.options.length);
+          if (find(cls(/qz-script/)).length) errors.push(unit.id + ": transcript shown before Check");
+          click(/qz-check/);
+          if (!find(cls(/qz-script/)).length) errors.push(unit.id + ": no transcript after answering");
         } else if (ex.options && typeof ex.correct === "number" && ex.type !== "pair_match") {
-          var opts = find(cls(/ex-option/));
           var pick = right ? ex.correct : (ex.correct + 1) % ex.options.length;
           if (answerIsRight(ex, pick) !== right) errors.push(unit.id + " " + ex.form + ": answerIsRight disagrees on option " + pick);
-          opts[pick].props.onClick();
+          if (find(cls(/qz-check/))[0].props.disabled !== true) errors.push(unit.id + ": Check enabled before a choice");
+          click(/qz-opt( |$)/, pick);
+          if (find(cls(/qz-check/))[0].props.disabled) errors.push(unit.id + ": Check still disabled after a choice");
+          if (state[7].length !== plan.length - 1) errors.push(unit.id + ": a choice counted before Check");
+          click(/qz-check/);
         } else if (ex.type === "pair_match") {
           var meaningOf = {};
           ex.pairs.forEach(function (p) { meaningOf[p[0]] = p[1]; });
-          ex.items.forEach(function (w, i) { // one pick per render, like a user
+          ex.items.forEach(function (w, i) { // tap the word, then a meaning, like a user
             var oi = ex.options.indexOf(meaningOf[w]);
-            render();
-            find(function (el) { return el.type === "select"; })[i].props.onChange({ target: { value: String(right ? oi : (oi + 1) % ex.options.length) } });
+            click(/qz-pc l/, i);
+            click(/qz-pc r/, right ? oi : (oi + 1) % ex.options.length);
           });
-          render();
-          find(cls(/ex-check-btn/)).slice(-1)[0].props.onClick();
+          click(/qz-check/);
         } else {
           var typed = right ? ex.answers[0] : "zzz";
           if (answerIsRight(ex, typed) !== right) errors.push(unit.id + " " + ex.form + ": typed '" + typed + "' scored wrong way");
           find(function (el) { return el.type === "input"; })[0].props.onChange({ target: { value: typed } });
           render();
-          find(cls(/ex-check-btn/))[0].props.onClick();
+          click(/qz-check/);
         }
         var res = state[7]; // Exercises' results slot
         if (res[res.length - 1] !== right) errors.push(unit.id + "@" + unit.level + " " + ex.form + ": answered " + (right ? "right" : "wrong") + ", scored the other way");
+        if (!find(cls(/qz-dock (right|wrong)/)).length) errors.push(unit.id + ": no feedback dock after Check");
+        click(/qz-next/);
       }
       render(); // finish screen
       if (!result) return errors.push(unit.id + "@" + unit.level + ": quiz never finished");
@@ -446,7 +449,7 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       var requeued = plan.filter(function (p) { return p[0].requeue; }).length;
       if (requeued !== wrongFirst.length) errors.push(unit.id + "@" + unit.level + ": " + wrongFirst.length + " misses, " + requeued + " re-asked");
       wrongFirst.forEach(function (p) { if (result.missed.indexOf(p[0].itemId) < 0) errors.push(unit.id + ": miss not flagged " + p[0].itemId); });
-      if (!find(cls(/ex-finish-verdict/)).length) errors.push(unit.id + ": no pass/fail verdict");
+      if (!find(cls(/qz-verdict/)).length) errors.push(unit.id + ": no pass/fail verdict");
     };
     try {
       global.setTimeout = function (fn) { fn(); };

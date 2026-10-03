@@ -15,12 +15,6 @@ function UnitView(props) {
     setKanjiView = props.setKanjiView;
   var lv = unit.level;
   var isDone = completed.has(unit.id);
-  var _React$useStateQuiz = React.useState(false),
-    quizActive = _React$useStateQuiz[0],
-    setQuizActive = _React$useStateQuiz[1];
-  React.useEffect(function () {
-    setQuizActive(false);
-  }, [unit.id]);
   var section = function (label) {
     var children = Array.prototype.slice.call(arguments, 1);
     return React.createElement.apply(React, ["div", { className: "section" },
@@ -99,7 +93,7 @@ function UnitView(props) {
         knownN > 0 && React.createElement("span", { className: "week-badge" }, t('unit_known', lv).replace('{n}', knownN))),
       React.createElement("h2", { className: "day-title" }, unit.title)),
     React.createElement("div", { className: "day-body" },
-      React.createElement("div", { className: "lesson-blurrable" + (quizActive ? ' blurred' : '') },
+      React.createElement("div", null,
         // Lesson note: first sentence as the headline, the rest as quiet lines (prep / mock notes
         // run to several paragraphs, one per line, ticket 18)
         unit.notes && (function () {
@@ -140,9 +134,8 @@ function UnitView(props) {
         }),
         examples.length > 0 && section(t('section_examples', lv), React.createElement("div", { className: "example-list" }, examples.map(exampleCard))),
         (examples.length > 0 || unit.grammar.length > 0) && React.createElement("button", {
-          className: "furigana-toggle" + (showFurigana ? " active" : ""),
-          onClick: toggleFurigana
-        }, showFurigana ? t('furigana_hide', lv) : t('furigana_show', lv))),
+          className: "furi", 'aria-pressed': showFurigana, onClick: toggleFurigana
+        }, React.createElement("i", { 'aria-hidden': true }), t('furigana_label', lv))),
       // a mock unit is taken as a whole test (MockExam); taking it completes the unit, pass or not
       React.createElement("div", { id: "unit-quiz" }, unit.kind === 'mock' ? React.createElement(MockExam, {
         key: unit.id,
@@ -151,9 +144,9 @@ function UnitView(props) {
       }) : React.createElement(Exercises, {
         key: unit.id,
         unit: unit,
-        onStart: function () { setQuizActive(true); },
-        onFinish: function () { setQuizActive(false); },
-        onResult: props.onQuizResult
+        onResult: props.onQuizResult,
+        passed: isDone,
+        onNextStage: unit.index < last ? function () { setUnit(unit.index + 1); } : null
       }))),
     // Bottom bar: one action that follows the stage state. Skip only navigates; a stage is done
     // only by passing its quiz (Q28), and a done stage can be un-marked from the status line.
@@ -177,10 +170,7 @@ function UnitView(props) {
         !isDone && unit.index < last && React.createElement("button", {
           className: "nav-skip", onClick: function () { setUnit(unit.index + 1); }
         }, t('nav_skip', lv)),
-        isDone ? unit.index < last && React.createElement("button", {
+        isDone && unit.index < last && React.createElement("button", {
           className: "nav-btn next", onClick: function () { setUnit(unit.index + 1); }
-        }, t('nav_next_stage', lv)) : React.createElement("button", {
-          className: "nav-btn next",
-          onClick: function () { var q = document.getElementById('unit-quiz'); if (q && q.scrollIntoView) q.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-        }, t(unit.kind === 'mock' ? 'nav_mock' : 'nav_quiz', lv)))));
+        }, t('nav_next_stage', lv)))));
 }
