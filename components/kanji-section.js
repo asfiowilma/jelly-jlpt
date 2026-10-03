@@ -7,7 +7,8 @@
 // Per kanji: meaning, kun / on readings (okurigana dimmed), the unit's words that
 // contain it, and the KanjiVG stroke-order SVG (numbered, static).
 
-// StrokeOrder: fetches + inlines kanji-svg/<hex>.svg when mounted.
+// StrokeOrder: fetches + inlines kanji-svg/<hex>.svg when mounted. props.compact (chart tiles):
+// empty while loading or when missing, no retry button, no frame.
 function StrokeOrder(props) {
   var ch = props.ch;
   var _s = React.useState({ svg: null, error: false, loading: true, n: 0 }),
@@ -23,6 +24,7 @@ function StrokeOrder(props) {
     });
     return function () { live = false; };
   }, [ch, st.n]);
+  if (props.compact && !st.svg) return null;
   if (st.loading) return React.createElement("div", { className: "stroke-loading" }, "Loading...");
   if (st.error) {
     return React.createElement("div", { className: "stroke-error" },
@@ -32,18 +34,18 @@ function StrokeOrder(props) {
         onClick: function () { setSt(function (p) { return { svg: null, error: false, loading: true, n: p.n + 1 }; }); }
       }, "Retry"));
   }
-  return React.createElement("div", { className: "stroke-viewer kj-stroke", dangerouslySetInnerHTML: { __html: st.svg } });
+  return React.createElement("div", { className: props.compact ? "stroke-thumb" : "stroke-viewer kj-stroke", dangerouslySetInnerHTML: { __html: st.svg } });
 }
 
 // charSectionHead: heading of a Kanji / Kana section: label, ⓘ popover (hover, focus or tap)
-// and the rows <-> focus toggle. opts: { label, popId, infoLabel, info: [nodes], toggle: {label, onClick} | false }
+// and whatever controls sit on the right. opts: { label, popId, infoLabel, info: [nodes], right: node }
 function charSectionHead(opts) {
   return React.createElement("div", { className: "section-label kj-head" },
     React.createElement("span", { className: "kj-title" }, opts.label,
       React.createElement("span", { className: "kj-info" },
         React.createElement("button", { className: "kj-info-btn", 'aria-label': opts.infoLabel, 'aria-describedby': opts.popId }, "i"),
         React.createElement("div", { id: opts.popId, role: "tooltip", className: "kj-pop" }, opts.info))),
-    opts.toggle && React.createElement("button", { className: "vocab-btn kj-toggle", onClick: opts.toggle.onClick }, opts.toggle.label));
+    opts.right);
 }
 
 // Kun readings carry okurigana after a dot ('なが.い'): stem normal, tail dimmed.
@@ -135,10 +137,9 @@ function KanjiSection(props) {
         React.createElement("p", { key: "k" }, React.createElement("span", { className: "kj-tag kun" }, "kun"), " ", t('kanji_info_kun', lv)),
         React.createElement("p", { key: "o" }, React.createElement("span", { className: "kj-tag on" }, "on"), " ", t('kanji_info_on', lv)),
         React.createElement("p", { key: "e" }, t('kanji_info_extra', lv))],
-      toggle: kanji.length > 1 && {
-        label: view === 'focus' ? t('kanji_view_rows', lv) : t('kanji_view_focus', lv),
-        onClick: function () { props.setKanjiView(view === 'focus' ? 'rows' : 'focus'); }
-      }
+      right: kanji.length > 1 && React.createElement("button", {
+        className: "vocab-btn kj-toggle", onClick: function () { props.setKanjiView(view === 'focus' ? 'rows' : 'focus'); }
+      }, view === 'focus' ? t('kanji_view_rows', lv) : t('kanji_view_focus', lv))
     }),
     body);
 }

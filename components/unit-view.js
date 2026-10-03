@@ -123,9 +123,7 @@ function UnitView(props) {
         unit.notes && React.createElement("div", { className: "tip-box" }, unit.notes.split('\n').map(function (para, i) {
           return React.createElement("p", { key: i, className: "tip-para" }, para);
         })),
-        unit.kana.length > 0 && React.createElement(KanaSection, {
-          key: unit.id, unit: unit, kanjiView: kanjiView, setKanjiView: setKanjiView
-        }),
+        unit.kana.length > 0 && React.createElement(KanaSection, { key: unit.id, unit: unit }),
         unit.vocab.length > 0 && section(t('section_vocabulary', lv),
           React.createElement("div", { className: "vocab-bar" },
             React.createElement("span", { className: "vocab-count" }, t('vocab_checked', lv), " ", shownCount, " / ", unit.vocab.length),

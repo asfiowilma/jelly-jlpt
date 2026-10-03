@@ -1,11 +1,13 @@
 "use strict";
 
 // ── Kana section of a kana lesson ────────────────────────────────────────────
-// Same `kanjiView` pref as the Kanji section:
-//   'rows'  : gojūon chart (rows × vowel columns), tap a tile to hear it and open its detail
-//   'focus' : one kana at a time, picked from chips
-// Detail card: kana + romaji + Listen, stroke order (single kana only), and an info column
-// that exists only when there is something to show (catalog note, look-alikes, practice words).
+// A gojūon chart of the unit's kana, in two modes (Learn is the default):
+//   Learn    : romaji and, in lesson units, the numbered stroke order on every tile; a tap plays
+//              the kana and highlights its entry in "Watch out for"
+//   Practice : romaji and the a i u e o headers hidden; a tap reveals + plays; Shuffle drops the
+//              position cue; Reveal all gives up
+// "Watch out for": irregular sounds (catalog note, or a spelling that differs from the pattern:
+// し shi, not si) and look-alike sets (KANA_LOOKALIKES). The dots match the dots on the tiles.
 
 var KANA_COLS = ['a', 'i', 'u', 'e', 'o'];
 var KANA_YOUON_COLS = ['ya', '', 'yu', '', 'yo'];
@@ -31,109 +33,119 @@ function kanaChart(items) {
   return { rows: rows, cols: cols, headers: headers, youon: items.every(function (k) { return Array.from(k.char).length > 1; }) };
 }
 
-// Same-script kana that get mixed up with this one (KANA_LOOKALIKES in lib.js); plain kana only.
-function kanaLookalikes(ch) {
-  if (Array.from(ch).length > 1 || kanaBase(ch) !== ch) return [];
-  return Array.from(KANA_LOOKALIKES.filter(function (s) { return s.indexOf(ch) >= 0; }).join(''))
-    .filter(function (c, i, a) { return c !== ch && a.indexOf(c) === i; });
+// Plain (single, undotted) kana only; combos and dakuten kana have no look-alike sets.
+function kanaIsPlain(k) { return Array.from(k.char).length === 1 && kanaBase(k.char) === k.char; }
+
+// kanaLookSets(items): the KANA_LOOKALIKES sets that contain at least one of these kana.
+function kanaLookSets(items) {
+  var chars = items.filter(kanaIsPlain).map(function (k) { return k.char; });
+  return KANA_LOOKALIKES.filter(function (set) { return Array.from(set).some(function (c) { return chars.indexOf(c) >= 0; }); });
+}
+
+// kanaIrregular(k): the note shown for an irregular kana, or null. A catalog note wins; otherwise a
+// single kana typed another way (し: shi / si, ふ: fu / hu) reads "shi, not si".
+function kanaIrregular(k) {
+  if (k.notes) return k.notes;
+  return Array.from(k.char).length === 1 && k.answers && k.answers.length > 1 ? k.romaji + ", not " + k.answers[1] : null;
 }
 
 function KanaSection(props) {
   var unit = props.unit,
     lv = unit.level,
-    view = props.kanjiView === 'focus' ? 'focus' : 'rows',
     kana = unit.kana,
-    chart = kanaChart(kana);
+    chart = kanaChart(kana),
+    strokes = unit.kind === 'kana'; // review units can hold 100+ kana: no per-tile stroke fetches
+  var _pr = React.useState(false), practice = _pr[0], setPractice = _pr[1];
+  var _rev = React.useState({}), rev = _rev[0], setRev = _rev[1];
+  var _order = React.useState(null), order = _order[0], setOrder = _order[1]; // Practice shuffle: kana list | null
   var _sel = React.useState(null), sel = _sel[0], setSel = _sel[1];
-  var _seen = React.useState({}), seen = _seen[0], setSeen = _seen[1];
-  var look = function (id) {
-    setSel(id);
-    setSeen(function (p) { return Object.assign({}, p, { [id]: true }); });
-  };
-  var cur = kana.filter(function (k) { return k.id === sel; })[0] || (view === 'focus' ? kana[0] : null);
-  var mark = function (text, ch) {
-    return text.split(ch).map(function (part, i, a) {
-      return React.createElement(React.Fragment, { key: i }, part, i < a.length - 1 && React.createElement("mark", null, ch));
-    });
+  var looks = kanaLookSets(kana);
+  var inUnit = {};
+  kana.forEach(function (k) { inUnit[k.char] = true; });
+  var revealed = kana.filter(function (k) { return rev[k.id]; }).length;
+
+  var setMode = function (p) { setPractice(p); setRev({}); setOrder(null); setSel(null); };
+  var tile = function (k) {
+    if (practice) {
+      var open = !!rev[k.id];
+      return React.createElement("button", {
+        key: k.id, className: "kn-tile cover" + (open ? "" : " covered"),
+        'aria-label': k.char + (open ? ", " + k.romaji : ", " + t('tap_reveal', lv)),
+        onClick: function () { speak(k.char); setRev(function (p) { return Object.assign({}, p, { [k.id]: true }); }); }
+      }, React.createElement("span", { className: "kn-k" }, k.char), React.createElement("span", { className: "kn-r" }, open ? k.romaji : " "));
+    }
+    var irr = !!kanaIrregular(k),
+      like = looks.some(function (s) { return kanaIsPlain(k) && s.indexOf(k.char) >= 0; });
+    return React.createElement("button", {
+      key: k.id, className: "kn-tile" + (sel === k.id ? " sel" : ""),
+      'aria-label': k.char + ", " + k.romaji + (irr ? ", " + t('kana_irregular', lv) : ""),
+      onClick: function () { speak(k.char); setSel(k.id); }
+    },
+    (irr || like) && React.createElement("span", { className: "kn-mk", 'aria-hidden': true },
+      irr && React.createElement("i", { className: "irr" }), like && React.createElement("i", { className: "like" })),
+    React.createElement("span", { className: "kn-k" }, k.char),
+    strokes && Array.from(k.char).length === 1 && React.createElement(StrokeOrder, { ch: k.char, compact: true }),
+    React.createElement("span", { className: "kn-r" }, k.romaji));
   };
 
-  var detail = function (k) {
-    var like = kanaLookalikes(k.char);
-    var words = (unit.practice || []).filter(function (v) { return v.reading.indexOf(k.char) >= 0; });
-    var info = [
-      k.notes && React.createElement("div", { key: "n" },
-        React.createElement("div", { className: "kj-sub" }, t('kana_note', lv)), React.createElement("div", { className: "kn-note" }, k.notes)),
-      like.length > 0 && React.createElement("div", { key: "l" },
-        React.createElement("div", { className: "kj-sub" }, t('kana_lookalikes', lv)),
-        React.createElement("div", { className: "kn-like" }, like.map(function (c) { return React.createElement("span", { key: c }, c); }))),
-      words.length > 0 && React.createElement("div", { key: "w" },
-        React.createElement("div", { className: "kj-sub" }, t('kana_words', lv)),
-        words.map(function (v) {
-          return React.createElement("div", { key: v.id, className: "kj-word" },
-            React.createElement("span", { className: "kj-word-jp" }, mark(v.reading, k.char)),
-            React.createElement("span", { className: "kj-word-gl" }, glossText(v)));
-        }))
-    ].filter(Boolean);
-    return React.createElement("div", { className: "kn-card" + (info.length ? " has-info" : "") },
-      React.createElement("div", { className: "kn-stage" },
-        React.createElement("div", { className: "kn-big", 'aria-hidden': true }, k.char),
-        React.createElement("div", { className: "kn-romaji" }, k.romaji),
-        React.createElement("button", { className: "vocab-btn", onClick: function () { speak(k.char); } }, "🔊 ", t('kana_listen', lv))),
-      Array.from(k.char).length === 1 && React.createElement("div", { className: "kn-sv" }, React.createElement(StrokeOrder, { key: k.id, ch: k.char })),
-      info.length > 0 && React.createElement("div", { className: "kn-info" }, info));
-  };
-
-  var body;
-  if (view === 'focus') {
-    var i = kana.indexOf(cur);
-    body = React.createElement(React.Fragment, null,
-      React.createElement("div", { className: "kj-chips", role: "tablist" }, chart.rows.map(function (r, ri) {
-        return React.createElement(React.Fragment, { key: ri }, ri > 0 && React.createElement("span", { className: "kn-sep" }),
-          r.filter(Boolean).map(function (k) {
-            return React.createElement("button", {
-              key: k.id, role: "tab", className: "kj-chip kn-chip", 'aria-selected': k === cur,
-              'aria-label': k.char + ", " + k.romaji, onClick: function () { look(k.id); }
-            }, k.char, (seen[k.id] || k === cur) && React.createElement("span", { className: "kj-check", 'aria-hidden': true }, "✓"));
-          }));
-      })),
-      detail(cur),
-      React.createElement("div", { className: "kj-foot" },
-        React.createElement("span", null, kana.filter(function (k) { return seen[k.id] || k === cur; }).length + " / " + kana.length + " " + t('kanji_looked', lv)),
-        i < kana.length - 1 && React.createElement("button", { className: "vocab-btn", onClick: function () { look(kana[i + 1].id); } }, t('kana_next', lv))));
+  var cells = [];
+  if (practice && order) {
+    cells = order.map(tile);
   } else {
-    var cells = [];
-    if (chart.headers) {
+    if (chart.headers && !practice) {
       cells.push(React.createElement("span", { key: "h" }));
       chart.cols.forEach(function (c) { cells.push(React.createElement("span", { key: "h" + c, className: "kn-col" }, (chart.youon ? KANA_YOUON_COLS : KANA_COLS)[c])); });
     }
     chart.rows.forEach(function (r, ri) {
-      cells.push(React.createElement("span", { key: "r" + ri, className: "kn-rowlab jp" }, Array.from(r.filter(Boolean)[0].char)[0]));
-      chart.cols.forEach(function (c) {
-        var k = r[c];
-        cells.push(k ? React.createElement("button", {
-          key: k.id, className: "kn-tile", 'aria-pressed': k === cur, 'aria-label': k.char + ", " + k.romaji,
-          onClick: function () { speak(k.char); look(k.id); }
-        }, k.notes && React.createElement("i", { className: "kn-dot", title: t('kana_legend', lv) }),
-        React.createElement("span", { className: "kn-k" }, k.char), React.createElement("span", { className: "kn-r" }, k.romaji))
-          : React.createElement("span", { key: "e" + ri + c }));
-      });
+      cells.push(React.createElement("span", { key: "r" + ri, className: "kn-rowlab" }, Array.from(r.filter(Boolean)[0].char)[0]));
+      chart.cols.forEach(function (c) { cells.push(r[c] ? tile(r[c]) : React.createElement("span", { key: "e" + ri + c })); });
     });
-    body = React.createElement(React.Fragment, null,
-      React.createElement("div", { className: "kn-chart", style: { gridTemplateColumns: "34px repeat(" + chart.cols.length + ", minmax(0, 1fr))" } }, cells),
-      kana.some(function (k) { return k.notes; }) && React.createElement("div", { className: "kn-legend" }, React.createElement("i", { className: "kn-dot" }), t('kana_legend', lv)),
-      React.createElement("div", { className: "kn-detail" }, cur ? detail(cur) : React.createElement("p", { className: "kn-empty" }, t('kana_tap', lv))));
   }
+  var shuffled = practice && order;
+  // In shuffled Practice the grid has no row labels or headers: 5 equal columns.
+  var tpl = shuffled ? "repeat(5, minmax(0, 1fr))" : "34px repeat(" + chart.cols.length + ", minmax(0, 1fr))";
+  var group = function (dot, label, chips) {
+    return chips.length > 0 && React.createElement("span", { className: "kn-grp" }, React.createElement("i", { className: dot }), label, chips);
+  };
+  var irrChips = practice ? [] : kana.filter(function (k) { return kanaIrregular(k); }).map(function (k) {
+    return React.createElement("span", { key: k.id, className: "kn-chip" + (sel === k.id ? " hl" : "") },
+      React.createElement("span", { className: "kn-chip-k" }, k.char), " ", kanaIrregular(k));
+  });
+  var selChar = sel && CATALOG.items[sel].char;
+  var likeChips = looks.map(function (s) {
+    var hl = selChar && Array.from(s).indexOf(selChar) >= 0;
+    return React.createElement("span", { key: s, className: "kn-chip" + (hl ? " hl" : "") },
+      Array.from(s).map(function (c) { return React.createElement("span", { key: c, className: "kn-chip-k" + (inUnit[c] ? "" : " later"), title: inUnit[c] ? undefined : t('kana_later', lv) }, c); }));
+  });
+  var seg = React.createElement("span", { className: "kn-seg", role: "group", 'aria-label': t('kana_mode', lv) },
+    React.createElement("button", { 'aria-pressed': !practice, onClick: function () { setMode(false); } }, t('kana_learn', lv)),
+    React.createElement("button", { 'aria-pressed': practice, onClick: function () { setMode(true); } }, t('kana_practice', lv)));
+  var right = React.createElement("span", { className: "kn-ctl" },
+    practice
+      ? React.createElement(React.Fragment, null,
+        React.createElement("span", { className: "kn-count" }, t('kana_revealed', lv) + " " + revealed + " / " + kana.length),
+        React.createElement("button", { className: "vocab-btn" + (order ? " active" : ""), 'aria-pressed': !!order, onClick: function () { setOrder(order ? null : rndShuffle(kana)); } }, t('kana_shuffle', lv)),
+        React.createElement("button", {
+          className: "vocab-btn",
+          onClick: function () {
+            var all = {};
+            if (revealed < kana.length) kana.forEach(function (k) { all[k.id] = true; });
+            setRev(all);
+          }
+        }, revealed === kana.length ? t('kana_hide_all', lv) : t('kana_reveal_all', lv)))
+      : React.createElement("span", { className: "kn-count" }, t('kana_tap', lv)),
+    seg);
   return React.createElement("div", { className: "section" },
     charSectionHead({
       label: t('section_kana', lv), popId: "kn-pop", infoLabel: t('kana_info_label', lv),
       info: [
         React.createElement("p", { key: "a" }, t('kana_info_sound', lv)),
-        React.createElement("p", { key: "b" }, t('kana_info_romaji', lv)),
-        React.createElement("p", { key: "c" }, t('kana_info_dot', lv))],
-      toggle: kana.length > 1 && {
-        label: view === 'focus' ? t('kana_view_rows', lv) : t('kanji_view_focus', lv),
-        onClick: function () { props.setKanjiView(view === 'focus' ? 'rows' : 'focus'); }
-      }
+        React.createElement("p", { key: "b" }, t('kana_info_romaji', lv) + " " + t('kana_info_practice', lv))],
+      right: right
     }),
-    body);
+    React.createElement("div", { className: "kn-chart", style: { gridTemplateColumns: tpl } }, cells),
+    (irrChips.length > 0 || likeChips.length > 0) && React.createElement("div", { className: "kn-watch" },
+      React.createElement("b", null, t('kana_watch', lv)),
+      group("irr", t('kana_irregular', lv), irrChips),
+      group("like", t('kana_lookalike', lv), likeChips)));
 }
