@@ -146,10 +146,11 @@ a.data-btn{display:inline-flex;align-items:center;text-decoration:none}
 .vocab-btn:hover{border-color:var(--accent-fg)}
 .vocab-group{margin-top:14px}
 .vocab-group:first-of-type{margin-top:0}
-.vocab-group-label{font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:6px}
+.vocab-cols-grp{font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text)}
+.vocab-cols.quiet span{visibility:hidden}
 .vocab-list{list-style:none;display:grid;gap:4px}
 .vocab-cols,.vocab-row{display:grid;grid-template-columns:minmax(92px,1.1fr) minmax(88px,1fr) minmax(0,2fr) 44px;align-items:center;gap:10px}
-.vocab-cols{margin-bottom:6px;padding:0 4px 0 12px;font-size:0.7rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted)}
+.vocab-cols{margin-bottom:2px;padding:0 4px 0 12px;font-size:0.7rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted)}
 .vocab-row{background:var(--surface2);border-radius:6px;padding:4px 4px 4px 12px}
 .vocab-jp{font-size:1.25rem;font-weight:600;line-height:1.2}
 .vocab-cell{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:0 10px 0 0;border:1px dashed transparent;border-radius:6px;background:transparent;color:inherit;font-family:inherit;text-align:left}
@@ -163,7 +164,7 @@ a.data-btn{display:inline-flex;align-items:center;text-decoration:none}
 .pos-chip{font-size:0.68rem;font-weight:600;padding:1px 7px;border-radius:99px;border:1px solid var(--border);color:var(--muted)}
 .speak-btn-row{width:44px;height:44px;padding:0;border-radius:var(--radius)}
 .speak-btn-row:hover{background:var(--surface)}
-@media (max-width:560px){.vocab-cols{display:none}.vocab-row{grid-template-columns:1fr 1fr 44px;row-gap:2px}.vocab-col-meaning{grid-column:1 / -1;grid-row:2}}
+@media (max-width:560px){.vocab-cols{display:block}.vocab-cols span{display:none}.vocab-row{grid-template-columns:1fr 1fr 44px;row-gap:2px}.vocab-col-meaning{grid-column:1 / -1;grid-row:2}}
 .grammar-card{display:grid;grid-template-columns:minmax(150px,200px) 1fr;gap:20px}
 .grammar-rail{padding-right:20px;border-right:1px solid var(--border)}
 .grammar-pattern{font-size:1.5rem;font-weight:700;line-height:1.25;color:var(--accent-fg);overflow-wrap:anywhere}

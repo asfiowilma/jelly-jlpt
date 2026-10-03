@@ -74,11 +74,21 @@ function VocabSection(props) {
   };
 
   var groups = vocabGroups(vocab, lv);
-  var body = practice && order
-    ? React.createElement("ul", { className: "vocab-list" }, order.map(row))
-    : groups.map(function (g) {
+  // Column header row. With several groups each group's label sits in the Word column of its own
+  // header row; only the first repeats Reading / Meaning (the rest keep the row but hide them).
+  var cols = function (label, grouped, quiet) {
+    var hid = { 'aria-hidden': true };
+    return React.createElement("div", { key: "h", className: "vocab-cols" + (quiet ? " quiet" : "") },
+      grouped ? React.createElement("h4", { className: "vocab-cols-grp" }, label) : React.createElement("span", hid, label),
+      React.createElement("span", hid, t('vocab_reading', lv)), React.createElement("span", hid, t('vocab_meaning', lv)),
+      React.createElement("span", hid));
+  };
+  var grouped = !(practice && order) && groups.length > 1;
+  var body = !grouped
+    ? [cols(t('vocab_word', lv), false, false), React.createElement("ul", { key: "l", className: "vocab-list" }, (practice && order ? order : vocab).map(row))]
+    : groups.map(function (g, i) {
       return React.createElement("div", { key: g.key, className: "vocab-group" },
-        groups.length > 1 && React.createElement("h4", { className: "vocab-group-label" }, g.label),
+        cols(g.label, true, i > 0),
         React.createElement("ul", { className: "vocab-list" }, g.items.map(row)));
     });
   var seg = React.createElement("span", { className: "mode-seg", role: "group", 'aria-label': t('mode_label', lv) },
@@ -102,8 +112,5 @@ function VocabSection(props) {
     seg);
   return React.createElement("div", { className: "section" },
     React.createElement("div", { className: "section-label kj-head" }, React.createElement("span", null, t('section_vocabulary', lv)), controls),
-    React.createElement("div", { className: "vocab-cols", 'aria-hidden': true },
-      React.createElement("span", null, t('vocab_word', lv)), React.createElement("span", null, t('vocab_reading', lv)),
-      React.createElement("span", null, t('vocab_meaning', lv)), React.createElement("span", null)),
     body);
 }
