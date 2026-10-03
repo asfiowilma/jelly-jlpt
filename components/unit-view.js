@@ -15,8 +15,13 @@ function UnitView(props) {
   var _React$useStateQuiz = React.useState(false),
     quizActive = _React$useStateQuiz[0],
     setQuizActive = _React$useStateQuiz[1];
+  // Vocabulary cover-and-test: session-only, resets per unit
+  var _React$useStateCover = React.useState({ covered: true, shown: {} }),
+    cover = _React$useStateCover[0],
+    setCover = _React$useStateCover[1];
   React.useEffect(function () {
     setQuizActive(false);
+    setCover({ covered: true, shown: {} });
   }, [unit.id]);
   var section = function (label) {
     var children = Array.prototype.slice.call(arguments, 1);
@@ -61,6 +66,41 @@ function UnitView(props) {
     }).filter(function (x) { return x.w > 0 && !shown[x.s.id]; })
       .sort(function (a, b) { return b.w - a.w; }).slice(0, 3).map(function (x) { return x.s; });
   }
+  var VOCAB_GROUPS = [
+    { key: 'verb', label: 'vocab_verbs', test: function (p) { return /^verb/.test(p); } },
+    { key: 'adj', label: 'vocab_adjectives', test: function (p) { return /^adj/.test(p); } },
+    { key: 'noun', label: 'vocab_nouns', test: function (p) { return /^(noun|pronoun|number|counter)$/.test(p); } }
+  ];
+  var posChip = function (pos) {
+    return pos === 'adj-i' ? 'i-adj' : pos === 'adj-na' ? 'na-adj' : pos.replace(/^verb-/, '');
+  };
+  // Group by part of speech; anything unmatched lands in "other". One group = no headings.
+  var vocabGroups = VOCAB_GROUPS.map(function (g) {
+    return { key: g.key, label: t(g.label, lv), items: unit.vocab.filter(function (v) { return g.test(v.pos); }) };
+  });
+  vocabGroups.push({ key: 'other', label: t('vocab_other', lv), items: unit.vocab.filter(function (v) {
+    return !VOCAB_GROUPS.some(function (g) { return g.test(v.pos); });
+  }) });
+  vocabGroups = vocabGroups.filter(function (g) { return g.items.length > 0; });
+  var shownCount = unit.vocab.filter(function (v) { return !cover.covered || cover.shown[v.id]; }).length;
+  var vocabRow = function (v) {
+    var hidden = cover.covered && !cover.shown[v.id];
+    return React.createElement("li", { key: v.id, className: "vocab-row" },
+      React.createElement("div", { className: "vocab-word" },
+        React.createElement("div", { className: "vocab-jp" }, word(v)),
+        v.reading !== v.word && !(showFurigana && hasKanji(v.word)) && React.createElement("div", { className: "vocab-reading" }, v.reading)),
+      React.createElement("button", {
+        className: "vocab-gloss" + (hidden ? " covered" : ""),
+        onClick: function () { setCover({ covered: cover.covered, shown: Object.assign({}, cover.shown, { [v.id]: true }) }); },
+        disabled: !hidden,
+        'aria-label': hidden ? t('tap_reveal', lv) : glossText(v)
+      }, hidden ? React.createElement("span", { className: "vocab-tap" }, t('tap_reveal', lv)) : [
+        glossText(v), " ", React.createElement("span", { key: "pos", className: "pos-chip" }, posChip(v.pos))]),
+      React.createElement("button", {
+        className: "speak-btn speak-btn-row", onClick: function () { speak(v.word); },
+        title: "Listen to pronunciation", 'aria-label': "Listen to " + v.word
+      }, "🔊"));
+  };
   var practice = unit.practice || [];
   var last = units.length - 1;
   return React.createElement("div", { className: "day-card" },
@@ -89,20 +129,21 @@ function UnitView(props) {
                 React.createElement("td", null, glossText(v)));
             })))),
         unit.vocab.length > 0 && section(t('section_vocabulary', lv),
-          React.createElement("table", { className: "vocab-table" },
-            React.createElement("thead", null, React.createElement("tr", null,
-              React.createElement("th", null, t('vocab_word', lv)),
-              React.createElement("th", null, t('vocab_meaning', lv)))),
-            React.createElement("tbody", null, unit.vocab.map(function (v) {
-              return React.createElement("tr", { key: v.id },
-                React.createElement("td", null, word(v), React.createElement("button", {
-                  className: "speak-btn",
-                  onClick: function () { speak(v.word); },
-                  title: "Listen to pronunciation",
-                  'aria-label': "Listen to " + v.word
-                }, "🔊")),
-                React.createElement("td", null, glossText(v)));
-            })))),
+          React.createElement("div", { className: "vocab-bar" },
+            React.createElement("span", { className: "vocab-count" }, t('vocab_checked', lv), " ", shownCount, " / ", unit.vocab.length),
+            React.createElement("button", {
+              className: "vocab-btn",
+              onClick: function () { setCover({ covered: !cover.covered, shown: {} }); }
+            }, cover.covered ? t('vocab_reveal_all', lv) : t('vocab_cover_all', lv)),
+            React.createElement("button", {
+              className: "vocab-btn",
+              onClick: function () { speak(unit.vocab.map(function (v) { return v.word; }).join('、')); }
+            }, "🔊 ", t('vocab_listen_all', lv))),
+          vocabGroups.map(function (g) {
+            return React.createElement("div", { key: g.key, className: "vocab-group" },
+              vocabGroups.length > 1 && React.createElement("h4", { className: "vocab-group-label" }, g.label),
+              React.createElement("ul", { className: "vocab-list" }, g.items.map(vocabRow)));
+          })),
         unit.kanji.length > 0 && section(t('section_kanji', lv),
           React.createElement("div", { className: "chars-table" }, unit.kanji.map(function (k) {
             return React.createElement(CharCard, { key: k.id, kanji: k });

@@ -36,6 +36,15 @@ var UI_STRINGS = {
   vocab_word:    { en: 'Word',    ja: 'ことば', since: 'N4' },
   vocab_reading: { en: 'Reading', ja: 'よみ',   since: 'N4'  },
   vocab_meaning: { en: 'Meaning', ja: 'いみ',   since: 'N4' },
+  // Vocabulary cover-and-test (lesson screen)
+  vocab_verbs:      { en: 'Verbs',      ja: 'どうし',     since: 'N4' },
+  vocab_adjectives: { en: 'Adjectives', ja: 'けいようし', since: 'N4' },
+  vocab_nouns:      { en: 'Nouns',      ja: 'めいし',     since: 'N4' },
+  vocab_other:      { en: 'Other',      ja: 'ほか',       since: 'N4' },
+  vocab_checked:    { en: 'Checked',    ja: 'かくにん',   since: 'N4' },
+  vocab_reveal_all: { en: 'Reveal all', ja: 'ぜんぶみる', since: 'N4' },
+  vocab_cover_all:  { en: 'Cover all',  ja: 'かくす',     since: 'N4' },
+  vocab_listen_all: { en: 'Listen to all', ja: 'ぜんぶきく', since: 'N4' },
   // SRS review buttons
   btn_again: { en: 'Again', ja: 'もういちど',  since: 'N4'  },
   btn_hard:  { en: 'Hard',  ja: 'むずかしい', since: 'N4'  },
