@@ -454,6 +454,8 @@ function App() {
     completed: completed,
     unmarkDone: unmarkDone,
     onQuizResult: onQuizResult,
+    sfxOn: sfxOn,
+    setSfxOn: setSfxOn,
     setUnit: setUnitIdx,
     pace: pace,
     doneToday: doneToday,

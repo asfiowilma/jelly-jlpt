@@ -146,6 +146,8 @@ function UnitView(props) {
         unit: unit,
         onResult: props.onQuizResult,
         passed: isDone,
+        sfxOn: props.sfxOn,
+        setSfxOn: props.setSfxOn,
         onNextStage: unit.index < last ? function () { setUnit(unit.index + 1); } : null
       }))),
     // Bottom bar: one action that follows the stage state. Skip only navigates; a stage is done

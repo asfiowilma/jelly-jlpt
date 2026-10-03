@@ -76,6 +76,8 @@ function Exercises(_ref9) {
     onFinish = _ref9.onFinish,
     onResult = _ref9.onResult,
     onNextStage = _ref9.onNextStage,
+    sfxOn = _ref9.sfxOn,
+    setSfxOn = _ref9.setSfxOn, // same pref as Settings; omitted = no mute button
     passed = _ref9.passed, // the stage is already done: the entry card offers a retake
     build = _ref9.build || buildExercises;
   var lv = unit.level;
@@ -282,6 +284,10 @@ function Exercises(_ref9) {
       h("div", { className: "qz-meta" },
         ex && ex.requeue && h("span", { className: "qz-again" }, "Again · not scored"),
         h("span", null, label),
+        setSfxOn && h("button", {
+          className: "qz-snd", 'aria-pressed': !sfxOn, 'aria-label': sfxOn ? "Mute sounds" : "Unmute sounds",
+          onClick: function () { setSfxOn(!sfxOn); if (!sfxOn) playSfx('correct'); }
+        }, icon(sfxOn ? 'speaker' : 'speakerOff')),
         deadline && !done && h("span", { className: "qz-timer" + (clockLeft < 60 ? " low" : ""), role: "timer", 'aria-label': "Time left" }, icon('clock'), clock(clockLeft))));
   };
   var leaveDialog = leaving && h("div", { className: "qz-scrim" },

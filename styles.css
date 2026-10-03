@@ -619,6 +619,9 @@ body.quiz-open{overflow:hidden}
 .qz-seg.bad{background:var(--bad)}
 .qz-seg.now{background:color-mix(in srgb,var(--accent) 55%,var(--surface2))}
 .qz-meta{display:flex;align-items:center;gap:10px;font-size:0.85rem;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.qz-snd{width:36px;height:36px;border:0;border-radius:8px;background:transparent;color:var(--muted);display:grid;place-items:center}
+.qz-snd:hover{background:var(--surface2);color:var(--text)}
+.qz-snd svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .qz-timer{display:inline-flex;align-items:center;gap:4px;color:var(--text);font-weight:600}
 .qz-timer.low{color:var(--bad)}
 .qz-timer svg{width:16px;height:16px}
