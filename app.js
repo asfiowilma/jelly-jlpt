@@ -423,7 +423,7 @@ function App() {
       className: "pill"
     }, dueCount, /*#__PURE__*/React.createElement("span", {
       className: "sr-only"
-    }, " due")));
+    }, " due")), tab.view === 'achievements' && view !== 'achievements' && achievementBadge() > 0 && React.createElement("span", { className: "pill" }, achievementBadge()));
   })
   ),
   streak > 0 && /*#__PURE__*/React.createElement("span", {

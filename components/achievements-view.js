@@ -3,11 +3,7 @@
 // Achievements screen (ticket 09): every achievement as a stamp, grouped by category,
 // unearned greyed, hidden ones "???", progress counters, unlock date.
 //
-// THE SEAM with the achievement engine (ticket 08): everything this screen needs comes
-// from achievementsData(). It expects
-//   ACHIEVEMENTS         global array of { id, name, desc, category, rarity, hidden, revealed, level }
-//   achievementUnlocks() global function returning { [id]: unlockedAtMs }
-// TODO(08): both are defined by the engine; until it merges the screen shows its empty state.
+// Reads ACHIEVEMENTS (lib.js) and achievementUnlocks() (store.js): { [id]: unlockedAtMs }.
 function achievementsData() {
   return {
     defs: typeof ACHIEVEMENTS !== 'undefined' ? ACHIEVEMENTS : [],

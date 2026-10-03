@@ -846,6 +846,7 @@ body.quiz-open{overflow:hidden}
 @keyframes toast-shimmer{to{background-position:-250% 0}}
 @media(max-width:639px){.toast-stack{right:8px;left:8px;max-width:none;bottom:calc(64px + env(safe-area-inset-bottom))}}
 @media(prefers-reduced-motion:reduce){.toast,.toast-legendary{animation:none}}
+
 /* Achievements screen + stamps (components/stamp.js). Ink is per stamp, never the palette:
    two precomputed inks (--ink-d / --ink-l) and the theme picks one. */
 .stamp{--ink:var(--ink-d);--stamp-gold:oklch(0.82 0.13 85);color:var(--ink);display:block;width:100%;height:auto;overflow:visible}

@@ -294,25 +294,25 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
   test("React render: AchievementsView() renders empty and with the fixture list", function (a) {
     try {
       AchievementsView({ level: "N5" });
-      AchievementsView({ level: "N5", defs: ACHIEVEMENTS_FIXTURE, unlocks: {} });
+      AchievementsView({ level: "N5", defs: ACHIEVEMENTS, unlocks: {} });
       Stamp({ id: "first-steps", category: "progress", rarity: "common", earned: true, name: "x" });
       a.ok(true);
     } catch (e) { a.ok(false, e.message); }
   });
 
   test("achievements: groupAchievements counts, orders categories, keeps hidden", function (a) {
-    var g = groupAchievements(ACHIEVEMENTS_FIXTURE, { "first-steps": 1700000000000, comeback: 1700000001000 });
+    var g = groupAchievements(ACHIEVEMENTS, { "first-steps": 1700000000000, comeback: 1700000001000 });
     a.equal(g.total, 64); a.equal(g.earned, 2);
     a.deepEqual(g.groups.map(function (x) { return x.category; }), ["progress", "habit", "quiz", "mock", "review", "mastery"]);
     a.equal(g.groups.reduce(function (n, x) { return n + x.total; }, 0), 64);
     a.equal(g.groups[0].earned, 1);
-    a.equal(ACHIEVEMENTS_FIXTURE.filter(function (d) { return d.hidden; }).length, 7);
-    a.ok(ACHIEVEMENTS_FIXTURE.filter(function (d) { return d.hidden; }).every(function (d) { return d.revealed; }), "hidden rows carry revealed text");
+    a.equal(ACHIEVEMENTS.filter(function (d) { return d.hidden; }).length, 7);
+    a.ok(ACHIEVEMENTS.filter(function (d) { return d.hidden; }).every(function (d) { return d.revealed; }), "hidden rows carry revealed text");
   });
 
   test("stamp icons: one glyph per achievement id", function (a) {
-    ACHIEVEMENTS_FIXTURE.forEach(function (d) { a.ok(STAMP_ICONS[d.id], d.id + " has an icon"); });
-    a.equal(Object.keys(STAMP_ICONS).length, ACHIEVEMENTS_FIXTURE.length);
+    ACHIEVEMENTS.forEach(function (d) { a.ok(STAMP_ICONS[d.id], d.id + " has an icon"); });
+    a.equal(Object.keys(STAMP_ICONS).length, ACHIEVEMENTS.length);
   });
 
   test("stamp ink: category hue fixed, tier steps L/C, level steps hue, light lowers L only", function (a) {
