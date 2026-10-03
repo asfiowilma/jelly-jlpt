@@ -98,6 +98,18 @@ QUnit.module('buildExercises', {
     assert.ok(kya.some(function (x) { return x.char.charAt(0) === 'き' || x.char.charAt(0) === 'ぎ'; }), 'きゃ → きゅ/きょ/ぎゃ…');
   });
 
+  QUnit.test('N5 lessons teaching a conjugation form ask for that form of one of their verbs', function (assert) {
+    ['g:te-form', 'g:nai-form', 'g:ta-form'].forEach(function (gid) {
+      var u = buildUnits(PLAN, CATALOG).filter(function (x) {
+        return x.kind === 'lesson' && x.grammar.some(function (g) { return g.id === gid; });
+      })[0];
+      var ex = buildExercises(Object.assign({}, u, { quiz: { cap: 99 } })).filter(function (e) { return e.type === 'conjugation'; })[0];
+      assert.ok(ex && ex.targetForm === CATALOG.items[gid].conjForm, gid + ' → ' + (ex && ex.targetForm));
+      var v = ex && u.vocab.filter(function (x) { return ex.question.indexOf(x.word) === 0; })[0];
+      assert.ok(v && checkTyping(conjugate(v.word, v.reading, ex.targetForm, v.pos).kana, ex.answers), gid + ': answer for ' + (v && v.word));
+    });
+  });
+
   QUnit.test('every shipped unit builds a quiz', function (assert) {
     buildUnits(PLAN, CATALOG).forEach(function (u) {
       assert.ok(buildExercises(u).length > 0, u.id);

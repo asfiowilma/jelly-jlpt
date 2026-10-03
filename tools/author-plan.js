@@ -13,13 +13,16 @@
 //      its new kana + 2–5 practice words: N5 vocab shown in kana and readable with only
 //      the kana learned so far (checked by tests/catalog-checks.js). Practice words are
 //      reading drills, not taught: each one is taught later in a lesson unit.
-//   2. Lessons: grammar in a Genki / Minna no Nihongo order (です → particles → ます verbs
-//      → adjectives → existence → wants and comparisons → て-form family → ない-forms →
-//      dictionary / た-form patterns → plain-form patterns), vocab chosen by topic to fit
-//      each unit's grammar. A review unit after every 6 lessons.
+//   2. Lessons: grammar in a Genki / Minna no Nihongo order (です → particles → ます verbs,
+//      verb groups, でした, ません, ました → adjectives → existence → wants and comparisons →
+//      て-form, then its family → ない-form, then its patterns → dictionary-form patterns →
+//      た-form, then its patterns → plain-form patterns), vocab chosen by topic to fit each
+//      unit's grammar. Each conjugation form (ticket 36) comes before every pattern built on
+//      it, and the て / ない / た-form lessons have verbs in their vocab (their quiz asks for
+//      that form). A review unit after every 6 lessons.
 //   Load per lesson (map Q13): ~8 vocab / ~2 kanji / 1 grammar, ±25% (tests enforce 6–10
-//   vocab, ≤3 kanji, ≤2 grammar). 59 grammar points over more lessons than that means some
-//   lessons are vocabulary-only (numbers, counters, dates…): grammar: ''.
+//   vocab, ≤3 kanji, ≤2 grammar). 67 grammar points over 74 lessons means some lessons are
+//   vocabulary-only (counting, dates…): grammar: ''.
 //   3. Kanji: placed by this script. A kanji is taught in the first lesson at or after the
 //      lesson that teaches a word written with it, at most 2 per lesson, kanji whose word
 //      is in the current lesson first.
@@ -86,29 +89,29 @@ const LESSONS = [
   ["This one, that one", "g:ja-nai", "これ それ あれ どれ この その あの どの 違う"],
   ["My family", "g:mo", "家族 父 母 兄 姉 弟 妹 両親 兄弟 家庭"],
   ["Someone else's family", "g:ne", "お父さん お母さん お兄さん お姉さん おじいさん おばあさん 伯父さん 伯母さん 奥さん 方"],
-  // places; ます verbs and their particles (Genki 2-4, Minna 3-6)
+  // places; ます verbs, verb groups, でした / ません / ました, and the verb particles (Genki 2-4, Minna 3-6)
   ["Where is it?", "g:yo", "ここ そこ あそこ どこ こちら そちら あちら どちら トイレ お手洗い"],
   ["Which way? When? How many?", "", "こっち そっち あっち どっち いつ いくつ 先 側"],
-  ["Eating and drinking", "g:wo", "食べる 飲む 水 お茶 パン 牛乳 コーヒー 紅茶 食べ物 飲み物"],
+  ["Eating and drinking", "g:masu", "食べる 飲む 水 お茶 パン 牛乳 コーヒー 紅茶 食べ物 飲み物"],
   ["Going and coming home", "g:ni-ikimasu", "行く|いく 来る 帰る 学校 会社 大学 駅 家|いえ うち アパート"],
-  ["Numbers 0 to 6", "", "ゼロ 零 一|いち 二|に 三 四|し 四|よん 五 六", "一 二 三"],
-  ["Numbers 7 to 10,000", "", "七|しち 七|なな 八 九|きゅう 九|く 十|じゅう 百 千 万", "七 八 九"],
+  ["Numbers 0 to 6", "g:verb-groups-dict", "ゼロ 零 一|いち 二|に 三 四|し 四|よん 五 六", "一 二 三"],
+  ["Numbers 7 to 10,000", "g:deshita", "七|しち 七|なな 八 九|きゅう 九|く 十|じゅう 百 千 万", "七 八 九"],
   ["What time is it?", "g:ni", "時|じ 分 半 今 午前 午後 起きる 寝る 毎日 ごろ", "時 午 前"],
-  ["Days of the week", "g:made", "月曜日 火曜日 水曜日 木曜日 金曜日 土曜日 日曜日 休み 働く カレンダー", "月 火 木"],
+  ["Days of the week", "g:masen", "月曜日 火曜日 水曜日 木曜日 金曜日 土曜日 日曜日 休み 働く カレンダー", "月 火 木"],
   ["Dates: the 1st to the 10th", "", "一日|ついたち 二日 三日 四日 五日 六日 七日 八日 九日 十日", "四 五 六"],
-  ["At the library", "g:de", "図書館 読む 書く 見る 聞く 勉強 昨日 今日 明日 字引", "読 書 見"],
-  ["With friends", "g:to", "友達 一緒 一人 二人 バス 電車 地下鉄 タクシー 自転車 歩く"],
+  ["At the library", "g:wo", "図書館 読む 書く 見る 聞く 勉強 昨日 今日 明日 字引", "読 書 見"],
+  ["With friends", "g:de", "友達 一緒 一人 二人 バス 電車 地下鉄 タクシー 自転車 歩く"],
   ["Going out together", "g:masen-ka", "映画 映画館 喫茶店 レストラン 公園 散歩 遊ぶ 会う パーティー ちょっと"],
   ["This week, next week", "g:mashou", "来週 先週 今週 毎週 来月 先月 今月 毎月 旅行 ちょうど", "毎 金 土"],
-  ["How long? Days, weeks, months", "", "二十日 日|にち 月|がつ か月 週間 一月|ひとつき 時間 一日|いちにち 中|じゅう 中|ちゅう"],
+  ["How long? Days, weeks, months", "g:made", "二十日 日|にち 月|がつ か月 週間 一月|ひとつき 時間 一日|いちにち 中|じゅう 中|ちゅう"],
   ["Morning and night", "g:itsumo", "いつも よく 時々 あまり 毎朝 毎晩 朝 晩 夜 今晩"],
-  ["Earlier and later", "", "今朝 昨夜 昼 時|とき 後|あと 次 初め 初めて すぎ すぐに"],
+  ["Earlier and later", "g:mashita", "今朝 昨夜 昼 時|とき 後|あと 次 初め 初めて すぎ すぐに"],
   // existence and adjectives (Genki 4-5, Minna 8-10)
   ["In my room", "g:ga-arimasu", "ある ない 部屋 机 いす ベッド 窓 ドア テレビ 本棚"],
   ["Above, below, inside", "g:ga-imasu", "居る 上 下 中|なか 前 後ろ 隣 犬 猫 動物"],
-  ["Around the house", "g:ya", "台所 玄関 庭 お風呂 冷蔵庫 テーブル 廊下 階段 戸 箱"],
+  ["Around the house", "g:to", "台所 玄関 庭 お風呂 冷蔵庫 テーブル 廊下 階段 戸 箱"],
   ["Big and small", "g:adj-i", "大きい 小さい 新しい 古い 高い 安い いい 悪い おもしろい つまらない"],
-  ["Colours", "", "色 赤 青 黄色 黒 白 茶色 緑 同じ"],
+  ["Colours", "g:ya", "色 赤 青 黄色 黒 白 茶色 緑 同じ"],
   ["Quiet, famous, convenient", "g:adj-na", "きれい 静か 賑やか 有名 便利 元気 暇 大丈夫 大切 丈夫"],
   ["Thick, thin, wide, narrow", "", "厚い 薄い 狭い 広い りっぱ 煩い かわいい いろいろ よい 冷たい"],
   ["The weather", "g:totemo", "とても 少し 暑い 寒い 暖かい 涼しい 天気 雨|あめ 雪 差す"],
@@ -121,21 +124,21 @@ const LESSONS = [
   ["Town and buildings", "", "町 村 建物 所 入口 出口 門 プール エレベーター"],
   ["Faster, nearer: comparing", "g:hou-ga-yori", "より ほう 多い 少ない 速い 遅い 早い 近い 遠い 飛行機"],
   ["Seasons and favourite foods", "g:naka-de-ichiban", "いちばん 春 夏 秋 冬 果物 野菜 肉 魚 たくさん"],
-  // て-form family (Genki 6-7, Minna 14-16)
-  ["In the classroom", "g:te-kudasai", "ください 開ける 閉める 待つ 言う 答える 質問 もう一度 ゆっくりと 教室"],
-  ["Lending a hand", "g:mashou-ka", "持つ 荷物 重い 軽い 取る|とる 貸す 借りる 返す 置く 渡す"],
+  // て-form, then its family (Genki 6-7, Minna 14-16); ない-form before ないでください
+  ["In the classroom", "g:te-form", "ください 開ける 閉める 待つ 言う 答える 質問 もう一度 ゆっくりと 教室"],
+  ["Lending a hand", "g:te-kudasai", "持つ 荷物 重い 軽い 取る|とる 貸す 借りる 返す 置く 渡す"],
   ["On the phone", "g:te-iru", "電話 かける もしもし 話す 歌う 弾く ギター ラジオ 番号"],
   ["May I?", "g:te-mo-ii", "入る 座る 立つ 使う 撮る 吸う たばこ 灰皿 マッチ カメラ"],
   ["Rules and warnings", "g:te-wa-ikemasen", "危ない 走る 押す 引く 消す つける 開く 閉まる 止まる 電気"],
   ["Morning routine", "g:te-kara", "洗う 磨く 歯 顔 シャワー あびる 朝御飯 着る 出かける"],
   ["Homework and classes", "g:mou", "もう 宿題 終る 始まる 授業 作文 テスト 問題 練習 文章"],
-  ["Learning Japanese", "g:mada", "まだ 漢字 平仮名 片仮名 言葉 意味 覚える 忘れる 教える 習う"],
-  ["Cooking dinner", "g:mada-te-imasen", "晩御飯 昼御飯 御飯 料理 作る お弁当 夕飯 切る 入れる"],
-  ["Setting the table", "", "ちゃわん はし カップ コップ ナイフ フォーク お皿 スプーン 花瓶"],
+  ["Learning Japanese", "g:nai-form", "まだ 漢字 平仮名 片仮名 言葉 意味 覚える 忘れる 教える 習う"],
+  ["Cooking dinner", "g:mada", "晩御飯 昼御飯 御飯 料理 作る お弁当 夕飯 切る 入れる"],
+  ["Setting the table", "g:mada-te-imasen", "ちゃわん はし カップ コップ ナイフ フォーク お皿 スプーン 花瓶"],
   // ない-forms (Genki 8, 12; Minna 17)
   ["At the doctor's", "g:nai-de-kudasai", "医者 病院 頭 おなか 目 耳 鼻 口 手 足"],
   ["The bank and the post office", "g:nakute-wa-ikenai", "銀行 郵便局 手紙 葉書 切手 封筒 出す 仕事 ポスト"],
-  ["Paper, pens and pockets", "", "紙 ページ 万年筆 コピーする 貼る ハンカチ ポケット ボタン たて"],
+  ["Paper, pens and pockets", "g:mashou-ka", "紙 ページ 万年筆 コピーする 貼る ハンカチ ポケット ボタン たて"],
   ["Asking the way", "g:nakute-wa-naranai", "道 角 右 左 まっすぐ 曲る 渡る 橋 地図 交差点"],
   ["North, south, east, west", "", "東 西 南 北 外 向こう 横 近く そば 辺"],
   ["Housework", "g:nakucha-ikenai", "洗濯 掃除 する やる かぎ せっけん 汚い 物 ストーブ 並べる"],
@@ -143,9 +146,9 @@ const LESSONS = [
   ["Hobbies", "g:no-ga-suki", "絵 新聞 雑誌 ニュース レコード テープ テープレコーダー ラジカセ フィルム 話"],
   ["Body and build", "g:no-ga-jouzu", "体 背|せ 強い 弱い 低い 長い 短い 太い 細い 若い"],
   ["Drawing and singing", "g:no-ga-heta", "声 大きな 小さな 赤い 青い 黄色い 黒い 白い 丸い"],
-  ["Clothes", "", "服 洋服 シャツ ワイシャツ セーター コート 上着 スカート ズボン 背広"],
-  ["Putting on and taking off", "g:mae-ni", "靴 靴下 はく 脱ぐ かぶる 帽子 眼鏡 ネクタイ 締める スリッパ"],
-  // た-form (Genki 9-11, Minna 19)
+  ["Clothes", "g:mae-ni", "服 洋服 シャツ ワイシャツ セーター コート 上着 スカート ズボン 背広"],
+  ["Putting on and taking off", "g:ta-form", "靴 靴下 はく 脱ぐ かぶる 帽子 眼鏡 ネクタイ 締める スリッパ"],
+  // た-form, then its patterns (Genki 9-11, Minna 19)
   ["Travelling abroad", "g:ta-koto-ga-aru", "ホテル 大使館 留学生 切符 乗る 降りる 着く 飛ぶ 車 自動車"],
   ["Spring in the park", "g:tari-tari", "花 咲く 池 木 空 鳥 鳴く ペット 晴れ 晴れる"],
   ["Changing weather", "g:naru", "なる 曇り 曇る 降る 吹く 風|かぜ 明るい 暗い 夕方 だんだん"],

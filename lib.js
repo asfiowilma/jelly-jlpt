@@ -533,9 +533,12 @@ function buildExercises(unit) {
   // ponytail: no reading-comprehension exercise until passages are catalog
   // items (spec §1 `passage`); the renderer (typing + ex.passage) stays.
 
-  // Conjugation (N3+): verbs by item pos, else the old "to …" gloss heuristic
-  if (rank >= 2) {
-    var form = CONJ_FORMS[(unit.index || 0) % CONJ_FORMS.length];
+  // Conjugation: verbs by item pos, else the old "to …" gloss heuristic. N3+ cycles
+  // through the forms; below that, only a unit teaching a form point (grammar conjForm,
+  // e.g. g:te-form) asks for that form.
+  var conjPoint = (unit.grammar || []).filter(function (g) { return g && g.conjForm; })[0];
+  if (rank >= 2 || conjPoint) {
+    var form = conjPoint ? conjPoint.conjForm : CONJ_FORMS[(unit.index || 0) % CONJ_FORMS.length];
     var vConj = rndShuffle(vocabItems.filter(function (v) {
       var g = glossText(v);
       var isVerb = v.pos ? /^verb/.test(v.pos) : /^to /i.test(g) && !/passive|potential|causative/i.test(g);

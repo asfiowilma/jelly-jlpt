@@ -24,7 +24,40 @@ Ticket 14. The content lives in `data/n5/grammar.js` and `data/n5/sentences.js`.
 5. **`uses`** lists only grammar ids, the ones the sentence is an example for. `vocabHints` holds N5 vocab as `tools/ref/n5.json` keys (`word|reading`), ready to link once `vocab.js` has them. For Tatoeba sentences they come from Tatoeba's word index (B-lines), kept only when the word actually appears in the sentence (the index also lists implied words). For own sentences they were written by hand.
 6. Sentences stay `verified: false`: each has only one source.
 
-Counts: 59 grammar points, 178 sentences (145 Tatoeba, 33 own).
+Counts: 67 grammar points (59 + 8 conjugation forms), 204 sentences (168 Tatoeba, 36 own).
+
+## Conjugation forms (ticket 36)
+
+Tanos lists patterns, not forms, so the list-driven catalog had no ます or て-form even though most N5 patterns are built on them. Eight form items were added, each with `offList: 'conjugation form — not a Tanos pattern'` and no `ref`:
+
+| id | covers | sources |
+|---|---|---|
+| `g:masu` | 〜ます, the ます-stem | Genki I ch.3 present tense + basic verb conjugation; Bunpro `polite-verb-endings` |
+| `g:masen` | 〜ません | Genki I ch.3 basic verb conjugation; Bunpro う-verb / る-verb negative |
+| `g:mashita` | 〜ました and 〜ませんでした (Genki teaches them together; ませんでした = ません + でした) | Genki I ch.4 past tense; Bunpro う-verb past / negative-past |
+| `g:deshita` | でした / だった / じゃなかった(です) / じゃありませんでした | Genki I ch.4 past tense + ch.9 short form (past); Bunpro だった・でした |
+| `g:verb-groups-dict` | る-verbs / う-verbs / する・来る, dictionary form, the る-ending godan exceptions | Genki I ch.3 basic verb conjugation; Bunpro る-Verb / う-Verb (Dictionary), Verbs (Non-past) |
+| `g:te-form` | て-form rules by ending, 行って | Genki I ch.6 te-form; Bunpro Verb + て |
+| `g:nai-form` | ない-form (う → わない, こない, ある → ない), なかった | Genki I ch.8 short forms; Bunpro う-verb / る-verb negative |
+| `g:ta-form` | た-form from the て-form | Genki I ch.9 short form (past); Bunpro う-verb / る-verb past |
+
+- One item per form the learner has to produce, capped at 8 items: ませんでした shares `g:mashita`, and the plain past negative なかった sits in `g:nai-form`. です and じゃない stay in `g:wa-desu` / `g:ja-nai`; `g:ja-nai`'s notes now point to `g:deshita` for the past.
+- Every URL was opened and checked: the page is marked N5 (Bunpro) or sits in Genki I, and says what our notes say. Bunpro has no single page for ます / ません / ました, so the per-group pages are cited.
+- `conjForm` on て / ない / た-form tells `buildExercises` to ask for that form (via `conjugate()` and the verb's `pos`) in a unit teaching it. ます forms aren't quizzed that way: `conjugate()` has no ます form.
+- Plan (`tools/author-plan.js`): every form comes before the patterns built on it: ます (lesson 9) → verb groups (11) → でした (12) → ません (14) → ませんか (18), ましょう (19) → ました (22); て-form (39) → てください (40) … てから (44); ない-form (46) → ないでください (49); た-form (59) → たことがある (60), たり (61), ほうがいい (68). No lessons were added: the 8 points went into vocabulary-only lessons, and some particles moved one or two lessons to free a slot (を 9 → 16, で 16 → 17, と 17 → 25, や 25 → 27, まで 14 → 20, てください 39 → 40, ましょうか 40 → 51, まだ 46 → 47, まだ〜ていません 47 → 48, 前に 59 → 58). Lessons 39, 46 and 59 all have verbs in their vocab, so their quizzes can ask for the form. One side effect: を is formally taught in lesson 16, but the ます examples in lesson 9 already use it, which is how Genki ch.3 presents it as well.
+- Examples: 23 Tatoeba (native authors only, picked by hand as above) + 3 own sentences where Tatoeba had nothing clean (ませんでした with 食べる, 行って, しない).
+
+Rejected for the form items:
+
+| id | sentence | why |
+|---|---|---|
+| 152726 | 私は毎日６時に起きる。 | 毎日 is "every day", but both English versions say "every morning" |
+| 10570974 | 先週は雪でした。 | "It snowed last week." is too loose to teach でした |
+| 12047429 | 英語は下手でした。 | the English sentence has no recorded author |
+| 4080013 | 昨日魚を食べました。 | furigana reads 魚 as ぎょ |
+| 1911360 | 今日は来ない。 | non-native author; "I won't come" vs "he won't come" can't be told from the sentence |
+| 627953 | 少年は静かだった。 | 少年 is above N5; 9553709 部屋は静かだった。 used instead |
+| 10496327 | 彼と一緒には行きませんでした。 | the contrastive には is hard to see at this level |
 
 ## Rejected Tatoeba candidates
 

@@ -1,7 +1,8 @@
 "use strict";
 
 // N5 grammar (ticket 14): the 40 Tanos N5 points (`ref` = their Tanos names, tools/ref/n5.json)
-// plus 20 JLPT Sensei N5 names that a 2nd source also puts at N5 (`offList`, that source in `sources`).
+// plus 20 JLPT Sensei N5 names that a 2nd source also puts at N5 (`offList`, that source in `sources`),
+// plus 8 conjugation forms (ticket 36, `offList`) that the patterns are built on.
 // Meanings and notes are our own words; the linked pages only confirm them (map Q18).
 // Method + sources: tools/n5-grammar-notes.md. Examples live in sentences.js.
 (function () {
@@ -235,7 +236,7 @@ CATALOG.add([
     sources: ['jlptsensei', GENKI + 'frequency-adverbs-genki-i-chapter-3/'], verified: true },
   { id: 'g:ja-nai', kind: 'grammar', level: 'N5', pattern: '〜じゃない/〜ではない/〜じゃありません/〜ではありません', meaning: 'is not ~ (negative of です)',
     formation: 'N / な-adj + じゃありません (casual じゃない)',
-    notes: 'じゃ is the spoken form of では. Polite: じゃありません / ではありません (or じゃないです); casual: じゃない. い-adjectives do not use it: 高くない, not 高いじゃない.',
+    notes: 'じゃ is the spoken form of では. Polite: じゃありません / ではありません (or じゃないです); casual: じゃない. The past, じゃなかった(です), is taught with でした (g:deshita). い-adjectives do not use it: 高くない, not 高いじゃない.',
     examples: ['s:tatoeba:9958554', 's:tatoeba:8587365', 's:tatoeba:10276739'], offList: 'not on Tanos N5; Bunpro + Genki I ch.2 list it at N5',
     sources: ['jlptsensei', BUNPRO + '%E3%81%98%E3%82%83%E3%81%AA%E3%81%84', GENKI + 'noun-ja-arimasen-genki-i-chapter-2/'], verified: true },
   { id: 'g:ka', kind: 'grammar', level: 'N5', pattern: '〜か', meaning: 'turns a sentence into a question',
@@ -307,6 +308,50 @@ CATALOG.add([
     formation: 'Sentence + よ',
     notes: 'Tells the listener something you think they don\'t know, or stresses a point. Too many よ can sound pushy; ね (g:ne) seeks agreement instead.',
     examples: ['s:tatoeba:81564', 's:tatoeba:189557', 's:tatoeba:9496179'], offList: 'not on Tanos N5; Bunpro + Genki I ch.2 list よ at N5',
-    sources: ['jlptsensei', BUNPRO + '%E3%82%88', GENKI + 'particles-ne-yo-genki-i-chapter-2/'], verified: true }
+    sources: ['jlptsensei', BUNPRO + '%E3%82%88', GENKI + 'particles-ne-yo-genki-i-chapter-2/'], verified: true },
+
+  // ── Conjugation forms (ticket 36): not patterns, so not on Tanos, but every N5 pattern
+  // above is built on them. Checked against St. Olaf's Genki I index + Bunpro (both N5).
+  // conjForm: the conjugate() form a unit teaching it can quiz (lib.js buildExercises).
+  { id: 'g:masu', kind: 'grammar', level: 'N5', pattern: '〜ます', meaning: 'polite non-past: do / will do',
+    formation: 'V-ます stem + ます (食べる → 食べます, 飲む → 飲みます, する → します, 来る → 来ます)',
+    notes: 'The polite way to end a verb sentence. It covers habits ("I drink coffee") and the future ("I will go"), but not "am doing" (that is 〜ている). The ます-stem: る-verbs drop る (食べ); う-verbs change their last u-sound to i (飲む → 飲み, 帰る → 帰り); する → し, 来る → き. 〜ませんか, 〜ましょう and 〜たい all attach to this stem.',
+    examples: ['s:tatoeba:5070656', 's:tatoeba:10953992', 's:tatoeba:113471'], offList: 'conjugation form — not a Tanos pattern',
+    sources: [GENKI + 'present-tense-genki-i-chapter-3/', GENKI + 'basic-verb-conjugation-genki-i-chapter-3/', BUNPRO + 'polite-verb-endings'], verified: true },
+  { id: 'g:masen', kind: 'grammar', level: 'N5', pattern: '〜ません', meaning: "polite negative: don't / won't",
+    formation: 'V-ます stem + ません (飲みません, 食べません, しません, 来ません)',
+    notes: 'Swap ます for ません. The same form means "I don\'t (as a habit)" and "I won\'t". Words like 何も "nothing" and あまり "not much" need it: 何も食べません. The negative of あります is ありません.',
+    examples: ['s:tatoeba:10547019', 's:tatoeba:159402', 's:tatoeba:122162'], offList: 'conjugation form — not a Tanos pattern',
+    sources: [GENKI + 'basic-verb-conjugation-genki-i-chapter-3/', BUNPRO + '%E3%81%86verb--%E3%81%AA%E3%81%84', BUNPRO + '%E3%82%8Bverb-%E3%81%AA%E3%81%84'], verified: true },
+  { id: 'g:mashita', kind: 'grammar', level: 'N5', pattern: '〜ました/〜ませんでした', meaning: "polite past: did / didn't",
+    formation: 'V-ます stem + ました / V-ます stem + ませんでした',
+    notes: 'ました is the past of ます: 見ました "watched". ませんでした (ません + でした) is the past negative: 来ませんでした "didn\'t come". Japanese verbs have only two tenses, past and non-past; the future uses 〜ます.',
+    examples: ['s:tatoeba:5221', 's:tatoeba:156763', 's:tatoeba:11005158', 's:own:n5-masen-deshita'], offList: 'conjugation form — not a Tanos pattern',
+    sources: [GENKI + 'past-tense-genki-i-chapter-4/', BUNPRO + '%E3%81%86-verb-past', BUNPRO + '%E3%81%86-verb-neg-past'], verified: true },
+  { id: 'g:deshita', kind: 'grammar', level: 'N5', pattern: '〜でした/〜だった/〜じゃなかった(です)', meaning: 'was / was not (past of です and だ)',
+    formation: 'N / な-adj + でした (casual だった); negative N / な-adj + じゃなかったです・じゃありませんでした (casual じゃなかった)',
+    notes: 'The past of です is でした: 昨日は日曜日でした; casual speech uses だった. Negative: じゃありませんでした or じゃなかったです (polite), じゃなかった (casual); ではありませんでした is the formal written version. い-adjectives never take でした: 寒かったです, not 寒いでした (g:adj-i).',
+    examples: ['s:tatoeba:169953', 's:tatoeba:8576106', 's:tatoeba:9553709', 's:tatoeba:12508549'], offList: 'conjugation form — not a Tanos pattern',
+    sources: [GENKI + 'past-tense-genki-i-chapter-4/', GENKI + 'short-form-past-genki-i-chapter-9/', BUNPRO + '%E3%81%A0%E3%81%A3%E3%81%9F-%E3%81%A7%E3%81%97%E3%81%9F'], verified: true },
+  { id: 'g:verb-groups-dict', kind: 'grammar', level: 'N5', pattern: 'V-る / V-う (dictionary form)', meaning: 'the three verb groups, and the dictionary (plain non-past) form',
+    formation: 'る-verbs (ichidan): end in -iる / -eる (見る, 食べる); う-verbs (godan): end in any u-sound (飲む, 行く, 買う, 帰る); irregular: する, 来る (くる)',
+    notes: 'The dictionary form is the one you look up, and also the casual "do / will do": 毎晩11時に寝る. Every other form depends on the group. A verb ending in -iる or -eる is usually a る-verb, but some are う-verbs and must be learned one by one: 帰る, 入る, 走る, 知る, 切る. Only する and 来る are irregular. 〜前に, 〜つもり and 〜のが好き take the dictionary form.',
+    examples: ['s:tatoeba:152684', 's:tatoeba:157179', 's:tatoeba:6037220'], offList: 'conjugation form — not a Tanos pattern',
+    sources: [GENKI + 'basic-verb-conjugation-genki-i-chapter-3/', BUNPRO + '%E3%82%8B-Verbs', BUNPRO + '%E3%81%86-Verbs', BUNPRO + 'verb-non-past'], verified: true },
+  { id: 'g:te-form', kind: 'grammar', level: 'N5', pattern: '〜て/〜で (て-form)', meaning: 'the て-form: "do ~ and (then) …"; the base of many patterns',
+    formation: 'る-verbs: る → て (食べて); う-verbs: う・つ・る → って (買って, 待って, 帰って), む・ぶ・ぬ → んで (読んで, 遊んで, 死んで), く → いて (書いて), ぐ → いで (泳いで), す → して (話して); 行く → 行って; する → して, 来る → 来て (きて)',
+    notes: 'On its own it links actions in order: 本を借りて、読みました "borrowed a book and read it". The tense goes on the last verb only. 行く is the one exception among く-verbs: 行って, not 行いて. 〜てください, 〜ている, 〜てもいい, 〜てはいけません and 〜てから are all built on it.',
+    examples: ['s:tatoeba:10899855', 's:tatoeba:11003183', 's:own:n5-te-form-itte'], offList: 'conjugation form — not a Tanos pattern', conjForm: 'て-form',
+    sources: [GENKI + 'te-form-genki-i-chapter-6/', BUNPRO + 'verb-%E3%81%A6'], verified: true },
+  { id: 'g:nai-form', kind: 'grammar', level: 'N5', pattern: '〜ない (ない-form)', meaning: "plain negative: don't / won't (casual)",
+    formation: 'る-verbs: る → ない (食べない); う-verbs: last u-sound → a-sound + ない (読まない, 行かない), but う → わない (買わない); する → しない, 来る → こない; ある → ない',
+    notes: 'The casual partner of 〜ません. ない conjugates like an い-adjective: past 〜なかった (行かなかった "didn\'t go"), polite 〜ないです. 〜ないでください and 〜なくてはいけない start from this form.',
+    examples: ['s:tatoeba:8556042', 's:tatoeba:114844', 's:own:n5-nai-form-shinai'], offList: 'conjugation form — not a Tanos pattern', conjForm: 'ない-form',
+    sources: [GENKI + 'short-forms-genki-i-chapter-8/', BUNPRO + '%E3%81%86verb--%E3%81%AA%E3%81%84', BUNPRO + '%E3%82%8Bverb-%E3%81%AA%E3%81%84'], verified: true },
+  { id: 'g:ta-form', kind: 'grammar', level: 'N5', pattern: '〜た/〜だ (た-form)', meaning: 'plain past: did (casual)',
+    formation: 'Make the て-form, then て → た, で → だ: 食べた, 読んだ, 書いた, 行った, した, 来た (きた)',
+    notes: 'The casual partner of 〜ました: 昨日動物園に行った. 〜たことがある, 〜たり〜たりする and 〜たほうがいい are built on it. The plain past negative is 〜なかった (g:nai-form).',
+    examples: ['s:tatoeba:5217', 's:tatoeba:172298', 's:tatoeba:169603'], offList: 'conjugation form — not a Tanos pattern', conjForm: 'た-form',
+    sources: [GENKI + 'short-form-past-genki-i-chapter-9/', BUNPRO + '%E3%81%86-verb-past', BUNPRO + '%E3%82%8B-verb-past'], verified: true }
 ]);
 })();
