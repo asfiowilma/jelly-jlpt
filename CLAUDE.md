@@ -1,200 +1,214 @@
-# CLAUDE.md — jlpt-n5
+# CLAUDE.md — jelly-jlpt
 
 ## Project overview
 
-A free, self-contained, zero-dependency interactive Japanese course from zero to JLPT N1 in 1,720 days (N5 + N4 + N3 + N2 + N1 complete).
-Everything runs in the browser with no build step and no installation required.
+A free, browser-only Japanese course aimed at passing the JLPT. It started as a fork of
+alanfwilliams/jlpt but is now a separate project: upstream is no longer synced and the
+content is being rebuilt level by level from reference datasets.
+
+- **N5** is built: kana from zero (hiragana, katakana), then vocab, kanji and grammar lessons
+  with review units. N5 is not released yet (needs the difficulty model, test prep, import, README).
+- **N4–N1** show as "Coming soon" in the Overview until each level is rebuilt.
+- Content is organised in **units** (`kana`, `lesson`, `review`; `prep`, `mock` reserved).
+  "Day" is not a unit. The learner picks a **pace** (units per calendar day: 0.5 / 1 / 2 / 3)
+  that only drives targets and projections. Nothing is locked; every unit is open.
+
+No build step, no npm, no bundler, no ES modules. Every file is a classic `<script src>`
+that defines top-level globals. React 18 and PouchDB 9 come from cdnjs.
 
 ## Repository structure
 
 ```
-jlpt-n5/
-├── index.html              # Shell: head, CSP, <script src> load order, <div id="root">
-├── styles.css              # All app CSS (extracted from index.html's old inline <style>)
-├── curriculum/             # Lesson data, one file per phase (00 = shared constants)
-│   ├── 00-constants.js     #   var curriculum = []; + PHASE_COLORS/PHASE_BG/PHASE_NAMES
-│   ├── 01-hiragana.js      #   each later file: curriculum.push({...}) per day, in order
-│   ├── 02-katakana.js
-│   ├── ...
-│   └── 32-n1-test-prep.js
-├── lib.js                  # Pure utility functions: SM-2, card helpers, exercises
-├── app-helpers.js          # t()/translation strings, localStorage load/save, TTS, stroke-order fetch
-├── components/             # One React component per file (plain React.createElement, no JSX)
-│   ├── review-view.js
-│   ├── typing-tip.js
-│   ├── char-card.js
-│   ├── exercises.js
-│   ├── day-view.js
-│   ├── review-mode.js
-│   └── overview.js
-├── app.js                  # App component + ErrorBoundary + ReactDOM.createRoot(...).render(...)
-├── tests.html              # QUnit browser test suite (open directly, no server)
-├── tests/                  # One file per QUnit module, loaded by tests.html via <script src>
-│   ├── sm2-update.js
-│   ├── check-typing.js
-│   └── ... (19 files total, see Tests below)
-├── README.md               # User-facing documentation
-└── .nojekyll               # Disables Jekyll processing for GitHub Pages
+index.html            CSP, <script src> list in load order, <div id="root">
+styles.css            all app CSS (palettes + light/dark themes)
+data/
+  catalog.js          CATALOG { items, add } + PLAN = [] + CATALOG_ID_PREFIX
+  n5/                 one file per item kind + plan.js
+    kana.js vocab.js kanji.js grammar.js sentences.js plan.js
+lib.js                pure logic (no DOM): units, conjugation, distractors, exercises,
+                      SRS, store doc shapes + merge, stats, pace, export/import
+store.js              Store: PouchDB persistence + optional CouchDB sync
+app-helpers.js        t() progressive UI strings, TTS, icons, stroke-order SVG fetch
+sfx.js                quiz/achievement sounds from sfx/ (Kenney, CC0)
+components/           one React component per file, React.createElement, no JSX
+  char-card.js exercises.js unit-view.js review-mode.js
+  overview.js stats-view.js settings-view.js
+app.js                App: builds UNITS from PLAN + CATALOG, awaits Store.init(), mounts
+kanji-svg/            KanjiVG stroke-order SVGs (<hex codepoint>.svg), CC BY-SA 3.0
+tools/                zero-dep Node authoring scripts + checks (dev only, outputs committed)
+  ref/n5.json         reference list: which vocab/kanji/grammar belong to N5
+tests/                QUnit modules, one file per area
+tests.html            browser QUnit runner
+.claude/hooks/        run-tests.js (headless runner), pre-commit.sh, session-start.sh
+legacy/curriculum/    old day-based upstream content. Not loaded; salvage quarry only
+docs/adr/             architecture decision records
+docs/agents/          issue-tracker and domain-doc conventions for agents
 ```
 
-No bundler, no ES modules — every file above is a plain classic `<script src>` that
-defines top-level `var`/`function` globals. **Load order is load-bearing** and is
-not inferred automatically; it's spelled out in a comment at the top of
-`index.html`'s `<body>` (curriculum/ → lib.js → app-helpers.js → components/*.js,
-any order → app.js last, since app.js is what actually calls `ReactDOM.render`).
+## Architecture
 
-`curriculum/*.js` and `lib.js` are loaded by both `index.html` (app) and `tests.html`
-(test suite), making the pure functions testable without a build step. The headless
-runner (`.claude/hooks/run-tests.js`) loads every file in `curriculum/` by reading
-the directory (sorted), so a new phase file just needs to exist there — no path to
-update. It also loads `app-helpers.js` + `components/*.js` + `app.js` in the same
-order as `index.html` to exercise the React render smoke tests.
+### Load order (load-bearing, nothing resolves it for you)
 
-Adding a feature that's self-contained in its own component: add one file under
-`components/`, add its `<script src>` tag to `index.html` (and to the `appFiles`
-list in `.claude/hooks/run-tests.js` if it should be smoke-tested), done — no other
-file needs touching.
+`data/catalog.js` → `data/<level>/*.js` → `lib.js` → `store.js` → `app-helpers.js` →
+`sfx.js` → `components/*.js` (any order) → `app.js` last. The comment at the top of
+`index.html`'s `<body>` is the reference.
+
+Adding a file means adding its `<script src>` by hand:
+
+| New file | index.html | tests.html | run-tests.js |
+|---|---|---|---|
+| `data/<lvl>/*.js` | add tag | add tag | automatic (reads `data/` sorted) |
+| `components/*.js` | add tag | — | add to `appFiles` |
+| `tests/*.js` | — | add tag | automatic (reads `tests/` sorted) |
+
+### Catalog + plan
+
+- **Catalog** (`data/<lvl>/<kind>.js`, each calling `CATALOG.add([...])`): every teachable
+  item exactly once, with a content-keyed, stable id.
+
+  | Kind | Id |
+  |---|---|
+  | kana | `c:<kana>` |
+  | vocab | `v:<word>\|<reading>` |
+  | kanji | `k:<char>` |
+  | grammar | `g:<slug>` |
+  | sentence | `s:tatoeba:<n>` or `s:own:<slug>` |
+
+  Items carry `level`, `sources`, `verified`. Vocab has `pos` (drives conjugation).
+  A duplicate spelling carries `alt: <id of the spelling the plan teaches>`.
+- **Plan** (`data/<lvl>/plan.js`, `PLAN.push({ level, units: [...] })`): ordered units that
+  reference item ids (`kana`, `vocab`, `kanji`, `grammar`, `practice`). Unit ids
+  (`n5.u001`…) are opaque; once a level ships, never reuse or renumber them.
+- `lib.js` joins them: `validatePlan(PLAN, CATALOG)` checks every reference resolves,
+  `buildUnits` resolves items and gives a review unit the items of the units since the
+  previous review. `app.js` does this once at load into `UNITS`.
+
+### Persistence (store.js)
+
+PouchDB database `jelly` (IndexedDB), in-memory fallback when PouchDB is missing (Node tests,
+blocked IndexedDB). Reads come from a synchronous memory mirror; writes go through an async
+queue. Doc shapes are documented in `lib.js` above `STORE_ID_RE`:
+
+| Doc id | Body |
+|---|---|
+| `unit:<unitId>` | `{ done, completedAt }` |
+| `card:<itemId>` | SM-2 card (`interval`, `ease`, `due`, `reps`, `lastReviewedAt`…). Same item = same card wherever it appears |
+| `prefs:learning` | `{ currentUnit, pace, examDate, furigana, uiLang }` (defaults: `PREFS_DEFAULTS`) |
+| `log:<YYYY-MM-DD>:<deviceId>` | daily activity log, written only by its own device |
+
+Every doc also gets `updatedAt` and `deviceId`. Conflicts merge through `mergeStoreDocs`.
+Device-only prefs (palette, theme, TTS rate, sfx mute) stay in localStorage
+(`DEVICE_PREF_KEYS`) and never sync. There is no migration from the old day-keyed data.
+
+### Main lib.js functions
+
+| Area | Functions |
+|---|---|
+| Units | `validatePlan`, `buildUnits`, `nextUnit`, `levelRamp`, `taughtIds` |
+| Quiz | `buildExercises(unit)`, `checkTyping`, `exerciseCap(level)` |
+| Distractors | `pickDistractors` (+ `DISTRACTOR_RULES`), `kanaDistractors`, `readingFakes` |
+| Grammar | `conjugate(dict, reading, form, pos)` (rule-based, by `pos`) |
+| SRS | `srsAddCards(unit, cards)`, `srsReview(card, quality)`, `srsDueCards` |
+| Pace | `PACE_MODES`, `todayTarget`, `projectFinish`, `suggestPace`, `newCardCap` (not enforced yet) |
+| Store | `docsToSnapshot`, `mergeStoreDocs`, `exportProgress`, `validateProgressData` |
+| Stats | `srsStats`, `dueForecast`, `computeStreak`, `retention`, `studyHeatmap` |
+| Display | `furiganaHTML`, `furiganaOn(stored, level)` |
+
+UI strings (`t(key, level)` in `app-helpers.js`) switch from English to Japanese
+progressively by level; the `uiLang` pref overrides.
+
+## Content pipeline
+
+| Step | Tool |
+|---|---|
+| Reference list per level (list membership only) | `node tools/build-ref.js <research/data dir> N5` → `tools/ref/n5.json` |
+| Vocab | `node tools/author-vocab.js <jisho-cache dir> [--fetch]` → `data/n5/vocab.js`, from `tools/ref` + `tools/n5-vocab-overrides.json`, JMdict cross-check via Jisho |
+| Kanji | `node tools/author-kanji.js <wiktionary-cache dir> [--fetch]` → `data/n5/kanji.js`, from `tools/ref` + `tools/n5-kanji-overrides.json`, checked against KANJIDIC + Wiktionary |
+| Grammar + sentences | hand-authored in `data/n5/grammar.js` / `sentences.js`; method in `tools/n5-grammar-notes.md` |
+| Kana | hand-authored table in `data/n5/kana.js` |
+| Plan | `node tools/author-plan.js` → `data/n5/plan.js`, from the outline inside the script |
+| Coverage report | `node tools/coverage.js` (catalog vs ref list, taught vs not, verified counts) |
+
+Generated files (`vocab.js`, `kanji.js`, `plan.js`) say "do not edit by hand": change the
+overrides JSON or the plan outline and rerun the script. The research inputs and fetch caches
+live in `.scratch/content-audit/research/data/` (gitignored); see each script's header for
+exact inputs.
+
+Catalog checks (`tests/catalog-checks.js`, `tests/catalog-plan.js`) run with the test suite:
+unique ids and id prefixes, required fields per kind, readings well-formed and consistent
+with kanji, `verified:true` needs ≥2 distinct sources (`legacy` doesn't count), sentences
+contain what they `uses`, grammar examples, every plan reference resolves, no item taught
+twice, per-lesson load within the guide (N5: ~8 vocab / ~2 kanji / 1 grammar), no placeholder
+titles, every reference-list item taught, catalog levels match `tools/ref`.
+
+## Content rules
+
+Japanese facts (levels, readings, meanings, grammar) come from research against the sources
+below, never from the project owner. The owner decides technical shape only; don't ask them
+Japanese questions.
+
+1. **Authority order**: jlpt.jp (format, scoring) > Tanos (vocab/kanji/grammar levels) >
+   Jisho/JMdict, KANJIDIC (readings, glosses: authoring-time check only) > Tatoeba
+   (sentences) > JLPT Sensei / Tofugu / NHK Easy (cross-check and links only).
+2. **Verified** = ≥2 independent sources plus the automated checks. Anything less ships as
+   `verified:false` with the reason in `notes`.
+3. **Never copy** text, items or audio from jlpt.jp (official workbooks), JLPT Sensei or NHK
+   News Web Easy. Link out; write original items in the official formats.
+4. **No bulk EDRDG data** (JMdict, KANJIDIC are CC BY-SA): use them to check facts, don't
+   ship their fields or files.
+5. **Explanations in our own words**: glosses, meanings, notes and grammar explanations are
+   written for this project.
+6. **Attribution**: credits live in Settings (`CREDITS` in `components/settings-view.js`).
+   Tanos (CC BY), Tatoeba (CC BY 2.0 FR: every Tatoeba sentence keeps its id, `author`,
+   `license`, and `enId`/`enAuthor`/`enLicense`), KanjiVG (CC BY-SA 3.0; keep the SVGs as
+   separate files), elzup/jlpt-word-list (MIT). Adding a third-party source means adding a
+   credit.
+
+Full source and license notes: `.scratch/content-audit/research/sources.md` and
+`licenses-and-audio.md`.
 
 ## Running the app
 
-Open `index.html` directly in a browser — no server needed.
-
-```bash
-# macOS
-open index.html
-
-# Linux
-xdg-open index.html
-```
-
-## Tech stack
-
-- **React 18** loaded from CDN (`cdnjs.cloudflare.com`) — no npm or bundler
-- **Vanilla CSS** inlined in `<style>` tags
-- **Web Speech API** for text-to-speech (Japanese voice)
-- **localStorage** for progress persistence
-- **No build step, no transpilation, no dependencies to install**
-
-## Linting
-
-HTML can be validated with:
-
-```bash
-npx html-validate index.html
-```
+Open `index.html` in a browser. No server needed.
 
 ## Tests
 
-**Tests must pass before every commit and push.**  The pre-commit hook enforces
-this automatically — any `git commit` or `git push` Bash call is blocked when
-the test suite reports failures.
+**Tests must pass before every commit and push.** `.claude/hooks/pre-commit.sh` (a
+PreToolUse hook) runs the suite on any `git commit` / `git push` Bash call and blocks on
+failure.
 
-### Running tests
-
-**In the browser (full suite):**
-```
-open tests.html        # macOS
-xdg-open tests.html    # Linux
-```
-
-**Headlessly via Node.js (CI / hooks):**
 ```bash
-node .claude/hooks/run-tests.js
+node .claude/hooks/run-tests.js     # headless, exit 0 = pass
 ```
 
-### Test coverage — 20 modules
+`run-tests.js` loads the same scripts as `index.html` into a Node `vm` with stubbed
+browser APIs and React, sets `REF` from `tools/ref/*.json`, runs every `tests/*.js` through
+a minimal QUnit shim, then runs inline Node-only checks (React render smoke tests,
+`safeSave`, `sanitizeSvg`, stroke-order fetch).
 
-| Module | What is tested |
-|---|---|
-| `sm2Update` | All interval branches, EF formula, 1.3 clamp, due-date, no mutation |
-| `checkTyping` | Exact, case, whitespace, `/` and `,` alternatives, multi-answer |
-| `cardId` | ID string format |
-| `addDayCards` | Card creation, initial values, no-overwrite guard |
-| `getDueCards` | Past/future filtering, returns ID strings |
-| `cardToItem` | Vocab/char field resolution, null reading, OOB → null |
-| `rndShuffle` | Length, elements, no mutation, new reference |
-| `buildExercises` | ≤5 cap, empty lesson, MC bounds, typing answers |
-| `srsReview` | Quality→grade mapping, EF clamp, no mutation, new object |
-| `srsAddCards` | Embedded card data, no-overwrite, bool return value |
-| `srsDueCards` | Returns objects not IDs, due/not-due filtering |
-| **Curriculum integrity** | 1,720 sequential days, required fields, type validity, vocab/chars structure, phase/week ranges, N5/N4/N3/N2/N1 boundary checks |
-| **Phase constants** | PHASE_COLORS, PHASE_BG, PHASE_NAMES defined and correct for all 32 active phases |
-| **furiganaHTML** | Ruby tag generation, hiragana passthrough, null/empty reading handling |
-| **dayToLevel** | Correct N5/N4/N3/N2/N1 mapping for boundary days |
-| **exerciseCap** | Returns 5/7/9 for N5+N4/N3/N2+N1 respectively |
-| **buildExercises (N3+ types)** | fill_blank, conjugation, pair_match; N2: synonym, kanji_reading; cap enforced |
-| **passage rendering** | All reading-type days have text_jp and text_en |
-| **React render** | index.html inline script executes, App/DayView/Overview/ReviewMode render without error |
+`tests.html` runs the same QUnit modules in a browser (open it directly). From `file://` it
+can't read JSON, so the reference-list level check is headless-only.
 
-## Curriculum structure
-
-| Days      | Phase | Name                                               |
-|-----------|-------|----------------------------------------------------|
-| 1–14      | 1     | Hiragana (46 characters)                           |
-| 15–28     | 2     | Katakana (46 characters)                           |
-| 29–84     | 3     | Foundations (numbers, particles, basic sentences)  |
-| 85–140    | 4     | Vocabulary (~200 N5 words)                         |
-| 141–182   | 5     | Verbs (て-form, ます-form, conjugation)            |
-| 183–252   | 6     | Grammar Patterns (particles, conditionals, keigo)  |
-| 253–308   | 7     | Kanji (~100 N5 kanji)                              |
-| 309–365   | 8     | Test Prep (N5 review & JLPT prep)                  |
-| 366–395   | 9     | N5 Review (bridge to N4)                           |
-| 396–455   | 10    | N4 Vocabulary (~300 words)                         |
-| 456–500   | 11    | N4 Verbs                                           |
-| 501–555   | 12    | N4 Grammar Patterns                                |
-| 556–620   | 13    | N4 Kanji (~175 kanji)                              |
-| 621–660   | 14    | N4 Test Prep                                       |
-| 661–690   | 15    | N4 Review (bridge to N3)                           |
-| 691–770   | 16    | N3 Vocabulary (~1,500 words)                       |
-| 771–820   | 17    | N3 Verbs & Adjectives                              |
-| 821–895   | 18    | N3 Grammar Patterns (~120 patterns)                |
-| 896–930   | 19    | N3 Kanji (~170 kanji)                              |
-| 931–960   | 20    | N3 Test Prep                                       |
-| 961–990   | 21    | N3 Review (bridge to N2)                           |
-| 991–1090  | 22    | N2 Vocabulary (~3,000 words)                       |
-| 1091–1140 | 23    | N2 Verbs & Expressions                             |
-| 1141–1230 | 24    | N2 Grammar Patterns (~180 patterns)                |
-| 1231–1275 | 25    | N2 Kanji (~200 kanji)                              |
-| 1276–1320 | 26    | N2 Test Prep                                       |
-| 1321–1350 | 27    | N2 Review (bridge to N1)                           |
-| 1351–1470 | 28    | N1 Vocabulary (~4,000 words)                       |
-| 1471–1530 | 29    | N1 Verbs & Expressions                             |
-| 1531–1640 | 30    | N1 Grammar (~220 patterns)                         |
-| 1641–1690 | 31    | N1 Kanji (~300 kanji)                              |
-| 1691–1720 | 32    | N1 Test Prep                                       |
-
-## Key implementation notes
-
-- All 1,720 day definitions live in `curriculum.js` — the first 365 as a JSON array literal, days 366–1,720 appended via `curriculum.push()` calls
-- Two SM-2 implementations exist side-by-side: `sm2Update` (older, used by `ReviewView`) and `srsReview` (newer, used by `ReviewMode` + `App`). Both use `ease`/`ef` for the same concept.
-- Quiz state, SRS card data, and completed-day flags are stored in `localStorage`
-- The lesson view, overview calendar, and review flashcard deck are separate React components in `index.html`
-- TTS is triggered via `window.speechSynthesis` using `lang: 'ja-JP'`
-- Pure utility functions (`sm2Update`, `checkTyping`, `cardId`, `buildExercises`, etc.) live in `lib.js` and are tested headlessly by `.claude/hooks/run-tests.js`
-
-## Browser compatibility
-
-| Browser       | Lessons | TTS          | Speech recognition |
-|---------------|---------|--------------|--------------------|
-| Chrome / Edge | Yes     | Yes          | Yes                |
-| Safari        | Yes     | Yes          | Yes                |
-| Firefox       | Yes     | Limited      | No                 |
-
-## Deployment
-
-Hosted on GitHub Pages — push to `main`, enable Pages from repo Settings (branch: main, root `/`).
-Live URL pattern: `https://<username>.github.io/jlpt-n5`
+**Worktree gotcha:** `run-tests.js` and the hooks resolve the project root from
+`CLAUDE_PROJECT_DIR` when it is set. In a git worktree that variable can point at the main
+checkout, so the hook tests main's files, not yours. Run the suite against the worktree
+explicitly: `CLAUDE_PROJECT_DIR=$(pwd) node .claude/hooks/run-tests.js`.
 
 ## Commit convention
 
-Commits follow [gitmoji](https://gitmoji.dev/): `<emoji> [scope?]: <imperative message>`, body only when the why isn't obvious. One emoji per commit. Common ones: ✨ feature, 🐛 fix, ♻️ refactor, 📝 docs, ✅ tests, 🔧 config, 🚑️ hotfix, 💥 breaking change.
+[gitmoji](https://gitmoji.dev/): `<emoji> [scope?]: <imperative message>`, body only when the
+why isn't obvious. One emoji per commit. Common: ✨ feature, 🐛 fix, ♻️ refactor, 📝 docs,
+✅ tests, 🔧 config, 🍱 assets/data, 🚑️ hotfix, 💥 breaking change.
 
 ## Agent skills
 
 ### Issue tracker
 
-Issues and specs are tracked as local markdown files under `.scratch/<feature-slug>/`, one file per ticket. See `docs/agents/issue-tracker.md`.
+Issues and specs are local markdown files under `.scratch/<feature-slug>/` (gitignored), one
+file per ticket. See `docs/agents/issue-tracker.md`. The content rebuild lives in
+`.scratch/content-audit/` (`map.md` decisions, `spec.md`, `issues/`).
 
 ### Domain docs
 
-Single-context — `CONTEXT.md` + `docs/adr/` at the repo root, read lazily when they exist. See `docs/agents/domain.md`.
+Single-context: `CONTEXT.md` + `docs/adr/` at the repo root, read lazily when they exist.
+See `docs/agents/domain.md`.

@@ -19,7 +19,7 @@ If any of these files don't exist, **proceed silently**. Don't flag their absenc
 ├── docs/adr/
 │   ├── 0001-....md
 │   └── 0002-....md
-└── (index.html, curriculum/, lib.js, app-helpers.js, components/, app.js, tests.html)
+└── (index.html, data/, lib.js, store.js, app-helpers.js, components/, app.js, tools/, tests.html)
 ```
 
 ## Use the glossary's vocabulary
