@@ -737,6 +737,99 @@ function activityTotals(logs) {
   return t;
 }
 
+// ── Stats view (SRS + activity) ─────────────────────────────────────────────
+// Maturity stages by interval (Anki cutoffs): new = never reviewed, learning
+// < 7 days, young 7–20, mature ≥ 21. A lapsed card (reps reset to 0) has a
+// lastReviewedAt, so it counts as learning, not new.
+var SRS_STAGES = ['new', 'learning', 'young', 'mature'];
+var SRS_TYPES = ['kana', 'vocab', 'kanji', 'grammar'];
+function cardStage(c) {
+  if (!c.reps && !c.lastReviewedAt) return 0;
+  return c.interval < 7 ? 1 : c.interval < 21 ? 2 : 3;
+}
+// srsStats(cards) → { total, new, learning, young, mature, byType: { kana, vocab,
+// kanji, grammar: [new, learning, young, mature] } }.
+function srsStats(cards) {
+  var s = { total: 0, 'new': 0, learning: 0, young: 0, mature: 0, byType: {} };
+  SRS_TYPES.forEach(function (ty) { s.byType[ty] = [0, 0, 0, 0]; });
+  Object.keys(cards).forEach(function (id) {
+    var c = cards[id], st = cardStage(c);
+    s.total++;
+    s[SRS_STAGES[st]]++;
+    (s.byType[c.type] || (s.byType[c.type] = [0, 0, 0, 0]))[st]++;
+  });
+  return s;
+}
+// dayStart(now, offset): ms of local midnight `offset` days after now's date.
+// Built from calendar fields, so DST days (23/25 h) stay one calendar day.
+function dayStart(now, offset) {
+  var d = new Date(now);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + (offset || 0)).getTime();
+}
+// dueForecast(cards, now, days) → { overdue: due before today's local midnight,
+// perDay: [days] cards due on each local day from today (today includes cards
+// due earlier today and later today) }. Cards due after the window are left out.
+function dueForecast(cards, now, days) {
+  days = days || 14;
+  var bounds = [];
+  for (var i = 0; i <= days; i++) bounds.push(dayStart(now, i));
+  var out = { overdue: 0, perDay: bounds.slice(1).map(function () { return 0; }) };
+  Object.keys(cards).forEach(function (id) {
+    var due = cards[id].due;
+    if (due < bounds[0]) { out.overdue++; return; }
+    for (var j = 0; j < days; j++) if (due < bounds[j + 1]) { out.perDay[j]++; return; }
+  });
+  return out;
+}
+// reviewTotals(agg, from, to): summed reviews over day indexes [from, to].
+function reviewTotals(agg, from, to) {
+  var r = { reviews: 0, again: 0 };
+  Object.keys(agg).forEach(function (date) {
+    var n = dateToDayIndex(date);
+    if (n < from || n > to) return;
+    r.reviews += agg[date].reviews.count;
+    r.again += agg[date].reviews.again;
+  });
+  return r;
+}
+// retention(logs, today, days) → { rate: 1 − again ÷ reviews over the last
+// `days` days ending today ('YYYY-MM-DD'), or null with no reviews; reviews; again }.
+function retention(logs, today, days) {
+  var t = dateToDayIndex(today);
+  var r = reviewTotals(aggregateLogs(logs), t - (days || 30) + 1, t);
+  return { rate: r.reviews ? 1 - r.again / r.reviews : null, reviews: r.reviews, again: r.again };
+}
+// weeklyRetention(logs, today, weeks) → [weeks] rates, oldest first; each a
+// 7-day window, the last one ending today. null for a week with no reviews.
+function weeklyRetention(logs, today, weeks) {
+  weeks = weeks || 12;
+  var agg = aggregateLogs(logs), t = dateToDayIndex(today), out = [];
+  for (var w = weeks - 1; w >= 0; w--) {
+    var r = reviewTotals(agg, t - w * 7 - 6, t - w * 7);
+    out.push(r.reviews ? 1 - r.again / r.reviews : null);
+  }
+  return out;
+}
+// studyHeatmap(logs, today, weeks) → weeks×7 cells, column-major (Sun..Sat per
+// week), starting the Sunday `weeks - 1` weeks before today's week:
+// { date, reviews, lessons, level 0–4, future }. Activity = reviews + 20 per
+// unit finished. ponytail: fixed level cutoffs (30/55/80) from the sketch;
+// switch to per-user quantiles if they feel wrong for light or heavy users.
+function studyHeatmap(logs, today, weeks) {
+  weeks = weeks || 52;
+  var agg = aggregateLogs(logs), p = today.split('-');
+  var t = new Date(+p[0], p[1] - 1, +p[2]);
+  var cells = [];
+  for (var i = 0; i < weeks * 7; i++) {
+    var date = localDate(new Date(t.getFullYear(), t.getMonth(), t.getDate() - t.getDay() - (weeks - 1) * 7 + i));
+    var a = agg[date], reviews = a ? a.reviews.count : 0, lessons = a ? a.lessons.length : 0;
+    var act = reviews + lessons * 20;
+    cells.push({ date: date, reviews: reviews, lessons: lessons, future: date > today,
+      level: !act ? 0 : act < 30 ? 1 : act < 55 ? 2 : act < 80 ? 3 : 4 });
+  }
+  return cells;
+}
+
 function stripDocMeta(doc) {
   var out = {};
   Object.keys(doc).forEach(function (k) {

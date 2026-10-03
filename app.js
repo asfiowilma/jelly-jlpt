@@ -7,7 +7,8 @@ var UNITS = PLAN_CHECK.valid ? buildUnits(PLAN, CATALOG) : [];
 
 var NAV_TABS = [
   { view: 'unit', label: 'view_today', icon: 'today' },
-  { view: 'overview', label: 'view_overview', icon: 'overview' },
+  { view: 'units', label: 'view_units', icon: 'units' },
+  { view: 'stats', label: 'view_stats', icon: 'stats' },
   { view: 'review', label: 'view_review', icon: 'review' }
 ];
 
@@ -297,7 +298,7 @@ function App() {
     className: "sync-dot sync-" + Store.syncInfo.status,
     'aria-hidden': "true"
   }))), /*#__PURE__*/React.createElement("main", {
-    className: "main"
+    className: view === 'units' || view === 'stats' ? "main wide" : "main"
   }, view === 'settings' ? /*#__PURE__*/React.createElement(SettingsView, {
     themePrefs: themePrefs,
     setThemePrefs: setThemePrefs,
@@ -331,7 +332,10 @@ function App() {
       setSrsCards(updated);
       Store.putCards(updated);
     }
-  }) : view === 'overview' ? /*#__PURE__*/React.createElement(Overview, {
+  }) : view === 'stats' ? React.createElement(StatsView, {
+    cards: srsCards,
+    onReview: function () { setView('review'); }
+  }) : view === 'units' ? /*#__PURE__*/React.createElement(Overview, {
     units: UNITS,
     completed: completed,
     current: unit.index,

@@ -13,7 +13,9 @@ var UI_STRINGS = {
   unit_label:     { en: 'Unit',     ja: 'ユニット',   since: 'N4' },
   // Navbar tabs: kanji labels, `rt` = furigana shown via tRuby() while the pref is on
   view_today:     { en: 'Today',    ja: '今日', rt: 'きょう',     since: 'N4'   },
-  view_overview:  { en: 'Overview', ja: '一覧', rt: 'いちらん',   since: 'N1' },
+  // Units/Stats words aren't taught as lesson vocabulary → switch with N1 (like Settings)
+  view_units:     { en: 'Units',    ja: '単元', rt: 'たんげん',   since: 'N1' },
+  view_stats:     { en: 'Stats',    ja: '統計', rt: 'とうけい',   since: 'N1' },
   view_review:    { en: 'Review',   ja: '復習', rt: 'ふくしゅう', since: 'N4'   },
   // Day status
   mark_complete:   { en: '✓ Mark Complete',   ja: '✓ かんりょう！', since: 'N4' },
@@ -165,7 +167,8 @@ function tRuby(key, level, furigana) {
 // Stroke icons from the navbar sketch; styled by .tab svg / .icon-btn svg.
 var ICONS = {
   today: [['path', { d: 'M4 19V6a2 2 0 0 1 2-2h12v15H6a2 2 0 0 0-2 2z' }], ['path', { d: 'M8 8h6' }]],
-  overview: [['rect', { x: 4, y: 4, width: 7, height: 7, rx: 1.5 }], ['rect', { x: 13, y: 4, width: 7, height: 7, rx: 1.5 }], ['rect', { x: 4, y: 13, width: 7, height: 7, rx: 1.5 }], ['rect', { x: 13, y: 13, width: 7, height: 7, rx: 1.5 }]],
+  units: [['rect', { x: 4, y: 4, width: 7, height: 7, rx: 1.5 }], ['rect', { x: 13, y: 4, width: 7, height: 7, rx: 1.5 }], ['rect', { x: 4, y: 13, width: 7, height: 7, rx: 1.5 }], ['rect', { x: 13, y: 13, width: 7, height: 7, rx: 1.5 }]],
+  stats: [['path', { d: 'M4 20h16' }], ['path', { d: 'M7 16v-5' }], ['path', { d: 'M12 16V6' }], ['path', { d: 'M17 16v-8' }]],
   review: [['rect', { x: 3, y: 7, width: 14, height: 12, rx: 2 }], ['path', { d: 'M7 4h12a2 2 0 0 1 2 2v10' }]],
   gear: [['circle', { cx: 12, cy: 12, r: 3 }], ['path', { d: 'M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z' }]]
 };

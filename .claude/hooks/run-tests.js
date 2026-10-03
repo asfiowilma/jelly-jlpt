@@ -61,6 +61,7 @@ var appFiles = [
   path.join("components", "unit-view.js"),
   path.join("components", "review-mode.js"),
   path.join("components", "overview.js"),
+  path.join("components", "stats-view.js"),
   path.join("components", "settings-view.js"),
   "app.js",
 ];
@@ -207,6 +208,22 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       Overview({ units: units, completed: new Set([units[0].id]), current: units.length - 1, suggested: 1, setUnit: noop });
       a.ok(true);
     } catch (e) { a.ok(false, e.message); }
+  });
+
+  test("React render: StatsView() renders empty and with a reviewed deck + logs", function (a) {
+    var origLogs = Store.logs;
+    try {
+      StatsView({ cards: {}, onReview: noop });
+      var cards = {}, now = Date.now(), day = 86400000;
+      units.slice(0, 3).forEach(function (u) { srsAddCards(u, cards); });
+      Object.keys(cards).forEach(function (id, i) {
+        cards[id] = Object.assign({}, cards[id], { interval: [1, 3, 9, 30][i % 4], reps: i % 5, lastReviewedAt: i % 5 ? now - day : 0, due: now + ((i % 9) - 3) * day });
+      });
+      Store.logs = function () { return [{ _id: 'log:' + localDate() + ':d1', date: localDate(), lessons: ['n5.u001'], quizzes: [], reviews: { count: 12, again: 2 } }]; };
+      StatsView({ cards: cards, onReview: noop });
+      a.ok(true);
+    } catch (e) { a.ok(false, e.message); }
+    finally { Store.logs = origLogs; }
   });
 
   test("React render: ReviewMode() renders empty and with due item cards", function (a) {
