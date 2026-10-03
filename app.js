@@ -345,7 +345,7 @@ function App() {
   }, storageError && /*#__PURE__*/React.createElement("div", {
     className: "storage-warning",
     role: "alert"
-  }, Store.backend === 'memory' ? "\u26a0\ufe0f Progress can't be saved in this browser \u2014 it lasts only until you close this tab. Export before closing. " : "\u26a0\ufe0f Unable to save progress \u2014 storage may be full or disabled. ", /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("span", { className: "storage-warning-msg" }, jelly('oops', 28), Store.backend === 'memory' ? "\u26a0\ufe0f Progress can't be saved in this browser \u2014 it lasts only until you close this tab. Export before closing. " : "\u26a0\ufe0f Unable to save progress \u2014 storage may be full or disabled. "), /*#__PURE__*/React.createElement("button", {
     onClick: function() { setStorageError(false); },
     className: "storage-warning-dismiss"
   }, "Dismiss")), /*#__PURE__*/React.createElement("header", {

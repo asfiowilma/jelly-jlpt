@@ -327,10 +327,10 @@ function Exercises(_ref9) {
           h("svg", { viewBox: "0 0 140 140", 'aria-hidden': "true" },
             h("circle", { className: "t", cx: 70, cy: 70, r: 60 }),
             h("circle", { className: "v " + (s.passed ? 'pass' : 'fail'), cx: 70, cy: 70, r: 60, strokeDasharray: (QZ_RING * pct / 100) + " " + QZ_RING })),
-          h("b", null, s.right, " / ", s.total)),
+          h("span", { className: "qz-jelly" }, jelly(s.passed ? 'cheer' : 'oops', 84))),
         h("div", null,
           h("h3", { className: "qz-verdict " + (s.passed ? 'pass' : 'fail'), role: "status" }, s.passed ? "Passed — stage complete" : "Not passed yet"),
-          h("p", null, pct, "% · pass mark ", needPct, s.passed ? "." : ". Retake with new questions."),
+          h("p", null, s.right, " / ", s.total, " · ", pct, "% · pass mark ", needPct, s.passed ? "." : ". Retake with new questions."),
           timedOut && h("p", { className: "qz-timeup" }, "Time is up: unanswered questions count as wrong."))),
       missed.length > 0 && h("div", { key: "mh", className: "qz-miss-h" }, "Missed (", missed.length, ")"),
       missed.length > 0 && h("ul", { key: "ml", className: "qz-miss" }, shown.map(function (e, i) {

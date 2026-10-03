@@ -23,7 +23,7 @@ function ReviewHub(p) {
     h('div', { className: 'rv-due' },
       h('div', null, h('strong', null, n), h('span', null, n === 1 ? t('rv_card_due', level) : t('rv_cards_due', level))),
       h('button', { className: 'ex-retry-btn', disabled: !n, onClick: function () { p.onStart(filter); } }, t('rv_start', level))),
-    n === 0 && h('div', { className: 'rv-caught' }, t('all_caught_up', level)),
+    n === 0 && h('div', { className: 'rv-caught' }, jelly('sleepy', 64), t('all_caught_up', level)),
     types.length > 0 && h('div', { className: 'rv-chips', role: 'group' },
       chip('all', t('rv_all', level), due.length),
       types.map(function (ty) { return chip(ty, t(labels[ty], level), byType[ty]); })),
@@ -86,7 +86,7 @@ function ReviewMode(_ref1) {
       className: "review-empty"
     }, /*#__PURE__*/React.createElement("div", {
       className: "review-empty-icon"
-    }, "\uD83C\uDF1F"), /*#__PURE__*/React.createElement("div", {
+    }, jelly('cheer', 96)), /*#__PURE__*/React.createElement("div", {
       className: "review-empty-title"
     }, t('session_done', level)), /*#__PURE__*/React.createElement("div", {
       className: "review-empty-sub"

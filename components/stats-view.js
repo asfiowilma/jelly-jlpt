@@ -84,7 +84,7 @@ function StatsView(props) {
   var tableBtn = function (on, set) {
     return ce("button", { key: "tb", type: "button", className: "linkish", 'aria-expanded': on, onClick: function () { set(!on); } }, on ? "Hide table" : "Table");
   };
-  var empty = function (title, text) { return ce("div", { className: "stats-empty" }, ce("b", null, title), text); };
+  var empty = function (title, text) { return ce("div", { className: "stats-empty" }, jelly('hello', 72), ce("b", null, title), text); };
 
   // ── KPIs ──
   var overdue = fc.overdue;
