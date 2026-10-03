@@ -24,7 +24,7 @@ styles.css            all app CSS (palettes + light/dark themes)
 data/
   catalog.js          CATALOG { items, add } + PLAN = [] + CATALOG_ID_PREFIX
   n5/                 one file per item kind + plan.js
-    kana.js vocab.js kanji.js grammar.js sentences.js plan.js
+    kana.js vocab.js kanji.js grammar.js sentences.js mondai.js plan.js
 lib.js                pure logic (no DOM): units, conjugation, distractors, exercises,
                       SRS, store doc shapes + merge, stats, pace, export/import
 store.js              Store: PouchDB persistence + optional CouchDB sync
@@ -72,7 +72,8 @@ Adding a file means adding its `<script src>` by hand:
   | vocab | `v:<word>\|<reading>` |
   | kanji | `k:<char>` |
   | grammar | `g:<slug>` |
-  | sentence | `s:tatoeba:<n>` or `s:own:<slug>` |
+  | sentence | `s:tatoeba:<n>` or `s:own:<slug>` (optional `chunks` for ★ questions) |
+  | mondai | `m:<slug>`: authored exam items (`type` iikae / bunshou), not taught, no SRS card |
 
   Items carry `level`, `sources`, `verified`. Vocab has `pos` (drives conjugation).
   A duplicate spelling carries `alt: <id of the spelling the plan teaches>`.
@@ -106,7 +107,8 @@ Device-only prefs (palette, theme, TTS rate, sfx mute) stay in localStorage
 |---|---|
 | Units | `validatePlan`, `buildUnits`, `nextUnit`, `levelRamp`, `taughtIds` |
 | Quiz | `buildExercises(unit)`, `quizLength`, `passMark`/`quizPassed`, `scoreQuiz`, `pickDistractors`, `checkTyping` |
-| Distractors | `pickDistractors` (+ `DISTRACTOR_RULES`), `kanaDistractors`, `readingFakes` |
+| Distractors | `pickDistractors` (+ `DISTRACTOR_RULES`), `kanaDistractors`, `readingFakes`, `spellingFakes` |
+| Exam formats (N5 mondai) | `MONDAI` table, `mondaiQuestions(type, item, ctx)` (for mocks); in quizzes via `formsFor`: kanjiYomi, hyouki, bunmyaku (vocab), hyouki (kanji), gap, order ★ (grammar); iikae / bunshou authored in `mondai.js` |
 | Grammar | `conjugate(dict, reading, form, pos)` (rule-based, by `pos`) |
 | SRS | `srsAddCards(unit, cards)`, `srsReview(card, quality)`, `srsDueCards`, `srsFlagMissed`, `admitCards` (app.js: `releasePendingCards`, `markUnitsDone`) |
 | Pace | `PACE_MODES`, `todayTarget`, `projectFinish`, `suggestPace`, `newCardCap`, `dailyCardCap` (enforced via pending cards) |
@@ -137,7 +139,8 @@ exact inputs.
 Catalog checks (`tests/catalog-checks.js`, `tests/catalog-plan.js`) run with the test suite:
 unique ids and id prefixes, required fields per kind, readings well-formed and consistent
 with kanji, `verified:true` needs ≥2 distinct sources (`legacy` doesn't count), sentences
-contain what they `uses`, grammar examples, every plan reference resolves, no item taught
+contain what they `uses`, furigana spells jp, ★ chunks spell jp (4 distinct, no cut furigana),
+mondai items (4 distinct options + answer, blanks numbered in order), grammar examples, every plan reference resolves, no item taught
 twice, per-lesson load within the guide (N5: ~8 vocab / ~2 kanji / 1 grammar), no placeholder
 titles, every reference-list item taught, catalog levels match `tools/ref`.
 

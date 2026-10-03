@@ -3,11 +3,12 @@
 // ── Catalog + plan (spec: .scratch/content-audit/spec.md §2-4) ──────────────
 // CATALOG.items: every teachable item exactly once, keyed by its content id
 //   v:<word>|<reading>  k:<char>  g:<slug>  s:own:<slug> / s:tatoeba:<n>  c:<kana>
+//   m:<slug> (authored exam-format item: iikae / bunshou, data/<lvl>/mondai.js)
 // PLAN: one entry per level, { level, units: [...] }, pushed by data/<lvl>/plan.js.
 // Item files (data/<lvl>/<kind>.js) call CATALOG.add([...]). lib.js joins the two
 // (buildUnits); validatePlan checks every reference resolves.
 var PLAN = [];
-var CATALOG_ID_PREFIX = { vocab: 'v:', kanji: 'k:', grammar: 'g:', sentence: 's:', kana: 'c:' };
+var CATALOG_ID_PREFIX = { vocab: 'v:', kanji: 'k:', grammar: 'g:', sentence: 's:', kana: 'c:', mondai: 'm:' };
 var CATALOG = {
   items: {},
   // ponytail: light shape check only (id/kind/prefix/duplicates); per-kind field

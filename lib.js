@@ -485,24 +485,149 @@ function gapSurfaces(g) {
 function gapParts(parts, surface) {
   var text = parts.map(function (p) { return p.t; }).join(''), at = -1, from = 0;
   while ((at = text.indexOf(surface, from)) >= 0 && surface.length === 1 && 'すし'.indexOf(text.charAt(at + 1)) >= 0) from = at + 1;
-  if (at < 0) return null;
-  var end = at + surface.length, pos = 0, out = [], ok = true;
+  return at < 0 ? null : spliceParts(parts, at, at + surface.length, [{ t: GAP_BLANK }]);
+}
+// sliceParts(parts, a, b): the furigana parts covering text offsets [a, b); a ruby
+// block only partly inside loses its ruby.
+function sliceParts(parts, a, b) {
+  var pos = 0, out = [];
   parts.forEach(function (p) {
     var s = pos, e = pos + p.t.length;
     pos = e;
-    if (e <= at || s >= end) return out.push(p);
-    if (p.r && (s < at || e > end)) ok = false; // ruby block cut by the gap
-    if (s < at) out.push({ t: p.t.slice(0, at - s) });
-    if (s <= at) out.push({ t: GAP_BLANK });
-    if (e > end) out.push({ t: p.t.slice(end - s) });
+    if (e <= a || s >= b) return;
+    out.push(p.r && s >= a && e <= b ? p : { t: p.t.slice(Math.max(0, a - s), b - s) });
   });
-  return ok ? out : null;
+  return out;
+}
+function cutsRuby(parts, x) {
+  var pos = 0;
+  return parts.some(function (p) { var s = pos; pos += p.t.length; return !!p.r && s < x && x < pos; });
+}
+// spliceParts(parts, at, end, insert): [at, end) replaced by the parts in insert;
+// null when an edge falls inside a furigana block.
+function spliceParts(parts, at, end, insert) {
+  if (cutsRuby(parts, at) || cutsRuby(parts, end)) return null;
+  return sliceParts(parts, 0, at).concat(insert, sliceParts(parts, end, Infinity));
 }
 // Confusables that fit the same slot with the same meaning: never distractors
 // for each other (two right answers). ponytail: hand list from reviewing every
 // generated N5 gap; extend it when a new level's confusables land.
 var GAP_INTERCHANGEABLE = [['g:kedo', 'g:keredomo', 'g:ga'], ['g:kara', 'g:node'], ['g:ni', 'g:ni-ikimasu', 'g:made'], ['g:to', 'g:ya'],
   ['g:ne', 'g:yo'], ['g:masen-ka', 'g:mashou-ka'], ['g:nakute-wa-ikenai', 'g:nakute-wa-naranai', 'g:nakucha-ikenai']];
+
+// ── Exam-format questions: N5 mondai (ticket 11) ───────────────────────────
+// Question types modelled on the official sections. Unit quizzes reach the item-based
+// ones through formsFor (form name = MONDAI key); mocks assemble sections with
+// mondaiQuestions(type, item, ctx).
+var MONDAI = {
+  kanjiYomi: { section: 'moji-goi', no: 1, name: '漢字読み' },  // underlined kanji word → reading
+  hyouki: { section: 'moji-goi', no: 2, name: '表記' },         // underlined hiragana word → kanji
+  bunmyaku: { section: 'moji-goi', no: 3, name: '文脈規定' },   // word that fits the blank
+  iikae: { section: 'moji-goi', no: 4, name: '言い換え類義' },  // closest sentence (authored, data/n5/mondai.js)
+  gap: { section: 'bunpou', no: 1, name: '文の文法1' },         // grammar that fits the blank
+  order: { section: 'bunpou', no: 2, name: '文の文法2' },       // ★ sentence composition (authored chunks)
+  bunshou: { section: 'bunpou', no: 3, name: '文章の文法' }     // text with blanks (authored)
+};
+var STAR_SLOTS = ['＿＿', '＿＿', '＿＿', '＿＿'];
+
+// sentencesUsing(id): catalog sentences whose `uses` lists the item.
+function sentencesUsing(id) {
+  return catalogOf('sentence').filter(function (s) { return (s.uses || []).indexOf(id) >= 0; });
+}
+// wordSpan(raw, word, reading): { at, end } of word in furigana parts when it occurs
+// exactly once, no furigana block is cut, and the furigana there reads `reading`
+// (so カナダ人 is not 人|ひと). Else null.
+function wordSpan(raw, word, reading) {
+  var text = raw.map(function (p) { return p.t; }).join(''), at = text.indexOf(word);
+  if (at < 0 || text.indexOf(word, at + 1) >= 0) return null;
+  var end = at + word.length, pos = 0, rd = '', ok = true;
+  raw.forEach(function (p) {
+    var s = pos, e = pos + p.t.length;
+    pos = e;
+    if (e <= at || s >= end) return;
+    if (p.r && (s < at || e > end)) ok = false;
+    rd += p.r || p.t.slice(Math.max(0, at - s), end - s);
+  });
+  return ok && kataToHira(rd) === kataToHira(reading) ? { at: at, end: end } : null;
+}
+// allKanjiTaught(word, taughtKanji): every kanji in word has been taught.
+function allKanjiTaught(w, taughtKanji) {
+  return Array.from(w).every(function (ch) { return !hasKanji(ch) || taughtKanji[ch]; });
+}
+// spellingFakes(v): wrong kanji spellings of a vocab word for 表記 — one kanji swapped
+// for a real kanji with a shared on-reading (校 → 高 交) or a look-alike (KANJI_LOOKALIKES),
+// then, only if that gives fewer than 3, one of the same set (KANJI_GROUPS: 山 → 川).
+// Shuffled within each tier. Never a spelling any catalog word with the same reading uses.
+function spellingFakes(v) {
+  var real = catalogOf('vocab').filter(function (x) { return kataToHira(x.reading) === kataToHira(v.reading); }).map(function (x) { return x.word; });
+  var on = function (k) { return k ? (k.on || []).concat((k.extra || []).filter(function (r) { return /^[ァ-ヶ]/.test(r); })) : []; };
+  var setsWith = function (sets, ch) { return sets.filter(function (s) { return s.indexOf(ch) >= 0; }).join('').split(''); };
+  var chars = Array.from(v.word), tiers = [[], []];
+  chars.forEach(function (ch, i) {
+    if (!hasKanji(ch)) return;
+    var mine = on(CATALOG.items['k:' + ch]);
+    var sound = catalogOf('kanji').filter(function (k) { return on(k).some(function (r) { return mine.indexOf(r) >= 0; }); })
+      .map(function (k) { return k.char; });
+    [sound.concat(setsWith(KANJI_LOOKALIKES, ch)), setsWith(KANJI_GROUPS, ch)].forEach(function (cs, t) {
+      cs.forEach(function (c) {
+        var w = chars.slice(0, i).concat(c, chars.slice(i + 1)).join('');
+        if (chars.indexOf(c) < 0 && real.indexOf(w) < 0) tiers[t].push(w);
+      });
+    });
+  });
+  var out = [];
+  rndShuffle(tiers[0]).concat(rndShuffle(tiers[1])).forEach(function (w) { if (out.indexOf(w) < 0) out.push(w); });
+  return out;
+}
+// orderQuestion(s, taughtKanji): ★ sentence composition from s.chunks. The ★ goes in one
+// of the slots the author marked as fixed by grammar (default all four).
+function orderQuestion(s, taughtKanji) {
+  var c = s.chunks, raw = quizFurigana(furiganaParts(s.furigana || s.jp), taughtKanji, '');
+  var star = rndShuffle(c.star || [0, 1, 2, 3])[0], at = c.pre.length;
+  var chunkParts = c.move.map(function (m) { var p = sliceParts(raw, at, at + m.length); at += m.length; return p; });
+  var slots = STAR_SLOTS.map(function (x, i) { return i === star ? '＿★＿' : x; }).join(' ');
+  var order = rndShuffle([0, 1, 2, 3]);
+  return { type: 'order', prompt: 'Which goes in the ★ slot?', question: c.pre + ' ' + slots + ' ' + c.post,
+    parts: sliceParts(raw, 0, c.pre.length).concat({ t: ' ' + slots + ' ' }, sliceParts(raw, at, Infinity)),
+    options: order.map(function (i) { return c.move[i]; }), optionParts: order.map(function (i) { return chunkParts[i]; }),
+    correct: order.indexOf(star), star: star, sentence: s.id };
+}
+// mcFromAuthored(options, answer): shuffled options + the answer's new index.
+function mcFromAuthored(options, answer) {
+  var opts = rndShuffle(options);
+  return { options: opts, correct: opts.indexOf(options[answer]) };
+}
+function iikaeQuestion(m, taughtKanji) {
+  var raw = quizFurigana(furiganaParts(m.furigana || m.jp), taughtKanji, ''), at = m.jp.indexOf(m.underline);
+  var parts = spliceParts(raw, at, at + m.underline.length, [{ t: m.underline, u: true }]);
+  return Object.assign({ type: 'iikae', prompt: 'Which sentence means about the same? (look at the underlined part)', question: m.jp, parts: parts },
+    mcFromAuthored(m.options, m.answer));
+}
+// bunshouQuestion(m, n, taughtKanji): blank n (1-based) of a text with blanks; the
+// passage shows every blank as （ k ）, the asked one underlined.
+function bunshouQuestion(m, n, taughtKanji) {
+  var passage = [];
+  quizFurigana(furiganaParts(m.text), taughtKanji, '').forEach(function (p) {
+    if (p.r) return passage.push(p);
+    p.t.split(/(［\d+］)/).forEach(function (x) {
+      var k = /^［(\d+)］$/.exec(x);
+      if (k) passage.push({ t: '（ ' + k[1] + ' ）', u: +k[1] === n });
+      else if (x) passage.push({ t: x });
+    });
+  });
+  var b = m.blanks[n - 1];
+  return Object.assign({ type: 'bunshou', prompt: 'Which fits blank (' + n + ')?', question: '（ ' + n + ' ）', passageParts: passage, blank: n },
+    mcFromAuthored(b.options, b.answer));
+}
+// mondaiQuestions(type, item, ctx) → [question] (bunshou: one per blank; [] when the
+// item can't make that type). type = a MONDAI key; ctx = quizContext(unit).
+function mondaiQuestions(type, item, ctx) {
+  var tag = function (ex) { return ex && Object.assign(ex, { itemId: item.id, item: item, form: type, recall: false }); };
+  if (type === 'bunshou') return item.blanks.map(function (_, i) { return tag(bunshouQuestion(item, i + 1, ctx.taughtKanji)); });
+  var fm = formsFor(item, ctx).filter(function (x) { return x.name === type; })[0];
+  var ex = fm && fm.make();
+  return ex ? [tag(ex)] : [];
+}
 
 // ── Quiz composition (Q29-Q31) ──────────────────────────────────────────────
 var RECALL_SHARE = 0.4; // Q30: at least this share typed (recall), the rest MC
@@ -568,6 +693,34 @@ function formsFor(item, ctx) {
       answers: c.kanji === c.kana ? [c.kana] : [c.kanji, c.kana], targetForm: form, placeholder: form + '...', conjItem: v.id };
   };
   var f = function (name, recall, make) { return { name: name, recall: recall, make: make }; };
+  // inSentence(w, make): make(sentence, raw furigana parts, span) for a random catalog
+  // sentence that uses vocab w and holds it once with its reading; first non-null result.
+  var inSentence = function (w, make) {
+    var sents = rndShuffle(sentencesUsing(w.id));
+    for (var i = 0; i < sents.length; i++) {
+      var raw = furiganaParts(sents[i].furigana || sents[i].jp), sp = wordSpan(raw, w.word, w.reading);
+      var ex = sp && make(sents[i], raw, sp);
+      if (ex) return ex;
+    }
+    return null;
+  };
+  // 表記 for vocab w: only once all its kanji are taught (asked from the word or its kanji)
+  var hyouki = function (w) {
+    if (!hasKanji(w.word) || !allKanjiTaught(w.word, ctx.taughtKanji)) return null;
+    var d = spellingFakes(w).slice(0, 3);
+    return d.length < 3 ? null : inSentence(w, function (s, raw, sp) {
+      var parts = spliceParts(quizFurigana(raw, ctx.taughtKanji, w.word), sp.at, sp.end, [{ t: w.reading, u: true }]);
+      var opts = rndShuffle([w.word].concat(d));
+      return { type: 'hyouki', prompt: 'How is the underlined word written?', question: s.jp, parts: parts, options: opts,
+        correct: opts.indexOf(w.word), sentence: s.id, word: w.id };
+    });
+  };
+
+  if (item.kind === 'mondai') {
+    if (item.type === 'iikae') return [f('iikae', false, function () { return iikaeQuestion(item, ctx.taughtKanji); })];
+    if (item.type === 'bunshou') return [f('bunshou', false, function () { return bunshouQuestion(item, 1 + Math.floor(Math.random() * item.blanks.length), ctx.taughtKanji); })];
+    return [];
+  }
 
   if (item.kind === 'kana') {
     var k = item;
@@ -605,7 +758,40 @@ function formsFor(item, ctx) {
       }),
       f('meaningMc', false, function () { return mc('mc', 'What does this word mean?', v.word, 'gloss', ctx.vPool, null, { parts: wordParts(v) }); }),
       f('wordMc', false, function () { return mc('mc', 'Which word means "' + glossText(v) + '"?', '', 'word', ctx.vPool); }),
-      f('readingMc', false, function () { return kanjiWord ? mc('mc', 'How do you read this word?', v.word, 'reading', ctx.vPool) : null; })
+      f('readingMc', false, function () { return kanjiWord ? mc('mc', 'How do you read this word?', v.word, 'reading', ctx.vPool) : null; }),
+      // exam formats (ticket 11): the word inside a catalog sentence that uses it
+      f('kanjiYomi', false, function () {
+        return kanjiWord ? inSentence(v, function (s, raw, sp) {
+          var parts = spliceParts(quizFurigana(raw, ctx.taughtKanji, v.word), sp.at, sp.end, [{ t: v.word, u: true }]);
+          return mc('kanji_yomi', 'How is the underlined word read?', s.jp, 'reading', ctx.vPool, null, { parts: parts, sentence: s.id });
+        }) : null;
+      }),
+      f('hyouki', false, function () { return hyouki(v); }),
+      f('bunmyaku', false, function () {
+        // ponytail: all-hiragana words under 3 kana match inside other words too often; skipped
+        if (!kanjiWord && scriptShape(v.word) === 'hira' && v.word.length < 3) return null;
+        // same exact pos, no shared sense (the English note then leaves one fit), taught first,
+        // then another topic tag; shown in kana while a kanji is untaught (Q33)
+        var tags = v.tags || [];
+        var cands = rndShuffle(ctx.vPool.filter(function (x) {
+          return x.pos === v.pos && x.id !== v.id && !x.alt && x.word !== v.word && x.reading !== v.reading &&
+            (x.level === v.level || ctx.taught[x.id]) && !sharesSense(glossText(x), glossText(v));
+        })).map(function (x) {
+          return { it: x, s: [!ctx.taught[x.id], (x.tags || []).some(function (t) { return tags.indexOf(t) >= 0; })] };
+        }).sort(function (a, b) { return a.s[0] - b.s[0] || a.s[1] - b.s[1]; });
+        var shown = function (x) { return allKanjiTaught(x.word, ctx.taughtKanji) ? x.word : x.reading; };
+        var picks = [v];
+        cands.forEach(function (c) {
+          if (picks.length < 4 && picks.map(shown).indexOf(shown(c.it)) < 0) picks.push(c.it);
+        });
+        if (picks.length < 4) return null;
+        return inSentence(v, function (s, raw, sp) {
+          var parts = spliceParts(quizFurigana(raw, ctx.taughtKanji, ''), sp.at, sp.end, [{ t: GAP_BLANK }]);
+          var items = rndShuffle(picks);
+          return parts && { type: 'bunmyaku', prompt: 'Which word fits the gap?', question: s.jp, parts: parts, note: s.en,
+            options: items.map(shown), optionItems: items, correct: items.indexOf(v), sentence: s.id };
+        });
+      })
     ];
     if (ctx.conjForm && isVerbItem(v)) forms.push(f('conj', true, function () { return conjEx(v, ctx.conjForm); }));
     if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -633,7 +819,13 @@ function formsFor(item, ctx) {
         return rank >= 3 ? mc('kanji_reading', 'Select the correct reading:', kj.char, 'kanjiReading', ctx.kPool, rndShuffle(rs)[0])
           : mc('mc', 'Which is a reading of this kanji?', kj.char, 'kanjiReading', ctx.kPool, rndShuffle(rs)[0]);
       }),
-      f('kanjiMeanMc', false, function () { return mc('mc', 'What does this kanji mean?', kj.char, 'kanjiMeaning', ctx.kPool); })
+      f('kanjiMeanMc', false, function () { return mc('mc', 'What does this kanji mean?', kj.char, 'kanjiMeaning', ctx.kPool); }),
+      // 表記 of a taught word written with this kanji (words come before their kanji)
+      f('hyouki', false, function () {
+        var ws = rndShuffle((kj.words || []).filter(function (id) { return ctx.taught[id]; }));
+        for (var i = 0; i < ws.length; i++) { var ex = CATALOG.items[ws[i]] && hyouki(CATALOG.items[ws[i]]); if (ex) return ex; }
+        return null;
+      })
     ];
   }
 
@@ -668,6 +860,10 @@ function formsFor(item, ctx) {
           }
         }
         return null;
+      }),
+      f('order', false, function () {
+        var s = rndShuffle(sentencesUsing(g.id).filter(function (x) { return x.chunks; }))[0];
+        return s ? orderQuestion(s, ctx.taughtKanji) : null;
       })
     ];
     if (g.conjForm) gForms.push(f('conj', true, function () {

@@ -300,7 +300,7 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     var pool = units.concat([].concat.apply([], ["N4", "N3", "N2", "N1"].map(function (lv) {
       return sample.map(function (u) { return Object.assign({}, u, { level: lv }); });
     })));
-    var play = function (unit, qi) {
+    var play = function (unit, qi, build) {
       var state = [], k = 0, els = [], result = null;
       React.useState = function (init) {
         var i = k++;
@@ -312,7 +312,7 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
         els.push(el);
         return el;
       };
-      var render = function () { k = 0; els = []; Exercises({ unit: unit, onStart: noop, onFinish: noop, onResult: function (s) { result = s; } }); return els; };
+      var render = function () { k = 0; els = []; Exercises({ unit: unit, build: build, onStart: noop, onFinish: noop, onResult: function (s) { result = s; } }); return els; };
       var find = function (pred) { return els.filter(pred); };
       var cls = function (re) { return function (el) { return re.test(el.props.className || ""); }; };
       render();
@@ -368,6 +368,17 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       pool.forEach(function (unit, qi) {
         try { play(unit, qi); } catch (e) { errors.push(unit.id + "@" + unit.level + ": " + e.message); }
       });
+      // authored mondai (iikae, bunshou) as a mock would feed them (ticket 11 → 18)
+      var mock = { id: "n5.mock", kind: "mock", level: "N5", index: units.length - 1 };
+      var mondai = function (type) {
+        return function (u) {
+          var ctx = quizContext(u);
+          return [].concat.apply([], catalogOf("mondai").filter(function (m) { return m.type === type; }).slice(0, 4).map(function (m) { return mondaiQuestions(type, m, ctx); }));
+        };
+      };
+      ["iikae", "bunshou"].forEach(function (type, i) {
+        try { play(mock, i, mondai(type)); } catch (e) { errors.push("mock " + type + ": " + e.message); }
+      });
     } finally {
       React.useState = orig.useState;
       React.createElement = orig.createElement;
@@ -376,8 +387,10 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       window.speechSynthesis = origSpeech;
     }
     a.equal(errors.length, 0, errors.slice(0, 8).join("\n"));
-    // ponytail: no "reading" (needs passage items) or "reorder" (needs authored chunks) yet
-    ["mc", "listen", "typing", "conjugation", "gap", "pair_match", "fill_blank", "synonym", "kanji_reading"].forEach(function (t) {
+    // ponytail: no "reading" (passage items, ticket 15); tap-to-order "reorder" stays unused
+    // (★ sentence composition is the MC "order" type)
+    ["mc", "listen", "typing", "conjugation", "gap", "pair_match", "fill_blank", "synonym", "kanji_reading",
+      "kanji_yomi", "hyouki", "bunmyaku", "order", "iikae", "bunshou"].forEach(function (t) {
       a.ok(seen[t], "type " + t + " was played");
     });
   });

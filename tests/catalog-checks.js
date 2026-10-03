@@ -17,7 +17,8 @@ QUnit.module('catalog checks', function () {
   // lessons carry no grammar, and kanji run out before vocab does.
   var LOAD_GUIDE = { N5: { vocab: 8, kanji: 2, grammar: 1 } };
   var REQUIRED = { vocab: ['word', 'reading', 'pos'], kanji: ['char'], grammar: ['pattern', 'meaning'], sentence: ['jp', 'en'],
-    kana: ['char', 'romaji', 'script', 'group'] };
+    kana: ['char', 'romaji', 'script', 'group'], mondai: ['type', 'en'] };
+  var CHUNK_PUNCT_RE = /[、。？！?!\s「」]/;
   var SCRIPT_RE = { hiragana: /^[ぁ-ゖ]+$/, katakana: /^[ァ-ヺ]+$/ };
 
   function nonEmptyStrings(a) { return Array.isArray(a) && a.length > 0 && a.every(function (s) { return typeof s === 'string' && s; }); }
@@ -115,12 +116,50 @@ QUnit.module('catalog checks', function () {
       if (!/^s:(own:[a-z0-9-]+|tatoeba:\d+)$/.test(it.id)) err('id not s:own:<slug> / s:tatoeba:<n>');
       if (/^s:tatoeba:/.test(it.id) && !(it.license && it.author)) err('tatoeba sentence needs license + author');
       if (it.reading && hasKanji(it.reading)) err('reading has kanji');
-      (it.uses || []).forEach(function (id) {
-        if (!items[id]) err('uses missing ' + id);
-        else if (!surfaceMatch(items[id], it.jp)) err("jp doesn't contain " + id);
-      });
+      usesErrors(it.uses, it.jp, items, err);
+      if (it.furigana && furiganaText(it.furigana) !== it.jp) err('furigana text ≠ jp');
+      if (it.chunks) chunkErrors(it, err);
+    } else if (it.kind === 'mondai') {
+      if (!/^m:[a-z0-9-]+$/.test(it.id)) err('id not m:<slug>');
+      var four = function (o) { return Array.isArray(o) && o.length === 4 && nonEmptyStrings(o) && new Set(o).size === 4; };
+      var answerOk = function (b) { return four(b.options) && b.answer === Math.floor(b.answer) && b.answer >= 0 && b.answer < 4; };
+      if (it.type === 'iikae') {
+        if (typeof it.jp !== 'string' || !it.underline || it.jp.indexOf(it.underline) < 0) err('underline not in jp');
+        if (!answerOk(it)) err('needs 4 distinct options + answer index');
+        else if (it.options.indexOf(it.jp) >= 0) err('the sentence itself is an option');
+        else usesErrors(it.uses, it.jp + it.options[it.answer], items, err); // the word and its paraphrase
+      } else if (it.type === 'bunshou') {
+        var marks = (it.text || '').match(/［\d+］/g) || [], blanks = it.blanks || [];
+        if (!blanks.length || marks.join() !== blanks.map(function (_, i) { return '［' + (i + 1) + '］'; }).join()) err('blanks ［1］… must match blanks[] in order');
+        blanks.forEach(function (b, i) { if (!answerOk(b)) err('blank ' + (i + 1) + ' needs 4 distinct options + answer index'); });
+        if (!e.length) usesErrors(it.uses, furiganaText(bunshouFilled(it)), items, err);
+      } else err('type ' + it.type);
     }
     return e;
+  }
+  function usesErrors(uses, jp, items, err) {
+    (uses || []).forEach(function (id) {
+      if (!items[id]) err('uses missing ' + id);
+      else if (!surfaceMatch(items[id], jp)) err("jp doesn't contain " + id);
+    });
+  }
+  function furiganaText(s) { return furiganaParts(s).map(function (p) { return p.t; }).join(''); }
+  function bunshouFilled(m) { return m.text.replace(/［(\d+)］/g, function (_, n) { var b = m.blanks[n - 1]; return b.options[b.answer]; }); }
+
+  // ★ chunks (文の文法2): pre + move + post spell jp exactly; four distinct chunks with no
+  // punctuation; no chunk edge inside a furigana block; star = allowed ★ slots (0-3).
+  function chunkErrors(it, err) {
+    var c = it.chunks, mv = c.move;
+    if (typeof c.pre !== 'string' || typeof c.post !== 'string' || !Array.isArray(mv) || mv.length !== 4 || !nonEmptyStrings(mv)) return err('chunks need pre, post and 4 move strings');
+    if (c.pre + mv.join('') + c.post !== it.jp) err('chunks ≠ jp: ' + c.pre + mv.join('|') + c.post);
+    if (new Set(mv).size !== 4) err('chunks not distinct');
+    mv.forEach(function (m) { if (CHUNK_PUNCT_RE.test(m)) err('chunk has punctuation: ' + m); });
+    if (c.star !== undefined && !(Array.isArray(c.star) && c.star.length && c.star.every(function (n) { return [0, 1, 2, 3].indexOf(n) >= 0; }))) err('star must list slots 0-3');
+    var parts = furiganaParts(it.furigana || it.jp), at = c.pre.length;
+    [at].concat(mv.map(function (m) { return at += m.length; })).forEach(function (x) {
+      var pos = 0;
+      parts.forEach(function (p) { var s = pos; pos += p.t.length; if (p.r && s < x && x < pos) err('chunk edge cuts furigana ' + p.t); });
+    });
   }
 
   function catalogErrors(items) {
@@ -302,6 +341,39 @@ QUnit.module('catalog checks', function () {
     assert.ok(/license/.test(errsFor(with_(s('パンを食べます。', []), { id: 's:tatoeba:1' }))), 'tatoeba license');
     assert.strictEqual(errsFor(with_(s('パンを食べます。', []), { id: 's:tatoeba:1', license: 'CC BY 2.0 FR', author: 'x' })), '');
     assert.ok(/reading has kanji/.test(errsFor(with_(s('パンを食べます。', []), { reading: 'パンを食べます' }))), 'sentence reading');
+  });
+
+  QUnit.test('item checks: ★ chunks join to jp, distinct, no punctuation, no cut furigana', function (assert) {
+    var base = with_(s('本を読むのが好きです。', []), { furigana: '[本|ほん]を[読|よ]むのが[好|す]きです。' });
+    var ch = function (pre, move, post, star) { return with_(base, { chunks: { pre: pre, move: move, post: post, star: star } }); };
+    assert.strictEqual(errsFor(ch('', ['本を', '読む', 'のが', '好き'], 'です。')), '');
+    assert.strictEqual(errsFor(ch('', ['本を', '読む', 'のが', '好き'], 'です。', [2, 3])), '', 'star slots');
+    assert.ok(/chunks ≠ jp/.test(errsFor(ch('', ['本を', '読む', 'が', '好き'], 'です。'))), 'chunks must spell jp');
+    assert.ok(/4 move/.test(errsFor(ch('', ['本を', '読むのが', '好き'], 'です。'))), 'four chunks');
+    assert.ok(/not distinct/.test(errsFor(with_(s('のがのがのがのがです。', []), { chunks: { pre: '', move: ['のが', 'のが', 'のが', 'のが'], post: 'です。' } }))), 'distinct');
+    assert.ok(/punctuation/.test(errsFor(ch('', ['本を', '読む', 'のが', '好きです。'], ''))), 'no punctuation in a chunk');
+    assert.ok(/cuts furigana/.test(errsFor(with_(ch('', ['本を', '読む', 'のが', '好き'], 'です。'), { furigana: '[本を読|ほんをよ]むのが[好|す]きです。' }))), 'chunk edge inside a furigana block');
+    assert.ok(/star/.test(errsFor(ch('', ['本を', '読む', 'のが', '好き'], 'です。', [4]))), 'bad star');
+    assert.ok(/furigana text ≠ jp/.test(errsFor(with_(base, { furigana: '[本|ほん]をよむのが[好|す]きです。' }))), 'furigana must match jp');
+  });
+
+  QUnit.test('item checks: mondai (iikae / bunshou)', function (assert) {
+    var ik = { id: 'm:x', kind: 'mondai', type: 'iikae', level: 'N5', jp: 'へやがくらいです。', underline: 'くらい', options: ['a', 'b', 'c', 'd'], answer: 0,
+      en: 'x', uses: [], sources: ['own'], verified: false };
+    assert.strictEqual(errsFor(ik), '');
+    assert.ok(/underline/.test(errsFor(with_(ik, { underline: 'あかるい' }))), 'underline in jp');
+    assert.ok(/4 distinct/.test(errsFor(with_(ik, { options: ['a', 'a', 'c', 'd'] }))), 'distinct options');
+    assert.ok(/4 distinct/.test(errsFor(with_(ik, { answer: 4 }))), 'answer index');
+    assert.ok(/id not m:/.test(errsFor(with_(ik, { id: 'm:X Y' }))), 'id');
+    assert.ok(/missing en/.test(errsFor(with_(ik, { en: '' }))), 'en required');
+    var bs = { id: 'm:y', kind: 'mondai', type: 'bunshou', level: 'N5', text: '[本|ほん]［1］[読|よ]み［2］。', en: 'x', uses: ['v:食べる|たべる'],
+      blanks: [{ options: ['を', 'が', 'に', 'で'], answer: 0 }, { options: ['ます', 'ない', 'た', 'て'], answer: 0 }], sources: ['own'], verified: false };
+    var items = {}; items[v.id] = with_(v, { id: v.id });
+    assert.ok(/doesn't contain v:食べる/.test(errsFor(bs, items)), 'uses checked on the filled text');
+    assert.strictEqual(errsFor(with_(bs, { uses: [] })), '');
+    assert.ok(/match blanks/.test(errsFor(with_(bs, { uses: [], text: '本［2］読み［1］。' }))), 'blank order');
+    assert.ok(/blank 2/.test(errsFor(with_(bs, { uses: [], blanks: [bs.blanks[0], { options: ['ます'], answer: 0 }] }))), 'blank options');
+    assert.ok(/type/.test(errsFor(with_(bs, { type: 'nope' }))), 'type');
   });
 
   QUnit.test('item checks: grammar examples', function (assert) {

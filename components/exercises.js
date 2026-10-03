@@ -17,13 +17,15 @@ function translatePrompt(prompt, level) {
 // ── Exercises: the unit quiz (ticket 35) ────────────────────────────────────
 // Pass mark gates completion (Q28); a missed question comes back once at the
 // end in another form, unscored (Q31). onResult(scoreQuiz(...)) when finished.
+// build(unit) → questions (default buildExercises; mocks pass their own section list).
 function Exercises(_ref9) {
   var unit = _ref9.unit,
     onStart = _ref9.onStart,
     onFinish = _ref9.onFinish,
-    onResult = _ref9.onResult;
+    onResult = _ref9.onResult,
+    build = _ref9.build || buildExercises;
   var _React$useState9 = React.useState(function () {
-      return buildExercises(unit);
+      return build(unit);
     }),
     _React$useState0 = _slicedToArray(_React$useState9, 2),
     exs = _React$useState0[0],
@@ -87,7 +89,7 @@ function Exercises(_ref9) {
   }
   // Retake: a fresh set of questions (Q28)
   var retry = function retry() {
-    setExs(buildExercises(unit));
+    setExs(build(unit));
     setCur(0);
     setAnswer('');
     setSelected(null);
@@ -170,15 +172,21 @@ function Exercises(_ref9) {
   }
   var ex = exs[cur];
   var progress = "".concat(cur + 1, " / ").concat(exs.length);
-  // The question line: furigana parts (quiz rules, Q33) or plain text, plus the
-  // English of a gap sentence.
+  // Furigana parts (quiz rules, Q33) → ruby; u = the underlined / asked part (mondai).
+  var partsEl = function partsEl(parts) {
+    return parts.map(function (p, i) {
+      var el = p.r ? React.createElement("ruby", { key: i }, p.t, React.createElement("rt", null, p.r)) : p.t;
+      return p.u ? React.createElement("u", { key: i, className: "ex-u" }, el) : el;
+    });
+  };
+  var SENTENCE_TYPES = ['gap', 'kanji_yomi', 'hyouki', 'bunmyaku', 'order', 'iikae', 'bunshou'];
+  // The question line (plus the passage of a text-with-blanks, and the English of a
+  // gap sentence).
   var questionEl = function questionEl() {
-    var body = ex.parts ? ex.parts.map(function (p, i) {
-      return p.r ? React.createElement("ruby", { key: i }, p.t, React.createElement("rt", null, p.r)) : p.t;
-    }) : ex.question;
-    return [(ex.question || ex.parts) && React.createElement("div", {
-      key: "q", className: "ex-question" + (ex.type === 'gap' ? ' sentence' : ''), lang: "ja"
-    }, body), ex.note && React.createElement("div", { key: "n", className: "ex-note" }, ex.note)];
+    return [ex.passageParts && React.createElement("div", { key: "p", className: "passage-box", lang: "ja" }, partsEl(ex.passageParts)),
+      !ex.passageParts && (ex.question || ex.parts) && React.createElement("div", {
+        key: "q", className: "ex-question" + (SENTENCE_TYPES.indexOf(ex.type) >= 0 ? ' sentence' : ''), lang: "ja"
+      }, ex.parts ? partsEl(ex.parts) : ex.question), ex.note && React.createElement("div", { key: "n", className: "ex-note" }, ex.note)];
   };
   var header = function header() {
     return [React.createElement("div", {
@@ -325,12 +333,13 @@ function Exercises(_ref9) {
       return /*#__PURE__*/React.createElement("button", {
         key: i,
         className: cls,
+        lang: SENTENCE_TYPES.indexOf(ex.type) >= 0 ? "ja" : undefined,
         disabled: selected !== null,
         onClick: function onClick() {
           setSelected(i);
           advance(answerIsRight(ex, i));
         }
-      }, opt);
+      }, ex.optionParts ? partsEl(ex.optionParts[i]) : opt);
     }))));
   }
 
