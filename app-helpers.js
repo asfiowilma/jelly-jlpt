@@ -143,7 +143,12 @@ var UI_STRINGS = {
   pace_on_track:     { en: 'On track',          ja: '順調',             since: 'N1' },
   pace_behind:       { en: 'Behind',            ja: '遅れ気味',         since: 'N1' },
   pace_suggested:    { en: 'Suggested',         ja: 'おすすめ',         since: 'N1' },
-  pace_too_late:    { en: "Even Super intensive won't finish a week before the exam", ja: '超集中でも試験の1週間前までに終わりません', since: 'N1' },
+  set_credits:       { en: 'Credits',           ja: 'クレジット',       since: 'N1' },
+  cred_kanjivg:      { en: 'stroke order diagrams', ja: '筆順図',       since: 'N1' },
+  cred_tanos:        { en: 'JLPT kanji and vocabulary lists', ja: 'JLPTの漢字・語彙リスト', since: 'N1' },
+  cred_tatoeba:      { en: 'example sentences', ja: '例文',             since: 'N1' },
+  cred_wordlist:     { en: 'JLPT word list',    ja: 'JLPT単語リスト',   since: 'N1' },
+  pace_too_late:   { en: "Even Super intensive won't finish a week before the exam", ja: '超集中でも試験の1週間前までに終わりません', since: 'N1' },
 };
 // t(key, level): level = the learner's current unit level ('N5'…'N1').
 // window._uiLang ('auto' | 'en' | 'ja', set by App from prefs) overrides

@@ -109,8 +109,23 @@ function SettingsView(props) {
           React.createElement("button", { className: "data-btn", onClick: props.onImport, 'aria-label': "Import progress from file" }, L("set_import"))))),
     section("set-sync", L("set_sync"),
       React.createElement(SyncSettings, { L: L, sync: props.sync, savedCreds: props.savedCreds,
-        onConnect: props.onConnect, onDisconnect: props.onDisconnect, onSyncNow: props.onSyncNow })));
+        onConnect: props.onConnect, onDisconnect: props.onDisconnect, onSyncNow: props.onSyncNow })),
+    section("set-credits", L("set_credits"),
+      React.createElement("ul", { className: "credits" }, CREDITS.map(function (c) {
+        return React.createElement("li", { key: c.name },
+          React.createElement("a", { href: c.url, target: "_blank", rel: "noopener noreferrer" }, c.name),
+          ' — ' + L(c.key) + ' (',
+          React.createElement("a", { href: c.licenseUrl, target: "_blank", rel: "noopener noreferrer" }, c.license), ')');
+      }))));
 }
+
+// Third-party content shipped with the app (map Q4: credits live in Settings).
+var CREDITS = [
+  { name: 'KanjiVG', url: 'https://kanjivg.tagaini.net/', key: 'cred_kanjivg', license: 'CC BY-SA 3.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/' },
+  { name: 'Tanos', url: 'https://www.tanos.co.uk/jlpt/', key: 'cred_tanos', license: 'CC BY', licenseUrl: 'https://www.tanos.co.uk/jlpt/' }, // ponytail: site states CC BY without a version
+  { name: 'Tatoeba', url: 'https://tatoeba.org/', key: 'cred_tatoeba', license: 'CC BY 2.0 FR', licenseUrl: 'https://creativecommons.org/licenses/by/2.0/fr/' },
+  { name: 'elzup/jlpt-word-list', url: 'https://github.com/elzup/jlpt-word-list', key: 'cred_wordlist', license: 'MIT', licenseUrl: 'https://github.com/elzup/jlpt-word-list/blob/master/LICENSE' }
+];
 
 // Settings → Sync: connect form when not connected, status + controls when
 // connected. sync = Store.syncInfo; savedCreds = loadSyncCreds();
