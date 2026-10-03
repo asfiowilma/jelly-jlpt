@@ -86,7 +86,7 @@ function ReviewMode(_ref1) {
       className: "review-empty"
     }, /*#__PURE__*/React.createElement("div", {
       className: "review-empty-icon"
-    }, jelly('cheer', 96)), /*#__PURE__*/React.createElement("div", {
+    }, React.createElement(JellyExcited, { size: 96 })), /*#__PURE__*/React.createElement("div", {
       className: "review-empty-title"
     }, t('session_done', level)), /*#__PURE__*/React.createElement("div", {
       className: "review-empty-sub"

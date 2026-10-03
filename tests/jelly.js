@@ -13,4 +13,13 @@ QUnit.module('jelly', function () {
   QUnit.test('jelly() falls back to idle for an unknown mood', function (assert) {
     assert.ok(jelly('nope', 24));
   });
+  QUnit.test('jellyCycle loops idle -> cheer -> idle with finite values', function (assert) {
+    for (var t = 0; t < JELLY_CYCLE; t += 10) {
+      var S = jellyCycle(t);
+      JELLY_KEYS.forEach(function (k) { assert.ok(isFinite(S[k]), k + ' finite at ' + t); });
+    }
+    assert.ok(jellyCycle(JELLY_TIMING.antic + JELLY_TIMING.rise).ry > JELLY_MOODS.idle.ry, 'is taller than idle at the top of the hop');
+    assert.deepEqual(jellyCycle(0), JELLY_MOODS.idle, 'starts on idle');
+    assert.ok(Math.abs(jellyCycle(JELLY_CYCLE - 1).ry - JELLY_MOODS.idle.ry) < 3, 'ends next to idle, so the loop wraps without a jump');
+  });
 });

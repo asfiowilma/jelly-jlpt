@@ -327,7 +327,7 @@ function Exercises(_ref9) {
           h("svg", { viewBox: "0 0 140 140", 'aria-hidden': "true" },
             h("circle", { className: "t", cx: 70, cy: 70, r: 60 }),
             h("circle", { className: "v " + (s.passed ? 'pass' : 'fail'), cx: 70, cy: 70, r: 60, strokeDasharray: (QZ_RING * pct / 100) + " " + QZ_RING })),
-          h("span", { className: "qz-jelly" }, jelly(s.passed ? 'cheer' : 'oops', 84))),
+          h("span", { className: "qz-jelly" }, s.passed ? h(JellyExcited, { size: 84 }) : jelly('oops', 84))),
         h("div", null,
           h("h3", { className: "qz-verdict " + (s.passed ? 'pass' : 'fail'), role: "status" }, s.passed ? "Passed — stage complete" : "Not passed yet"),
           h("p", null, s.right, " / ", s.total, " · ", pct, "% · pass mark ", needPct, s.passed ? "." : ". Retake with new questions."),

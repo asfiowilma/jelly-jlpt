@@ -129,7 +129,7 @@ function MockExam(props) {
       back,
       ce("div", { className: "section-label" }, mock.title, ": results"),
       ce("div", { className: "mock-estimate " + (est.passed ? 'pass' : 'fail'), role: "status" },
-        ce("div", { className: "mock-estimate-head" }, jelly(est.passed ? 'cheer' : 'oops', 56, true),
+        ce("div", { className: "mock-estimate-head" }, est.passed ? ce(JellyExcited, { size: 56 }) : jelly('oops', 56, true),
           ce("div", { className: "mock-estimate-total" }, "Estimated score: ", ce("b", null, est.total), " / 180 · ",
             est.passed ? "would pass" : "not a pass yet")),
         ce("ul", null,

@@ -361,6 +361,38 @@ function jelly(mood, size, wobble) {
   return jellyFrom(JELLY_MOODS[mood], size, 'jl-' + mood, jellyPath(mood), wobble);
 }
 
+// Excited jelly: loops idle -> squash -> spring up to cheer -> back to idle.
+// jellyCycle(t) is pure (t in ms, wraps at JELLY_CYCLE); JellyExcited drives it with rAF.
+// Timing (ms) picked in the loop-timing sketch: squash, spring up, hold, bounce back; no rest.
+var JELLY_TIMING = { antic: 250, rise: 250, hold: 20, back: 150, bounce: 0.25 };
+var JELLY_CYCLE = JELLY_TIMING.antic + JELLY_TIMING.rise + JELLY_TIMING.hold + JELLY_TIMING.back, JELLY_UID = 0;
+function jellyEase(u) { return u * u * (3 - 2 * u); }
+function jellySpring(u, bounce) { // damped spring 0 -> 1, overshoots by ~bounce
+  if (u >= 1) return 1;
+  return 1 - Math.exp(-(8 - 2 * bounce) * u) * Math.cos(18 * bounce * u);
+}
+function jellyCycle(t) {
+  var T = JELLY_TIMING, idle = JELLY_MOODS.idle, cheer = JELLY_MOODS.cheer;
+  var squash = Object.assign({}, idle, { rx: idle.rx * 1.08, ry: idle.ry * 0.86, ey: idle.ey + 6 });
+  if (t < T.antic) return jellyLerp(idle, squash, jellyEase(t / T.antic));
+  t -= T.antic;
+  if (t < T.rise + T.hold) return jellyLerp(squash, cheer, jellySpring(t / T.rise, T.bounce));
+  t -= T.rise + T.hold;
+  return jellyLerp(cheer, idle, jellySpring(t / T.back, T.bounce * 0.55));
+}
+function JellyExcited(props) {
+  var _s = React.useState(JELLY_MOODS.cheer), S = _s[0], setS = _s[1];
+  var idRef = React.useRef(null);
+  if (!idRef.current) idRef.current = 'jl-x' + (++JELLY_UID);
+  React.useEffect(function () {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined; // stays on the cheer pose
+    var raf, t0 = performance.now();
+    (function frame(now) { setS(jellyCycle((now - t0) % JELLY_CYCLE)); raf = requestAnimationFrame(frame); })(t0);
+    return function () { cancelAnimationFrame(raf); };
+  }, []);
+  return jellyFrom(S, props.size, idRef.current, jellyPathOf(S));
+}
+
 // ── TTS ──────────────────────────────────────────────────────────────────────
 window._ttsRate = 0.85;
 function speak(text) {
