@@ -1,0 +1,410 @@
+"use strict";
+
+// N5 reading passages (ticket 15): original texts in the three N5 読解 formats of the official
+// test (jlpt.jp sample index, format only, nothing copied): short = 内容理解(短文), a note / email /
+// notice of ~80–150 characters with 1 question; mid = 内容理解(中文), ~250 characters with 2 questions;
+// info = 情報検索, a notice / schedule / list to search, 1 question.
+//
+// Written by hand for this project (sources: ['own']). Text rules:
+// - `furigana`: the text with [漢字|かな] ruby blocks (same markup as sentences.js); `jp` is derived
+//   from it. Kanji only from the N5 list; a word whose kanji are not all N5 is written in kana.
+//   Words are spaced the way N5 test texts are (full-width space between phrases). Questions and
+//   options use the same markup. In a quiz, ruby is hidden on kanji the learner has been taught.
+// - `uses`: every grammar point, every content word (as its catalog vocab id) and every kanji in
+//   the passage, its questions and options. Kept by hand: there is no tokenizer, so the checks can
+//   only confirm that what `uses` lists is really in the text (and that every kanji and katakana
+//   word is covered), not that nothing is missing from it. Words outside the catalog are avoided;
+//   proper nouns (people, places) go in `names`.
+// - `answer`: index of the right option in `options` (shuffled when asked).
+// - verified (map Q1, own content): true only when every `uses` item is a verified catalog item
+//   and the passage checks in tests/catalog-checks.js pass; ≥2 sources does not apply to own text.
+(function () {
+function P(o) {
+  o.kind = 'passage';
+  o.level = 'N5';
+  o.jp = o.furigana.replace(/\[([^|\]]+)(\|[^\]]*)\]/g, '$1');
+  o.author = 'jelly-jlpt';
+  o.license = 'own';
+  o.sources = ['own'];
+  return o;
+}
+
+CATALOG.add([
+  // ── short (内容理解・短文) ─────────────────────────────────────────────────
+  P({ id: 'p:n5-mike-family', format: 'short',
+    furigana: 'わたしは　マイクです。アメリカ[人|じん]です。[学生|がくせい]です。[父|ちち]は　[先生|せんせい]です。[母|はは]も　[先生|せんせい]です。あには　[学生|がくせい]じゃありません。あねは　[学生|がくせい]です。あねの　[先生|せんせい]は　[父|ちち]です。',
+    en: 'I am Mike. I am American. I am a student. My father is a teacher. My mother is a teacher too. My older brother is not a student. My older sister is a student. My older sister\'s teacher is my father.',
+    questions: [{ q: 'マイクさんの　おねえさんの　[先生|せんせい]は　だれですか。',
+      options: ['お[父|とう]さん', 'お[母|かあ]さん', 'おにいさん', 'マイクさん'], answer: 0,
+      explain: 'The last sentence says あねの先生は父です: his sister\'s teacher is his father. His mother is a teacher too, but the text never says she teaches his sister. His brother is not a student, and Mike is a student, not a teacher.' }],
+    names: ['マイク', 'アメリカ'],
+    uses: ['g:wa-desu', 'g:mo', 'g:no', 'g:ja-nai', 'g:ka', 'v:私|わたし', 'v:人|じん', 'v:学生|がくせい', 'v:父|ちち', 'v:母|はは', 'v:先生|せんせい', 'v:兄|あに', 'v:姉|あね', 'v:さん|さん', 'v:お姉さん|おねえさん', 'v:誰|だれ', 'v:お父さん|おとうさん', 'v:お母さん|おかあさん', 'v:お兄さん|おにいさん', 'k:人', 'k:学', 'k:生', 'k:父', 'k:先', 'k:母'],
+    verified: true }),
+
+  P({ id: 'p:n5-where-family-goes', format: 'short',
+    furigana: '[父|ちち]は　かいしゃへ　[行|い]きます。[母|はは]は　[学校|がっこう]の　[先生|せんせい]です。[母|はは]は　[学校|がっこう]へ　[行|い]きます。あには　[大学|だいがく]の　[学生|がくせい]です。あには　[大学|だいがく]へ　[行|い]きます。わたしも　[学生|がくせい]です。わたしの　[学校|がっこう]は　えきの　[先|さき]です。',
+    en: 'My father goes to his company. My mother is a school teacher. My mother goes to the school. My older brother is a university student. My brother goes to the university. I am a student too. My school is past the station.',
+    questions: [{ q: 'お[母|かあ]さんは　どこへ　[行|い]きますか。',
+      options: ['かいしゃ', '[学校|がっこう]', '[大学|だいがく]', 'えき'], answer: 1,
+      explain: 'The mother is a school teacher and 学校へ行きます: she goes to the school. The company (かいしゃ) is where the father goes, the university (大学) is the brother\'s, and the station (えき) only tells us where the writer\'s school is.' }],
+    uses: ['g:wa-desu', 'g:no', 'g:mo', 'g:ni-ikimasu', 'g:masu', 'g:ka', 'v:父|ちち', 'v:会社|かいしゃ', 'v:行く|いく', 'v:母|はは', 'v:学校|がっこう', 'v:先生|せんせい', 'v:兄|あに', 'v:大学|だいがく', 'v:学生|がくせい', 'v:私|わたし', 'v:駅|えき', 'v:先|さき', 'v:お母さん|おかあさん', 'v:どこ|どこ', 'k:父', 'k:行', 'k:母', 'k:学', 'k:校', 'k:先', 'k:生', 'k:大'],
+    verified: true }),
+
+  P({ id: 'p:n5-movie-invite', format: 'short',
+    furigana: '[山川|やまかわ]さん\nあした　いっしょに　えいがを　[見|み]ませんか。えいがは　[午後|ごご]　[二|に][時|じ][半|はん]です。[一|いち][時|じ]に　えきで　あいませんか。わたしは　バスで　えきへ　[行|い]きます。\nキム',
+    en: 'Mr./Ms. Yamakawa — Would you like to see a movie together tomorrow? The movie is at 2:30 p.m. Shall we meet at the station at one? I will go to the station by bus. — Kim',
+    questions: [{ q: '[二人|ふたり]は　[何|なん][時|じ]に　どこで　あいますか。',
+      options: ['[一|いち][時|じ]に　えきで', '[二|に][時|じ][半|はん]に　えきで', '[一|いち][時|じ]に　えいがかんで', '[二|に][時|じ][半|はん]に　えいがかんで'], answer: 0,
+      explain: 'Kim writes 一時にえきであいませんか: meet at the station at one. 2:30 is when the movie starts, not when they meet, and they meet at the station, not at the cinema.' }],
+    names: ['山川|やまかわ', 'キム'],
+    uses: ['g:wo', 'g:masen-ka', 'g:ni', 'g:de', 'g:ni-ikimasu', 'g:wa-desu', 'g:masu', 'g:ka', 'v:さん|さん', 'v:明日|あした', 'v:一緒|いっしょ', 'v:映画|えいが', 'v:見る|みる', 'v:午後|ごご', 'v:二|に', 'v:時|じ', 'v:半|はん', 'v:一|いち', 'v:駅|えき', 'v:会う|あう', 'v:私|わたし', 'v:バス|バス', 'v:行く|いく', 'v:二人|ふたり', 'v:何|なん', 'v:映画館|えいがかん', 'k:山', 'k:川', 'k:見', 'k:午', 'k:後', 'k:二', 'k:時', 'k:半', 'k:一', 'k:行', 'k:人', 'k:何'],
+    verified: true }),
+
+  P({ id: 'p:n5-cat-in-my-room', format: 'short',
+    furigana: 'わたしの　へやに　ねこが　います。まどの　[前|まえ]に　つくえが　あります。つくえの　[上|うえ]に　テレビが　あります。ねこは　いつも　ベッドの　[上|うえ]に　います。きのうの　よるは　つくえの　[下|した]に　いました。',
+    en: 'There is a cat in my room. There is a desk in front of the window. There is a TV on the desk. The cat is always on the bed. Last night it was under the desk.',
+    questions: [{ q: 'きのうの　よる、ねこは　どこに　いましたか。',
+      options: ['ベッドの　[上|うえ]', 'つくえの　[上|うえ]', 'つくえの　[下|した]', 'まどの　[前|まえ]'], answer: 2,
+      explain: 'The last sentence says that last night (きのうのよる) the cat was under the desk (つくえの下). The bed is where it usually is (いつも); the TV is on the desk, and the desk is in front of the window.' }],
+    uses: ['g:ga-imasu', 'g:ga-arimasu', 'g:ni', 'g:no', 'g:itsumo', 'g:mashita', 'g:ka', 'v:私|わたし', 'v:部屋|へや', 'v:猫|ねこ', 'v:居る|いる', 'v:窓|まど', 'v:前|まえ', 'v:机|つくえ', 'v:ある|ある', 'v:上|うえ', 'v:テレビ|テレビ', 'v:いつも|いつも', 'v:ベッド|ベッド', 'v:昨日|きのう', 'v:夜|よる', 'v:下|した', 'v:どこ|どこ', 'k:前', 'k:上', 'k:下'],
+    verified: true }),
+
+  P({ id: 'p:n5-umbrellas', format: 'short',
+    furigana: 'うちの　げんかんに　かさが　あります。きいろの　かさは　[母|はは]のです。とても　きれいです。みどりの　かさは　あにのです。ちゃいろの　かさは　[父|ちち]のです。ふるいです。わたしの　かさは　あかと　[白|しろ]の　[大|おお]きい　かさです。',
+    en: 'There are umbrellas in our entrance hall. The yellow umbrella is my mother\'s. It is very pretty. The green umbrella is my older brother\'s. The brown umbrella is my father\'s. It is old. My umbrella is a big red-and-white one.',
+    questions: [{ q: 'お[父|とう]さんの　かさは　どれですか。',
+      options: ['きいろの　かさ', 'みどりの　かさ', 'ちゃいろの　かさ', 'あかと　[白|しろ]の　かさ'], answer: 2,
+      explain: 'ちゃいろのかさは父のです: the brown umbrella is the father\'s. Yellow is the mother\'s, green the brother\'s, and the red-and-white one is the writer\'s.' }],
+    uses: ['g:ga-arimasu', 'g:no', 'g:wa-desu', 'g:totemo', 'g:adj-na', 'g:adj-i', 'g:to', 'g:ka', 'v:うち|うち', 'v:玄関|げんかん', 'v:傘|かさ', 'v:ある|ある', 'v:黄色|きいろ', 'v:母|はは', 'v:とても|とても', 'v:きれい|きれい', 'v:緑|みどり', 'v:兄|あに', 'v:茶色|ちゃいろ', 'v:父|ちち', 'v:古い|ふるい', 'v:私|わたし', 'v:赤|あか', 'v:白|しろ', 'v:大きい|おおきい', 'v:お父さん|おとうさん', 'v:どれ|どれ', 'k:母', 'k:父', 'k:白', 'k:大'],
+    verified: true }),
+
+  P({ id: 'p:n5-summer-plans', format: 'short',
+    furigana: 'わたしは　[山|やま]が　だいすきです。なつやすみに　[山|やま]へ　[行|い]きたいです。ともだちの　マリアさんは　まいにち　プールで　およぎます。マリアさんは　うみへ　[行|い]きたいです。わたしは　[水|みず]が　きらいですから、うみへ　[行|い]きたくないです。',
+    en: 'I love the mountains. In the summer holidays I want to go to the mountains. My friend Maria swims in the pool every day. Maria wants to go to the sea. I don\'t like water, so I don\'t want to go to the sea.',
+    questions: [{ q: 'マリアさんは　なつやすみに　どこへ　[行|い]きたいですか。',
+      options: ['[山|やま]', 'うみ', 'プール', '[川|かわ]'], answer: 1,
+      explain: 'マリアさんはうみへ行きたいです: Maria wants to go to the sea. The mountains are where the writer wants to go; the pool is where Maria swims every day, not a holiday plan; a river is not mentioned.' }],
+    names: ['マリア'],
+    uses: ['g:ga', 'g:tai', 'g:kara', 'g:ni', 'g:ni-ikimasu', 'g:de', 'g:no', 'g:wa-desu', 'g:masu', 'g:ka', 'v:私|わたし', 'v:山|やま', 'v:大好き|だいすき', 'v:夏休み|なつやすみ', 'v:行く|いく', 'v:友達|ともだち', 'v:さん|さん', 'v:毎日|まいにち', 'v:プール|プール', 'v:泳ぐ|およぐ', 'v:海|うみ', 'v:水|みず', 'v:嫌い|きらい', 'v:どこ|どこ', 'v:川|かわ', 'k:山', 'k:行', 'k:水', 'k:川'],
+    verified: true }),
+
+  P({ id: 'p:n5-favorite-season', format: 'short',
+    furigana: 'わたしは　なつより　ふゆの　ほうが　すきです。ふゆは　[山|やま]で　あそびます。あには　うみで　およぎますから、なつが　すきです。[母|はは]は　はる、なつ、あき、ふゆの　[中|なか]で　あきが　いちばん　すきです。くだものが　たくさん　ありますから。',
+    en: 'I like winter better than summer. In winter I play in the mountains. My older brother likes summer, because he swims in the sea. Of spring, summer, autumn and winter, my mother likes autumn best, because there is lots of fruit.',
+    questions: [{ q: 'お[母|かあ]さんは　いつが　いちばん　すきですか。',
+      options: ['はる', 'なつ', 'あき', 'ふゆ'], answer: 2,
+      explain: 'The mother likes autumn (あき) best of the four seasons, because of the fruit. Summer is the brother\'s favourite, winter the writer\'s; spring is only listed.' }],
+    uses: ['g:hou-ga-yori', 'g:naka-de-ichiban', 'g:ga', 'g:kara', 'g:de', 'g:no', 'g:wa-desu', 'g:ka', 'v:私|わたし', 'v:夏|なつ', 'v:より|より', 'v:冬|ふゆ', 'v:ほう|ほう', 'v:好き|すき', 'v:山|やま', 'v:遊ぶ|あそぶ', 'v:兄|あに', 'v:海|うみ', 'v:泳ぐ|およぐ', 'v:母|はは', 'v:春|はる', 'v:秋|あき', 'v:中|なか', 'v:いちばん|いちばん', 'v:果物|くだもの', 'v:たくさん|たくさん', 'v:ある|ある', 'v:お母さん|おかあさん', 'v:いつ|いつ', 'k:山', 'k:母', 'k:中'],
+    verified: true }),
+
+  P({ id: 'p:n5-morning-routine', format: 'short',
+    furigana: 'わたしは　まいあさ　[六|ろく][時|じ]に　おきます。シャワーを　あびてから、あさごはんを　[食|た]べます。あさごはんは　いつも　パンです。[七|しち][時|じ][半|はん]に　[出|で]かけます。きょうは　[九|く][時|じ]に　おきました。もう　[十|じゅう][時|じ]です。まだ　あさごはんを　[食|た]べていません。',
+    en: 'Every morning I get up at six. After I take a shower, I eat breakfast. Breakfast is always bread. I leave at 7:30. Today I got up at nine. It is already ten. I haven\'t eaten breakfast yet.',
+    questions: [{ q: 'きょう、この　[人|ひと]は　[何|なん][時|じ]に　おきましたか。',
+      options: ['[六|ろく][時|じ]', '[七|しち][時|じ][半|はん]', '[九|く][時|じ]', '[十|じゅう][時|じ]'], answer: 2,
+      explain: 'きょうは九時におきました: today the writer got up at nine. Six is the usual time, 7:30 is when the writer usually leaves, and ten is the time now.' }],
+    uses: ['g:ni', 'g:wo', 'g:te-kara', 'g:itsumo', 'g:mashita', 'g:mou', 'g:mada-te-imasen', 'g:wa-desu', 'g:masu', 'g:ka', 'v:私|わたし', 'v:毎朝|まいあさ', 'v:六|ろく', 'v:時|じ', 'v:起きる|おきる', 'v:シャワー|シャワー', 'v:あびる|あびる', 'v:朝御飯|あさごはん', 'v:食べる|たべる', 'v:いつも|いつも', 'v:パン|パン', 'v:七|しち', 'v:半|はん', 'v:出かける|でかける', 'v:今日|きょう', 'v:九|く', 'v:もう|もう', 'v:十|じゅう', 'v:まだ|まだ', 'v:人|ひと', 'v:何|なん', 'k:六', 'k:時', 'k:食', 'k:七', 'k:半', 'k:出', 'k:九', 'k:十', 'k:人', 'k:何'],
+    verified: true }),
+
+  P({ id: 'p:n5-note-from-mother', format: 'short',
+    furigana: 'ゆみ\nゆうびんきょくへ　[行|い]って、この　てがみを　[出|だ]して　ください。てがみは　ふうとうに　[入|はい]って　います。きってを　かわなくては　いけません。おかねは　つくえの　[上|うえ]に　あります。ぎんこうへは　[行|い]かないで　ください。[母|はは]が　[行|い]きます。\n[母|はは]',
+    en: 'Yumi — Please go to the post office and send this letter. The letter is in the envelope. You have to buy stamps. The money is on the desk. Please don\'t go to the bank; I (Mum) will go. — Mum',
+    questions: [{ q: 'ゆみさんは　[何|なに]を　しなくては　いけませんか。',
+      options: ['ゆうびんきょくで　きってを　かって、てがみを　[出|だ]す', 'ぎんこうへ　[行|い]って、おかねを　[出|だ]す', 'ふうとうを　かって、てがみを　[書|か]く', 'おかねを　ぎんこうへ　もって　[行|い]く'], answer: 0,
+      explain: 'Yumi must go to the post office, send the letter and buy stamps. The bank is where her mother will go (ぎんこうへは行かないでください), the letter is already written and in its envelope, and the money is on the desk for the stamps.' }],
+    names: ['ゆみ'],
+    uses: ['g:te-form', 'g:te-kudasai', 'g:te-iru', 'g:nakute-wa-ikenai', 'g:nai-de-kudasai', 'g:ni-ikimasu', 'g:wo', 'g:ni', 'g:ga', 'g:de', 'g:no', 'g:masu', 'g:ka', 'v:郵便局|ゆうびんきょく', 'v:行く|いく', 'v:この|この', 'v:手紙|てがみ', 'v:出す|だす', 'v:ください|ください', 'v:封筒|ふうとう', 'v:入る|はいる', 'v:切手|きって', 'v:買う|かう', 'v:お金|おかね', 'v:机|つくえ', 'v:上|うえ', 'v:ある|ある', 'v:銀行|ぎんこう', 'v:母|はは', 'v:さん|さん', 'v:何|なに', 'v:する|する', 'v:書く|かく', 'v:持つ|もつ', 'k:行', 'k:出', 'k:入', 'k:上', 'k:母', 'k:何', 'k:書'],
+    verified: true }),
+
+  P({ id: 'p:n5-good-at-drawing', format: 'short',
+    furigana: 'ともだちの　キムさんは　えを　かくのが　じょうずです。わたしは　えを　かくのが　へたです。わたしは　うたを　うたうのが　すきです。キムさんは　[日本|にほん]へ　[行|い]った　ことが　あります。わたしは　まだ　[行|い]った　ことが　ありません。[日本|にほん]へ　[行|い]く　[前|まえ]に、[日本|にほん][語|ご]の　べんきょうを　したいです。',
+    en: 'My friend Kim is good at drawing. I am bad at drawing. I like singing songs. Kim has been to Japan. I have not been yet. Before I go to Japan, I want to study Japanese.',
+    questions: [{ q: '「わたし」は　どんな　[人|ひと]ですか。',
+      options: ['えを　かくのが　じょうずな　[人|ひと]', 'うたを　うたうのが　すきな　[人|ひと]', '[日本|にほん]へ　[行|い]った　ことが　ある　[人|ひと]', '[日本|にほん][語|ご]が　じょうずな　[人|ひと]'], answer: 1,
+      explain: 'The writer says うたをうたうのがすきです: they like singing. Kim is the one who is good at drawing and has been to Japan; the writer has not studied Japanese yet, so nothing says they are good at it.' }],
+    names: ['キム', '日本|にほん'],
+    uses: ['g:no-ga-jouzu', 'g:no-ga-heta', 'g:no-ga-suki', 'g:ta-koto-ga-aru', 'g:mada', 'g:mae-ni', 'g:tai', 'g:ni-ikimasu', 'g:wo', 'g:no', 'g:wa-desu', 'g:adj-na', 'g:ka', 'v:友達|ともだち', 'v:さん|さん', 'v:絵|え', 'v:書く|かく', 'v:上手|じょうず', 'v:私|わたし', 'v:下手|へた', 'v:歌|うた', 'v:歌う|うたう', 'v:好き|すき', 'v:行く|いく', 'v:まだ|まだ', 'v:前|まえ', 'v:語|ご', 'v:勉強|べんきょう', 'v:する|する', 'v:どんな|どんな', 'v:人|ひと', 'k:日', 'k:本', 'k:行', 'k:前', 'k:語', 'k:人'],
+    verified: true }),
+
+  P({ id: 'p:n5-sunday-park', format: 'short',
+    furigana: 'にちようびに　ともだちと　こうえんへ　[行|い]きました。こうえんで　はなを　[見|み]たり、しゃしんを　とったり　しました。ひるごはんは　パンを　[一|ひと]つだけ　[食|た]べました。[午後|ごご]、だんだん　くもりに　なりました。[三|さん][時|じ]ごろ　[雨|あめ]が　ふりましたから、すぐに　うちへ　かえりました。',
+    en: 'On Sunday I went to the park with a friend. In the park we looked at flowers, took photos and so on. For lunch I ate just one bread roll. In the afternoon it gradually clouded over. Around three it rained, so we went home straight away.',
+    questions: [{ q: '[二人|ふたり]は　こうえんで　[何|なに]を　しましたか。',
+      options: ['はなを　[見|み]たり、しゃしんを　とったり　しました', 'いけで　およいだり、パンを　[食|た]べたり　しました', '[雨|あめ]の　[中|なか]で　あそびました', 'うちで　しゃしんを　[見|み]ました'], answer: 0,
+      explain: 'こうえんではなを見たり、しゃしんをとったりしました: they looked at flowers and took photos. They did not swim (the writer only ate bread), they went home when it rained, and nothing is said about looking at photos at home.' }],
+    uses: ['g:to', 'g:ni', 'g:ni-ikimasu', 'g:de', 'g:wo', 'g:tari-tari', 'g:dake', 'g:naru', 'g:ga', 'g:kara', 'g:mashita', 'g:no', 'g:ka', 'v:日曜日|にちようび', 'v:友達|ともだち', 'v:公園|こうえん', 'v:行く|いく', 'v:花|はな', 'v:見る|みる', 'v:写真|しゃしん', 'v:撮る|とる', 'v:する|する', 'v:昼御飯|ひるごはん', 'v:パン|パン', 'v:一つ|ひとつ', 'v:だけ|だけ', 'v:食べる|たべる', 'v:午後|ごご', 'v:だんだん|だんだん', 'v:曇り|くもり', 'v:なる|なる', 'v:三|さん', 'v:時|じ', 'v:ごろ|ごろ', 'v:雨|あめ', 'v:降る|ふる', 'v:すぐに|すぐに', 'v:うち|うち', 'v:帰る|かえる', 'v:二人|ふたり', 'v:何|なに', 'v:池|いけ', 'v:泳ぐ|およぐ', 'v:中|なか', 'v:遊ぶ|あそぶ', 'k:行', 'k:見', 'k:一', 'k:食', 'k:午', 'k:後', 'k:三', 'k:時', 'k:雨', 'k:二', 'k:人', 'k:何', 'k:中'],
+    verified: true }),
+
+  P({ id: 'p:n5-mothers-birthday', format: 'short',
+    furigana: 'らいしゅうの　どようびは　[母|はは]の　たんじょうびです。わたしは　[母|はは]の　すきな　カレーを　つくる　つもりです。わたしの　カレーは　いつも　からすぎるので、[母|はは]は　あまり　[食|た]べません。[今年|ことし]は　さとうを　すこし　[入|い]れる　つもりです。',
+    en: 'Next Saturday is my mother\'s birthday. I plan to make curry, which my mother likes. My curry is always too spicy, so my mother doesn\'t eat much of it. This year I plan to put in a little sugar.',
+    questions: [{ q: 'どうして　お[母|かあ]さんは　「わたし」の　カレーを　あまり　[食|た]べませんか。',
+      options: ['からすぎるから', 'あますぎるから', 'カレーが　すきじゃないから', 'さとうが　[入|はい]って　いるから'], answer: 0,
+      explain: 'からすぎるので、母はあまり食べません: it is too spicy, so she doesn\'t eat much. It is not too sweet, the mother likes curry (母のすきなカレー), and the sugar is only a plan for this year.' }],
+    uses: ['g:tsumori', 'g:sugiru', 'g:node', 'g:itsumo', 'g:doushite', 'g:kara', 'g:adj-na', 'g:ja-nai', 'g:te-iru', 'g:wo', 'g:no', 'g:ga', 'g:wa-desu', 'g:masen', 'g:ka', 'v:来週|らいしゅう', 'v:土曜日|どようび', 'v:母|はは', 'v:誕生日|たんじょうび', 'v:私|わたし', 'v:好き|すき', 'v:カレー|カレー', 'v:作る|つくる', 'v:いつも|いつも', 'v:辛い|からい', 'v:あまり|あまり', 'v:食べる|たべる', 'v:今年|ことし', 'v:砂糖|さとう', 'v:少し|すこし', 'v:入れる|いれる', 'v:どうして|どうして', 'v:お母さん|おかあさん', 'v:甘い|あまい', 'v:入る|はいる', 'k:母', 'k:食', 'k:今', 'k:年', 'k:入'],
+    verified: true }),
+
+  P({ id: 'p:n5-party-invite', format: 'short',
+    furigana: 'キムさん\nあしたの　ばん、わたしの　うちで　パーティーを　します。[山川|やまかわ]さんや　[中山|なかやま]さんも　[来|き]ます。キムさんも　[来|き]ませんか。[食|た]べものは　わたしが　つくりますけど、のみものが　すくないです。のみものを　かってから　[来|き]て　ください。\nマリア',
+    en: 'Kim — Tomorrow evening I\'m having a party at my place. Yamakawa, Nakayama and others are coming too. Won\'t you come too? I\'ll make the food, but there isn\'t much to drink. Please buy some drinks before you come. — Maria',
+    questions: [{ q: 'キムさんは　パーティーの　[前|まえ]に　[何|なに]を　しますか。',
+      options: ['のみものを　かいます', '[食|た]べものを　つくります', '[山川|やまかわ]さんに　あいます', 'マリアさんの　うちで　まちます'], answer: 0,
+      explain: 'のみものをかってから来てください: Kim should buy drinks and then come. Maria makes the food herself; nothing says Kim meets Yamakawa first or waits at Maria\'s place.' }],
+    names: ['キム', 'マリア', '山川|やまかわ', '中山|なかやま'],
+    uses: ['g:no', 'g:de', 'g:wo', 'g:ya', 'g:mo', 'g:masen-ka', 'g:kedo', 'g:ga', 'g:te-kara', 'g:te-kudasai', 'g:mae-ni', 'g:wa-desu', 'g:masu', 'g:ka', 'v:さん|さん', 'v:明日|あした', 'v:晩|ばん', 'v:私|わたし', 'v:うち|うち', 'v:パーティー|パーティー', 'v:する|する', 'v:来る|くる', 'v:食べ物|たべもの', 'v:作る|つくる', 'v:飲み物|のみもの', 'v:少ない|すくない', 'v:買う|かう', 'v:ください|ください', 'v:前|まえ', 'v:何|なに', 'v:会う|あう', 'v:待つ|まつ', 'k:山', 'k:川', 'k:中', 'k:来', 'k:食', 'k:前', 'k:何'],
+    verified: true }),
+
+  P({ id: 'p:n5-library-closed', format: 'short',
+    furigana: 'としょかん\n[三|さん][月|がつ][十日|とおか]から　[十|じゅう][五|ご][日|にち]まで、としょかんは　お[休|やす]みです。[本|ほん]を　かえす　ときは、いりぐちの　[右|みぎ]の　ポストに　[入|い]れて　ください。[十|じゅう][六|ろく][日|にち]に　また　あきます。',
+    en: 'Library — The library is closed from 10 to 15 March. When you return books, please put them in the box to the right of the entrance. It opens again on the 16th.',
+    questions: [{ q: '[三|さん][月|がつ][十|じゅう][二|に][日|にち]に　[本|ほん]を　かえします。どこに　[入|い]れますか。',
+      options: ['いりぐちの　[右|みぎ]の　ポスト', 'いりぐちの　[左|ひだり]の　ポスト', 'でぐちの　[右|みぎ]の　ポスト', 'としょかんの　[中|なか]の　つくえ'], answer: 0,
+      explain: 'The 12th falls inside the closure (10th–15th), so books go in the box to the right of the entrance (いりぐちの右のポスト). The left side and the exit are not mentioned, and you can\'t get inside while it is closed.' }],
+    uses: ['g:made', 'g:wa-desu', 'g:te-kudasai', 'g:wo', 'g:ni', 'g:no', 'g:ka', 'v:図書館|としょかん', 'v:三|さん', 'v:月|がつ', 'v:十日|とおか', 'v:十|じゅう', 'v:五|ご', 'v:日|にち', 'v:お|お', 'v:休み|やすみ', 'v:本|ほん', 'v:返す|かえす', 'v:時|とき', 'v:入口|いりぐち', 'v:右|みぎ', 'v:ポスト|ポスト', 'v:入れる|いれる', 'v:ください|ください', 'v:六|ろく', 'v:また|また', 'v:開く|あく', 'v:二|に', 'v:どこ|どこ', 'v:左|ひだり', 'v:出口|でぐち', 'v:中|なか', 'v:机|つくえ', 'k:三', 'k:月', 'k:十', 'k:日', 'k:五', 'k:休', 'k:本', 'k:右', 'k:入', 'k:六', 'k:二', 'k:左', 'k:中'],
+    verified: true }),
+
+  P({ id: 'p:n5-email-absent', format: 'short',
+    furigana: '[山川|やまかわ][先生|せんせい]\nきょうは　あたまが　いたいので、[学校|がっこう]を　[休|やす]みます。きのうの　しゅくだいは　あした　[出|だ]します。あしたは　[学校|がっこう]へ　[行|い]く　つもりです。\nリン',
+    en: 'Mr./Ms. Yamakawa — I have a headache today, so I will stay home from school. I will hand in yesterday\'s homework tomorrow. I plan to come to school tomorrow. — Lin',
+    questions: [{ q: 'リンさんは　いつ　しゅくだいを　[出|だ]しますか。',
+      options: ['きのう', 'きょう', 'あした', 'あさって'], answer: 2,
+      explain: 'しゅくだいはあした出します: Lin will hand it in tomorrow. Yesterday is when the homework was set, today Lin is absent, and the day after tomorrow is not mentioned.' }],
+    names: ['山川|やまかわ', 'リン'],
+    uses: ['g:node', 'g:ga', 'g:wo', 'g:no', 'g:tsumori', 'g:ni-ikimasu', 'g:wa-desu', 'g:masu', 'g:ka', 'v:先生|せんせい', 'v:今日|きょう', 'v:頭|あたま', 'v:痛い|いたい', 'v:学校|がっこう', 'v:休む|やすむ', 'v:昨日|きのう', 'v:宿題|しゅくだい', 'v:明日|あした', 'v:出す|だす', 'v:行く|いく', 'v:さん|さん', 'v:いつ|いつ', 'v:あさって|あさって', 'k:山', 'k:川', 'k:先', 'k:生', 'k:学', 'k:校', 'k:休', 'k:出', 'k:行'],
+    verified: true }),
+
+  P({ id: 'p:n5-bakery', format: 'short',
+    furigana: 'きょう　[母|はは]と　かいものに　[行|い]きました。やおやで　やさいを　かいました。ぜんぶで　[五|ご][百|ひゃく][円|えん]でした。それから、パンやで　パンを　[二|ふた]つ　かいました。パンは　[一|ひと]つ　[百|ひゃく][二|に][十|じゅう][円|えん]でした。',
+    en: 'Today I went shopping with my mother. At the greengrocer\'s we bought vegetables. It was 500 yen in all. Then at the bakery we bought two bread rolls. The rolls were 120 yen each.',
+    questions: [{ q: 'パンは　ぜんぶで　いくらでしたか。',
+      options: ['[百|ひゃく][二|に][十|じゅう][円|えん]', '[二|に][百|ひゃく][四|よん][十|じゅう][円|えん]', '[五|ご][百|ひゃく][円|えん]', '[七|なな][百|ひゃく][四|よん][十|じゅう][円|えん]'], answer: 1,
+      explain: 'Two rolls at 120 yen each: 2 × 120 = 240 yen. 120 is the price of one roll, 500 is what the vegetables cost, and 740 is vegetables and bread together.' }],
+    uses: ['g:to', 'g:ni-iku', 'g:de', 'g:wo', 'g:deshita', 'g:mashita', 'g:ka', 'v:今日|きょう', 'v:母|はは', 'v:買い物|かいもの', 'v:行く|いく', 'v:八百屋|やおや', 'v:野菜|やさい', 'v:買う|かう', 'v:全部|ぜんぶ', 'v:五|ご', 'v:百|ひゃく', 'v:円|えん', 'v:それから|それから', 'v:パン|パン', 'v:屋|や', 'v:二つ|ふたつ', 'v:一つ|ひとつ', 'v:二|に', 'v:十|じゅう', 'v:いくら|いくら', 'v:四|よん', 'v:七|なな', 'k:母', 'k:行', 'k:五', 'k:百', 'k:円', 'k:二', 'k:一', 'k:十', 'k:四', 'k:七'],
+    verified: true }),
+
+  P({ id: 'p:n5-new-classmate', format: 'short',
+    furigana: 'わたしの　クラスに　あたらしい　りゅうがくせいが　[来|き]ました。ワンさんです。ワンさんの　[国|くに]は　[中国|ちゅうごく]です。ワンさんは　[日本|にほん][語|ご]も　えいごも　じょうずです。スポーツが　すきです。まいあさ　こうえんで　はしって　います。わたしは　スポーツが　へたですけど、あした　いっしょに　はしる　つもりです。',
+    en: 'A new foreign student has joined my class. It\'s Wang. Wang\'s country is China. Wang is good at both Japanese and English. Wang likes sports and runs in the park every morning. I\'m bad at sports, but I plan to run with Wang tomorrow.',
+    questions: [{ q: 'ワンさんは　まいあさ　[何|なに]を　して　いますか。',
+      options: ['こうえんで　はしって　います', '[日本|にほん][語|ご]を　べんきょうして　います', 'えいごを　おしえて　います', 'スポーツを　[見|み]て　います'], answer: 0,
+      explain: 'まいあさこうえんではしっています: Wang runs in the park every morning. Wang is good at Japanese and English, but the text doesn\'t say Wang studies or teaches them every morning, and Wang plays sport rather than watching it.' }],
+    names: ['ワン', '中国|ちゅうごく', '日本|にほん'],
+    uses: ['g:ni', 'g:ga', 'g:mo', 'g:no', 'g:de', 'g:te-iru', 'g:kedo', 'g:tsumori', 'g:wa-desu', 'g:mashita', 'g:ka', 'v:私|わたし', 'v:クラス|クラス', 'v:新しい|あたらしい', 'v:留学生|りゅうがくせい', 'v:来る|くる', 'v:さん|さん', 'v:国|くに', 'v:語|ご', 'v:英語|えいご', 'v:上手|じょうず', 'v:スポーツ|スポーツ', 'v:好き|すき', 'v:毎朝|まいあさ', 'v:公園|こうえん', 'v:走る|はしる', 'v:下手|へた', 'v:明日|あした', 'v:一緒|いっしょ', 'v:何|なに', 'v:する|する', 'v:勉強|べんきょう', 'v:教える|おしえる', 'v:見る|みる', 'k:来', 'k:国', 'k:日', 'k:本', 'k:語', 'k:何', 'k:見', 'k:中'],
+    verified: true }),
+
+  P({ id: 'p:n5-elevator-notice', format: 'short',
+    furigana: 'えきの　[北|きた]がわの　エレベーターは　[一日|ついたち]から　[三日|みっか]まで　とまります。[南|みなみ]がわの　エレベーターを　つかって　ください。かいだんは　[北|きた]がわにも　[南|みなみ]がわにも　あります。',
+    en: 'The lift on the north side of the station will be out of service from the 1st to the 3rd. Please use the lift on the south side. There are stairs on both the north side and the south side.',
+    questions: [{ q: '[二日|ふつか]に　えきで　エレベーターに　のりたい　[人|ひと]は　どう　しますか。',
+      options: ['[北|きた]がわへ　[行|い]きます', '[南|みなみ]がわへ　[行|い]きます', 'かいだんを　つかいます', '[四日|よっか]まで　まちます'], answer: 1,
+      explain: 'The 2nd is between the 1st and the 3rd, when the north lift is stopped, so someone who wants a lift goes to the south side. The stairs are not a lift, and there is no need to wait: the south lift works.' }],
+    uses: ['g:made', 'g:wo', 'g:te-kudasai', 'g:mo', 'g:ni', 'g:ni-ikimasu', 'g:tai', 'g:no', 'g:ka', 'v:駅|えき', 'v:北|きた', 'v:側|がわ', 'v:エレベーター|エレベーター', 'v:一日|ついたち', 'v:三日|みっか', 'v:止まる|とまる', 'v:南|みなみ', 'v:使う|つかう', 'v:ください|ください', 'v:階段|かいだん', 'v:ある|ある', 'v:二日|ふつか', 'v:乗る|のる', 'v:人|ひと', 'v:どう|どう', 'v:する|する', 'v:行く|いく', 'v:四日|よっか', 'v:待つ|まつ', 'k:北', 'k:一', 'k:日', 'k:三', 'k:南', 'k:二', 'k:人', 'k:行', 'k:四'],
+    verified: true }),
+
+  P({ id: 'p:n5-sunday-diary', format: 'short',
+    furigana: 'きのうは　にちようびでした。あさ　[十|じゅう][時|じ]に　おきました。[午後|ごご]、ともだちと　きっさてんで　コーヒーを　のみました。それから　デパートへ　[行|い]って、シャツを　かいました。[白|しろ]い　シャツです。よる、うちで　テレビを　[見|み]ました。',
+    en: 'Yesterday was Sunday. I got up at ten in the morning. In the afternoon I had coffee with a friend at a café. Then I went to the department store and bought a shirt. It is a white shirt. In the evening I watched TV at home.',
+    questions: [{ q: 'この　[人|ひと]は　きのう　[何|なに]を　かいましたか。',
+      options: ['コーヒー', '[白|しろ]い　シャツ', 'テレビ', 'くつ'], answer: 1,
+      explain: 'デパートへ行って、シャツをかいました。白いシャツです: the writer bought a white shirt. The coffee was drunk at a café, the TV was watched, and shoes are not mentioned.' }],
+    uses: ['g:deshita', 'g:ni', 'g:mashita', 'g:to', 'g:de', 'g:wo', 'g:te-form', 'g:ni-ikimasu', 'g:adj-i', 'g:wa-desu', 'g:ka', 'v:昨日|きのう', 'v:日曜日|にちようび', 'v:朝|あさ', 'v:十|じゅう', 'v:時|じ', 'v:起きる|おきる', 'v:午後|ごご', 'v:友達|ともだち', 'v:喫茶店|きっさてん', 'v:コーヒー|コーヒー', 'v:飲む|のむ', 'v:それから|それから', 'v:デパート|デパート', 'v:行く|いく', 'v:シャツ|シャツ', 'v:買う|かう', 'v:白い|しろい', 'v:夜|よる', 'v:うち|うち', 'v:テレビ|テレビ', 'v:見る|みる', 'v:人|ひと', 'v:何|なに', 'v:靴|くつ', 'k:十', 'k:時', 'k:午', 'k:後', 'k:行', 'k:白', 'k:見', 'k:人', 'k:何'],
+    verified: true }),
+
+  P({ id: 'p:n5-teacher-note', format: 'short',
+    furigana: 'あしたの　じゅぎょうは　[十|じゅう][時|じ]からです。きょうしつは　[二|に]かいです。じしょを　わすれないで　ください。テストが　ありますから、ボールペンで　[書|か]いて　ください。えんぴつは　いりません。\n[山川|やまかわ]',
+    en: 'Tomorrow\'s class starts at ten. The classroom is on the second floor. Don\'t forget your dictionary. There is a test, so please write with a ballpoint pen. You don\'t need a pencil. — Yamakawa',
+    questions: [{ q: 'あした、[学生|がくせい]は　[何|なに]を　もって　[行|い]きますか。',
+      options: ['じしょと　ボールペン', 'じしょと　えんぴつ', 'ノートと　えんぴつ', 'ノートと　ボールペン'], answer: 0,
+      explain: 'Students must not forget the dictionary (じしょをわすれないでください) and must write the test with a ballpoint pen. A pencil is not needed (えんぴつはいりません), and a notebook is not mentioned.' }],
+    names: ['山川|やまかわ'],
+    uses: ['g:kara', 'g:nai-de-kudasai', 'g:te-kudasai', 'g:te-form', 'g:ga-arimasu', 'g:de', 'g:wo', 'g:to', 'g:no', 'g:wa-desu', 'g:ka', 'v:明日|あした', 'v:授業|じゅぎょう', 'v:十|じゅう', 'v:時|じ', 'v:教室|きょうしつ', 'v:二|に', 'v:階|かい', 'v:辞書|じしょ', 'v:忘れる|わすれる', 'v:ください|ください', 'v:テスト|テスト', 'v:ある|ある', 'v:ボールペン|ボールペン', 'v:書く|かく', 'v:鉛筆|えんぴつ', 'v:要る|いる', 'v:学生|がくせい', 'v:何|なに', 'v:持つ|もつ', 'v:行く|いく', 'v:ノート|ノート', 'k:十', 'k:時', 'k:二', 'k:書', 'k:山', 'k:川', 'k:学', 'k:生', 'k:何', 'k:行'],
+    verified: true }),
+
+  // ── mid (内容理解・中文) ───────────────────────────────────────────────────
+  P({ id: 'p:n5-letter-from-tokyo', format: 'mid',
+    furigana: 'キムさん\nおげんきですか。わたしは　[今|いま]、とうきょうの　[大学|だいがく]で　[日本|にほん][語|ご]を　べんきょうして　います。まいにち　いそがしいですけど、とても　たのしいです。\nわたしの　アパートは　[大学|だいがく]から　あるいて　[十|じゅう][五|ご]ふんです。アパートの　ちかくに　こうえんが　あります。にちようびは　よく　こうえんを　さんぽします。\nせんしゅう、クラスの　ともだちと　[山|やま]へ　[行|い]きました。[山|やま]の　[上|うえ]で　しゃしんを　たくさん　とりました。\n[来月|らいげつ]、[国|くに]へ　かえります。その　とき、いっしょに　ごはんを　[食|た]べましょう。\nマリア',
+    en: 'Kim — How are you? I am now studying Japanese at a university in Tokyo. I\'m busy every day, but it\'s a lot of fun. My apartment is a fifteen-minute walk from the university. There is a park near the apartment. On Sundays I often take a walk in the park. Last week I went to the mountains with friends from my class. I took lots of photos at the top. Next month I\'m going back to my country. Let\'s have a meal together then. — Maria',
+    questions: [
+      { q: 'マリアさんの　アパートは　どこに　ありますか。',
+        options: ['[大学|だいがく]から　あるいて　[十|じゅう][五|ご]ふんの　ところ', '[大学|だいがく]の　[中|なか]', '[山|やま]の　[上|うえ]', 'こうえんの　[中|なか]'], answer: 0,
+        explain: 'アパートは大学からあるいて十五ふんです: a fifteen-minute walk from the university. The park is near the apartment, not around it, and the mountain top is where the photos were taken.' },
+      { q: 'マリアさんは　[来月|らいげつ]　[何|なに]を　しますか。',
+        options: ['[国|くに]へ　かえります', '[山|やま]へ　[行|い]きます', '[大学|だいがく]に　[入|はい]ります', 'キムさんと　しゃしんを　とります'], answer: 0,
+        explain: '来月、国へかえります: next month Maria goes back to her country. The mountain trip was last week, she is already at the university, and taking photos with Kim is not mentioned.' }],
+    names: ['キム', 'マリア', 'とうきょう', '日本|にほん'],
+    uses: ['g:te-iru', 'g:kedo', 'g:totemo', 'g:kara', 'g:ga-arimasu', 'g:to', 'g:de', 'g:ni', 'g:wo', 'g:ni-ikimasu', 'g:mashou', 'g:mashita', 'g:mo', 'g:no', 'g:adj-i', 'g:wa-desu', 'g:ka', 'v:さん|さん', 'v:お|お', 'v:元気|げんき', 'v:私|わたし', 'v:今|いま', 'v:大学|だいがく', 'v:語|ご', 'v:勉強|べんきょう', 'v:する|する', 'v:毎日|まいにち', 'v:忙しい|いそがしい', 'v:とても|とても', 'v:楽しい|たのしい', 'v:アパート|アパート', 'v:歩く|あるく', 'v:十|じゅう', 'v:五|ご', 'v:分|ふん', 'v:近く|ちかく', 'v:公園|こうえん', 'v:ある|ある', 'v:日曜日|にちようび', 'v:よく|よく', 'v:散歩|さんぽ', 'v:先週|せんしゅう', 'v:クラス|クラス', 'v:友達|ともだち', 'v:山|やま', 'v:行く|いく', 'v:上|うえ', 'v:写真|しゃしん', 'v:たくさん|たくさん', 'v:撮る|とる','v:来月|らいげつ', 'v:国|くに', 'v:帰る|かえる', 'v:その|その', 'v:時|とき', 'v:一緒|いっしょ', 'v:御飯|ごはん', 'v:食べる|たべる', 'v:所|ところ', 'v:中|なか', 'v:何|なに', 'v:入る|はいる', 'k:今', 'k:大', 'k:学', 'k:日', 'k:本', 'k:語', 'k:十', 'k:五', 'k:山', 'k:行', 'k:上', 'k:来', 'k:月', 'k:国', 'k:食', 'k:中', 'k:何', 'k:入'],
+    verified: true }),
+
+  P({ id: 'p:n5-my-family', format: 'mid',
+    furigana: 'わたしの　かぞく\nわたしの　かぞくは　[五|ご][人|にん]です。[父|ちち]と　[母|はは]と　あにと　いもうとと　わたしです。[父|ちち]は　ぎんこうで　はたらいて　います。まいあさ　[七|しち][時|じ]に　うちを　[出|で]ます。[母|はは]は　びょういんの　いしゃです。あには　[大学|だいがく]の　[学生|がくせい]です。ギターを　ひくのが　じょうずです。いもうとは　[七|なな]さいです。\nうちには　ねこも　います。[名前|なまえ]は　タマです。[白|しろ]い　ねこです。タマは　いつも　いもうとの　ベッドで　ねて　います。にちようびは　かぞく　みんなで　こうえんへ　[行|い]きます。',
+    en: 'My family. There are five people in my family: my father, my mother, my older brother, my younger sister and me. My father works at a bank. Every morning he leaves home at seven. My mother is a doctor at a hospital. My brother is a university student. He is good at playing the guitar. My sister is seven. We also have a cat. Its name is Tama. It is a white cat. Tama always sleeps on my sister\'s bed. On Sundays the whole family goes to the park.',
+    questions: [
+      { q: 'お[父|とう]さんは　どこで　はたらいて　いますか。',
+        options: ['ぎんこう', 'びょういん', '[大学|だいがく]', 'こうえん'], answer: 0,
+        explain: '父はぎんこうではたらいています: the father works at a bank. The hospital is where the mother works, the university is the brother\'s, and the park is a Sunday outing.' },
+      { q: 'タマは　いつも　どこで　ねて　いますか。',
+        options: ['いもうとの　ベッド', 'わたしの　ベッド', 'あにの　へや', 'こうえん'], answer: 0,
+        explain: 'タマはいつもいもうとのベッドでねています: Tama always sleeps on the younger sister\'s bed. The writer\'s bed and the brother\'s room are not mentioned, and the park is where the family goes.' }],
+    names: ['タマ'],
+    uses: ['g:to', 'g:de', 'g:te-iru', 'g:ni', 'g:wo', 'g:no-ga-jouzu', 'g:mo', 'g:itsumo', 'g:adj-i', 'g:ni-ikimasu', 'g:no', 'g:wa-desu', 'g:masu', 'g:ka', 'v:私|わたし', 'v:家族|かぞく', 'v:五|ご', 'v:人|にん', 'v:父|ちち', 'v:母|はは', 'v:兄|あに', 'v:妹|いもうと', 'v:銀行|ぎんこう', 'v:働く|はたらく', 'v:毎朝|まいあさ', 'v:七|しち', 'v:時|じ', 'v:うち|うち', 'v:出る|でる', 'v:病院|びょういん', 'v:医者|いしゃ', 'v:大学|だいがく', 'v:学生|がくせい', 'v:ギター|ギター', 'v:弾く|ひく', 'v:上手|じょうず', 'v:七|なな', 'v:歳|さい', 'v:猫|ねこ', 'v:居る|いる', 'v:名前|なまえ', 'v:白い|しろい', 'v:いつも|いつも', 'v:ベッド|ベッド', 'v:寝る|ねる', 'v:日曜日|にちようび', 'v:みんな|みんな', 'v:公園|こうえん', 'v:行く|いく', 'v:お父さん|おとうさん', 'v:どこ|どこ', 'v:部屋|へや', 'k:五', 'k:人', 'k:父', 'k:母', 'k:七', 'k:時', 'k:出', 'k:大', 'k:学', 'k:生', 'k:名', 'k:前', 'k:白', 'k:行'],
+    verified: true }),
+
+  P({ id: 'p:n5-curry-party', format: 'mid',
+    furigana: 'こんしゅうの　どようびに、クラスの　ともだちが　[三|さん][人|にん]　わたしの　うちに　[来|き]ます。みんなで　カレーを　つくる　つもりです。わたしは　りょうりが　へたですから、きのう　[母|はは]と　いっしょに　カレーを　つくりました。とても　おいしかったです。\nともだちの　[中|なか]で、ワンさんは　からい　ものが　すきです。でも、アンナさんは　からい　ものが　きらいです。ですから、あまり　からくない　カレーを　つくる　つもりです。\nカレーを　[食|た]べてから、みんなで　えいがを　[見|み]る　つもりです。',
+    en: 'This Saturday three friends from my class are coming to my home. We plan to make curry together. I\'m bad at cooking, so yesterday I made curry with my mother. It was very good. Of my friends, Wang likes spicy food, but Anna doesn\'t like spicy food. So I plan to make a curry that isn\'t very spicy. After we eat the curry, we plan to watch a movie together.',
+    questions: [
+      { q: 'どんな　カレーを　つくりますか。',
+        options: ['とても　からい　カレー', 'あまり　からくない　カレー', 'あまい　カレー', 'にくが　ない　カレー'], answer: 1,
+        explain: 'Because Anna doesn\'t like spicy food, the writer will make あまりからくないカレー, a curry that isn\'t very spicy. Very spicy is what Wang would like; "not very spicy" is not the same as sweet, and nothing is said about meat.' },
+      { q: 'カレーを　[食|た]べてから、みんなで　[何|なに]を　しますか。',
+        options: ['えいがを　[見|み]ます', 'りょうりを　つくります', 'さんぽを　します', 'おんがくを　ききます'], answer: 0,
+        explain: 'カレーを食べてから、みんなでえいがを見るつもりです: after the curry they will watch a movie. The cooking comes before the meal; a walk and music are not mentioned.' }],
+    names: ['ワン', 'アンナ'],
+    uses: ['g:ni', 'g:ga', 'g:wo', 'g:tsumori', 'g:kara', 'g:to', 'g:adj-i', 'g:te-kara', 'g:totemo', 'g:no', 'g:wa-desu', 'g:ka', 'v:今週|こんしゅう', 'v:土曜日|どようび', 'v:クラス|クラス', 'v:友達|ともだち', 'v:三|さん', 'v:人|にん', 'v:私|わたし', 'v:うち|うち', 'v:来る|くる', 'v:みんな|みんな', 'v:カレー|カレー', 'v:作る|つくる', 'v:料理|りょうり', 'v:下手|へた', 'v:昨日|きのう', 'v:母|はは', 'v:一緒|いっしょ', 'v:とても|とても', 'v:おいしい|おいしい', 'v:中|なか', 'v:さん|さん', 'v:辛い|からい', 'v:物|もの', 'v:好き|すき', 'v:でも|でも', 'v:嫌い|きらい', 'v:あまり|あまり', 'v:食べる|たべる', 'v:映画|えいが', 'v:見る|みる', 'v:どんな|どんな', 'v:甘い|あまい', 'v:肉|にく', 'v:ない|ない', 'v:何|なに', 'v:する|する', 'v:散歩|さんぽ', 'v:音楽|おんがく', 'v:聞く|きく', 'k:三', 'k:人', 'k:来', 'k:母', 'k:中', 'k:食', 'k:見', 'k:何'],
+    verified: true }),
+
+  P({ id: 'p:n5-lost-umbrella', format: 'mid',
+    furigana: 'きのうは　あさから　[雨|あめ]でした。わたしは　せんしゅう　デパートで　かった　あたらしい　あおい　かさを　もって、[電車|でんしゃ]で　[学校|がっこう]へ　[行|い]きました。[学校|がっこう]の　[前|まえ]の　えきで　[電車|でんしゃ]を　おりました。\nでも、[学校|がっこう]に　ついた　とき、かさが　ありませんでした。[電車|でんしゃ]の　[中|なか]に　わすれたんです。とても　こまりました。[学校|がっこう]で　ともだちの　かさを　かりました。\n[午後|ごご]、えきへ　かさを　とりに　[行|い]きました。えきの　[人|ひと]が　わたしの　かさを　もって　いました。よかったです。',
+    en: 'Yesterday it rained from the morning. I took the new blue umbrella I bought at a department store last week and went to school by train. I got off the train at the station in front of the school. But when I got to school, I didn\'t have my umbrella. I had left it on the train. I was really stuck. At school I borrowed a friend\'s umbrella. In the afternoon I went to the station to get the umbrella. A station worker had it. I was glad.',
+    questions: [
+      { q: 'この　[人|ひと]は　どこに　かさを　わすれましたか。',
+        options: ['[電車|でんしゃ]の　[中|なか]', 'えき', '[学校|がっこう]', 'うち'], answer: 0,
+        explain: '電車の中にわすれたんです: the umbrella was left on the train. The station is where the writer got it back, the school is where the writer noticed, and the writer left home with it.' },
+      { q: 'わすれた　かさは　だれが　もって　いましたか。',
+        options: ['えきの　[人|ひと]', '[学校|がっこう]の　[先生|せんせい]', 'ともだち', '[電車|でんしゃ]の　[中|なか]の　[人|ひと]'], answer: 0,
+        explain: 'えきの人がわたしのかさをもっていました: a person at the station had it. The friend only lent the writer another umbrella, no teacher is mentioned, and passengers on the train are not mentioned either.' }],
+    uses: ['g:deshita', 'g:kara', 'g:ta-form', 'g:te-form', 'g:de', 'g:ni-ikimasu', 'g:wo', 'g:ni', 'g:ga-arimasu', 'g:mashita', 'g:n-desu', 'g:ni-iku', 'g:te-iru', 'g:totemo', 'g:adj-i', 'g:no', 'g:ga', 'g:wa-desu', 'g:ka', 'v:昨日|きのう', 'v:朝|あさ', 'v:雨|あめ', 'v:私|わたし', 'v:新しい|あたらしい', 'v:青い|あおい', 'v:傘|かさ', 'v:持つ|もつ', 'v:電車|でんしゃ', 'v:学校|がっこう', 'v:行く|いく', 'v:前|まえ', 'v:駅|えき', 'v:降りる|おりる', 'v:でも|でも', 'v:着く|つく', 'v:時|とき', 'v:ある|ある', 'v:中|なか', 'v:忘れる|わすれる', 'v:とても|とても', 'v:困る|こまる', 'v:午後|ごご', 'v:取る|とる', 'v:人|ひと', 'v:いい|いい', 'v:どこ|どこ', 'v:うち|うち', 'v:誰|だれ', 'v:先生|せんせい', 'v:友達|ともだち', 'v:先週|せんしゅう', 'v:デパート|デパート', 'v:買う|かう', 'v:借りる|かりる', 'k:雨', 'k:電', 'k:車', 'k:学', 'k:校', 'k:行', 'k:前', 'k:中', 'k:午', 'k:後', 'k:人', 'k:先', 'k:生'],
+    verified: true }),
+
+  P({ id: 'p:n5-japanese-class', format: 'mid',
+    furigana: 'わたしは　まいしゅう　かようびと　もくようびに　[日本|にほん][語|ご]の　クラスへ　[行|い]きます。クラスは　[午後|ごご]　[六|ろく][時|じ]から　[八|はち][時|じ]までです。[先生|せんせい]は　[中山|なかやま][先生|せんせい]です。とても　おもしろい　[先生|せんせい]です。クラスには　[学生|がくせい]が　[十|じゅう][二|に][人|にん]　います。いろいろな　[国|くに]の　[人|ひと]が　います。\nわたしは　かんじを　おぼえるのが　へたです。でも、ひらがなと　かたかなは　もう　ぜんぶ　おぼえました。しゅくだいが　たくさん　ありますから、すいようびの　よるは　いつも　としょかんで　べんきょうします。',
+    en: 'Every week, on Tuesdays and Thursdays, I go to a Japanese class. The class is from 6 to 8 p.m. The teacher is Ms. Nakayama. She is a very interesting teacher. There are twelve students in the class, from many different countries. I\'m bad at remembering kanji. But I have already learned all of hiragana and katakana. There is a lot of homework, so on Wednesday evenings I always study at the library.',
+    questions: [
+      { q: 'この　[人|ひと]は　いつ　[日本|にほん][語|ご]の　クラスへ　[行|い]きますか。',
+        options: ['かようびと　もくようびの　[午後|ごご]', 'かようびと　もくようびの　[午前|ごぜん]', 'すいようびの　よる', 'まいにち'], answer: 0,
+        explain: 'Class is on Tuesdays and Thursdays from 6 to 8 p.m. (午後). Not in the morning; Wednesday evening is library study time, and the class is not every day.' },
+      { q: 'この　[人|ひと]は　[何|なに]を　もう　ぜんぶ　おぼえましたか。',
+        options: ['かんじ', 'ひらがなと　かたかな', 'かんじと　ひらがな', 'かたかなだけ'], answer: 1,
+        explain: 'ひらがなとかたかなはもうぜんぶおぼえました: both hiragana and katakana. Kanji are what the writer is bad at remembering, so any option with kanji is wrong, and katakana alone leaves out hiragana.' }],
+    names: ['中山|なかやま', '日本|にほん'],
+    uses: ['g:to', 'g:ni', 'g:ni-ikimasu', 'g:made', 'g:totemo', 'g:adj-i', 'g:adj-na', 'g:ga-imasu', 'g:no-ga-heta', 'g:mou', 'g:kara', 'g:ga', 'g:itsumo', 'g:de', 'g:dake', 'g:no', 'g:wa-desu', 'g:mashita', 'g:ka', 'v:私|わたし', 'v:毎週|まいしゅう', 'v:火曜日|かようび', 'v:木曜日|もくようび', 'v:語|ご', 'v:クラス|クラス', 'v:行く|いく', 'v:午後|ごご', 'v:六|ろく', 'v:時|じ', 'v:八|はち', 'v:先生|せんせい', 'v:とても|とても', 'v:おもしろい|おもしろい', 'v:学生|がくせい', 'v:十|じゅう', 'v:二|に', 'v:人|にん', 'v:居る|いる', 'v:いろいろ|いろいろ', 'v:国|くに', 'v:人|ひと', 'v:漢字|かんじ', 'v:覚える|おぼえる', 'v:下手|へた', 'v:でも|でも', 'v:平仮名|ひらがな', 'v:片仮名|かたかな', 'v:もう|もう', 'v:全部|ぜんぶ', 'v:宿題|しゅくだい', 'v:たくさん|たくさん', 'v:ある|ある', 'v:水曜日|すいようび', 'v:夜|よる', 'v:いつも|いつも', 'v:図書館|としょかん', 'v:勉強|べんきょう', 'v:する|する', 'v:いつ|いつ', 'v:午前|ごぜん', 'v:毎日|まいにち', 'v:何|なに', 'v:だけ|だけ', 'k:日', 'k:本', 'k:語', 'k:行', 'k:午', 'k:後', 'k:六', 'k:時', 'k:八', 'k:先', 'k:生', 'k:中', 'k:山', 'k:学', 'k:十', 'k:二', 'k:人', 'k:国', 'k:前', 'k:何'],
+    verified: true }),
+
+  P({ id: 'p:n5-trip-to-the-sea', format: 'mid',
+    furigana: 'せんしゅうの　にちようびに、ともだちの　かぞくと　うみへ　[行|い]きました。あさ　[八|はち][時|じ]に　えきの　[前|まえ]で　あって、[車|くるま]で　[行|い]きました。[二|に][時間|じかん]くらい　かかりました。うみは　[水|みず]が　とても　きれいでした。\nわたしは　およぐのが　へたですから、うみの　ちかくを　さんぽしたり、しゃしんを　とったり　しました。ともだちは　[一|いち][時間|じかん]　およいで　いました。ひるごはんは　ちかくの　レストランで　さかなを　[食|た]べました。[午後|ごご]　[五|ご][時|じ]に　うみを　[出|で]て、[七|しち][時|じ]に　うちへ　かえりました。',
+    en: 'Last Sunday I went to the sea with a friend\'s family. We met in front of the station at eight in the morning and went by car. It took about two hours. The water was very clean. I\'m bad at swimming, so I walked along the shore and took photos. My friend swam for an hour. For lunch we ate fish at a restaurant nearby. We left the sea at five p.m. and got home at seven.',
+    questions: [
+      { q: 'うみまで　[何|なん]で　[行|い]きましたか。',
+        options: ['[車|くるま]', '[電車|でんしゃ]', 'バス', 'じてんしゃ'], answer: 0,
+        explain: '車で行きました: they went by car. They met at the station, but did not take a train from there; buses and bicycles are not mentioned.' },
+      { q: '「わたし」は　うみで　[何|なに]を　しましたか。',
+        options: ['[一|いち][時間|じかん]　およぎました', 'さんぽしたり、しゃしんを　とったり　しました', '[車|くるま]の　[中|なか]で　ねました', 'レストランで　にくを　[食|た]べました'], answer: 1,
+        explain: 'The writer is bad at swimming, so they walked by the sea and took photos. It was the friend who swam for an hour, nobody slept in the car, and they ate fish, not meat.' }],
+    uses: ['g:ni', 'g:to', 'g:ni-ikimasu', 'g:de', 'g:te-form', 'g:totemo', 'g:adj-na', 'g:no-ga-heta', 'g:kara', 'g:tari-tari', 'g:te-iru', 'g:wo', 'g:made', 'g:no', 'g:deshita', 'g:mashita', 'g:wa-desu', 'g:ka', 'v:先週|せんしゅう', 'v:日曜日|にちようび', 'v:友達|ともだち', 'v:家族|かぞく', 'v:海|うみ', 'v:行く|いく', 'v:朝|あさ', 'v:八|はち', 'v:時|じ', 'v:駅|えき', 'v:前|まえ', 'v:会う|あう', 'v:車|くるま', 'v:二|に', 'v:時間|じかん', 'v:くらい|くらい', 'v:かかる|かかる', 'v:水|みず', 'v:とても|とても', 'v:きれい|きれい', 'v:私|わたし', 'v:泳ぐ|およぐ', 'v:下手|へた', 'v:近く|ちかく', 'v:散歩|さんぽ', 'v:する|する', 'v:写真|しゃしん', 'v:撮る|とる', 'v:一|いち', 'v:昼御飯|ひるごはん', 'v:レストラン|レストラン', 'v:魚|さかな', 'v:食べる|たべる', 'v:午後|ごご', 'v:五|ご', 'v:出る|でる', 'v:七|しち', 'v:うち|うち', 'v:帰る|かえる', 'v:何|なん', 'v:何|なに', 'v:電車|でんしゃ', 'v:バス|バス', 'v:自転車|じてんしゃ', 'v:中|なか', 'v:寝る|ねる', 'v:肉|にく', 'k:行', 'k:八', 'k:時', 'k:前', 'k:車', 'k:二', 'k:間', 'k:水', 'k:一', 'k:食', 'k:午', 'k:後', 'k:五', 'k:出', 'k:七', 'k:何', 'k:電', 'k:中'],
+    verified: true }),
+
+  P({ id: 'p:n5-my-town', format: 'mid',
+    furigana: 'わたしの　まちは　[小|ちい]さいです。でも、えきの　ちかくには　みせが　たくさん　あります。わたしは　とうきょうより　この　まちの　ほうが　すきです。しずかですから。\nまちの　[中|なか]で　いちばん　ゆうめいな　ところは　[大|おお]きい　こうえんです。はるは　はなが　とても　きれいです。[毎年|まいとし]　[四|し][月|がつ]に、たくさんの　[人|ひと]が　はなを　[見|み]に　こうえんへ　[行|い]きます。\nこの　まちには　[大学|だいがく]が　ありません。ですから、あには　とうきょうの　[大学|だいがく]へ　[行|い]きました。あには　[毎月|まいつき]　うちへ　かえります。',
+    en: 'My town is small. But there are lots of shops near the station. I like this town better than Tokyo, because it is quiet. The most famous place in the town is a big park. In spring the flowers there are very beautiful. Every year in April, lots of people go to the park to see the flowers. There is no university in this town. So my older brother went to a university in Tokyo. He comes home every month.',
+    questions: [
+      { q: 'この　まちで　いちばん　ゆうめいな　ところは　どこですか。',
+        options: ['えきの　ちかくの　みせ', '[大|おお]きい　こうえん', '[大学|だいがく]', 'とうきょう'], answer: 1,
+        explain: 'いちばんゆうめいなところは大きいこうえんです: the most famous place is a big park. The shops are only "many", the town has no university, and Tokyo is another city.' },
+      { q: 'おにいさんは　どうして　とうきょうへ　[行|い]きましたか。',
+        options: ['まちに　[大学|だいがく]が　ないから', 'とうきょうの　ほうが　すきだから', 'はなを　[見|み]たいから', 'しごとが　あるから'], answer: 0,
+        explain: 'この町には大学がありません。ですから、あには東京の大学へ行きました: there is no university in the town, so he went to one in Tokyo. Liking Tokyo better is the opposite of what the writer says (about themselves), the flowers are in the town, and no job is mentioned.' }],
+    names: ['とうきょう'],
+    uses: ['g:adj-i', 'g:adj-na', 'g:ga-arimasu', 'g:hou-ga-yori', 'g:kara', 'g:totemo', 'g:ni', 'g:ni-iku', 'g:ni-ikimasu', 'g:mashita', 'g:doushite', 'g:tai', 'g:no', 'g:wa-desu', 'g:ka', 'v:私|わたし', 'v:町|まち', 'v:小さい|ちいさい', 'v:でも|でも', 'v:駅|えき', 'v:近く|ちかく', 'v:店|みせ', 'v:たくさん|たくさん', 'v:ある|ある', 'v:より|より', 'v:この|この', 'v:ほう|ほう', 'v:好き|すき', 'v:静か|しずか', 'v:中|なか', 'v:いちばん|いちばん', 'v:有名|ゆうめい', 'v:所|ところ', 'v:大きい|おおきい', 'v:公園|こうえん', 'v:春|はる', 'v:花|はな', 'v:とても|とても', 'v:きれい|きれい', 'v:毎年|まいとし', 'v:四|し', 'v:月|がつ', 'v:人|ひと', 'v:見る|みる', 'v:行く|いく', 'v:大学|だいがく', 'v:兄|あに', 'v:毎月|まいつき', 'v:うち|うち', 'v:帰る|かえる', 'v:お兄さん|おにいさん', 'v:どうして|どうして', 'v:ない|ない', 'v:仕事|しごと', 'k:小', 'k:中', 'k:大', 'k:毎', 'k:年', 'k:四', 'k:月', 'k:人', 'k:見', 'k:行', 'k:学'],
+    verified: true }),
+
+  P({ id: 'p:n5-new-shoes', format: 'mid',
+    furigana: 'きのう、[母|はは]と　デパートへ　くつを　かいに　[行|い]きました。くつの　みせは　[五|ご]かいに　あります。[白|しろ]い　くつと　くろい　くつが　ありました。どちらも　[七|なな][千|せん][円|えん]でした。\nわたしは　[白|しろ]い　くつの　ほうが　すきでしたけど、すこし　[小|ちい]さかったです。くろい　くつは　ちょうど　よかったです。ですから、くろい　くつを　かいました。\nそれから、[七|なな]かいの　レストランで　ひるごはんを　[食|た]べました。[母|はは]は　さかなを、わたしは　カレーを　[食|た]べました。あしたから　この　くつで　[学校|がっこう]へ　[行|い]きます。',
+    en: 'Yesterday I went to the department store with my mother to buy shoes. The shoe shop is on the fifth floor. There were white shoes and black shoes. Both were 7,000 yen. I liked the white ones better, but they were a little small. The black ones were just right. So I bought the black shoes. Then we had lunch at the restaurant on the seventh floor. My mother had fish and I had curry. From tomorrow I will wear these shoes to school.',
+    questions: [
+      { q: '「わたし」は　どうして　くろい　くつを　かいましたか。',
+        options: ['[白|しろ]い　くつが　[小|ちい]さかったから', 'くろい　くつの　ほうが　やすかったから', 'くろい　くつの　ほうが　すきだったから', '[白|しろ]い　くつが　[高|たか]かったから'], answer: 0,
+        explain: 'The white shoes were a little small and the black ones fit, so the writer bought the black ones. Both pairs cost 7,000 yen, so price was not the reason either way, and the writer liked the white ones better.' },
+      { q: '「わたし」は　[何|なん]かいで　ひるごはんを　[食|た]べましたか。',
+        options: ['[二|に]かい', '[五|ご]かい', '[七|なな]かい', '[九|きゅう]かい'], answer: 2,
+        explain: 'They ate at the restaurant on the seventh floor (七かい). The fifth floor is the shoe shop; the second and ninth floors are not mentioned.' }],
+    uses: ['g:to', 'g:ni-ikimasu', 'g:ni-iku', 'g:ga-arimasu', 'g:mo', 'g:deshita', 'g:kedo', 'g:adj-i', 'g:mashita', 'g:doushite', 'g:kara', 'g:de', 'g:wo', 'g:ni', 'g:no', 'g:wa-desu', 'g:ka', 'v:昨日|きのう', 'v:母|はは', 'v:デパート|デパート', 'v:靴|くつ', 'v:買う|かう', 'v:行く|いく', 'v:店|みせ', 'v:五|ご', 'v:階|かい', 'v:ある|ある', 'v:白い|しろい', 'v:黒い|くろい', 'v:どちら|どちら', 'v:七|なな', 'v:千|せん', 'v:円|えん', 'v:私|わたし', 'v:ほう|ほう', 'v:好き|すき', 'v:少し|すこし', 'v:小さい|ちいさい', 'v:ちょうど|ちょうど', 'v:よい|よい', 'v:それから|それから', 'v:レストラン|レストラン', 'v:昼御飯|ひるごはん', 'v:食べる|たべる', 'v:魚|さかな', 'v:カレー|カレー', 'v:どうして|どうして', 'v:安い|やすい', 'v:高い|たかい', 'v:何|なん', 'v:二|に', 'v:九|きゅう', 'v:明日|あした', 'v:学校|がっこう', 'k:母', 'k:行', 'k:五', 'k:白', 'k:七', 'k:千', 'k:円', 'k:小', 'k:食', 'k:高', 'k:何', 'k:二', 'k:九', 'k:学', 'k:校'],
+    verified: true }),
+
+  // ── info retrieval (情報検索) ──────────────────────────────────────────────
+  P({ id: 'p:n5-library-hours', format: 'info',
+    furigana: '[東|ひがし]としょかん\n・げつようび　お[休|やす]み\n・かようび〜きんようび　[午前|ごぜん][九|く][時|じ]〜[午後|ごご][七|しち][時|じ]\n・どようび・にちようび　[午前|ごぜん][十|じゅう][時|じ]〜[午後|ごご][五|ご][時|じ]\n[本|ほん]は　[五|ご]さつまで、[二|に]しゅうかん　かりても　いいです。としょかんの　[中|なか]で　[食|た]べたり　のんだり　しないで　ください。',
+    en: 'Higashi Library. Monday: closed. Tuesday–Friday: 9 a.m.–7 p.m. Saturday and Sunday: 10 a.m.–5 p.m. You may borrow up to five books for two weeks. Please do not eat or drink inside the library.',
+    questions: [{ q: 'リンさんは　しごとが　[午後|ごご]　[六|ろく][時|じ]に　おわります。しごとの　あとで　としょかんへ　[行|い]きたいです。[何|なん]ようびに　[行|い]きますか。',
+      options: ['げつようび', 'すいようび', 'どようび', 'にちようび'], answer: 1,
+      explain: 'After 6 p.m. the library is open only Tuesday–Friday (until 7), so Wednesday. It is closed on Monday, and on Saturday and Sunday it closes at 5, before Lin finishes work.' }],
+    names: ['リン'],
+    uses: ['g:made', 'g:te-mo-ii', 'g:tari-tari', 'g:nai-de-kudasai', 'g:de', 'g:ga', 'g:ni', 'g:no', 'g:tai', 'g:ni-ikimasu', 'g:wa-desu', 'g:ka', 'v:東|ひがし', 'v:図書館|としょかん', 'v:月曜日|げつようび', 'v:お|お', 'v:休み|やすみ', 'v:火曜日|かようび', 'v:金曜日|きんようび', 'v:午前|ごぜん', 'v:九|く', 'v:時|じ', 'v:午後|ごご', 'v:七|しち', 'v:土曜日|どようび', 'v:日曜日|にちようび', 'v:十|じゅう', 'v:五|ご', 'v:本|ほん', 'v:冊|さつ', 'v:二|に', 'v:週間|しゅうかん', 'v:借りる|かりる', 'v:中|なか', 'v:食べる|たべる', 'v:飲む|のむ', 'v:する|する', 'v:ください|ください', 'v:さん|さん', 'v:仕事|しごと', 'v:六|ろく', 'v:終る|おわる', 'v:後|あと', 'v:行く|いく', 'v:何|なん', 'v:水曜日|すいようび', 'k:東', 'k:休', 'k:午', 'k:前', 'k:九', 'k:時', 'k:後', 'k:七', 'k:十', 'k:五', 'k:本', 'k:二', 'k:中', 'k:食', 'k:六', 'k:行', 'k:何'],
+    verified: true }),
+
+  P({ id: 'p:n5-train-times', format: 'info',
+    furigana: '[東|ひがし]えきを　[出|で]る　[時間|じかん]　→　[山川|やまかわ]えきに　つく　[時間|じかん]\n・7:10　→　7:45\n・7:40　→　8:15\n・8:10　→　8:45\n・8:40　→　9:15\n[電車|でんしゃ]の　お[金|かね]は　[二|に][百|ひゃく][円|えん]です。[山川|やまかわ]えきから　[学校|がっこう]まで　あるいて　[五|ご]ふんです。',
+    en: 'Leaves Higashi Station → arrives at Yamakawa Station: 7:10 → 7:45, 7:40 → 8:15, 8:10 → 8:45, 8:40 → 9:15. The fare is 200 yen. From Yamakawa Station to the school is a five-minute walk.',
+    questions: [{ q: '[学校|がっこう]は　[八|はち][時|じ][半|はん]に　はじまります。リンさんは　[八|はち][時|じ][半|はん]の　[前|まえ]に　[学校|がっこう]に　つきたいです。でも、あさは　いそがしいですから、いちばん　おそい　[電車|でんしゃ]に　のりたいです。[東|ひがし]えきを　[何|なん][時|じ]の　[電車|でんしゃ]に　のりますか。',
+      options: ['7:10', '7:40', '8:10', '8:40'], answer: 1,
+      explain: 'The 7:40 train arrives at 8:15; with the five-minute walk Lin is at school at 8:20, before 8:30. The 8:10 train arrives at 8:45, too late, and so does the 8:40. The 7:10 also works but is not the latest one.' }],
+    names: ['山川|やまかわ', 'リン'],
+    uses: ['g:wo', 'g:ni', 'g:kara', 'g:made', 'g:tai', 'g:no', 'g:wa-desu', 'g:ka', 'v:東|ひがし', 'v:駅|えき', 'v:出る|でる', 'v:時間|じかん', 'v:着く|つく', 'v:学校|がっこう', 'v:歩く|あるく', 'v:五|ご', 'v:分|ふん', 'v:八|はち', 'v:時|じ', 'v:半|はん', 'v:始まる|はじまる', 'v:さん|さん', 'v:前|まえ', 'v:でも|でも', 'v:朝|あさ', 'v:忙しい|いそがしい', 'v:いちばん|いちばん', 'v:遅い|おそい', 'v:電車|でんしゃ', 'v:乗る|のる', 'v:お金|おかね', 'v:二|に', 'v:百|ひゃく', 'v:円|えん', 'v:何|なん', 'k:東', 'k:山', 'k:川', 'k:出', 'k:時', 'k:間', 'k:学', 'k:校', 'k:五', 'k:八', 'k:半', 'k:前', 'k:電', 'k:車', 'k:何', 'k:金', 'k:二', 'k:百', 'k:円'],
+    verified: true }),
+
+  P({ id: 'p:n5-class-party-flyer', format: 'info',
+    furigana: 'クラスの　パーティー\n・いつ　[三|さん][月|がつ][二十日|はつか]　[午後|ごご][六|ろく][時|じ]〜[八|はち][時|じ]\n・どこ　[学校|がっこう]の　[二|に]かいの　きょうしつ\n・お[金|かね]　[一人|ひとり]　[五|ご][百|ひゃく][円|えん]\n[食|た]べものと　のみものは　あります。じぶんの　コップを　もって　[来|き]て　ください。パーティーの　あとで、みんなで　きょうしつを　そうじします。',
+    en: 'Class party. When: 20 March, 6–8 p.m. Where: the classroom on the second floor of the school. Cost: 500 yen per person. There will be food and drinks. Please bring your own cup. After the party we will all clean the classroom together.',
+    questions: [{ q: 'パーティーへ　[行|い]く　[人|ひと]は　[何|なに]を　もって　[行|い]きますか。',
+      options: ['[食|た]べもの', 'のみもの', 'じぶんの　コップと　[五|ご][百|ひゃく][円|えん]', 'じぶんの　コップだけ'], answer: 2,
+      explain: 'Everyone pays 500 yen (お金 一人 五百円) and must bring their own cup. Food and drinks are provided, and the cup alone leaves out the money.' }],
+    uses: ['g:no', 'g:to', 'g:te-form', 'g:te-kudasai', 'g:dake', 'g:wo', 'g:ni-ikimasu', 'g:masu', 'g:ka', 'v:クラス|クラス', 'v:パーティー|パーティー', 'v:いつ|いつ', 'v:三|さん', 'v:月|がつ', 'v:二十日|はつか', 'v:午後|ごご', 'v:六|ろく', 'v:時|じ', 'v:八|はち', 'v:どこ|どこ', 'v:学校|がっこう', 'v:二|に', 'v:階|かい', 'v:教室|きょうしつ', 'v:お金|おかね', 'v:一人|ひとり', 'v:五|ご', 'v:百|ひゃく', 'v:円|えん', 'v:食べ物|たべもの', 'v:飲み物|のみもの', 'v:ある|ある', 'v:自分|じぶん', 'v:コップ|コップ', 'v:持つ|もつ', 'v:来る|くる', 'v:ください|ください', 'v:行く|いく', 'v:人|ひと', 'v:何|なに', 'v:だけ|だけ', 'v:後|あと', 'v:みんな|みんな', 'v:掃除|そうじ', 'v:する|する', 'k:三', 'k:月', 'k:二', 'k:十', 'k:日', 'k:午', 'k:後', 'k:六', 'k:時', 'k:八', 'k:学', 'k:校', 'k:金', 'k:一', 'k:人', 'k:五', 'k:百', 'k:円', 'k:食', 'k:来', 'k:行', 'k:何'],
+    verified: true }),
+
+  P({ id: 'p:n5-cafe-prices', format: 'info',
+    furigana: 'きっさてん\nのみもの\n・コーヒー　300[円|えん]\n・こうちゃ　280[円|えん]\n・ぎゅうにゅう　200[円|えん]\n[食|た]べもの\n・パン　150[円|えん]\n・カレー　600[円|えん]\n[午前|ごぜん]は、のみものが　ぜんぶ　50[円|えん]　やすく　なります。あさ　[七|しち][時|じ]から　よる　[九|く][時|じ]まで　あいて　います。',
+    en: 'Café. Drinks: coffee 300 yen, black tea 280 yen, milk 200 yen. Food: bread 150 yen, curry 600 yen. In the morning, all drinks are 50 yen cheaper. Open from 7 a.m. to 9 p.m.',
+    questions: [{ q: '[午前|ごぜん][十|じゅう][時|じ]に、コーヒーと　パンを　[一|ひと]つずつ　かいました。ぜんぶで　いくらですか。',
+      options: ['350[円|えん]', '400[円|えん]', '450[円|えん]', '500[円|えん]'], answer: 1,
+      explain: 'At 10 a.m. drinks are 50 yen off: coffee 300 − 50 = 250, bread stays 150 (the discount is for drinks only), so 250 + 150 = 400 yen. 450 forgets the discount, 350 takes 50 off the bread too, and 500 is wrong arithmetic.' }],
+    uses: ['g:ga', 'g:made', 'g:te-iru', 'g:naru', 'g:adj-i', 'g:to', 'g:ni', 'g:wo', 'g:mashita', 'g:wa-desu', 'g:ka', 'v:喫茶店|きっさてん', 'v:飲み物|のみもの', 'v:コーヒー|コーヒー', 'v:円|えん', 'v:紅茶|こうちゃ', 'v:牛乳|ぎゅうにゅう', 'v:食べ物|たべもの', 'v:パン|パン', 'v:カレー|カレー', 'v:午前|ごぜん', 'v:全部|ぜんぶ', 'v:安い|やすい', 'v:なる|なる', 'v:十|じゅう', 'v:時|じ', 'v:一つ|ひとつ', 'v:ずつ|ずつ', 'v:買う|かう', 'v:いくら|いくら', 'v:朝|あさ', 'v:七|しち', 'v:夜|よる', 'v:九|く', 'v:開く|あく', 'k:円', 'k:食', 'k:午', 'k:前', 'k:十', 'k:時', 'k:一', 'k:七', 'k:九'],
+    verified: true }),
+
+  P({ id: 'p:n5-class-schedule', format: 'info',
+    furigana: '[日本|にほん][語|ご]クラス\n・げつようび　かんじ\n・かようび　さくぶん\n・すいようび　お[休|やす]み\n・もくようび　[日本|にほん]の　うた\n・きんようび　テスト\nクラスは　[午前|ごぜん][九|く][時|じ]から　[十|じゅう][一|いち][時|じ]までです。テストの　[日|ひ]は、じしょを　もって　[来|こ]ないで　ください。',
+    en: 'Japanese class. Monday: kanji. Tuesday: composition. Wednesday: no class. Thursday: Japanese songs. Friday: test. Class is from 9 to 11 a.m. On test days, please don\'t bring a dictionary.',
+    questions: [{ q: '[何|なん]ようびに　じしょを　もって　[行|い]っては　いけませんか。',
+      options: ['げつようび', 'かようび', 'もくようび', 'きんようび'], answer: 3,
+      explain: 'Dictionaries are not allowed on test days, and the test is on Friday (きんようび テスト). Monday is kanji, Tuesday composition and Thursday songs, with no rule about dictionaries.' }],
+    names: ['日本|にほん'],
+    uses: ['g:made', 'g:no', 'g:nai-de-kudasai', 'g:te-form', 'g:te-wa-ikemasen', 'g:wo', 'g:wa-desu', 'g:ka', 'v:語|ご', 'v:クラス|クラス', 'v:月曜日|げつようび', 'v:漢字|かんじ', 'v:火曜日|かようび', 'v:作文|さくぶん', 'v:水曜日|すいようび', 'v:お|お', 'v:休み|やすみ', 'v:木曜日|もくようび', 'v:歌|うた', 'v:金曜日|きんようび', 'v:テスト|テスト', 'v:午前|ごぜん', 'v:九|く', 'v:時|じ', 'v:十|じゅう', 'v:一|いち', 'v:辞書|じしょ', 'v:持つ|もつ', 'v:来る|くる', 'v:ください|ください', 'v:行く|いく', 'v:何|なん', 'k:日', 'k:本', 'k:語', 'k:休', 'k:午', 'k:前', 'k:九', 'k:時', 'k:十', 'k:一', 'k:来', 'k:行', 'k:何'],
+    verified: true }),
+
+  P({ id: 'p:n5-pool-rules', format: 'info',
+    furigana: '[山下|やました]プール\n・[時間|じかん]　[午前|ごぜん][九|く][時|じ]〜[午後|ごご][五|ご][時|じ]\n・お[金|かね]　[大人|おとな]　400[円|えん]　こども　200[円|えん]\n・[休|やす]み　まいしゅう　かようび\nプールに　[入|はい]る　[前|まえ]に、シャワーを　あびて　ください。プールの　ちかくで　はしらないで　ください。こどもは　[大人|おとな]と　いっしょに　[入|はい]って　ください。',
+    en: 'Yamashita Pool. Hours: 9 a.m.–5 p.m. Price: adults 400 yen, children 200 yen. Closed: every Tuesday. Please take a shower before going into the pool. Please don\'t run near the pool. Children must go in with an adult.',
+    questions: [{ q: '[大人|おとな][二人|ふたり]と　こども[一人|ひとり]で　プールへ　[行|い]きます。お[金|かね]は　ぜんぶで　いくらですか。',
+      options: ['600[円|えん]', '800[円|えん]', '1000[円|えん]', '1200[円|えん]'], answer: 2,
+      explain: 'Two adults at 400 yen and one child at 200 yen: 800 + 200 = 1,000 yen. 600 counts one adult and one child, 800 only the adults, and 1,200 charges all three as adults.' }],
+    names: ['山下|やました'],
+    uses: ['g:mae-ni', 'g:te-kudasai', 'g:nai-de-kudasai', 'g:te-form', 'g:to', 'g:de', 'g:ni', 'g:wo', 'g:ni-ikimasu', 'g:no', 'g:wa-desu', 'g:ka', 'v:プール|プール', 'v:時間|じかん', 'v:午前|ごぜん', 'v:九|く', 'v:時|じ', 'v:午後|ごご', 'v:五|ご', 'v:お金|おかね', 'v:大人|おとな', 'v:円|えん', 'v:子供|こども', 'v:休み|やすみ', 'v:毎週|まいしゅう', 'v:火曜日|かようび', 'v:入る|はいる', 'v:前|まえ', 'v:シャワー|シャワー', 'v:あびる|あびる', 'v:ください|ください', 'v:近く|ちかく', 'v:走る|はしる', 'v:二人|ふたり', 'v:一人|ひとり', 'v:行く|いく', 'v:全部|ぜんぶ', 'v:いくら|いくら', 'v:一緒|いっしょ', 'k:山', 'k:下', 'k:時', 'k:間', 'k:午', 'k:前', 'k:九', 'k:後', 'k:五', 'k:金', 'k:大', 'k:人', 'k:円', 'k:休', 'k:入', 'k:二', 'k:一', 'k:行'],
+    verified: true }),
+
+  P({ id: 'p:n5-no-water-notice', format: 'info',
+    furigana: 'アパートの　みなさん\n[水|みず]が　[出|で]ない　[日|ひ]\n・[日|ひ]　[五|ご][月|がつ][八日|ようか]（すいようび）\n・[時間|じかん]　[午前|ごぜん][十|じゅう][時|じ]〜[午後|ごご][二|に][時|じ]\n・[水|みず]　1かいの　いりぐちに　あります。[一人|ひとり]　[二|に][本|ほん]　もって　[行|い]って　ください。\nこの　[時間|じかん]は　[水|みず]が　[出|で]ません。トイレも　つかわないで　ください。',
+    en: 'To everyone in the apartment building: day without water. Day: Wednesday 8 May. Time: 10 a.m.–2 p.m. Water: there is water at the entrance on the ground floor; please take two bottles per person. During this time no water will come out of the taps. Please don\'t use the toilet either.',
+    questions: [{ q: '[五|ご][月|がつ][八日|ようか]の　[午前|ごぜん][十|じゅう][一|いち][時|じ]に、[何|なに]を　しては　いけませんか。',
+      options: ['トイレを　つかう', '1かいの　いりぐちへ　[行|い]く', '[水|みず]を　[二|に][本|ほん]　もって　[行|い]く', 'でんわを　かける'], answer: 0,
+      explain: '11 a.m. is inside 10 a.m.–2 p.m., and the notice says not to use the toilet then (トイレもつかわないでください). Going to the ground-floor entrance and taking two bottles is what the notice asks you to do, and phone calls are not mentioned.' }],
+    uses: ['g:ga', 'g:nai-form', 'g:mo', 'g:nai-de-kudasai', 'g:te-form', 'g:te-kudasai', 'g:te-wa-ikemasen', 'g:ni', 'g:ni-ikimasu', 'g:no', 'g:ka', 'v:アパート|アパート', 'v:皆さん|みなさん', 'v:水|みず', 'v:出る|でる', 'v:五|ご', 'v:月|がつ', 'v:八日|ようか', 'v:水曜日|すいようび', 'v:午前|ごぜん', 'v:十|じゅう', 'v:時|じ', 'v:午後|ごご', 'v:二|に', 'v:この|この', 'v:時間|じかん', 'v:トイレ|トイレ', 'v:使う|つかう', 'v:ください|ください', 'v:階|かい', 'v:入口|いりぐち', 'v:ある|ある', 'v:一人|ひとり', 'v:本|ほん', 'v:持つ|もつ', 'v:行く|いく', 'v:一|いち', 'v:何|なに', 'v:する|する', 'v:電話|でんわ', 'v:かける|かける', 'k:水', 'k:出', 'k:日', 'k:五', 'k:月', 'k:八', 'k:午', 'k:前', 'k:十', 'k:時', 'k:後', 'k:二', 'k:間', 'k:人', 'k:一', 'k:本', 'k:行', 'k:何'],
+    verified: true }),
+
+  P({ id: 'p:n5-weekly-weather', format: 'info',
+    furigana: 'こんしゅうの　[天気|てんき]\n・げつようび　はれ　[二|に][十|じゅう][五|ご]ど\n・かようび　くもり　[二|に][十|じゅう][二|に]ど\n・すいようび　[雨|あめ]　[十|じゅう][八|はち]ど\n・もくようび　[雨|あめ]　[二|に][十|じゅう]ど\n・きんようび　はれ　[二|に][十|じゅう][七|なな]ど\nわたしは　こんしゅう、はれの　[日|ひ]に　せんたくを　する　つもりです。でも、げつようびは　あさから　よるまで　しごとです。',
+    en: 'This week\'s weather. Monday: sunny, 25°. Tuesday: cloudy, 22°. Wednesday: rain, 18°. Thursday: rain, 20°. Friday: sunny, 27°. This week I plan to do the laundry on a sunny day. But on Monday I work from morning till night.',
+    questions: [{ q: '「わたし」は　[何|なん]ようびに　せんたくを　しますか。',
+      options: ['げつようび', 'かようび', 'すいようび', 'きんようび'], answer: 3,
+      explain: 'Only Monday and Friday are sunny, and the writer works all day on Monday, so Friday. Tuesday is cloudy and Wednesday rainy.' }],
+    uses: ['g:no', 'g:ni', 'g:wo', 'g:tsumori', 'g:made', 'g:wa-desu', 'g:ka', 'v:今週|こんしゅう', 'v:天気|てんき', 'v:月曜日|げつようび', 'v:晴れ|はれ', 'v:二|に', 'v:十|じゅう', 'v:五|ご', 'v:度|ど', 'v:火曜日|かようび', 'v:曇り|くもり', 'v:水曜日|すいようび', 'v:雨|あめ', 'v:八|はち', 'v:木曜日|もくようび', 'v:金曜日|きんようび', 'v:七|なな', 'v:私|わたし', 'v:洗濯|せんたく', 'v:する|する', 'v:でも|でも', 'v:朝|あさ', 'v:夜|よる', 'v:仕事|しごと', 'v:何|なん', 'k:天', 'k:気', 'k:二', 'k:十', 'k:五', 'k:雨', 'k:八', 'k:七', 'k:日', 'k:何'],
+    verified: true })
+]);
+})();

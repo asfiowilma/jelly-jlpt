@@ -18,9 +18,26 @@ QUnit.module('catalog + plan', function () {
     assert.ok(PLAN.some(function (p) { return p.level === 'N5'; }), 'N5 plan present');
   });
 
+  QUnit.test('reading passages: lookup by format, review questions keep the right answer', function (assert) {
+    assert.deepEqual(['short', 'mid', 'info'].map(function (f) { return passagesFor('N5', f).length; }), [20, 8, 8], '20 short / 8 mid / 8 info');
+    assert.strictEqual(passagesFor('N4').length, 0, 'none at N4 yet');
+    var rev = allUnits().filter(function (u) { return u.passages && u.passages.length; })[0];
+    var p = CATALOG.items[rev.passages[0]];
+    var exs = readingExercises(rev, { '学': true, '生': true });
+    assert.strictEqual(exs.length, p.questions.length);
+    var ex = exs[0], q = p.questions[0];
+    assert.strictEqual(ex.options[ex.correct], q.options[q.answer].replace(/\[([^|\]]+)\|[^\]]*\]/g, '$1'), 'correct follows the shuffle');
+    assert.ok(answerIsRight(ex, ex.correct) && !answerIsRight(ex, (ex.correct + 1) % 4));
+    var rubyOn = function (c) { return ex.passage.some(function (x) { return x.r && x.t.indexOf(c) >= 0; }); };
+    assert.ok(!rubyOn('学') && rubyOn('先'), 'ruby only on kanji not taught yet');
+    var again = requeueExercise(rev, ex);
+    assert.strictEqual(again.options[again.correct], ex.options[ex.correct], 'a missed reading question comes back, same answer');
+  });
+
   QUnit.test('validatePlan catches broken plans', function (assert) {
     function err(units) { return validatePlan([{ level: 'N5', units: units }], CATALOG).error || ''; }
     var u = { id: 'n5.u901', level: 'N5', kind: 'lesson', title: 't' };
+    assert.ok(/missing passage p:n5-nope/.test(err([Object.assign({}, u, { kind: 'review', passages: ['p:n5-nope'] })])), 'missing passage');
     assert.ok(/missing v:nope/.test(err([Object.assign({}, u, { vocab: ['v:nope|nope'] })])), 'missing ref');
     var kanjiId = all().filter(function (it) { return it.kind === 'kanji'; })[0].id;
     assert.ok(/has kanji/.test(err([Object.assign({}, u, { vocab: [kanjiId] })])), 'wrong kind in field');

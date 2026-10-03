@@ -203,6 +203,20 @@ const soon = function (k, n) { return lessonText.slice(n + 1, n + 7).some(functi
 // (2 per lesson, 3 when the lesson has 3+ candidates). A kanji that doesn't fit waits for its
 // next lesson if that comes within 6 lessons; otherwise it joins the backlog, which fills the
 // next lessons with room, oldest first.
+// Reading (ticket 15): each lesson review gets the first unused short passage (passages.js
+// order) whose vocab and grammar are all taught by then; kanji may be untaught (the quiz shows
+// their furigana). mid / info passages are kept for test prep and mocks (passagesFor in lib.js).
+const shortPassages = items.filter(function (it) { return it.kind === "passage" && it.format === "short"; });
+const usedPassages = new Set();
+function pickPassage() {
+  const taughtNow = new Set();
+  units.forEach(function (u) { (u.vocab || []).concat(u.grammar || []).forEach(function (id) { taughtNow.add(id); }); });
+  const p = shortPassages.find(function (x) {
+    return !usedPassages.has(x.id) && x.uses.every(function (id) { return !/^[vg]:/.test(id) || taughtNow.has(id); });
+  });
+  if (p) usedPassages.add(p.id);
+  return p;
+}
 const backlog = [], placed = new Set();
 let sinceReview = [];
 LESSONS.forEach(function (l, n) {
@@ -229,7 +243,10 @@ LESSONS.forEach(function (l, n) {
   sinceReview.push(u);
   if (sinceReview.length === 6 || n === LESSONS.length - 1) {
     const a = units.indexOf(sinceReview[0]) + 1, b = units.length;
-    units.push({ id: uid(), level: "N5", kind: "review", title: "Review: units " + a + "–" + b });
+    const review = { id: uid(), level: "N5", kind: "review", title: "Review: units " + a + "–" + b };
+    const p = pickPassage();
+    if (p) review.passages = [p.id];
+    units.push(review);
     sinceReview = [];
   }
 });

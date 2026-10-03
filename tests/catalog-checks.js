@@ -17,7 +17,7 @@ QUnit.module('catalog checks', function () {
   // lessons carry no grammar, and kanji run out before vocab does.
   var LOAD_GUIDE = { N5: { vocab: 8, kanji: 2, grammar: 1 } };
   var REQUIRED = { vocab: ['word', 'reading', 'pos'], kanji: ['char'], grammar: ['pattern', 'meaning'], sentence: ['jp', 'en'],
-    kana: ['char', 'romaji', 'script', 'group'], mondai: ['type', 'en'] };
+    passage: ['furigana', 'jp', 'en', 'format'], kana: ['char', 'romaji', 'script', 'group'], mondai: ['type', 'en'] };
   var CHUNK_PUNCT_RE = /[、。？！?!\s「」]/;
   var SCRIPT_RE = { hiragana: /^[ぁ-ゖ]+$/, katakana: /^[ァ-ヺ]+$/ };
 
@@ -65,7 +65,8 @@ QUnit.module('catalog checks', function () {
     if (levelRank(it.level) < 0) err('level ' + it.level);
     if (!nonEmptyStrings(it.sources)) err('no sources');
     if (typeof it.verified !== 'boolean') err('verified not boolean');
-    if (it.verified && nonEmptyStrings(it.sources)) {
+    // own passages are verified by their own rule (map Q1): see passageErrors
+    if (it.verified && nonEmptyStrings(it.sources) && it.kind !== 'passage') {
       var distinct = it.sources.filter(function (s, i, a) { return a.indexOf(s) === i; });
       if (distinct.length < 2) err('verified needs ≥2 distinct sources');
       if (distinct.indexOf('legacy') >= 0) err("verified can't cite legacy");
@@ -134,6 +135,89 @@ QUnit.module('catalog checks', function () {
         blanks.forEach(function (b, i) { if (!answerOk(b)) err('blank ' + (i + 1) + ' needs 4 distinct options + answer index'); });
         if (!e.length) usesErrors(it.uses, furiganaText(bunshouFilled(it)), items, err);
       } else err('type ' + it.type);
+    } else if (it.kind === 'passage') e = e.concat(passageErrors(it, items));
+    return e;
+  }
+
+  // ── Reading passages (ticket 15) ──────────────────────────────────────────
+  // Per format: questions wanted, length of jp in characters (whitespace not counted).
+  var PASSAGE_FORMATS = { short: { q: 1, len: [50, 160] }, mid: { q: 2, len: [180, 360] }, info: { q: 1, len: [90, 300] } };
+  var RUBY_RE = /\[([^|\]]+)\|([^\]]*)\]/g;
+  function stripRuby(s) { return s.replace(RUBY_RE, '$1'); }
+  // A kanji's readings in hiragana: on, kun stems and full kun (た.べる → た, たべる), extra.
+  function kanjiHira(k) {
+    var out = [];
+    (k.on || []).concat(k.extra || []).forEach(function (r) { out.push(hira(r)); });
+    (k.kun || []).forEach(function (r) { r = r.replace(/-/g, ''); out.push(r.split('.')[0], r.replace('.', '')); });
+    return out;
+  }
+  // passageErrors: the machine checks for an own passage (data/<lvl>/passages.js header).
+  // Limit: there is no tokenizer, so a content word left out of `uses` is caught only when it is
+  // written in kanji or katakana (the kanji, ruby and katakana checks below); a kana-only word
+  // missing from `uses` is not. `uses` is kept by hand for that reason.
+  function passageErrors(it, items) {
+    var e = [];
+    function err(msg) { e.push(it.id + ': ' + msg); }
+    var f = PASSAGE_FORMATS[it.format];
+    if (!/^p:n[1-5]-[a-z0-9-]+$/.test(it.id)) err('id not p:<level>-<slug>');
+    if (!f) return [it.id + ': format ' + it.format];
+    if (stripRuby(it.furigana) !== it.jp) err('jp ≠ furigana text');
+    var len = it.jp.replace(/\s/g, '').length;
+    if (len < f.len[0] || len > f.len[1]) err(len + ' characters (want ' + f.len.join('–') + ' for ' + it.format + ')');
+    if (it.format === 'info' && it.jp.split('\n').filter(function (l) { return /^・/.test(l); }).length < 3) err('info passage needs a table/list (≥3 ・ lines)');
+    var qs = Array.isArray(it.questions) ? it.questions : [];
+    if (qs.length !== f.q) err(qs.length + ' questions (want ' + f.q + ')');
+    qs.forEach(function (q, i) {
+      var opts = (q.options || []).map(stripRuby);
+      if (!q.q || !q.explain) err('question ' + (i + 1) + ' needs q + explain');
+      if (opts.length !== 4 || opts.some(function (o) { return !o; })) err('question ' + (i + 1) + ' needs 4 options');
+      if (opts.some(function (o, j) { return opts.indexOf(o) !== j; })) err('question ' + (i + 1) + ' options not distinct');
+      if (!(q.answer >= 0 && q.answer < opts.length && q.answer % 1 === 0)) err('question ' + (i + 1) + ' answer out of range');
+    });
+    // All the Japanese: passage, questions and options.
+    var marked = [].concat.apply([it.furigana], qs.map(function (q) { return [q.q || ''].concat(q.options || []); })).join('\n');
+    var plain = stripRuby(marked).replace(/\s/g, '');
+    var kana = marked.replace(RUBY_RE, '$2').replace(/\s/g, '');
+    var names = it.names || [];
+    var used = (it.uses || []).map(function (id) { return items[id]; }).filter(Boolean);
+    var vocab = used.filter(function (x) { return x.kind === 'vocab'; });
+    (it.uses || []).forEach(function (id) {
+      var u = items[id];
+      if (!u) return err('uses missing ' + id);
+      if (u.kind === 'grammar') {
+        // pattern words in kanji the passage writes in kana (一番, 好き): match their readings
+        var kanaPattern = u.pattern;
+        Object.keys(items).map(function (k) { return items[k]; })
+          .filter(function (w) { return w.kind === 'vocab' && hasKanji(w.word); })
+          .sort(function (a, b) { return b.word.length - a.word.length; }) // 上手 before 上
+          .forEach(function (w) { kanaPattern = kanaPattern.split(w.word).join(w.reading); });
+        if (!surfaceMatch(u, plain) && !surfaceMatch({ kind: 'grammar', pattern: kanaPattern }, kana)) err("text doesn't contain " + id);
+      } else if (!surfaceMatch(u, plain) && !surfaceMatch(u, kana)) err("text doesn't contain " + id);
+    });
+    // Kanji: each one on the level's list (or an easier one), listed in uses, and inside a ruby block.
+    Array.from(plain).filter(function (c, i, a) { return hasKanji(c) && a.indexOf(c) === i; }).forEach(function (c) {
+      var k = items['k:' + c];
+      if (!k || levelRank(k.level) > levelRank(it.level)) err('kanji ' + c + ' not on the ' + it.level + ' list');
+      else if ((it.uses || []).indexOf(k.id) < 0) err('kanji ' + c + ' not in uses');
+    });
+    if (hasKanji(marked.replace(RUBY_RE, ''))) err('kanji outside a [漢字|かな] block');
+    // Each ruby reading backed by a used word (word with the block read = its reading), a name, or the kanji's readings.
+    var m;
+    RUBY_RE.lastIndex = 0;
+    while ((m = RUBY_RE.exec(marked))) {
+      var t = m[1], r = m[2];
+      var ok = names.indexOf(t + '|' + r) >= 0 ||
+        vocab.some(function (w) { return w.word.indexOf(t) >= 0 && hira(w.word.replace(t, r)) === hira(w.reading); }) ||
+        (Array.from(t).length === 1 && items['k:' + t] && kanjiHira(items['k:' + t]).indexOf(r) >= 0);
+      if (!ok) err('ruby ' + t + '|' + r + ' not backed by a used word, name or kanji reading');
+    }
+    // Katakana words: each one a used vocab word or a name.
+    (stripRuby(marked).match(/[ァ-ヺ][ァ-ヺー]+/g) || []).forEach(function (w) {
+      if (names.indexOf(w) < 0 && !vocab.some(function (x) { return x.word === w || x.reading === w; })) err('katakana ' + w + ' not in uses or names');
+    });
+    if (it.verified) {
+      if (it.sources.join() !== 'own') err("verified passage must be sources ['own']");
+      used.forEach(function (u) { if (!u.verified) err('verified, but uses unverified ' + u.id); });
     }
     return e;
   }
@@ -212,6 +296,15 @@ QUnit.module('catalog checks', function () {
       lp.units.forEach(function (u) {
         if (u.kind === 'review') {
           Object.keys(UNIT_REF_FIELDS).forEach(function (f) { if ((u[f] || []).length) e.push(u.id + ': review unit lists ' + f); });
+          // a review's passage: short, used once, every vocab / grammar item in it taught by now
+          (u.passages || []).forEach(function (id) {
+            var p = items[id];
+            if (!p || p.kind !== 'passage') return e.push(u.id + ': passage ' + id + ' missing');
+            if (p.format !== 'short') e.push(u.id + ': review passage ' + id + ' is ' + p.format + ', not short');
+            if (taught[id]) e.push(u.id + ': passage ' + id + ' already in ' + taught[id]);
+            taught[id] = u.id;
+            (p.uses || []).forEach(function (x) { if (/^[vg]:/.test(x) && !taught[x]) e.push(u.id + ': passage ' + id + ' uses ' + x + ', not taught yet'); });
+          });
           lessons = 0;
           return;
         }
@@ -398,6 +491,37 @@ QUnit.module('catalog checks', function () {
     assert.ok(/placeholder/.test(errsFor(with_(g, { pattern: 'Phase 6 review' }), items)), 'placeholder pattern');
   });
 
+  QUnit.test('item checks: reading passages', function (assert) {
+    var g = { id: 'g:wo', kind: 'grammar', level: 'N5', pattern: '〜を', meaning: 'object', sources: ['tanos', 'genki'], verified: true };
+    var items = {}; [v, k, g].forEach(function (it) { items[it.id] = it; });
+    var mk = function (fur, patch) {
+      return Object.assign({ id: 'p:n5-x', kind: 'passage', level: 'N5', format: 'short', furigana: fur, jp: stripRuby(fur), en: 'x',
+        questions: [{ q: 'なにを　たべますか。', options: ['パン', 'ごはん', 'みず', 'おちゃ'], answer: 0, explain: 'x' }],
+        names: ['パン'], uses: [g.id, v.id, k.id], sources: ['own'], verified: true }, patch);
+    };
+    var text = new Array(8).join('パンを　[食|た]べます。');
+    var p = mk(text);
+    assert.strictEqual(errsFor(p, items), '', 'good passage');
+    assert.ok(/kanji 飲 not on the N5 list/.test(errsFor(mk(text + '[飲|の]みます。'), items)), 'kanji off the list');
+    assert.ok(/outside a/.test(errsFor(mk(text + '食べます。'), items)), 'kanji without ruby');
+    assert.ok(/ruby 食\|く not backed/.test(errsFor(mk(text + '[食|く]べます。'), items)), 'wrong ruby reading');
+    assert.ok(/katakana パン not in uses/.test(errsFor(mk(text, { names: [] }), items)), 'katakana word not covered');
+    items['v:犬|いぬ'] = with_(v, { id: 'v:犬|いぬ', word: '犬', reading: 'いぬ', pos: 'noun' });
+    assert.ok(/text doesn't contain v:犬/.test(errsFor(mk(text, { uses: p.uses.concat('v:犬|いぬ') }), items)), 'use not in the text');
+    assert.ok(/uses missing v:nope/.test(errsFor(mk(text, { uses: p.uses.concat('v:nope|nope') }), items)), 'dangling use');
+    var q = function (patch) { return [Object.assign({}, p.questions[0], patch)]; };
+    assert.ok(/not distinct/.test(errsFor(mk(text, { questions: q({ options: ['パン', 'パン', 'みず', 'おちゃ'] }) }), items)), 'options distinct');
+    assert.ok(/answer out of range/.test(errsFor(mk(text, { questions: q({ answer: 4 }) }), items)), 'answer in range');
+    assert.ok(/needs 4 options/.test(errsFor(mk(text, { questions: q({ options: ['パン', 'みず'] }) }), items)), '4 options');
+    assert.ok(/2 questions/.test(errsFor(mk(text, { questions: p.questions.concat(p.questions) }), items)), 'short has 1 question');
+    assert.ok(/table\/list/.test(errsFor(mk(text, { format: 'info' }), items)), 'info needs a list');
+    assert.strictEqual(errsFor(mk('・パン\n・パン\n・パン\n' + text + text, { format: 'info' }), items), '', 'info with a list');
+    assert.ok(/characters/.test(errsFor(mk('パンを　[食|た]べます。'), items)), 'length');
+    items[v.id] = with_(v, { verified: false });
+    assert.ok(/uses unverified v:食べる/.test(errsFor(p, items)), 'verified needs verified uses');
+    assert.strictEqual(errsFor(mk(text, { verified: false }), items), '', 'unverified is fine');
+  });
+
   QUnit.test('item checks: kana and alt', function (assert) {
     var a = { id: 'c:し', kind: 'kana', level: 'N5', char: 'し', romaji: 'shi', answers: ['shi', 'si'], script: 'hiragana', group: 'sa-row',
       sources: ['unicode', 'hepburn'], verified: true };
@@ -439,6 +563,13 @@ QUnit.module('catalog checks', function () {
     var seven = '1234567'.split('').map(function (n) { return lesson('n5.u00' + n, { vocab: [n + 'a', n + 'b', n + 'c', n + 'd', n + 'e', n + 'f'] }); });
     assert.ok(/n5.u007: more than 6 lessons/.test(run(seven)), 'review cadence');
     assert.ok(/review unit lists vocab/.test(run([{ id: 'n5.u001', level: 'N5', kind: 'review', title: 'Review', vocab: ['v:青|あお'] }])), 'review teaches nothing');
+    items['p:n5-x'] = { id: 'p:n5-x', kind: 'passage', level: 'N5', format: 'short', uses: ['v:青|あお', 'k:青'] };
+    var rev = { id: 'n5.u002', level: 'N5', kind: 'review', title: 'Review', passages: ['p:n5-x'] };
+    assert.strictEqual(run([lesson('n5.u001'), rev]), '', 'review passage after its words');
+    assert.ok(/uses v:青\|あお, not taught yet/.test(run([lesson('n5.u001', { vocab: ['1', '2', '3', '4', '5', '6'] }), rev])), 'passage before its words');
+    items['p:n5-x'].format = 'mid';
+    assert.ok(/is mid, not short/.test(run([lesson('n5.u001'), rev])), 'review passages are short');
+    delete items['p:n5-x'];
     var cov = function (units) { return coverageErrors([{ level: 'N5', units: units }], items).join('\n'); };
     assert.ok(/v:秋\|あき: not taught/.test(cov([lesson('n5.u001')])), 'untaught item');
     items['v:秋|あき'].alt = 'v:青|あお';

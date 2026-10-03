@@ -14,6 +14,13 @@ function translatePrompt(prompt, level) {
   return t(key, level);
 }
 
+// Furigana parts ({ t, r? }, lib.js furiganaParts) → text and <ruby> elements (reading passages)
+function rubyEls(parts) {
+  return parts.map(function (p, i) {
+    return p.r ? React.createElement("ruby", { key: i }, p.t, React.createElement("rt", null, p.r)) : p.t;
+  });
+}
+
 // ── Exercises: the unit quiz (ticket 35) ────────────────────────────────────
 // Pass mark gates completion (Q28); a missed question comes back once at the
 // end in another form, unscored (Q31). onResult(scoreQuiz(...)) when finished.
@@ -315,7 +322,9 @@ function Exercises(_ref9) {
       className: "exercise-box"
     }, progressBar(), /*#__PURE__*/React.createElement("div", {
       className: "ex-prompt"
-    }, translatePrompt(ex.prompt, unit.level)), ex.type === 'listen' ? /*#__PURE__*/React.createElement("div", {
+    }, translatePrompt(ex.prompt, unit.level)), ex.type === 'reading' && React.createElement("div", {
+      className: "passage-box", lang: "ja"
+    }, rubyEls(ex.passage)), ex.type === 'listen' ? /*#__PURE__*/React.createElement("div", {
       className: "ex-question"
     }, /*#__PURE__*/React.createElement("button", {
       className: "ex-listen-btn",
@@ -340,7 +349,9 @@ function Exercises(_ref9) {
           advance(answerIsRight(ex, i));
         }
       }, ex.optionParts ? partsEl(ex.optionParts[i]) : opt);
-    }))));
+    })), selected !== null && ex.explain && React.createElement("div", {
+      className: "ex-note", role: "status"
+    }, ex.explain)));
   }
 
   // Typing exercise (typing, conjugation)

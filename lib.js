@@ -75,6 +75,12 @@ function validatePlan(plan, catalog) {
           if (it.kind !== UNIT_REF_FIELDS[f]) return { valid: false, error: u.id + '.' + f + ' has ' + it.kind + ' ' + ids[j] };
         }
       }
+      // passages: reading texts a unit's quiz asks about (ticket 15); not taught items, no cards
+      var ps = u.passages || [];
+      for (var q = 0; q < ps.length; q++) {
+        var pi = catalog.items[ps[q]];
+        if (!pi || pi.kind !== 'passage') return { valid: false, error: u.id + ' references missing passage ' + ps[q] };
+      }
     }
   }
   return { valid: true, error: null };
@@ -898,18 +904,21 @@ function makeQuestion(item, ctx, wantRecall, avoid, strict) {
 
 // buildExercises(unit): a fresh quiz for one resolved unit (buildUnits). Every
 // item once (a review samples 20), then extra questions in other forms up to
-// quizLength; at least RECALL_SHARE typed answers.
+// quizLength; at least RECALL_SHARE typed answers. A unit with passages (reviews) ends
+// with their reading questions, in place of the same number of item questions.
 function buildExercises(unit) {
   var ctx = quizContext(unit);
   if (!ctx.items.length) return [];
-  var n = quizLength(unit, ctx.items.length);
+  var total = quizLength(unit, ctx.items.length);
+  var reading = readingExercises(unit, ctx.taughtKanji); // takes slots from the item questions
+  var n = total - reading.length;
   // grammar first in the first round, so a form point (て-form…) gets its recall
   // (conjugation) question while the recall share is still open
   var gram = rndShuffle(ctx.items.filter(function (it) { return it.kind === 'grammar'; }));
   var order = gram.concat(rndShuffle(ctx.items.filter(function (it) { return it.kind !== 'grammar'; })));
   while (order.length < n) order = order.concat(rndShuffle(ctx.items));
   order = order.slice(0, n);
-  var need = Math.ceil(n * RECALL_SHARE), used = {}, out = [];
+  var need = Math.ceil(total * RECALL_SHARE), used = {}, out = [];
   var recallCount = function () { return out.filter(function (e) { return e.recall; }).length; };
   order.forEach(function (it) {
     var ex = makeQuestion(it, ctx, recallCount() < need, used[it.id] || []);
@@ -923,13 +932,45 @@ function buildExercises(unit) {
     var r = makeQuestion(out[i].item, ctx, true, used[out[i].itemId], true) || makeQuestion(out[i].item, ctx, true, [], true);
     if (r) out[i] = r;
   }
-  return rndShuffle(out);
+  // reading questions last, as on the test
+  return rndShuffle(out).concat(reading);
+}
+
+// ── Reading passages (ticket 15) ────────────────────────────────────────────
+// passagesFor(level, format?): the catalog's passages of a level (format 'short' | 'mid' |
+// 'info', or all), in catalog order. For test prep and mocks (ticket 18).
+function passagesFor(level, format) {
+  return Object.keys(CATALOG.items).map(function (k) { return CATALOG.items[k]; }).filter(function (p) {
+    return p.kind === 'passage' && p.level === level && (!format || p.format === format);
+  });
+}
+// readingExercises(unit, taughtKanji): one MC 'reading' question per question of each passage
+// in unit.passages. passage / parts / optionParts are furigana parts, ruby only on kanji not
+// taught yet (Q33); options shuffled. Not tied to an SRS card (itemId is the passage id).
+function readingExercises(unit, taughtKanji) {
+  var out = [];
+  var ruby = function (s) { return quizFurigana(furiganaParts(s), taughtKanji || {}, ''); };
+  var text = function (s) { return furiganaParts(s).map(function (p) { return p.t; }).join(''); };
+  (unit.passages || []).forEach(function (id) {
+    var p = CATALOG.items[id];
+    if (!p || p.kind !== 'passage') return;
+    p.questions.forEach(function (q) {
+      var order = rndShuffle(q.options.map(function (_, i) { return i; }));
+      out.push({ type: 'reading', prompt: 'Read the text and answer the question.', passage: ruby(p.furigana),
+        question: text(q.q), parts: ruby(q.q), options: order.map(function (i) { return text(q.options[i]); }),
+        optionParts: order.map(function (i) { return ruby(q.options[i]); }), correct: order.indexOf(q.answer),
+        explain: q.explain, itemId: p.id, form: 'reading', recall: false });
+    });
+  });
+  return out;
 }
 
 // requeueExercise(unit, ex): a missed question asked again at the end of the
 // quiz (Q31), same item in another form when there is one. Not scored.
 function requeueExercise(unit, ex) {
-  var r = ex.item && makeQuestion(ex.item, quizContext(unit), null, [ex.form]);
+  var o = ex.type === 'reading' && rndShuffle(ex.options.map(function (_, i) { return i; })); // same question, options reshuffled
+  var r = o ? Object.assign({}, ex, { options: o.map(function (i) { return ex.options[i]; }), optionParts: o.map(function (i) { return ex.optionParts[i]; }), correct: o.indexOf(ex.correct) })
+    : ex.item && makeQuestion(ex.item, quizContext(unit), null, [ex.form]);
   return r ? Object.assign(r, { requeue: true }) : null;
 }
 

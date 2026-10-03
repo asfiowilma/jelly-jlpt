@@ -357,6 +357,7 @@ table.data th{color:var(--muted);font-weight:600}
 .ex-question.sentence{font-size:1.35rem;line-height:1.9}
 .ex-note{font-size:0.9rem;color:var(--muted);text-align:center;margin:-8px 0 14px}
 .ex-u{text-decoration:underline 2px var(--accent);text-underline-offset:0.3em}
+.ex-options + .ex-note{margin:12px 0 0;text-align:left}
 .ex-hint{font-size:0.78rem;color:var(--muted);margin-top:6px}
 .pending-line{font-size:0.85rem;color:var(--muted);margin-top:14px}
 .ex-retry-btn{padding:8px 22px;background:var(--accent);color:var(--on-accent);border:none;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:600;font-family:inherit}
@@ -430,6 +431,7 @@ rt{font-size:0.6em;color:var(--accent-fg);font-weight:400;letter-spacing:0.02em}
 .vocab-table td:first-child rt{font-size:0.6em}
 /* Passage / reading comprehension */
 .passage-box{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:12px;line-height:1.9;font-size:1rem;color:var(--text)}
+.exercise-box .passage-box{white-space:pre-line;text-align:left}
 .passage-box ruby rt{font-size:0.55em;color:var(--accent-fg)}
 .passage-en{color:var(--muted);font-size:0.85rem;margin-top:10px;border-top:1px dashed var(--border);padding-top:10px;line-height:1.6}
 .passage-questions{margin-top:12px}

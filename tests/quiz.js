@@ -60,7 +60,8 @@ QUnit.module('quiz difficulty model', {
     prev.forEach(function (u) { quizItems(u).forEach(function (it) { allowed[it.id] = true; }); });
     var exs = buildExercises(rev);
     assert.strictEqual(exs.length, 20);
-    assert.ok(exs.every(function (e) { return allowed[e.itemId]; }), 'all items from the previous 6 lessons');
+    assert.ok(exs.every(function (e) { return allowed[e.itemId] || (e.type === 'reading' && rev.passages.indexOf(e.itemId) >= 0); }), 'all items from the previous 6 lessons (+ its passage)');
+    assert.strictEqual(exs[exs.length - 1].type, 'reading', 'the review\'s passage question comes last');
   });
 
   QUnit.test('Q30 at least 40% recall questions in every shipped quiz, and at N4/N3/N1', function (assert) {
