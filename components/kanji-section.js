@@ -74,10 +74,7 @@ function KanjiSection(props) {
     return ws.length > 0 && React.createElement("div", { className: "kj-words" },
       React.createElement("div", { className: "kj-sub" }, t('kanji_words', lv)),
       React.createElement("div", { className: "kj-word-list" }, ws.map(function (v) {
-        return React.createElement("button", {
-          key: v.id, className: "kj-word", onClick: function () { speak(v.word); },
-          'aria-label': "Listen to " + v.word
-        }, React.createElement("span", { className: "kj-word-jp" }, v.word.split(k.char).map(function (part, i, a) {
+        return React.createElement("div", { key: v.id, className: "kj-word" }, React.createElement("span", { className: "kj-word-jp" }, v.word.split(k.char).map(function (part, i, a) {
           return React.createElement(React.Fragment, { key: i }, part, i < a.length - 1 && React.createElement("mark", null, k.char));
         })), React.createElement("span", { className: "kj-word-rd" }, v.reading), React.createElement("span", { className: "kj-word-gl" }, glossText(v)));
       })));
