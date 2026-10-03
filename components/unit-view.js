@@ -119,10 +119,15 @@ function UnitView(props) {
       React.createElement("h2", { className: "day-title" }, unit.title)),
     React.createElement("div", { className: "day-body" },
       React.createElement("div", { className: "lesson-blurrable" + (quizActive ? ' blurred' : '') },
-        // prep / mock notes run to several paragraphs (one per line, ticket 18)
-        unit.notes && React.createElement("div", { className: "tip-box" }, unit.notes.split('\n').map(function (para, i) {
-          return React.createElement("p", { key: i, className: "tip-para" }, para);
-        })),
+        // Lesson note: first sentence as the headline, the rest as quiet lines (prep / mock notes
+        // run to several paragraphs, one per line, ticket 18)
+        unit.notes && (function () {
+          var note = noteParts(unit.notes);
+          return React.createElement("aside", { className: "unit-note", 'aria-label': t('note_label', lv) },
+            React.createElement("div", { className: "unit-note-label" }, icon('bulb'), t('note_label', lv)),
+            React.createElement("h3", { className: "unit-note-head" }, note.head),
+            note.body.map(function (line, i) { return React.createElement("p", { key: i, className: "unit-note-line" }, line); }));
+        })(),
         unit.kana.length > 0 && React.createElement(KanaSection, { key: unit.id, unit: unit }),
         unit.vocab.length > 0 && section(t('section_vocabulary', lv),
           React.createElement("div", { className: "vocab-bar" },

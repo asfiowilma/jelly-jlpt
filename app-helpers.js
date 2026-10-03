@@ -57,6 +57,8 @@ var UI_STRINGS = {
   kanji_info_kun:     { en: "Kun (kun'yomi): the native Japanese reading. Usually used when the kanji stands alone or takes hiragana endings, like 人 → ひと. The dimmed part is the hiragana ending (okurigana).", ja: 'くん：やまとことばのよみ。ひとつでつかうことがおおい。', since: 'N1' },
   kanji_info_on:      { en: "On (on'yomi): the reading borrowed from Chinese, written in katakana. Usually used in compounds of several kanji, like 学生 → がくせい.", ja: 'おん：ちゅうごくごからきたよみ。じゅくごでつかうことがおおい。', since: 'N1' },
   kanji_info_extra:   { en: "Grey readings are extra ones that this lesson's words don't use.", ja: 'うすいよみは、このレッスンではつかわないよみ。', since: 'N1' },
+  // Lesson note box
+  note_label:       { en: 'Lesson note', ja: 'メモ', since: 'N4' },
   // Lesson Kana section
   kana_learn:       { en: 'Learn',        ja: 'まなぶ',       since: 'N4' },
   kana_practice:    { en: 'Practice',     ja: 'れんしゅう',   since: 'N4' },
@@ -253,6 +255,7 @@ var ICONS = {
   units: [['rect', { x: 4, y: 4, width: 7, height: 7, rx: 1.5 }], ['rect', { x: 13, y: 4, width: 7, height: 7, rx: 1.5 }], ['rect', { x: 4, y: 13, width: 7, height: 7, rx: 1.5 }], ['rect', { x: 13, y: 13, width: 7, height: 7, rx: 1.5 }]],
   stats: [['path', { d: 'M4 20h16' }], ['path', { d: 'M7 16v-5' }], ['path', { d: 'M12 16V6' }], ['path', { d: 'M17 16v-8' }]],
   review: [['rect', { x: 3, y: 7, width: 14, height: 12, rx: 2 }], ['path', { d: 'M7 4h12a2 2 0 0 1 2 2v10' }]],
+  bulb: [['path', { d: 'M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z' }]],
   gear: [['circle', { cx: 12, cy: 12, r: 3 }], ['path', { d: 'M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z' }]]
 };
 function icon(name) {
