@@ -9,7 +9,8 @@
 //   tools/ref/n5.json            one item per distinct word|reading (array entries = one item per
 //                                alternative, minus overrides.skip)
 //   tools/n5-vocab-overrides.json  gloss/tags (own wording, required per item) and optional pos,
-//                                notes, q (Jisho keyword), jmWord / jmReading (form to match in JMdict)
+//                                notes, q (Jisho keyword), jmWord / jmReading (form to match in JMdict),
+//                                alt (word|reading of the spelling the plan teaches instead)
 //   D:/…/.scratch/content-audit/research/data/vocab-n5.json  list sources (tanos/elzup) per row
 //   <cache>/<keyword>.json       raw Jisho responses (JMdict-based, CC BY-SA: used only as a check,
 //                                nothing from it is copied into the output except pos labels)
@@ -123,6 +124,7 @@ keys.forEach(function (k) {
     sources: (listSources[k] || ["tanos"]).concat(c.ok ? ["jmdict"] : []), verified: !!c.ok };
   const notes = [o.notes, c.ok ? null : "unverified: " + c.reason].filter(Boolean).join(" ");
   if (notes) it.notes = notes;
+  if (o.alt) it.alt = "v:" + o.alt; // duplicate spelling: not taught, covered by the alt item (ticket 34)
   if (!c.ok) reasons[c.reason.replace(/ for .*| is .*/, "")] = (reasons[c.reason.replace(/ for .*| is .*/, "")] || 0) + 1;
   out.push(it);
 });
