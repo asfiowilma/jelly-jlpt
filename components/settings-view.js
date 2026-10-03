@@ -130,7 +130,8 @@ var CREDITS = [
   { name: 'KanjiVG', url: 'https://kanjivg.tagaini.net/', key: 'cred_kanjivg', license: 'CC BY-SA 3.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/' },
   { name: 'Tanos', url: 'https://www.tanos.co.uk/jlpt/', key: 'cred_tanos', license: 'CC BY', licenseUrl: 'https://www.tanos.co.uk/jlpt/' }, // ponytail: site states CC BY without a version
   { name: 'Tatoeba', url: 'https://tatoeba.org/', key: 'cred_tatoeba', license: 'CC BY 2.0 FR', licenseUrl: 'https://creativecommons.org/licenses/by/2.0/fr/' },
-  { name: 'elzup/jlpt-word-list', url: 'https://github.com/elzup/jlpt-word-list', key: 'cred_wordlist', license: 'MIT', licenseUrl: 'https://github.com/elzup/jlpt-word-list/blob/master/LICENSE' }
+  { name: 'elzup/jlpt-word-list', url: 'https://github.com/elzup/jlpt-word-list', key: 'cred_wordlist', license: 'MIT', licenseUrl: 'https://github.com/elzup/jlpt-word-list/blob/master/LICENSE' },
+  { name: 'Kenney', url: 'https://kenney.nl/assets/music-jingles', key: 'cred_kenney', license: 'CC0', licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/' }
 ];
 
 // Settings → Sync: connect form when not connected, status + controls when

@@ -185,6 +185,7 @@ var UI_STRINGS = {
   cred_tanos:        { en: 'JLPT kanji and vocabulary lists', ja: 'JLPTの漢字・語彙リスト', since: 'N1' },
   cred_tatoeba:      { en: 'example sentences', ja: '例文',             since: 'N1' },
   cred_wordlist:     { en: 'JLPT word list',    ja: 'JLPT単語リスト',   since: 'N1' },
+  cred_kenney:       { en: 'sound effects',     ja: '効果音',           since: 'N1' },
   pace_too_late:   { en: "Even Super intensive won't finish a week before your exam", ja: '超集中でも試験の1週間前までに終わりません', since: 'N1' },
   // Already-known import (ticket 37). 知る is N5 vocabulary, so the review
   // button and unit badge switch at N4; the Settings part switches with N1.
