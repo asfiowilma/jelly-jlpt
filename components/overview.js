@@ -42,7 +42,7 @@ function PacePanel(props) {
 // from the first not done, "Show all" for the rest). Nothing is locked (Q22): every unit
 // opens; the next suggested unit (first not done) is highlighted. Levels
 // without units yet collapse to "Coming soon" (Q24).
-var UP_AHEAD = 6; // stages listed from the first one not done, before "Show all"
+var UP_AHEAD = 12; // stages listed from the first one not done, before "Show all" (divides evenly into 1-4 columns)
 function Overview(props) {
   var units = props.units,
     completed = props.completed,
