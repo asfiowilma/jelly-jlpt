@@ -152,3 +152,5 @@ Or open `tests.html` in a browser. See `CLAUDE.md` for how the code and content 
 The same credits are listed in the app under Settings. Readings and meanings were checked against JMdict (via Jisho) and KANJIDIC while writing the course, but no data from them ships with the app. Glosses, notes and grammar explanations are written for this project.
 
 jelly-jlpt began as a fork of [alanfwilliams/jlpt](https://github.com/alanfwilliams/jlpt), whose README stated an MIT license. The course content and most of the app have since been rebuilt, and the project no longer tracks upstream.
+
+The app code is under the MIT license (see [`LICENSE`](LICENSE)). The third-party files in the table above keep their own licenses and are not covered by it: `kanji-svg/` (CC BY-SA 3.0), Tatoeba sentences in `data/` (CC BY 2.0 FR), the Tanos-derived level lists (CC BY) and `sfx/` (CC0).
