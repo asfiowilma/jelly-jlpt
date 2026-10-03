@@ -104,6 +104,14 @@ function App() {
     _React$useStateLang2 = _slicedToArray(_React$useStateLang, 2),
     uiLang = _React$useStateLang2[0],
     setUiLang = _React$useStateLang2[1];
+  // Lesson Kanji layout: 'rows' (all kanji stacked) or 'focus' (one at a time); synced pref.
+  var _React$useStateKv = React.useState(snap0.kanjiView),
+    kanjiView = _React$useStateKv[0],
+    setKanjiViewState = _React$useStateKv[1];
+  var setKanjiView = function setKanjiView(v) {
+    Store.putPrefs({ kanjiView: v });
+    setKanjiViewState(v);
+  };
   // Pace (units/day, PACE_MODES in lib.js) + optional exam date 'YYYY-MM-DD'; synced prefs.
   var _React$useStatePace = React.useState(snap0.pace),
     pace = _React$useStatePace[0],
@@ -193,6 +201,7 @@ function App() {
       setSrsCards(s.srsCards);
       setFuriganaPref(s.furiganaPref);
       setUiLang(s.uiLang);
+      setKanjiViewState(s.kanjiView);
       setPendingCards(s.pendingCards);
       setLogTick(function (n) { return n + 1; });
     }
@@ -292,6 +301,7 @@ function App() {
             setUnitIdx(i >= 0 ? i : nextUnit(UNITS, new Set(s.completed)));
             setFuriganaPref(s.furiganaPref);
             setUiLang(s.uiLang);
+            setKanjiViewState(s.kanjiView);
             setPace(s.pace);
             setExamDate(s.examDate);
             setPendingCards(s.pendingCards);
@@ -414,7 +424,9 @@ function App() {
     pace: pace,
     doneToday: doneToday,
     showFurigana: showFurigana,
-    toggleFurigana: toggleFurigana
+    toggleFurigana: toggleFurigana,
+    kanjiView: kanjiView,
+    setKanjiView: setKanjiView
   })));
 }
 
