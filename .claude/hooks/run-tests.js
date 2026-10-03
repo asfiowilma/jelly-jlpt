@@ -801,6 +801,25 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     });
   });
 
+  test("kanji-svg/strokes.js: bundle covers every N5 kanji/kana, prolog-free, and loader uses it without fetch", function (a) {
+    var bundle = new Function(fs.readFileSync(path.join(projectDir, 'kanji-svg', 'strokes.js'), 'utf8') + ';return KANJI_SVG;')();
+    var missing = Object.keys(CATALOG.items).map(function (id) { return CATALOG.items[id]; })
+      .filter(function (it) { return (it.kind === 'kanji' || it.kind === 'kana') && Array.from(it.char).length === 1; })
+      .filter(function (it) { return !bundle[kanjiToUnicodeHex(it.char)]; })
+      .map(function (it) { return it.char; });
+    a.deepEqual(missing, [], "chars missing from bundle");
+    a.ok(Object.keys(bundle).every(function (k) { return bundle[k].indexOf('<svg') === 0; }), "every entry starts at <svg");
+    _ssStore = {};
+    global.KANJI_SVG = bundle;
+    var fetchCalled = false;
+    global.fetch = function () { fetchCalled = true; return Promise.reject(new Error('no')); };
+    return loadStrokeOrderSvg('学').then(function (v) {
+      delete global.KANJI_SVG;
+      a.equal(v, bundle['05b66'], "served from bundle");
+      a.ok(!fetchCalled, "no fetch when bundled");
+    });
+  });
+
   test("kanji-svg/: every N5 kanji and single kana in the catalog has a stroke SVG", function (a) {
     var missing = Object.keys(CATALOG.items).map(function (id) { return CATALOG.items[id]; })
       .filter(function (it) { return (it.kind === 'kanji' || it.kind === 'kana') && Array.from(it.char).length === 1; })

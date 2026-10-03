@@ -35,7 +35,8 @@ components/           one React component per file, React.createElement, no JSX
   kanji-section.js kana-section.js exercises.js unit-view.js review-mode.js
   overview.js stats-view.js settings-view.js mock-exam.js
 app.js                App: builds UNITS from PLAN + CATALOG, awaits Store.init(), mounts
-kanji-svg/            KanjiVG stroke-order SVGs (<hex codepoint>.svg), CC BY-SA 3.0
+kanji-svg/            KanjiVG stroke-order SVGs (<hex codepoint>.svg), CC BY-SA 3.0, plus strokes.js
+                      (generated bundle `KANJI_SVG` for file://; rerun `node tools/build-strokes.js`)
 tools/                zero-dep Node authoring scripts + checks (dev only, outputs committed)
   ref/n5.json         reference list: which vocab/kanji/grammar belong to N5
 tests/                QUnit modules, one file per area

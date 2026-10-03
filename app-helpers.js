@@ -473,6 +473,8 @@ function kanjiToUnicodeHex(char) {
 function loadStrokeOrderSvg(char) {
   var hex = kanjiToUnicodeHex(char);
   var cacheKey = 'svg_' + hex;
+  // kanji-svg/strokes.js bundle works on file://; fall through to fetch if absent or missing this char
+  if (typeof KANJI_SVG !== 'undefined' && KANJI_SVG[hex]) return Promise.resolve(KANJI_SVG[hex]);
   try {
     var cached = sessionStorage.getItem(cacheKey);
     if (cached) return Promise.resolve(cached);
