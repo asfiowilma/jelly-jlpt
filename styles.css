@@ -133,10 +133,6 @@ a.data-btn{display:inline-flex;align-items:center;text-decoration:none}
 .section{margin-bottom:20px}
 .section-label{font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px}
 .intro-text{font-size:0.95rem;line-height:1.6;color:var(--text);padding:12px 16px;background:var(--surface2);border-radius:8px;border-left:3px solid var(--accent-fg)}
-.chars-table{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-top:4px}
-.char-card{text-align:center;padding:12px 8px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)}
-.char-jp{font-size:2.2rem;line-height:1;display:block;margin-bottom:4px}
-.char-reading{font-size:0.8rem;color:var(--muted);font-weight:500}
 .vocab-table{width:100%;border-collapse:separate;border-spacing:0 4px}
 .vocab-table thead tr{background:none}
 .vocab-table th{padding:4px 12px;font-size:0.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;background:none}
@@ -278,15 +274,11 @@ table.data th,table.data td{text-align:left;padding:4px 6px;border-bottom:1px so
 table.data th{color:var(--muted);font-weight:600}
 @media(prefers-reduced-motion:reduce){.chart-tip,.level-progress-fill{transition:none}}
 @media(max-width:600px){
-  .chars-table{grid-template-columns:repeat(auto-fill,minmax(65px,1fr))}
   .day-title{font-size:1.1rem}
   .main{padding:12px}
 }
 
 /* Stroke order */
-.stroke-toggle{margin-top:8px;padding:4px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);font-size:0.7rem;cursor:pointer;color:var(--muted);transition:all 0.2s;font-family:inherit}
-.stroke-toggle:hover{background:var(--border);color:var(--text)}
-.stroke-toggle.active{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
 .stroke-viewer{margin-top:8px;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;text-align:center}
 .stroke-viewer svg{max-width:100%;height:auto;max-height:120px}
 /* KanjiVG SVGs hardcode stroke:#000 inline; !important beats that so strokes follow the theme */
@@ -294,7 +286,6 @@ table.data th{color:var(--muted);font-weight:600}
 .stroke-viewer svg text{fill:var(--muted)}
 .stroke-loading{font-size:0.75rem;color:var(--muted);padding:8px}
 .stroke-error{font-size:0.75rem;color:var(--bad);padding:8px;text-align:center}
-.stroke-error-char{font-size:2.5rem;display:block;margin-bottom:4px}
 .stroke-retry-btn{margin-top:4px;padding:4px 12px;font-size:0.75rem;border:1px solid var(--bad);background:var(--surface);color:var(--bad);border-radius:var(--radius);cursor:pointer}
 .stroke-retry-btn:hover{background:color-mix(in srgb,var(--bad) 10%,var(--surface))}
 
