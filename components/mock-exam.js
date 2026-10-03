@@ -77,7 +77,7 @@ function MockExam(props) {
   };
   var history = (Store.snapshot().mocks || []).filter(function (m) { return m.mockId === mock.id; });
   var minutes = function (s) { return Math.round(s.seconds / 60); };
-  var back = props.onClose && ce("button", { className: "link-btn mock-back", onClick: props.onClose }, "← Back to units");
+  var back = props.onClose && ce("button", { className: "link-btn mock-back", onClick: props.onClose }, "← Back to stages");
 
   // ── start screen + history ────────────────────────────────────────────────
   if (phase === 'intro') {

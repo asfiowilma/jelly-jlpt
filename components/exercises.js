@@ -136,7 +136,7 @@ function Exercises(_ref9) {
     }, t('quiz_title', unit.level)), /*#__PURE__*/React.createElement("div", {
       className: "quiz-start-hint"
     }, "The lesson content above will be hidden while you answer ", exs.length, " questions. Score ", needPct,
-      " or more to complete this unit.", timed && React.createElement("span", { className: "quiz-timed-note" },
+      " or more to complete this stage.", timed && React.createElement("span", { className: "quiz-timed-note" },
         " Timed like the real N5 test: ", clock(limit), " for these questions. When time runs out, unanswered questions count as wrong.")),
       /*#__PURE__*/React.createElement("button", {
       className: "quiz-start-btn",
@@ -234,7 +234,7 @@ function Exercises(_ref9) {
       className: "ex-finish-verdict " + (s.passed ? 'pass' : 'fail'),
       role: "status"
     }, timedOut ? "Time is up: unanswered questions count as wrong. " : "",
-      s.passed ? "Passed (pass mark " + needPct + ") — unit complete." : "Not passed yet: you need " + needPct + ". Retake with new questions."),
+      s.passed ? "Passed (pass mark " + needPct + ") — stage complete." : "Not passed yet: you need " + needPct + ". Retake with new questions."),
     /*#__PURE__*/React.createElement("button", {
       className: "ex-retry-btn",
       onClick: retry

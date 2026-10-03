@@ -3,7 +3,7 @@
 QUnit.module('navbar', function () {
   QUnit.test('nav tab labels: kanji JA with furigana readings', function (assert) {
     assert.deepEqual(UI_STRINGS.view_today, { en: 'Today', ja: '今日', rt: 'きょう', since: 'N4' });
-    assert.deepEqual(UI_STRINGS.view_units, { en: 'Units', ja: '単元', rt: 'たんげん', since: 'N1' });
+    assert.deepEqual(UI_STRINGS.view_units, { en: 'Stages', ja: 'ステージ', since: 'N1' });
     assert.deepEqual(UI_STRINGS.view_stats, { en: 'Stats', ja: '統計', rt: 'とうけい', since: 'N1' });
     assert.deepEqual(UI_STRINGS.view_review, { en: 'Review', ja: '復習', rt: 'ふくしゅう', since: 'N4' });
   });
@@ -20,8 +20,8 @@ QUnit.module('navbar', function () {
     assert.equal(t('view_today', 'N5'), 'Today');
     assert.equal(t('view_today', 'N4'), '今日');
     assert.equal(t('view_today', 'N1'), '今日', 'stays JA at later levels');
-    assert.equal(t('view_units', 'N2'), 'Units');
-    assert.equal(t('view_units', 'N1'), '単元');
+    assert.equal(t('view_units', 'N2'), 'Stages');
+    assert.equal(t('view_units', 'N1'), 'ステージ');
     assert.equal(t('nope_key', 'N1'), 'nope_key', 'unknown key → key');
     window._uiLang = prev;
   });
@@ -41,7 +41,7 @@ QUnit.module('navbar', function () {
     if (typeof React !== 'undefined') { // tests.html doesn't load React
       assert.equal(typeof tRuby('view_today', 'N4', true), 'object', 'ruby element');
     }
-    assert.equal(tRuby('unit_label', 'N4', true), 'ユニット', 'no rt → plain t()');
+    assert.equal(tRuby('unit_label', 'N4', true), 'ステージ', 'no rt → plain t()');
     window._uiLang = prev;
   });
 

@@ -94,7 +94,7 @@ function StatsView(props) {
       ce("span", { className: "val" }, statsFmt(dueNow), ce("small", null, "cards")),
       dueNow > 0 && ce("span", { className: "ctx" }, overdue > 0 && ce("b", null, overdue), overdue > 0 && " overdue · ", dueNow - overdue, " due today"),
       dueNow > 0 ? ce("button", { type: "button", className: "cta", onClick: props.onReview }, "Start review")
-        : ce("span", { className: "ctx" }, deck.total ? "All caught up" : "Finish a unit to add cards")),
+        : ce("span", { className: "ctx" }, deck.total ? "All caught up" : "Finish a stage to add cards")),
     ce("div", { className: "panel kpi" },
       ce("span", { className: "lbl" }, "Retention · 30 days"),
       ce("span", { className: "val" }, ret.rate == null ? "—" : statsPct(ret.rate)),
@@ -107,7 +107,7 @@ function StatsView(props) {
     ce("div", { className: "panel kpi" },
       ce("span", { className: "lbl" }, "Deck"),
       ce("span", { className: "val" }, statsFmt(deck.total), ce("small", null, "cards")),
-      ce("span", { className: "ctx" }, deck.total ? [ce("b", { key: "b" }, statsFmt(deck.mature)), " mature · " + statsPct(deck.mature / deck.total) + " of deck"] : "Cards come from finished units")));
+      ce("span", { className: "ctx" }, deck.total ? [ce("b", { key: "b" }, statsFmt(deck.mature)), " mature · " + statsPct(deck.mature / deck.total) + " of deck"] : "Cards come from finished stages")));
 
   // ── Upcoming reviews ──
   var max = Math.max.apply(null, [1, overdue].concat(fc.perDay));
@@ -120,7 +120,7 @@ function StatsView(props) {
   var next7 = fc.perDay.slice(0, 7).reduce(function (a, b) { return a + b; }, 0);
   var forecast = card("Upcoming reviews",
     deck.total > 0 && [statsFmt(next7) + " in the next 7 days · ", tableBtn(fcTable, setFcTable)],
-    deck.total === 0 ? empty("No reviews scheduled yet", "Finish your first unit and its cards show up here.") : [
+    deck.total === 0 ? empty("No reviews scheduled yet", "Finish your first stage and its cards show up here.") : [
       ce("div", { key: "c", className: "fc", role: "list", 'aria-label': "Reviews due over the next 14 days" },
         col("o", " over", overdue, overdue + " overdue", true),
         fc.perDay.map(function (v, i) {
@@ -155,7 +155,7 @@ function StatsView(props) {
     });
   };
   var maturity = card("Card maturity", deck.total > 0 && tableBtn(matTable, setMatTable),
-    deck.total === 0 ? empty("Your deck is empty", "Each unit you finish adds its words, kanji and grammar here.") : [
+    deck.total === 0 ? empty("Your deck is empty", "Each stage you finish adds its words, kanji and grammar here.") : [
       ce("div", { key: "s", className: "stack", role: "list", 'aria-label': "Card maturity" }, stack(counts, "", true)),
       ce("div", { key: "l", className: "legend" }, counts.map(function (v, i) {
         return ce("div", { key: i }, ce("i", { style: { background: STAGE_COLORS[i] } }), STAGE_LABELS[i], ce("b", null, statsFmt(v)));
@@ -185,7 +185,7 @@ function StatsView(props) {
     reviews += c.reviews;
     var what = [];
     if (c.reviews) what.push(c.reviews + (c.reviews === 1 ? " review" : " reviews"));
-    if (c.lessons) what.push(c.lessons + (c.lessons === 1 ? " unit" : " units"));
+    if (c.lessons) what.push(c.lessons + (c.lessons === 1 ? " stage" : " stages"));
     return ce("i", { key: c.date, className: "l" + c.level + (c.date === today ? " today" : ""),
       'data-tip': statsDateLabel(d, { weekday: 'short', month: 'short', day: 'numeric' }) + ": " + (what.length ? what.join(", ") : "no study") });
   });

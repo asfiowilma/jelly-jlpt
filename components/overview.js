@@ -55,13 +55,13 @@ function Overview(props) {
   };
   return ce("div", { className: "overview" },
     ce("section", { className: "panel", 'aria-label': "Course progress" },
-      head("Course progress", completed.size + " / " + units.length + " units"),
+      head("Course progress", completed.size + " / " + units.length + " stages"),
       ce("div", { className: "course" },
         // Level ramp: one segment per level with units, filled up to the current unit
         ce("div", {
           className: "ramp",
           role: "img",
-          'aria-label': "Unit " + (current + 1) + " of " + units.length + ", level " + cur.level
+          'aria-label': "Stage " + (current + 1) + " of " + units.length + ", level " + cur.level
         }, ce("span", { className: "ramp-here", style: { '--here': ramp.here + '%' } }, t('unit_label', cur.level), " ", current + 1),
           ce("div", { className: "ramp-bars" }, ramp.segments.map(function (s) {
             return ce("i", { key: s.level, style: { flex: s.len, '--lv': LEVEL_COLORS[s.level] } }, ce("b", { style: { width: s.fill + '%' } }));
@@ -72,8 +72,8 @@ function Overview(props) {
         ce(PacePanel, { units: units, completed: completed, level: cur.level, pace: props.pace || 1,
           doneToday: props.doneToday || 0, examDate: props.examDate }))),
     props.onDiagnostic && DiagnosticPanel({ onStart: props.onDiagnostic }),
-    ce("section", { className: "panel", 'aria-label': "Units" },
-      head("Units", "Every unit is open. Start anywhere."),
+    ce("section", { className: "panel", 'aria-label': "Stages" },
+      head("Stages", "Every stage is open. Start anywhere."),
       LEVELS.map(function (lv) {
         var lvUnits = units.filter(function (u) { return u.level === lv; });
         var done = lvUnits.filter(function (u) { return completed.has(u.id); }).length;

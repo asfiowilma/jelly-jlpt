@@ -10,11 +10,11 @@ var LEVEL_COLORS = { N5: 'var(--n5)', N4: 'var(--n4)', N3: 'var(--n3)', N2: 'var
 // during N5 switch at N4, and so on. Settings words are never taught → N1.
 var UI_STRINGS = {
   // Navigation / header
-  unit_label:     { en: 'Unit',     ja: 'ユニット',   since: 'N4' },
+  unit_label:     { en: 'Stage',     ja: 'ステージ',   since: 'N4' },
   // Navbar tabs: kanji labels, `rt` = furigana shown via tRuby() while the pref is on
   view_today:     { en: 'Today',    ja: '今日', rt: 'きょう',     since: 'N4'   },
   // Units/Stats words aren't taught as lesson vocabulary → switch with N1 (like Settings)
-  view_units:     { en: 'Units',    ja: '単元', rt: 'たんげん',   since: 'N1' },
+  view_units:     { en: 'Stages',   ja: 'ステージ',   since: 'N1' },
   view_stats:     { en: 'Stats',    ja: '統計', rt: 'とうけい',   since: 'N1' },
   view_review:    { en: 'Review',   ja: '復習', rt: 'ふくしゅう', since: 'N4'   },
   // Day status
@@ -152,7 +152,7 @@ var UI_STRINGS = {
   sync_synced:       { en: 'Synced',            ja: '同期済み',         since: 'N1' },
   sync_offline:      { en: 'Offline. Retrying automatically', ja: 'オフライン。自動で再試行します', since: 'N1' },
   sync_error:        { en: 'Sync error',        ja: '同期エラー',       since: 'N1' },
-  sync_merged:       { en: 'Merged {units} completed units and {cards} cards', ja: '統合しました：完了ユニット{units}件、カード{cards}枚', since: 'N1' },
+  sync_merged:       { en: 'Merged {units} completed stages and {cards} cards', ja: '統合しました：完了ステージ{units}件、カード{cards}枚', since: 'N1' },
   sync_err_url_empty: { en: 'Enter the database URL.', ja: 'データベースURLを入力してください。', since: 'N1' },
   sync_err_url:      { en: 'That isn’t a valid URL.', ja: 'URLの形式が正しくありません。', since: 'N1' },
   sync_err_url_creds: { en: 'Put the username and password in their own fields, not in the URL.', ja: 'ユーザー名とパスワードはURLに含めず、それぞれの欄に入力してください。', since: 'N1' },
@@ -170,15 +170,15 @@ var UI_STRINGS = {
   set_official_audio_hint: { en: 'Listening questions here use your browser’s voice. The official JLPT site has real sample audio (opens jlpt.jp in a new tab).', ja: 'このアプリの聴解はブラウザの音声を使います。JLPT公式サイトに本物の音声サンプルがあります（新しいタブでjlpt.jpを開きます）。', since: 'N1' },
   // Pace (Settings + Overview, see PACE_MODES in lib.js)
   set_pace_section:  { en: 'Pace',              ja: 'ペース',           since: 'N1' },
-  set_pace:          { en: 'Units per day',     ja: '1日のユニット数',  since: 'N1' },
-  pace_casual:       { en: 'Casual: 1 unit every 2 days', ja: 'ゆっくり：2日に1ユニット', since: 'N1' },
-  pace_standard:     { en: 'Standard: 1 unit a day',      ja: '標準：1日1ユニット',       since: 'N1' },
-  pace_intensive:    { en: 'Intensive: 2 units a day',    ja: '集中：1日2ユニット',       since: 'N1' },
-  pace_super:        { en: 'Super intensive: 3 units a day', ja: '超集中：1日3ユニット',  since: 'N1' },
-  pace_super_note:   { en: 'More units a day means more new cards, so your daily reviews grow too.', ja: 'ユニットが増えると新しいカードも増え、毎日の復習も増えます。', since: 'N1' },
+  set_pace:          { en: 'Stages per day',     ja: '1日のステージ数',  since: 'N1' },
+  pace_casual:       { en: 'Casual: 1 stage every 2 days', ja: 'ゆっくり：2日に1ステージ', since: 'N1' },
+  pace_standard:     { en: 'Standard: 1 stage a day',      ja: '標準：1日1ステージ',       since: 'N1' },
+  pace_intensive:    { en: 'Intensive: 2 stages a day',    ja: '集中：1日2ステージ',       since: 'N1' },
+  pace_super:        { en: 'Super intensive: 3 stages a day', ja: '超集中：1日3ステージ',  since: 'N1' },
+  pace_super_note:   { en: 'More stages a day means more new cards, so your daily reviews grow too.', ja: 'ステージが増えると新しいカードも増え、毎日の復習も増えます。', since: 'N1' },
   set_exam_date:     { en: 'JLPT exam date (optional)', ja: 'JLPT試験日（任意）', since: 'N1' },
   set_exam_hint:     { en: 'Add it to see if your pace gets you there in time. The JLPT is held in July and December.', ja: '入力すると、今のペースで間に合うか確認できます。JLPTは7月と12月に実施されます。', since: 'N1' },
-  pace_units:        { en: 'units',             ja: 'ユニット',         since: 'N1' },
+  pace_units:        { en: 'stages',             ja: 'ステージ',         since: 'N1' },
   pace_finish:       { en: 'Projected finish for', ja: '修了予定',         since: 'N1' },
   pace_all_levels:   { en: 'All levels', ja: '全レベル',      since: 'N1' },
   pace_exam:         { en: 'Exam',              ja: '試験',             since: 'N1' },

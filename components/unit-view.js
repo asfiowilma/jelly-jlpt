@@ -147,12 +147,12 @@ function UnitView(props) {
         className: "nav-btn prev",
         onClick: function () { setUnit(Math.max(0, unit.index - 1)); },
         disabled: unit.index === 0,
-        title: "Previous unit"
+        title: "Previous stage"
       }, t('nav_prev', lv)),
       React.createElement("div", null,
         React.createElement("div", { className: "day-counter" }, t('unit_label', lv), " ", unit.index + 1, " / ", units.length),
         props.pace && React.createElement("div", { className: "day-counter" }, paceTodayLine(props.pace, props.doneToday || 0, lv)),
-        // Completion comes from passing the quiz (Q28); a done unit can be un-marked.
+        // Completion comes from passing the quiz (Q28); a done stage can be un-marked.
         isDone ? React.createElement("button", {
           className: "nav-btn complete done",
           onClick: unmarkDone
@@ -162,6 +162,6 @@ function UnitView(props) {
         className: "nav-btn next",
         onClick: function () { setUnit(Math.min(last, unit.index + 1)); },
         disabled: unit.index === last,
-        title: "Next unit"
+        title: "Next stage"
       }, t('nav_next', lv))));
 }
