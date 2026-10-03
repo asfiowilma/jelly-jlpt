@@ -15,7 +15,7 @@ content is being rebuilt level by level from reference datasets.
   that only drives targets and projections. Nothing is locked; every unit is open.
 
 No build step, no npm, no bundler, no ES modules. Every file is a classic `<script src>`
-that defines top-level globals. React 18 and PouchDB 9 come from cdnjs.
+that defines top-level globals. React 18 and PouchDB 9 are vendored in `vendor/` (minified builds + license files, no CDN).
 
 ## Repository structure
 
@@ -37,6 +37,8 @@ components/           one React component per file, React.createElement, no JSX
 app.js                App: builds UNITS from PLAN + CATALOG, awaits Store.init(), mounts
 kanji-svg/            KanjiVG stroke-order SVGs (<hex codepoint>.svg), CC BY-SA 3.0, plus strokes.js
                       (generated bundle `KANJI_SVG` for file://; rerun `node tools/build-strokes.js`)
+vendor/               React 18.2.0, ReactDOM, PouchDB 9.0.0 (minified) + LICENSE-*.txt. Upgrade = replace file, update index.html/tests.html/credits
+kanji-svg/            KanjiVG stroke-order SVGs (<hex codepoint>.svg), CC BY-SA 3.0
 tools/                zero-dep Node authoring scripts + checks (dev only, outputs committed)
   ref/n5.json         reference list: which vocab/kanji/grammar belong to N5
 tests/                QUnit modules, one file per area

@@ -65,7 +65,7 @@ A known item skips the new-card queue and comes back once, 3 to 4 weeks later, a
 - **Listening uses your device's voice.** Quality depends on your browser and operating system, and some devices have no Japanese voice at all (the app tells you and shows the transcript). Chrome's Japanese voice may need a network connection. Practice with the [official JLPT sample audio](https://www.jlpt.jp/e/samples/sampleindex.html) too.
 - **No official JLPT material is included.** Every question was written for this project in the official formats. The JLPT site has [official sample questions and workbooks](https://www.jlpt.jp/e/samples/sampleindex.html).
 - **Your progress lives in this browser.** It is stored in IndexedDB (through PouchDB). Clearing site data deletes it. Use Settings, then Export, to save a backup file, or set up sync below.
-- **It needs a connection to load.** React and PouchDB load from cdnjs, so the first load of each session needs the internet.
+- **Offline loading works, with one caveat.** React and PouchDB ship in the repo (`vendor/`), so nothing loads from a CDN. There is no service worker yet, so a hosted copy still needs the network to fetch the page itself.
 
 ## Sync between devices (optional)
 

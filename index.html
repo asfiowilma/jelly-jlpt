@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdnjs.cloudflare.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https: http://localhost:5984 http://127.0.0.1:5984;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https: http://localhost:5984 http://127.0.0.1:5984;">
 <title>日本語 N5–N1 Course</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="vendor/react.production.min.js"></script>
+<script src="vendor/react-dom.production.min.js"></script>
 <!-- PouchDB 9.0.0: local IndexedDB store for synced learning data (store.js) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pouchdb/9.0.0/pouchdb.min.js" integrity="sha512-hyVHTpOcRgAUXkchpu2278X+cGfyHDm7mVx8iUu9/jFjF2okiD4hWiDPQFhzQN9x788LJfU/9xcaDPz2nwYLDQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="vendor/pouchdb.min.js"></script>
 <link rel="stylesheet" href="styles.css">
 <!-- Apply saved theme before first paint (no flash). Unknown values fall back to styles.css's bare :root (Aizome dark); App normalizes + re-saves them. -->
 <script>try{document.documentElement.setAttribute('data-palette',localStorage.getItem('jlpt_palette')||'kokuban');document.documentElement.setAttribute('data-theme',localStorage.getItem('jlpt_theme')||'dark')}catch(e){}</script>
