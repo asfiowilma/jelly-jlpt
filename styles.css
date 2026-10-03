@@ -164,12 +164,24 @@ a.data-btn{display:inline-flex;align-items:center;text-decoration:none}
 .speak-btn-row{width:44px;height:44px;padding:0;border-radius:var(--radius)}
 .speak-btn-row:hover{background:var(--surface)}
 @media (max-width:560px){.vocab-cols{display:none}.vocab-row{grid-template-columns:1fr 1fr 44px;row-gap:2px}.vocab-col-meaning{grid-column:1 / -1;grid-row:2}}
-.grammar-box{background:linear-gradient(135deg,color-mix(in srgb,var(--info) 8%,transparent),color-mix(in srgb,var(--accent) 8%,transparent));border:1px solid color-mix(in srgb,var(--accent-fg) 19%,transparent);border-radius:10px;padding:14px 16px}
-.grammar-pattern{font-size:1.1rem;font-weight:700;color:var(--accent-fg);margin-bottom:4px}
-.grammar-meaning{font-size:0.85rem;color:var(--muted);margin-bottom:8px}
+.grammar-card{display:grid;grid-template-columns:minmax(150px,200px) 1fr;gap:20px}
+.grammar-rail{padding-right:20px;border-right:1px solid var(--border)}
+.grammar-pattern{font-size:1.5rem;font-weight:700;line-height:1.25;color:var(--accent-fg);overflow-wrap:anywhere}
+.grammar-alt{display:block}
+.grammar-alt+.grammar-alt{margin-top:2px;font-size:1.05rem;font-weight:600;opacity:0.85}
+.grammar-meaning{margin:6px 0 12px;font-size:0.9rem}
+.grammar-form{font-size:0.8rem;line-height:1.5;color:var(--muted)}
+.grammar-form b{display:block;margin-bottom:2px;font-size:0.7rem;letter-spacing:0.08em;text-transform:uppercase}
+.grammar-steps{margin-bottom:14px}
+.grammar-steps ul{list-style:none;display:grid;gap:4px;font-size:0.88rem;color:var(--text)}
+.grammar-steps li{padding:6px 10px;border-radius:6px;background:var(--surface2)}
+.grammar-notes{margin-bottom:14px;font-size:0.88rem;line-height:1.6;text-wrap:pretty}
+.grammar-examples{display:grid;gap:10px}
 .grammar-example{font-size:0.9rem}
-.grammar-example .jp{font-weight:600;color:var(--text)}
+.grammar-example .jp{font-size:1.05rem;font-weight:600;color:var(--text)}
+.grammar-example mark{background:none;color:var(--accent-fg);font-weight:700;border-bottom:2px solid color-mix(in srgb,var(--accent-fg) 45%,transparent)}
 .grammar-example .en{color:var(--muted);font-size:0.85rem;margin-top:2px}
+@media (max-width:560px){.grammar-card{grid-template-columns:1fr}.grammar-rail{padding:0 0 14px;border-right:0;border-bottom:1px solid var(--border)}}
 .practice-box{background:color-mix(in srgb,var(--warn) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--warn) 45%,var(--surface));border-radius:8px;padding:12px 16px;font-size:0.9rem;line-height:1.6;color:var(--text);white-space:pre-line}
 .nav-bar{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-top:1px solid var(--border);background:var(--surface2);gap:12px}
 .nav-btn{padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-size:0.9rem;font-weight:600;transition:all 0.2s}

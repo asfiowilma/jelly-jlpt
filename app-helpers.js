@@ -27,6 +27,7 @@ var UI_STRINGS = {
   section_kanji:      { en: 'Kanji',         ja: 'かんじ',     since: 'N4' },
   section_vocabulary: { en: 'Vocabulary',    ja: 'たんご',     since: 'N4' },
   section_grammar:    { en: 'Grammar point', ja: 'ぶんぽう',   since: 'N4' },
+  grammar_build:      { en: 'Build',         ja: 'つくりかた', since: 'N4' },
   section_practice:   { en: 'Practice',      ja: 'れんしゅう', since: 'N4' },
   section_exercises:  { en: 'Exercises',     ja: 'もんだい',   since: 'N4' },
   section_kana:       { en: 'Kana',          ja: 'かな',       since: 'N4' },

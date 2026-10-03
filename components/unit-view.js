@@ -27,10 +27,16 @@ function UnitView(props) {
       React.createElement("div", { className: "section-label" }, label)].concat(children));
   };
   // A sentence with furigana (Tatoeba-style `furigana` field) when the toggle is on.
-  var sentence = function (s) {
+  // `toks` = the taught particle(s)/endings to underline in the sentence (grammar examples only)
+  var mark = function (text, toks) {
+    if (!toks || !toks.length) return text;
+    var re = new RegExp("(" + toks.map(function (x) { return x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }).join("|") + ")", "g");
+    return text.split(re).map(function (p, i) { return i % 2 ? React.createElement("mark", { key: i }, p) : p; });
+  };
+  var sentence = function (s, toks) {
     var jp = showFurigana && s.furigana ? furiganaParts(s.furigana).map(function (p, i) {
-      return p.r ? React.createElement("ruby", { key: i }, p.t, React.createElement("rt", null, p.r)) : p.t;
-    }) : s.jp;
+      return p.r ? React.createElement("ruby", { key: i }, p.t, React.createElement("rt", null, p.r)) : React.createElement(React.Fragment, { key: i }, mark(p.t, toks));
+    }) : mark(s.jp, toks);
     return React.createElement("div", { key: s.id, className: "grammar-example" },
       React.createElement("div", { className: "jp" }, jp, React.createElement("button", {
         className: "speak-btn", onClick: function () { speak(s.jp); }, title: "Listen", 'aria-label': "Listen to " + s.jp
@@ -38,7 +44,15 @@ function UnitView(props) {
       React.createElement("div", { className: "en" }, s.en));
   };
   var grammarExamples = function (g) {
-    return (g.examples || []).map(function (id) { return CATALOG.items[id]; }).filter(Boolean).slice(0, 2);
+    return (g.examples || []).map(function (id) { return CATALOG.items[id]; }).filter(Boolean).slice(0, 3);
+  };
+  // ponytail: marks come from the Tanos `ref` label, so a bare particle (で) also lights up inside
+  // です; a per-point `hl` field is the upgrade if that bites.
+  var grammarMarks = function (g, alts) {
+    var toks = (g.ref || []).join("/").replace(/[～〜]/g, "").split("/");
+    // no ref label: use the 〜-patterns themselves (single kana would light up everywhere, skip those)
+    if (!g.ref && alts.length && alts[0] !== g.pattern) toks = alts.map(function (a) { return a.replace(/^[〜～]/, "").split(/[\s(]/)[0]; }).filter(function (x) { return x.length > 1; });
+    return toks.map(function (x) { return x.trim(); }).filter(Boolean).sort(function (a, b) { return b.length - a.length; });
   };
   // Lesson units: up to 3 more sentences using this unit's words / kanji (alt spellings count),
   // most matches first, skipping the grammar examples shown above.
@@ -88,14 +102,30 @@ function UnitView(props) {
           key: 'kanji:' + unit.id, unit: unit, kanjiView: kanjiView, setKanjiView: setKanjiView
         }),
         unit.grammar.map(function (g) {
+          // "〜A/〜B/〜C" patterns stack one per line; a long formation (て-form) leaves the rail
+          // for a list in the main column
+          var alts = g.pattern.split("/");
+          if (!alts.every(function (a) { return /^[〜～]/.test(a); })) alts = [g.pattern];
+          var longForm = g.formation && g.formation.length > 70;
+          var toks = grammarMarks(g, alts);
+          var build = g.formation && React.createElement("div", { className: "grammar-form" },
+            React.createElement("b", null, t('grammar_build', lv)), g.formation);
           return React.createElement(React.Fragment, { key: g.id }, section(t('section_grammar', lv),
-            React.createElement("div", { className: "grammar-box" },
-              React.createElement("div", { className: "grammar-pattern" }, g.pattern),
-              React.createElement("div", { className: "grammar-meaning" }, g.meaning),
-              g.formation && React.createElement("div", { className: "grammar-meaning" }, g.formation),
-              grammarExamples(g).map(sentence))));
+            React.createElement("div", { className: "grammar-card" },
+              React.createElement("div", { className: "grammar-rail" },
+                React.createElement("div", { className: "grammar-pattern" }, alts.map(function (a, i) {
+                  return React.createElement("span", { key: i, className: "grammar-alt" }, a);
+                })),
+                React.createElement("div", { className: "grammar-meaning" }, g.meaning),
+                !longForm && build),
+              React.createElement("div", { className: "grammar-main" },
+                longForm && React.createElement("div", { className: "grammar-form grammar-steps" },
+                  React.createElement("b", null, t('grammar_build', lv)),
+                  React.createElement("ul", null, g.formation.split("; ").map(function (x, i) { return React.createElement("li", { key: i }, x); }))),
+                g.notes && React.createElement("p", { className: "grammar-notes" }, g.notes),
+                React.createElement("div", { className: "grammar-examples" }, grammarExamples(g).map(function (s) { return sentence(s, toks); }))))));
         }),
-        examples.length > 0 && section(t('section_examples', lv), examples.map(sentence)),
+        examples.length > 0 && section(t('section_examples', lv), examples.map(function (s) { return sentence(s); })),
         (examples.length > 0 || unit.grammar.length > 0) && React.createElement("button", {
           className: "furigana-toggle" + (showFurigana ? " active" : ""),
           onClick: toggleFurigana
