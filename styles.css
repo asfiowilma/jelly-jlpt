@@ -142,27 +142,28 @@ a.data-btn{display:inline-flex;align-items:center;text-decoration:none}
 .vocab-table td:last-child{color:var(--ok);font-weight:500;border-radius:0 6px 6px 0}
 .vocab-table td:nth-child(2):not(:last-child){color:var(--muted);font-size:0.85rem}
 /* Vocabulary: grouped cover-and-test list */
-.vocab-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-.vocab-count{margin-right:auto;font-size:0.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
 .vocab-btn{padding:5px 12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:var(--radius);font-family:inherit;font-size:0.8rem;cursor:pointer}
 .vocab-btn:hover{border-color:var(--accent-fg)}
 .vocab-group{margin-top:14px}
 .vocab-group:first-of-type{margin-top:0}
 .vocab-group-label{font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:6px}
 .vocab-list{list-style:none;display:grid;gap:4px}
-.vocab-row{display:grid;grid-template-columns:minmax(96px,34%) 1fr 44px;align-items:center;gap:10px;background:var(--surface2);border-radius:6px;padding:4px 4px 4px 12px}
+.vocab-cols,.vocab-row{display:grid;grid-template-columns:minmax(92px,1.1fr) minmax(88px,1fr) minmax(0,2fr) 44px;align-items:center;gap:10px}
+.vocab-cols{margin-bottom:6px;padding:0 4px 0 12px;font-size:0.7rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted)}
+.vocab-row{background:var(--surface2);border-radius:6px;padding:4px 4px 4px 12px}
 .vocab-jp{font-size:1.25rem;font-weight:600;line-height:1.2}
-.vocab-jp ruby{font-size:1.25rem}
-.vocab-jp rt{font-size:0.6em}
-.vocab-reading{font-size:0.75rem;color:var(--muted)}
-.vocab-gloss{min-height:44px;width:100%;text-align:left;border:1px dashed var(--border);background:transparent;border-radius:6px;padding:0 10px;color:var(--ok);font-family:inherit;font-weight:500;font-size:0.9rem;display:flex;align-items:center;gap:8px;cursor:default}
-.vocab-gloss.covered{cursor:pointer;color:var(--muted);background:repeating-linear-gradient(135deg,var(--surface) 0 6px,var(--surface2) 6px 12px)}
+.vocab-cell{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:0 10px 0 0;border:1px dashed transparent;border-radius:6px;background:transparent;color:inherit;font-family:inherit;text-align:left}
+.vocab-reading{font-size:1rem;color:var(--text)}
+.vocab-meaning{font-size:0.9rem;font-weight:500;color:var(--ok)}
+.vocab-none{color:var(--muted);opacity:0.5}
+.vocab-cell.covered{padding:0 10px;border-color:var(--border);background:repeating-linear-gradient(135deg,var(--surface) 0 6px,var(--surface2) 6px 12px);color:var(--muted);cursor:pointer}
+.vocab-cell.covered:hover{border-color:var(--accent-fg)}
 .vocab-tap{font-size:0.75rem;font-weight:400}
 .vocab-usage{color:var(--muted);font-weight:400}
 .pos-chip{font-size:0.68rem;font-weight:600;padding:1px 7px;border-radius:99px;border:1px solid var(--border);color:var(--muted)}
 .speak-btn-row{width:44px;height:44px;padding:0;border-radius:var(--radius)}
 .speak-btn-row:hover{background:var(--surface)}
-@media (max-width:420px){.vocab-row{grid-template-columns:1fr 44px}.vocab-gloss{grid-column:1 / -1;grid-row:2}}
+@media (max-width:560px){.vocab-cols{display:none}.vocab-row{grid-template-columns:1fr 1fr 44px;row-gap:2px}.vocab-col-meaning{grid-column:1 / -1;grid-row:2}}
 .grammar-box{background:linear-gradient(135deg,color-mix(in srgb,var(--info) 8%,transparent),color-mix(in srgb,var(--accent) 8%,transparent));border:1px solid color-mix(in srgb,var(--accent-fg) 19%,transparent);border-radius:10px;padding:14px 16px}
 .grammar-pattern{font-size:1.1rem;font-weight:700;color:var(--accent-fg);margin-bottom:4px}
 .grammar-meaning{font-size:0.85rem;color:var(--muted);margin-bottom:8px}
@@ -332,12 +333,12 @@ table.data th{color:var(--muted);font-weight:600}
 @media (max-width:560px){.kj-focus{grid-template-columns:1fr}.kj-stage{max-width:240px}.kj-row{grid-template-columns:72px 1fr}.kj-big{font-size:2.8rem}}
 
 /* Lesson Kana section: gojuon chart, Learn / Practice */
-.kn-ctl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;text-transform:none;letter-spacing:0;font-weight:400}
-.kn-count{font-size:0.8rem;color:var(--muted)}
-.kn-seg{display:inline-flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-.kn-seg button{padding:5px 14px;border:0;background:var(--surface2);color:var(--muted);font-family:inherit;font-size:0.8rem;cursor:pointer}
-.kn-seg button+button{border-left:1px solid var(--border)}
-.kn-seg button[aria-pressed=true]{background:var(--accent);color:var(--on-accent)}
+.mode-ctl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;text-transform:none;letter-spacing:0;font-weight:400}
+.mode-count{font-size:0.8rem;color:var(--muted)}
+.mode-seg{display:inline-flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.mode-seg button{padding:5px 14px;border:0;background:var(--surface2);color:var(--muted);font-family:inherit;font-size:0.8rem;cursor:pointer}
+.mode-seg button+button{border-left:1px solid var(--border)}
+.mode-seg button[aria-pressed=true]{background:var(--accent);color:var(--on-accent)}
 .kn-chart{display:grid;gap:6px;align-items:center}
 .kn-col{font-size:0.7rem;color:var(--muted);text-align:center}
 .kn-rowlab{font-size:0.9rem;color:var(--muted);text-align:center}

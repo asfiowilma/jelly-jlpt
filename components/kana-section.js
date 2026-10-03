@@ -117,14 +117,14 @@ function KanaSection(props) {
     return React.createElement("span", { key: s, className: "kn-chip" + (hl ? " hl" : "") },
       Array.from(s).map(function (c) { return React.createElement("span", { key: c, className: "kn-chip-k" + (inUnit[c] ? "" : " later"), title: inUnit[c] ? undefined : t('kana_later', lv) }, c); }));
   });
-  var seg = React.createElement("span", { className: "kn-seg", role: "group", 'aria-label': t('kana_mode', lv) },
-    React.createElement("button", { 'aria-pressed': !practice, onClick: function () { setMode(false); } }, t('kana_learn', lv)),
-    React.createElement("button", { 'aria-pressed': practice, onClick: function () { setMode(true); } }, t('kana_practice', lv)));
-  var right = React.createElement("span", { className: "kn-ctl" },
+  var seg = React.createElement("span", { className: "mode-seg", role: "group", 'aria-label': t('mode_label', lv) },
+    React.createElement("button", { 'aria-pressed': !practice, onClick: function () { setMode(false); } }, t('mode_learn', lv)),
+    React.createElement("button", { 'aria-pressed': practice, onClick: function () { setMode(true); } }, t('mode_practice', lv)));
+  var right = React.createElement("span", { className: "mode-ctl" },
     practice
       ? React.createElement(React.Fragment, null,
-        React.createElement("span", { className: "kn-count" }, t('kana_revealed', lv) + " " + revealed + " / " + kana.length),
-        React.createElement("button", { className: "vocab-btn" + (order ? " active" : ""), 'aria-pressed': !!order, onClick: function () { setOrder(order ? null : rndShuffle(kana)); } }, t('kana_shuffle', lv)),
+        React.createElement("span", { className: "mode-count" }, t('kana_revealed', lv) + " " + revealed + " / " + kana.length),
+        React.createElement("button", { className: "vocab-btn" + (order ? " active" : ""), 'aria-pressed': !!order, onClick: function () { setOrder(order ? null : rndShuffle(kana)); } }, t('mode_shuffle', lv)),
         React.createElement("button", {
           className: "vocab-btn",
           onClick: function () {
@@ -132,8 +132,8 @@ function KanaSection(props) {
             if (revealed < kana.length) kana.forEach(function (k) { all[k.id] = true; });
             setRev(all);
           }
-        }, revealed === kana.length ? t('kana_hide_all', lv) : t('kana_reveal_all', lv)))
-      : React.createElement("span", { className: "kn-count" }, t('kana_tap', lv)),
+        }, revealed === kana.length ? t('mode_hide_all', lv) : t('mode_reveal_all', lv)))
+      : React.createElement("span", { className: "mode-count" }, t('kana_tap', lv)),
     seg);
   return React.createElement("div", { className: "section" },
     charSectionHead({
