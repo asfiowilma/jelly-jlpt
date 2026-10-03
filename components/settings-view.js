@@ -114,7 +114,7 @@ function SettingsView(props) {
       React.createElement("ul", { className: "credits" }, CREDITS.map(function (c) {
         return React.createElement("li", { key: c.name },
           React.createElement("a", { href: c.url, target: "_blank", rel: "noopener noreferrer" }, c.name),
-          ' — ' + L(c.key) + ' (',
+          ': ' + L(c.key) + ' (',
           React.createElement("a", { href: c.licenseUrl, target: "_blank", rel: "noopener noreferrer" }, c.license), ')');
       }))));
 }
@@ -143,7 +143,7 @@ function SyncSettings(props) {
   var status = React.createElement("p", { className: "sync-status", role: "status" },
     React.createElement("span", { className: "sync-dot sync-" + sync.status, 'aria-hidden': "true" }),
     L("sync_" + sync.status),
-    sync.connected && sync.error ? " — " + errText(sync.error, sync.detail) : null,
+    sync.connected && sync.error ? ". " + errText(sync.error, sync.detail) : null,
     sync.summary ? " · " + L("sync_merged").replace('{units}', sync.summary.units).replace('{cards}', sync.summary.cards) : null);
   var check = function (checked, onChange, label, describedBy) {
     return React.createElement("label", { className: "sync-check" },

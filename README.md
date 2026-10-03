@@ -26,7 +26,7 @@ A free, self-contained interactive Japanese course from zero to JLPT N1 level.
 2. Study the day's content
 3. Click **Start Quiz** to test yourself
 4. Use the **Review** tab daily for spaced-repetition flashcards
-5. Click **✓ Mark Complete** when done
+5. Click **✓ Mark as done** when done
 
 ## Publishing to GitHub Pages
 

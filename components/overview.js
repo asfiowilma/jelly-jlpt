@@ -4,6 +4,11 @@
 function paceMode(pace) {
   return PACE_MODES.filter(function (m) { return m.pace === pace; })[0] || PACE_MODES[1];
 }
+// showDate: Date or "YYYY-MM-DD" → "12 Oct 2026" in the browser's locale (display only; localDate stays the storage key).
+function showDate(d) {
+  if (typeof d === 'string') { var p = d.split('-'); d = new Date(+p[0], +p[1] - 1, +p[2]); }
+  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+}
 // paceTodayLine: "Today: 1 / 2 units" (also shown in UnitView).
 function paceTodayLine(pace, doneToday, lv) {
   return t('view_today', lv) + ": " + doneToday + " / " + todayTarget(pace).units + " " + t('pace_units', lv);
@@ -21,14 +26,14 @@ function PacePanel(props) {
   var exam = null;
   if (props.examDate) {
     var sug = suggestPace(lvLeft, props.examDate, now);
-    exam = React.createElement("p", null, t('pace_exam', lv), " ", props.examDate, ": ",
+    exam = React.createElement("p", null, t('pace_exam', lv), " ", showDate(props.examDate), ": ",
       sug === null ? t('pace_too_late', lv)
-        : (pace >= sug ? t('pace_on_track', lv) : t('pace_behind', lv)) + " · " + t('pace_suggested', lv) + ": " + t(paceMode(sug).key, lv));
+        : (pace >= sug ? t('pace_on_track', lv) : t('pace_behind', lv)) + " · " + t('pace_suggested', lv) + ": " + t(paceMode(sug).key, lv).split(/[:：]/)[0]);
   }
   return React.createElement("div", { className: "pace-panel ramp-meta" },
     React.createElement("p", null, React.createElement("strong", null, paceTodayLine(pace, props.doneToday, lv)), " · ", t(paceMode(pace).key, lv)),
-    React.createElement("p", null, t('pace_finish', lv), " ", lv, ": ", localDate(projectFinish(lvLeft, pace, now)),
-      levels && " · " + t('pace_all_levels', lv) + " (" + levels + "): " + localDate(projectFinish(allLeft, pace, now))),
+    React.createElement("p", null, t('pace_finish', lv), " ", lv, ": ", showDate(projectFinish(lvLeft, pace, now)),
+      levels && " · " + t('pace_all_levels', lv) + " (" + levels + "): " + showDate(projectFinish(allLeft, pace, now))),
     exam);
 }
 
@@ -67,7 +72,7 @@ function Overview(props) {
         ce(PacePanel, { units: units, completed: completed, level: cur.level, pace: props.pace || 1,
           doneToday: props.doneToday || 0, examDate: props.examDate }))),
     ce("section", { className: "panel", 'aria-label': "Units" },
-      head("Units", "Every unit is open — pick any"),
+      head("Units", "Every unit is open. Start anywhere."),
       LEVELS.map(function (lv) {
         var lvUnits = units.filter(function (u) { return u.level === lv; });
         var done = lvUnits.filter(function (u) { return completed.has(u.id); }).length;
@@ -90,7 +95,7 @@ function Overview(props) {
                 ce("span", { className: "unit-num" }, u.index + 1),
                 ce("span", { className: "unit-title" }, u.title),
                 u.kind !== 'lesson' && u.kind !== 'kana' && ce("span", { className: "week-badge" }, u.kind),
-                u.index === suggested && !isDone && ce("span", { className: "unit-next" }, "Next"),
+                u.index === suggested && !isDone && ce("span", { className: "unit-next" }, "Up next"),
                 isDone && ce("span", { className: "unit-done", 'aria-label': "completed" }, "✓")));
           })));
       })));
