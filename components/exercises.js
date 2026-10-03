@@ -164,7 +164,7 @@ function Exercises(_ref9) {
     if (d) d.focus();
   }, [leaving]);
   if (exs.length === 0) return null;
-  var needPct = Math.round(passMark(unit.kind) * 100) + '%';
+  var needPct = passMarkText(unit);
   var clock = function (s) { return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
   // finish(exs, results): score, log and report the quiz (last answer or time up), once.
   var finish = function finish(nextExs, nextRes) {
@@ -340,6 +340,12 @@ function Exercises(_ref9) {
         h("div", null,
           h("h3", { className: "qz-verdict " + (s.passed ? 'pass' : 'fail'), role: "status" }, s.passed ? "Passed — stage complete" : "Not passed yet"),
           h("p", null, s.right, " / ", s.total, " · ", pct, "% · pass mark ", needPct, s.passed ? "." : ". Retake with new questions."),
+          // kana quizzes (ticket 42): both parts must pass
+          s.split && h("ul", { className: "qz-parts" }, [["Characters", s.split.chars], ["Words", s.split.words]].map(function (p) {
+            var ok = p[1].right / p[1].total >= p[1].need - 1e-9;
+            return h("li", { key: p[0], className: ok ? "pass" : "fail" }, p[0], ": ", p[1].right, " / ", p[1].total,
+              " · ", Math.round(p[1].need * 100), "% needed · ", ok ? "passed" : "not yet");
+          })),
           timedOut && h("p", { className: "qz-timeup" }, "Time is up: unanswered questions count as wrong."))),
       missed.length > 0 && h("div", { key: "mh", className: "qz-miss-h" }, "Missed (", missed.length, ")"),
       missed.length > 0 && h("ul", { key: "ml", className: "qz-miss" }, shown.map(function (e, i) {

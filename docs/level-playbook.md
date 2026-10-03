@@ -83,8 +83,12 @@ in `.scratch/content-audit/issues/`.
 
 ## 5. Plan
 
-- **A from-zero course needs kana units first.** Kana practice words may use only kana
-  already taught (a test enforces this).
+- **A from-zero course needs kana units first.** Each kana unit also teaches 2–5 real words
+  spelled in its own script (moved out of their lessons, so they get cards early), plus
+  read-only practice words. Every word may use only kana already taught (a test enforces
+  this). Keep the こそあど series, particles, bound items and words a grammar point rests on
+  in their lessons. Kana quizzes are ~60% characters / ~40% words, passed with ≥90% on
+  characters and ≥80% on words.
 - **Load guide per lesson** (N5: about 8 vocab, about 2 kanji, 1 grammar; ±25%). Vocab-only
   lessons are fine when grammar runs out.
 - **A kanji appears only at or after the first lesson teaching a word that uses it.**

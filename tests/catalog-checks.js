@@ -335,7 +335,9 @@ QUnit.module('catalog checks', function () {
   // planErrors(plan, items): per-unit rules for the shipped plan (items = catalog items).
   //   lessons: no placeholder titles; vocab within guide ±25%, kanji / grammar ≤ guide +25%;
   //            a kanji only at or after a lesson teaching a word written with it.
-  //   kana units: 2–5 practice words, each readable with the kana (and marks っ ー) learned so far.
+  //   kana units (ticket 42): 2–5 taught words (vocab) spelled in kana of the unit's script, up to 5
+  //            practice words, ≥3 words in all; every word readable with the kana (and marks っ ー)
+  //            learned so far.
   //   reviews: list no items; at most 6 lessons between reviews. Nothing taught twice.
   function planErrors(plan, items) {
     items = items || CATALOG.items;
@@ -368,8 +370,17 @@ QUnit.module('catalog checks', function () {
         (u.kana || []).forEach(function (id) { if (items[id]) learned[items[id].char] = true; });
         (u.marks || []).forEach(function (m) { learned[m] = true; });
         if (u.kind === 'kana') {
-          var p = u.practice || [];
-          if (p.length < 2 || p.length > 5) e.push(u.id + ': ' + p.length + ' practice words (want 2–5)');
+          var p = u.practice || [], w = u.vocab || [];
+          var script = (items[(u.kana || [])[0]] || {}).script === 'katakana' ? /^[ァ-ヺー]+$/ : /^[ぁ-ゖっ]+$/;
+          if (w.length < 2 || w.length > 5) e.push(u.id + ': ' + w.length + ' taught words (want 2–5)');
+          if (p.length > 5) e.push(u.id + ': ' + p.length + ' practice words (want ≤5)');
+          if (w.length + p.length < 3) e.push(u.id + ': ' + (w.length + p.length) + ' words in all (want ≥3)');
+          w.forEach(function (id) {
+            var it = items[id];
+            if (!it) return;
+            if (!script.test(it.word)) e.push(u.id + ': word ' + id + ' not spelled in the unit\'s kana script');
+            else if (!readable(it.word, learned)) e.push(u.id + ': word ' + id + ' uses kana not learned yet');
+          });
           p.forEach(function (id) {
             if (items[id] && !readable(items[id].reading, learned)) e.push(u.id + ': practice ' + id + ' uses kana not learned yet');
           });
@@ -625,14 +636,25 @@ QUnit.module('catalog checks', function () {
      { id: 'v:青|あお', kind: 'vocab', word: '青', reading: 'あお' }, { id: 'v:秋|あき', kind: 'vocab', word: '秋', reading: 'あき' },
      { id: 'v:来た|きゃっく', kind: 'vocab', word: 'x', reading: 'きゃっく' }, { id: 'k:青', kind: 'kanji', char: '青' }]
       .forEach(function (it) { it.level = 'N5'; items[it.id] = it; });
-    var kanaU = function (id, kana, practice, marks) { return { id: id, level: 'N5', kind: 'kana', title: 't', kana: kana, practice: practice, marks: marks }; };
-    var ok = kanaU('n5.u001', ['c:あ', 'c:お'], ['v:青|あお', 'v:青|あお']);
+    [{ id: 'v:あお|あお', word: 'あお' }, { id: 'v:おあ|おあ', word: 'おあ' }, { id: 'v:きゃっく|きゃっく', word: 'きゃっく' }, { id: 'v:アオ|アオ', word: 'アオ' }, { id: 'v:くっく|くっく', word: 'くっく' }]
+      .forEach(function (it) { items[it.id] = Object.assign({ kind: 'vocab', level: 'N5', reading: it.word }, it); });
+    items['c:ア'] = { id: 'c:ア', kind: 'kana', level: 'N5', char: 'ア', script: 'katakana' };
+    items['c:オ'] = { id: 'c:オ', kind: 'kana', level: 'N5', char: 'オ', script: 'katakana' };
+    var kanaU = function (id, kana, practice, marks, vocab) {
+      return { id: id, level: 'N5', kind: 'kana', title: 't', kana: kana, vocab: vocab || ['v:あお|あお', 'v:おあ|おあ'], practice: practice, marks: marks };
+    };
+    var ok = kanaU('n5.u001', ['c:あ', 'c:お'], ['v:青|あお']);
     var run = function (units) { return planErrors([{ level: 'N5', units: units }], items).join('\n'); };
     assert.strictEqual(run([ok]), '');
-    assert.ok(/practice v:秋\|あき uses kana not learned/.test(run([kanaU('n5.u001', ['c:あ'], ['v:青|あお', 'v:秋|あき'])])), 'unlearned kana');
-    assert.ok(/1 practice words/.test(run([kanaU('n5.u001', ['c:あ', 'c:お'], ['v:青|あお'])])), '2–5 practice words');
-    assert.strictEqual(run([kanaU('n5.u001', ['c:きゃ', 'c:く'], ['v:来た|きゃっく', 'v:来た|きゃっく'], ['っ'])]), '', 'combo + っ mark');
-    assert.ok(/uses kana not learned/.test(run([kanaU('n5.u001', ['c:きゃ', 'c:く'], ['v:来た|きゃっく', 'v:来た|きゃっく'])])), 'っ needs its mark');
+    assert.ok(/practice v:秋\|あき uses kana not learned/.test(run([kanaU('n5.u001', ['c:あ', 'c:お'], ['v:青|あお', 'v:秋|あき'])])), 'unlearned kana');
+    assert.ok(/word v:おあ\|おあ uses kana not learned/.test(run([kanaU('n5.u001', ['c:あ'], ['v:青|あお'])])), 'taught word: unlearned kana');
+    assert.ok(/1 taught words/.test(run([kanaU('n5.u001', ['c:あ', 'c:お'], ['v:青|あお', 'v:青|あお'], null, ['v:あお|あお'])])), '2–5 taught words');
+    assert.ok(/2 words in all/.test(run([kanaU('n5.u001', ['c:あ', 'c:お'], [])])), '≥3 words in all');
+    assert.ok(/v:青\|あお not spelled in the unit's kana script/.test(run([kanaU('n5.u001', ['c:あ', 'c:お'], ['v:青|あお'], null, ['v:あお|あお', 'v:青|あお'])])), 'no kanji word taught in a kana unit');
+    assert.ok(/v:アオ\|アオ not spelled/.test(run([kanaU('n5.u001', ['c:あ', 'c:お', 'c:ア', 'c:オ'], ['v:青|あお'], null, ['v:あお|あお', 'v:アオ|アオ'])])), 'hiragana unit: hiragana words');
+    assert.ok(/v:あお\|あお not spelled/.test(run([kanaU('n5.u001', ['c:ア', 'c:オ', 'c:あ', 'c:お'], ['v:青|あお'], null, ['v:アオ|アオ', 'v:あお|あお'])])), 'katakana unit: katakana words');
+    assert.strictEqual(run([kanaU('n5.u001', ['c:きゃ', 'c:く'], ['v:来た|きゃっく'], ['っ'], ['v:きゃっく|きゃっく', 'v:くっく|くっく'])]), '', 'combo + っ mark');
+    assert.ok(/word v:きゃっく\|きゃっく uses kana not learned/.test(run([kanaU('n5.u001', ['c:きゃ', 'c:く'], ['v:来た|きゃっく'], null, ['v:きゃっく|きゃっく', 'v:くっく|くっく'])])), 'っ needs its mark');
     var lesson = function (id, patch) {
       return Object.assign({ id: id, level: 'N5', kind: 'lesson', title: 'Colours', vocab: ['1', '2', '3', '4', '5', 'v:青|あお'] }, patch);
     };

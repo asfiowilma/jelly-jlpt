@@ -105,6 +105,16 @@ function UnitView(props) {
         })(),
         unit.kana.length > 0 && React.createElement(KanaSection, { key: 'kana:' + unit.id, unit: unit }),
         unit.vocab.length > 0 && React.createElement(VocabSection, { key: 'vocab:' + unit.id, unit: unit }),
+        // kana units: read-only practice words (no card, not quizzed), shown in kana
+        practice.length > 0 && section(t('section_read', lv), React.createElement("ul", { className: "vocab-list read-list" }, practice.map(function (v) {
+          return React.createElement("li", { key: v.id, className: "vocab-row" },
+            React.createElement("div", { className: "vocab-jp jp" }, v.reading),
+            React.createElement("div", { className: "vocab-col-meaning" }, React.createElement("span", { className: "vocab-cell vocab-meaning" }, glossText(v))),
+            React.createElement("button", {
+              className: "speak-btn speak-btn-row", onClick: function () { speak(v.reading); },
+              title: "Listen to pronunciation", 'aria-label': "Listen to " + v.reading
+            }, "🔊"));
+        }))),
         unit.kanji.length > 0 && React.createElement(KanjiSection, {
           key: 'kanji:' + unit.id, unit: unit, kanjiView: kanjiView, setKanjiView: setKanjiView
         }),
@@ -166,7 +176,7 @@ function UnitView(props) {
         React.createElement("div", { className: "nav-status" }, isDone
           ? [React.createElement("span", { key: "d", className: "nav-ok" }, t('complete_badge', lv)), " · ",
             React.createElement("button", { key: "u", className: "nav-link", onClick: unmarkDone }, t('mark_incomplete', lv))]
-          : unit.kind === 'mock' ? "Take the mock to finish" : "Pass the quiz (" + Math.round(passMark(unit.kind) * 100) + "%) to finish"),
+          : unit.kind === 'mock' ? "Take the mock to finish" : "Pass the quiz (" + passMarkText(unit) + ") to finish"),
         props.pace && React.createElement("div", { className: "nav-pace" }, paceTodayLine(props.pace, props.doneToday || 0, lv))),
       React.createElement("div", { className: "nav-act" },
         !isDone && unit.index < last && React.createElement("button", {

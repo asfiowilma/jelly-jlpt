@@ -185,6 +185,8 @@ a.data-btn{display:inline-flex;align-items:center;text-decoration:none}
 .speak-btn-row{width:44px;height:44px;padding:0;border-radius:var(--radius)}
 .speak-btn-row:hover{background:var(--surface)}
 @media (max-width:560px){.vocab-cols{display:block}.vocab-cols span{display:none}.vocab-row{grid-template-columns:1fr 1fr 44px;row-gap:2px}.vocab-col-meaning{grid-column:1 / -1;grid-row:2}}
+.read-list .vocab-row{grid-template-columns:minmax(92px,1.1fr) minmax(0,3fr) 44px}
+@media (max-width:560px){.read-list .vocab-row{grid-template-columns:1fr 44px}}
 .grammar-card{display:grid;grid-template-columns:minmax(150px,200px) 1fr;gap:20px}
 .grammar-rail{padding-right:20px;border-right:1px solid var(--border)}
 .grammar-pattern{font-size:1.5rem;font-weight:700;line-height:1.25;color:var(--accent-fg);overflow-wrap:anywhere}
@@ -753,6 +755,10 @@ body.quiz-open{overflow:hidden}
 .qz-verdict.fail{color:var(--bad)}
 .qz-res p{color:var(--muted);font-size:0.9rem;margin-top:4px}
 .qz-res .qz-timeup{font-weight:600;color:var(--bad)}
+.qz-parts{list-style:none;margin:6px 0 0;padding:0;font-size:0.9rem}
+.qz-parts li{margin-top:2px}
+.qz-parts li.pass{color:var(--ok)}
+.qz-parts li.fail{color:var(--bad);font-weight:600}
 .qz-miss-h{font-size:0.7rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:22px 0 6px}
 .qz-miss{list-style:none}
 .qz-miss li{display:grid;grid-template-columns:minmax(3.2em,auto) 1fr auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--border);font-size:0.95rem}

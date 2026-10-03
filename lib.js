@@ -170,6 +170,22 @@ function quizLength(unit, nItems) {
   var base = unit.kind === 'kana' ? 10 : [12, 14][levelRank(unit.level)] || 16;
   return Math.min(QUIZ_MAX_QUESTIONS, Math.max(base, nItems || 0));
 }
+// Kana quizzes (ticket 42, Q45): about 60% character questions, 40% word questions, and two
+// pass marks, both required: 90% on characters, 80% on words.
+var KANA_CHAR_SHARE = 0.6, KANA_WORD_PASS = 0.8;
+// quizSize(unit, items): questions in the unit's quiz. A kana unit with words is sized so its
+// kana fill the character share: every kana asked once, the rest word questions (cap 30).
+function quizSize(unit, items) {
+  var nk = items.filter(function (it) { return it.kind === 'kana'; }).length;
+  return quizLength(unit, unit.kind === 'kana' && nk && nk < items.length ? Math.ceil(nk / KANA_CHAR_SHARE) : items.length);
+}
+// isKanaQuiz(unit): a kana unit, or a review of kana units (split pass mark).
+function isKanaQuiz(unit) { return quizItems(unit).some(function (it) { return it.kind === 'kana'; }); }
+// passMarkText(unit): the pass mark as shown on the quiz card and the stage bar.
+function passMarkText(unit) {
+  return isKanaQuiz(unit) ? Math.round(passMark('kana') * 100) + '% on characters, ' + Math.round(KANA_WORD_PASS * 100) + '% on words'
+    : Math.round(passMark(unit.kind) * 100) + '%';
+}
 
 // Catalog item → display strings
 function glossText(v) { return v.gloss.join(' / '); }
@@ -275,6 +291,96 @@ function kanaDistractors(k, n, pool) {
   return [0, 1, 2, 3].reduce(function (acc, t) {
     return acc.concat(rndShuffle(cands.filter(function (x) { return tier(x) === t; })));
   }, []).slice(0, n);
+}
+
+// ── Kana words (ticket 42, Q45) ─────────────────────────────────────────────
+// Kana units teach a few real words spelled in kana. Their quiz reads them in romaji, spells
+// them from romaji, and links them to their meaning.
+var KANA_WORD_RE = /^[ぁ-ゖァ-ヺー]+$/;
+var _kanaAns = null;
+function kanaAnswers() { // kana char → romaji answers (Hepburn first)
+  if (!_kanaAns) { _kanaAns = {}; catalogOf('kana').forEach(function (k) { _kanaAns[k.char] = k.answers; }); }
+  return _kanaAns;
+}
+// kanaChunks(word): per syllable, the romaji spellings accepted for it. Small っ doubles the next
+// consonant (ch → tch, Hepburn, or cch); ー repeats the vowel before it ('-' accepted too).
+function kanaChunks(word) {
+  var map = kanaAnswers(), ch = Array.from(word), out = [], dbl = false;
+  for (var i = 0; i < ch.length; i++) {
+    var two = ch[i] + (ch[i + 1] || ''), alts;
+    if (map[two]) { alts = map[two]; i++; }
+    else if (ch[i] === 'っ' || ch[i] === 'ッ') { dbl = true; continue; }
+    else if (ch[i] === 'ー') { var prev = out.length ? out[out.length - 1][0] : ''; alts = [prev.slice(-1), '-']; }
+    else alts = map[ch[i]] || [ch[i]];
+    if (ch[i] === 'ん' || ch[i] === 'ン') alts = alts.concat("n'");
+    if (dbl) alts = [].concat.apply([], alts.map(function (a) { return /^ch/.test(a) ? ['t' + a, 'c' + a] : [a.charAt(0) + a]; }));
+    dbl = false;
+    out.push(alts);
+  }
+  return out;
+}
+// kanaToRomaji(word): modified Hepburn, long vowels doubled (コーヒー koohii, マッチ matchi).
+function kanaToRomaji(word) { return kanaChunks(word).map(function (a) { return a[0]; }).join(''); }
+// romajiMatches(typed, word): typed romaji spells word exactly — any kana's accepted spelling
+// (shi / si), macrons (kōhī), case and spaces ignored. No typo tolerance: a wrong kana is wrong.
+function romajiMatches(typed, word) {
+  var esc = function (s) { return s.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&'); };
+  var re = new RegExp('^' + kanaChunks(word).map(function (a) { return '(?:' + a.map(esc).join('|') + ')'; }).join('') + '$');
+  var s = String(typed == null ? '' : typed).normalize('NFC').toLowerCase().replace(/[\s’]/g, function (c) { return c === '’' ? "'" : ''; });
+  var dbl = { 'ā': 'aa', 'ī': 'ii', 'ū': 'uu', 'ē': 'ee', 'ō': 'oo', 'â': 'aa', 'î': 'ii', 'û': 'uu', 'ê': 'ee', 'ô': 'oo' };
+  return [s.replace(/[āīūēōâîûêô]/g, function (c) { return dbl[c]; }), s.replace(/[āīūēōâîûêô]/g, function (c) { return c === 'ō' || c === 'ô' ? 'ou' : c === 'ē' || c === 'ê' ? 'ei' : dbl[c]; })]
+    .some(function (x) { return re.test(x); });
+}
+// kanaReadable(s, learned): s uses only learned kana ({ char: true }, combos and marks っ ー too).
+function kanaReadable(s, learned) {
+  var ch = Array.from(s);
+  for (var i = 0; i < ch.length; i++) {
+    if (learned[ch[i] + (ch[i + 1] || '')] && ch[i + 1]) { i++; continue; }
+    if (!learned[ch[i]]) return false;
+  }
+  return true;
+}
+// learnedKana(unit): kana (and marks) taught by this unit or any earlier one.
+function learnedKana(unit) {
+  var out = {};
+  var add = function (u) {
+    (u.kana || []).forEach(function (k) { if (k) out[k.char] = true; });
+    (u.marks || []).forEach(function (m) { out[m] = true; });
+  };
+  allUnits().forEach(function (u) { if (u.index <= (unit.index || 0)) add(u); });
+  add(unit);
+  return out;
+}
+// kanaWordFakes(word, learned): wrong spellings of a kana word, same script, only learned kana,
+// none read like the word (ず / づ): one edit each — dakuten on/off, small ゃ as big や, small っ
+// or ー added/dropped, a long vowel added/dropped, a look-alike kana; then any learned kana swap.
+function kanaWordFakes(word, learned) {
+  var kata = /[ァ-ヺ]/.test(word);
+  var ch = Array.from(word), near = [], far = [], r = kanaToRomaji(word);
+  var put = function (list, arr) { list.push(arr.join('')); };
+  var at = function (i, x) { return ch.slice(0, i).concat(x, ch.slice(i + 1)); };
+  ch.forEach(function (c, i) {
+    var d = c.normalize('NFD'), t = d.length > 1 ? d.charAt(0) : (c + '゙').normalize('NFC');
+    if (t.length === 1 && t !== c && t !== 'ゔ' && t !== 'ヴ') put(near, at(i, t));
+    if ('ゃゅょャュョ'.indexOf(c) >= 0) put(near, at(i, String.fromCharCode(c.charCodeAt(0) + 1)));
+    if (c === 'っ' || c === 'ッ' || c === 'ー') put(near, at(i, []));
+    if (i > 0 && /[かきくけこさしすせそたちつてとぱぴぷぺぽカキクケコサシスセソタチツテトパピプペポ]/.test(c) && kanaVowel(kataToHira(ch[i - 1]))) put(near, ch.slice(0, i).concat(kata ? 'ッ' : 'っ', ch.slice(i)));
+    if (kata && i > 0 && c !== 'ー' && ch[i + 1] !== 'ー' && 'ャュョッ'.indexOf(c) < 0) put(near, ch.slice(0, i + 1).concat('ー', ch.slice(i + 1)));
+    KANA_LOOKALIKES.filter(function (s) { return s.indexOf(c) >= 0; }).join('').split('').forEach(function (x) { if (x !== c) put(near, at(i, x)); });
+    Object.keys(learned).forEach(function (x) { if (x.length === 1 && /[ぁ-ゖァ-ヺ]/.test(x) && /[ァ-ヺ]/.test(x) === kata && 'ゃゅょャュョっッ'.indexOf(x) < 0 && x !== c) put(far, at(i, x)); });
+  });
+  if (!kata) readingFakes(word).forEach(function (f) { near.push(f); });
+  var out = [], seen = {}, all = rndShuffle(near).concat(rndShuffle(far));
+  seen[r] = true;
+  for (var i = 0; i < all.length && out.length < 6; i++) {
+    var f = all[i];
+    if (f === word || /^[ぁぃぅぇぉゃゅょっァィゥェォャュョッー]/.test(f) || !kanaReadable(f, learned)) continue;
+    var fr = kanaToRomaji(f);
+    if (seen[fr]) continue;
+    seen[fr] = true;
+    out.push(f);
+  }
+  return out;
 }
 
 // ── Distractor engine (ticket 09) ───────────────────────────────────────────
@@ -728,7 +834,11 @@ function quizContext(unit) {
   var conjPoint = (unit.grammar || []).filter(function (g) { return g && g.conjForm; })[0];
   var rank = levelRank(unit.level);
   var taughtVocab = Object.keys(taught).map(function (id) { return CATALOG.items[id]; }).filter(function (v) { return v && v.kind === 'vocab'; });
+  // kana quizzes (ticket 42): words are asked as kana; options only use kana learned so far
+  var kanaMode = own('kana').length > 0, learned = kanaMode ? learnedKana(unit) : {};
   return {
+    kanaMode: kanaMode, learned: learned,
+    kanaPool: kanaMode ? poolOf('vocab').filter(function (v) { return !v.alt && KANA_WORD_RE.test(v.word) && kanaReadable(v.word, learned); }) : [],
     unit: unit, items: items, rank: rank, taught: taught, taughtKanji: taughtKanji,
     vocab: own('vocab'), vPool: poolOf('vocab'), kPool: poolOf('kanji'), gPool: poolOf('grammar'),
     // verbs to conjugate: the quiz's own first, then any taught one
@@ -891,6 +1001,29 @@ function formsFor(item, ctx) {
   }
 
   if (isBound(item)) return boundForms(item, ctx, f, typing);
+
+  // A word in a kana quiz (ticket 42): read it in romaji, spell it from romaji, its meaning, and
+  // the word for a meaning (only when no other taught word shares that meaning).
+  if (item.kind === 'vocab' && ctx.kanaMode) {
+    var kw = item, rom = kanaToRomaji(kw.word);
+    return [
+      f('romajiType', true, function () { return typing('Type this word in romaji:', kw.word, [rom], 'romaji…', { romaji: kw.word }); }),
+      f('romajiPick', false, function () {
+        var fakes = kanaWordFakes(kw.word, ctx.learned).slice(0, 3);
+        if (fakes.length < 2) return null;
+        var opts = rndShuffle([kw.word].concat(fakes));
+        return { type: 'mc', prompt: 'Which is "' + rom + '"?', question: rom, options: opts, correct: opts.indexOf(kw.word) };
+      }),
+      f('meaningMc', false, function () { return mc('mc', 'What does this word mean?', kw.word, 'gloss', ctx.vPool); }),
+      f('wordMc', false, function () {
+        var clash = Object.keys(ctx.taught).some(function (id) {
+          var x = CATALOG.items[id];
+          return x && x.kind === 'vocab' && x !== kw && !isBound(x) && sharesSense(glossText(x), glossText(kw));
+        });
+        return clash ? null : mc('mc', 'Which word means "' + glossText(kw) + '"?', '', 'word', ctx.kanaPool);
+      })
+    ];
+  }
 
   if (item.kind === 'vocab') {
     var v = item, kanjiWord = hasKanji(v.word);
@@ -1098,16 +1231,30 @@ function buildExercises(unit) {
   if (unit.kind === 'prep') return prepDrill(unit); // ticket 18; a mock unit runs MockExam instead
   var ctx = quizContext(unit);
   if (!ctx.items.length) return [];
-  var total = quizLength(unit, ctx.items.length);
+  var total = quizSize(unit, ctx.items);
   var reading = readingExercises(unit, ctx.taughtKanji); // takes slots from the item questions
   var listening = listeningExercises(unit, ctx.taughtKanji);
   var n = total - reading.length - listening.length;
-  // grammar first in the first round, so a form point (て-form…) gets its recall
-  // (conjugation) question while the recall share is still open
-  var gram = rndShuffle(ctx.items.filter(function (it) { return it.kind === 'grammar'; }));
-  var order = gram.concat(rndShuffle(ctx.items.filter(function (it) { return it.kind !== 'grammar'; })));
-  while (order.length < n) order = order.concat(rndShuffle(ctx.items));
-  order = order.slice(0, n);
+  var rounds = function (list, len) { // len items: list shuffled, again and again
+    var out = [];
+    while (list.length && out.length < len) out = out.concat(rndShuffle(list));
+    return out.slice(0, len);
+  };
+  var order;
+  var kanaIts = ctx.items.filter(function (it) { return it.kind === 'kana'; });
+  var wordIts = ctx.items.filter(function (it) { return it.kind !== 'kana'; });
+  if (kanaIts.length && wordIts.length) {
+    // kana quiz (ticket 42): ~60% characters (a kana unit asks every one of its kana), the rest words
+    var nChars = Math.round(n * KANA_CHAR_SHARE);
+    if (unit.kind === 'kana') nChars = Math.min(n - Math.min(wordIts.length, n), Math.max(nChars, kanaIts.length));
+    order = rounds(kanaIts, nChars).concat(rounds(wordIts, n - nChars));
+  } else {
+    // grammar first in the first round, so a form point (て-form…) gets its recall
+    // (conjugation) question while the recall share is still open
+    var gram = rndShuffle(ctx.items.filter(function (it) { return it.kind === 'grammar'; }));
+    order = gram.concat(rndShuffle(ctx.items.filter(function (it) { return it.kind !== 'grammar'; })));
+    order = order.concat(rounds(ctx.items, n - order.length)).slice(0, n);
+  }
   var need = Math.ceil(total * RECALL_SHARE), used = {}, out = [];
   var recallCount = function () { return out.filter(function (e) { return e.recall; }).length; };
   order.forEach(function (it) {
@@ -1468,6 +1615,7 @@ function answerIsRight(ex, resp) {
   }
   if (ex.type === 'reorder') return Array.isArray(resp) && resp.map(function (i) { return ex.items[i]; }).join('') === ex.answer;
   if (ex.options && typeof ex.correct === 'number') return resp === ex.correct;
+  if (ex.romaji) return romajiMatches(resp, ex.romaji); // a kana word typed in romaji: exact
   // ponytail: romaji answers (kana items) go through the English path too; at ≤ 3 letters no typo
   // or plural rule can fire on them
   return checkTyping(String(resp == null ? '' : resp), ex.answers, englishPool());
@@ -1476,14 +1624,24 @@ function answerIsRight(ex, resp) {
 // scoreQuiz(kind, exs, results): results[i] = was exs[i] right. Score = first
 // attempts (re-queued questions don't count); missed = items answered wrong
 // on any attempt (flagged for SRS).
+// A quiz with both character (kana item) and word questions is split (ticket 42): split =
+// { chars, words } each { right, total, need }, and it passes only when both parts do.
 function scoreQuiz(kind, exs, results) {
   var right = 0, total = 0, missed = [];
+  var chars = { right: 0, total: 0, need: passMark('kana') }, words = { right: 0, total: 0, need: KANA_WORD_PASS };
   exs.forEach(function (e, i) {
     if (i >= results.length) return;
-    if (!e.requeue) { total++; if (results[i]) right++; }
+    if (!e.requeue) {
+      var part = /^c:/.test(e.itemId || '') ? chars : words;
+      total++; part.total++;
+      if (results[i]) { right++; part.right++; }
+    }
     if (!results[i] && e.itemId && missed.indexOf(e.itemId) < 0) missed.push(e.itemId);
   });
-  return { right: right, total: total, need: passMark(kind), passed: quizPassed(right, total, kind), missed: missed };
+  var ok = function (p) { return p.right / p.total >= p.need - 1e-9; };
+  var split = chars.total > 0 && words.total > 0 ? { chars: chars, words: words } : null;
+  var passed = split ? ok(chars) && ok(words) : quizPassed(right, total, chars.total ? 'kana' : kind);
+  return { right: right, total: total, need: passMark(kind), passed: passed, missed: missed, split: split };
 }
 // NFKC folds full-width romaji/digits/punctuation to half-width, half-width
 // katakana to full-width, and composes combining marks (か+゙ → が).

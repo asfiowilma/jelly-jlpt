@@ -60,7 +60,8 @@ QUnit.module('buildExercises', {
     var types = {};
     for (var run = 0; run < 20; run++) {
       buildExercises(kanaUnit).forEach(function (e) {
-        var k = CATALOG.items['c:' + e.question] || catalogOf('kana').filter(function (x) { return x.script === 'hiragana' && x.romaji === e.question; })[0];
+        if (e.item.kind === 'vocab') return; // the unit's words: tests/kana-words.js
+        var k =CATALOG.items['c:' + e.question] || catalogOf('kana').filter(function (x) { return x.script === 'hiragana' && x.romaji === e.question; })[0];
         assert.ok(k && k.kind === 'kana', 'question is a unit kana or its romaji: ' + e.question);
         if (e.type === 'typing') {
           types.typing = true;
@@ -79,7 +80,7 @@ QUnit.module('buildExercises', {
       });
     }
     assert.deepEqual(Object.keys(types).sort(), ['toKana', 'toRomaji', 'typing']);
-    assert.strictEqual(buildExercises(kanaUnit).length, 10, '10 questions for a 10-kana unit');
+    assert.strictEqual(buildExercises(kanaUnit).length, 17, '17 questions for a 10-kana unit with words (10 / 0.6)');
   });
 
   QUnit.test('kanaDistractors: look-alikes and dakuten siblings first, never a same-sounding kana', function (assert) {

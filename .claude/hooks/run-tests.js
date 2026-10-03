@@ -228,8 +228,8 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     a.equal(g.reduce(function (n, x) { return n + x.items.length; }, 0), u.vocab.length, "every word lands in a group");
     var by = function (w) { return u.vocab.filter(function (v) { return v.word === w; })[0]; };
     a.equal(vocabHasReading(by("部屋")), true, "部屋 has a reading to test");
-    a.equal(vocabHasReading(by("いす")), false, "kana-only いす does not");
-    a.equal(vocabHasReading(by("ベッド")), false, "katakana ベッド does not");
+    a.equal(vocabHasReading(by("ある")), false, "kana-only ある does not");
+    a.equal(vocabHasReading(by("ドア")), false, "katakana ドア does not");
   });
 
   test("React render: KanaSection() renders every kana unit in rows and focus layouts", function (a) {
@@ -462,7 +462,9 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       if (result.total !== first.length || result.right !== first.length - wrongFirst.length) {
         errors.push(unit.id + "@" + unit.level + ": score " + result.right + "/" + result.total + ", expected " + (first.length - wrongFirst.length) + "/" + first.length);
       }
-      if (result.passed !== quizPassed(result.right, result.total, unit.kind)) errors.push(unit.id + ": passed flag");
+      var sp = result.split, part = function (p) { return p.right / p.total >= p.need - 1e-9; };
+      if (result.passed !== (sp ? part(sp.chars) && part(sp.words) : quizPassed(result.right, result.total, unit.kind))) errors.push(unit.id + ": passed flag");
+      if (sp && !find(cls(/qz-parts/)).length) errors.push(unit.id + ": no per-part score on a kana quiz");
       var requeued = plan.filter(function (p) { return p[0].requeue; }).length;
       if (requeued !== wrongFirst.length) errors.push(unit.id + "@" + unit.level + ": " + wrongFirst.length + " misses, " + requeued + " re-asked");
       wrongFirst.forEach(function (p) { if (result.missed.indexOf(p[0].itemId) < 0) errors.push(unit.id + ": miss not flagged " + p[0].itemId); });

@@ -42,13 +42,16 @@ QUnit.module('srsAddCards', function () {
     assert.strictEqual(srsAddCards(unit, cards), false);
   });
 
-  QUnit.test('kana units add kana cards (char → romaji); practice words get no card', function (assert) {
+  QUnit.test('kana units add kana cards (char → romaji) and cards for their words; practice words get no card', function (assert) {
     var cards = {};
     var kanaUnit = buildUnits(PLAN, CATALOG).filter(function (u) { return u.kind === 'kana'; })[0];
     srsAddCards(kanaUnit, cards);
     var a = cards['c:あ'];
     assert.deepEqual([a.type, a.front, a.back], ['kana', 'あ', 'a']);
-    assert.ok(Object.keys(cards).every(function (id) { return id.indexOf('c:') === 0; }), 'only kana cards: ' + Object.keys(cards).join(' '));
+    var want = kanaUnit.kana.concat(kanaUnit.vocab).map(function (it) { return it.id; }).sort();
+    assert.deepEqual(Object.keys(cards).sort(), want, 'kana + taught words only');
+    assert.ok(kanaUnit.vocab.length >= 2 && cards[kanaUnit.vocab[0].id].type === 'vocab', 'word cards');
+    kanaUnit.practice.forEach(function (v) { assert.notOk(cards[v.id], 'no card for practice ' + v.id); });
   });
 
   QUnit.test('card ids are valid store doc ids', function (assert) {

@@ -44,7 +44,8 @@ QUnit.module('quiz difficulty model', {
     this.units.filter(function (u) { return u.kind === 'kana' || u.kind === 'lesson'; }).forEach(function (u) {
       var items = quizItems(u);
       var exs = buildExercises(u);
-      assert.strictEqual(exs.length, quizLength(u, items.length), u.id + ' length');
+      assert.strictEqual(exs.length, quizSize(u, items), u.id + ' length');
+      if (u.kind === 'lesson') assert.strictEqual(quizSize(u, items), quizLength(u, items.length), u.id + ' lesson size = quizLength');
       var asked = {};
       exs.forEach(function (e) { asked[e.itemId] = true; });
       var missing = items.filter(function (it) { return !asked[it.id]; }).map(function (it) { return it.id; });
