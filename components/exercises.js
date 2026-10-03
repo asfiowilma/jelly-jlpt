@@ -436,8 +436,10 @@ function Exercises(_ref9) {
   // Typing exercise (typing, conjugation)
   var handleCheck = function handleCheck() {
     if (!answer.trim() || revealed) return;
+    var final = ex.kana ? answer.replace(/n$/, 'ん') : answer; // a lone trailing n waits for a vowel while typing
+    setAnswer(final);
     setRevealed(true);
-    advance(answerIsRight(ex, answer));
+    advance(answerIsRight(ex, final));
   };
   var isRight = revealed && answerIsRight(ex, answer);
   return /*#__PURE__*/React.createElement("div", {
@@ -456,7 +458,7 @@ function Exercises(_ref9) {
     type: "text",
     value: answer,
     onChange: function onChange(e) {
-      return setAnswer(e.target.value);
+      return setAnswer(ex.kana ? romajiToKana(e.target.value) : e.target.value);
     },
     onKeyDown: function onKeyDown(e) {
       // Enter while an IME is composing confirms the kana, not the answer

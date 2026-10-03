@@ -642,7 +642,40 @@ function mondaiQuestions(type, item, ctx) {
 
 // ── Quiz composition (Q29-Q31) ──────────────────────────────────────────────
 var RECALL_SHARE = 0.4; // Q30: at least this share typed (recall), the rest MC
-var IME_HINT = 'Type in kana with a Japanese keyboard (IME).';
+var IME_HINT = 'Type in romaji (it turns into kana) or use a Japanese keyboard (IME).';
+var KANA_INPUT = { hint: IME_HINT, kana: true }; // kana: the answer box converts romaji as you type
+
+// romajiToKana(s): romaji → hiragana, for the kana answer boxes. Already-converted kana and
+// anything unknown pass through; an unfinished tail ('k', 'sh', 'n') stays latin until the
+// next key, so the whole box value can be re-converted on every keystroke.
+var ROMAJI = (function () {
+  var m = { a: 'あ', i: 'い', u: 'う', e: 'え', o: 'お', ya: 'や', yu: 'ゆ', yo: 'よ', wa: 'わ', wo: 'を', '-': 'ー',
+    shi: 'し', chi: 'ち', tsu: 'つ', fu: 'ふ', ji: 'じ', si: 'し', ti: 'ち', tu: 'つ', hu: 'ふ', zi: 'じ',
+    sha: 'しゃ', shu: 'しゅ', sho: 'しょ', cha: 'ちゃ', chu: 'ちゅ', cho: 'ちょ', ja: 'じゃ', ju: 'じゅ', jo: 'じょ' };
+  var rows = { k: 'かきくけこ', s: 'さしすせそ', t: 'たちつてと', n: 'なにぬねの', h: 'はひふへほ', m: 'まみむめも',
+    r: 'らりるれろ', g: 'がぎぐげご', z: 'ざじずぜぞ', d: 'だぢづでど', b: 'ばびぶべぼ', p: 'ぱぴぷぺぽ' };
+  Object.keys(rows).forEach(function (c) {
+    'aiueo'.split('').forEach(function (v, i) { if (!m[c + v]) m[c + v] = rows[c][i]; });
+    'auo'.split('').forEach(function (v, i) { m[c + 'y' + v] = rows[c][1] + 'ゃゅょ'[i]; });
+  });
+  return m;
+})();
+function romajiToKana(s) {
+  var out = '', i = 0, lower = s.toLowerCase();
+  while (i < s.length) {
+    var c = lower[i], next = lower[i + 1];
+    if (c === 'n' && next === 'n') { // 'nn' = ん, but 'nna' = んな
+      var after = lower[i + 2];
+      out += 'ん'; i += after && 'aiueoy'.indexOf(after) >= 0 ? 1 : 2; continue;
+    }
+    if (c === 'n' && (next === "'" || (next && !/[aiueoy]/.test(next) && /[a-z]/.test(next)))) { out += 'ん'; i += next === "'" ? 2 : 1; continue; }
+    if (c === next && /[bcdfghjklmpqrstvwxyz]/.test(c)) { out += 'っ'; i++; continue; }
+    var len = 3, hit = null;
+    for (; len > 0 && !hit; len--) hit = ROMAJI[lower.substr(i, len)];
+    if (hit) { out += hit; i += len + 1; } else { out += s[i]; i++; }
+  }
+  return out;
+}
 // meaningAnswers: glosses as accepted answers, plus each without a leading "to "
 // or a parenthetical ("to see (a person)" → "see").
 function meaningAnswers(glosses) {
@@ -759,13 +792,13 @@ function formsFor(item, ctx) {
       }),
       f('readingType', true, function () {
         return kanjiWord ? typing('Type the reading of this word in hiragana:', v.word, [kataToHira(v.reading), v.reading].filter(function (a, i, arr) { return arr.indexOf(a) === i; }),
-          'hiragana…', { hint: IME_HINT }) : null;
+          'hiragana…', KANA_INPUT) : null;
       }),
       f('enToJp', true, function () {
         // only when no other taught word shares a sense (else two right answers)
         var clash = ctx.vPool.some(function (x) { return x !== v && ctx.taught[x.id] && x.word !== v.word && sharesSense(glossText(x), glossText(v)); });
         var ans = [v.reading, kataToHira(v.reading), v.word].filter(function (a, i, arr) { return arr.indexOf(a) === i; });
-        return clash ? null : typing('Type the Japanese for "' + glossText(v) + '":', '', ans, 'in Japanese…', { hint: IME_HINT });
+        return clash ? null : typing('Type the Japanese for "' + glossText(v) + '":', '', ans, 'in Japanese…', KANA_INPUT);
       }),
       f('meaningMc', false, function () { return mc('mc', 'What does this word mean?', v.word, 'gloss', ctx.vPool, null, { parts: wordParts(v) }); }),
       f('wordMc', false, function () { return mc('mc', 'Which word means "' + glossText(v) + '"?', '', 'word', ctx.vPool); }),
@@ -823,7 +856,7 @@ function formsFor(item, ctx) {
     return [
       // any one reading; on accepted in hiragana too (no sample reading as placeholder: it'd be an answer)
       f('kanjiReadType', true, function () {
-        return typing('Type the reading for this character:', kj.char, rs.concat((kj.on || []).map(kataToHira)), 'reading…', { hint: IME_HINT });
+        return typing('Type the reading for this character:', kj.char, rs.concat((kj.on || []).map(kataToHira)), 'reading…', KANA_INPUT);
       }),
       f('kanjiMeanType', true, function () { return typing('What does this kanji mean? (type in English)', kj.char, meaningAnswers(kj.meaning), 'English meaning...'); }),
       f('kanjiReadMc', false, function () {
