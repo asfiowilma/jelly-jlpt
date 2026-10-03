@@ -58,6 +58,7 @@ var appFiles = [
   "sfx.js",
   path.join("components", "kanji-section.js"),
   path.join("components", "kana-section.js"),
+  path.join("components", "vocab-section.js"),
   path.join("components", "exercises.js"),
   path.join("components", "mock-exam.js"),
   path.join("components", "unit-view.js"),
@@ -210,6 +211,25 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
         catch (e) { a.ok(false, u.id + " " + view + ": " + e.message); }
       });
     });
+  });
+
+  test("React render: VocabSection() renders every unit with vocabulary", function (a) {
+    var withVocab = units.filter(function (u) { return u.vocab.length > 0; });
+    a.ok(withVocab.length > 0, "units with vocabulary exist");
+    withVocab.forEach(function (u) {
+      try { VocabSection({ unit: u }); } catch (e) { a.ok(false, u.id + ": " + e.message); }
+    });
+  });
+
+  test("vocabGroups / vocabHasReading: grouping by part of speech; reading column only for kanji words", function (a) {
+    var u = units.filter(function (x) { return x.id === "n5.u044"; })[0];
+    var g = vocabGroups(u.vocab, u.level);
+    a.deepEqual(g.map(function (x) { return x.key; }), ["verb", "adj", "noun"], "verbs, adjectives, nouns");
+    a.equal(g.reduce(function (n, x) { return n + x.items.length; }, 0), u.vocab.length, "every word lands in a group");
+    var by = function (w) { return u.vocab.filter(function (v) { return v.word === w; })[0]; };
+    a.equal(vocabHasReading(by("部屋")), true, "部屋 has a reading to test");
+    a.equal(vocabHasReading(by("いす")), false, "kana-only いす does not");
+    a.equal(vocabHasReading(by("ベッド")), false, "katakana ベッド does not");
   });
 
   test("React render: KanaSection() renders every kana unit in rows and focus layouts", function (a) {
