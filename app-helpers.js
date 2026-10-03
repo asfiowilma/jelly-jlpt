@@ -52,6 +52,11 @@ var UI_STRINGS = {
   kanji_strokes:      { en: 'strokes',            ja: 'かく',           since: 'N4' },
   kanji_strokes_show: { en: 'Show stroke order',  ja: 'かきじゅんをみる', since: 'N4' },
   kanji_strokes_hide: { en: 'Hide stroke order',  ja: 'かきじゅんをかくす', since: 'N4' },
+  kanji_info_label:   { en: 'What are kun and on readings?', ja: 'くんよみとおんよみ', since: 'N1' },
+  kanji_info_intro:   { en: 'Most kanji have more than one reading. Which one you use depends on the word.', ja: 'かんじにはよみかたがいくつかあります。', since: 'N1' },
+  kanji_info_kun:     { en: "Kun (kun'yomi): the native Japanese reading. Usually used when the kanji stands alone or takes hiragana endings, like 人 → ひと. The dimmed part is the hiragana ending (okurigana).", ja: 'くん：やまとことばのよみ。ひとつでつかうことがおおい。', since: 'N1' },
+  kanji_info_on:      { en: "On (on'yomi): the reading borrowed from Chinese, written in katakana. Usually used in compounds of several kanji, like 学生 → がくせい.", ja: 'おん：ちゅうごくごからきたよみ。じゅくごでつかうことがおおい。', since: 'N1' },
+  kanji_info_extra:   { en: "Grey readings are extra ones that this lesson's words don't use.", ja: 'うすいよみは、このレッスンではつかわないよみ。', since: 'N1' },
   kanji_looked:       { en: 'looked at',          ja: 'みた',           since: 'N4' },
   kanji_next:         { en: 'Next kanji →',  ja: 'つぎのかんじ →', since: 'N4' },
   // SRS review buttons

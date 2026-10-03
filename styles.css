@@ -283,6 +283,14 @@ table.data th{color:var(--muted);font-weight:600}
 
 /* Lesson Kanji section: rows (default) and focus layouts */
 .kj-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.kj-title{display:flex;align-items:center;gap:8px}
+.kj-info{position:relative;display:inline-flex}
+.kj-info-btn{width:20px;height:20px;padding:0;border:1px solid var(--muted);border-radius:50%;background:none;color:var(--muted);font:italic 700 0.7rem Georgia,serif;cursor:help;text-transform:none}
+.kj-info-btn:hover,.kj-info-btn:focus-visible{color:var(--accent-fg);border-color:var(--accent-fg)}
+.kj-pop{display:none;position:absolute;z-index:10;top:calc(100% + 8px);left:0;width:min(340px,80vw);padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);color:var(--text);font-size:0.8rem;font-weight:400;line-height:1.5;text-transform:none;letter-spacing:0}
+.kj-pop p+p{margin-top:8px}
+.kj-pop .kj-tag{margin-right:4px}
+.kj-info:hover .kj-pop,.kj-info:focus-within .kj-pop{display:block}
 .kj-toggle{text-transform:none;letter-spacing:0;font-weight:400;margin:-4px 0}
 .kj-row{display:grid;grid-template-columns:96px 1fr;gap:16px;padding:16px 0;border-top:1px solid var(--border)}
 .kj-row:first-of-type{border-top:0;padding-top:4px}

@@ -118,7 +118,14 @@ function KanjiSection(props) {
   }
   return React.createElement("div", { className: "section" },
     React.createElement("div", { className: "section-label kj-head" },
-      React.createElement("span", null, t('section_kanji', lv)),
+      React.createElement("span", { className: "kj-title" }, t('section_kanji', lv),
+        React.createElement("span", { className: "kj-info" },
+          React.createElement("button", { className: "kj-info-btn", 'aria-label': t('kanji_info_label', lv), 'aria-describedby': "kj-pop" }, "i"),
+          React.createElement("div", { id: "kj-pop", role: "tooltip", className: "kj-pop" },
+            React.createElement("p", null, t('kanji_info_intro', lv)),
+            React.createElement("p", null, React.createElement("span", { className: "kj-tag kun" }, "kun"), " ", t('kanji_info_kun', lv)),
+            React.createElement("p", null, React.createElement("span", { className: "kj-tag on" }, "on"), " ", t('kanji_info_on', lv)),
+            React.createElement("p", null, t('kanji_info_extra', lv))))),
       kanji.length > 1 && React.createElement("button", {
         className: "vocab-btn kj-toggle", onClick: function () { props.setKanjiView(view === 'focus' ? 'rows' : 'focus'); }
       }, view === 'focus' ? t('kanji_view_rows', lv) : t('kanji_view_focus', lv))),
