@@ -294,6 +294,13 @@ table.data th{color:var(--muted);font-weight:600}
 .ex-feedback.wrong{background:color-mix(in srgb,var(--bad) 15%,var(--surface));color:var(--bad)}
 .ex-finish{text-align:center;padding:24px 16px}
 .ex-finish-score{font-size:1.25rem;font-weight:700;color:var(--text);margin-bottom:14px}
+.ex-finish-verdict{font-size:0.9rem;margin-bottom:14px}
+.ex-finish-verdict.pass{color:var(--ok)}
+.ex-finish-verdict.fail{color:var(--bad)}
+.ex-question.sentence{font-size:1.35rem;line-height:1.9}
+.ex-note{font-size:0.9rem;color:var(--muted);text-align:center;margin:-8px 0 14px}
+.ex-hint{font-size:0.78rem;color:var(--muted);margin-top:6px}
+.pending-line{font-size:0.85rem;color:var(--muted);margin-top:14px}
 .ex-retry-btn{padding:8px 22px;background:var(--accent);color:var(--on-accent);border:none;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:600;font-family:inherit}
 .ex-retry-btn:hover{background:color-mix(in srgb,var(--accent) 85%,var(--text))}
 .ex-options+.ex-options,.ex-options+.ex-typing-row,.ex-typing-row+.ex-typing-row{margin-top:8px}

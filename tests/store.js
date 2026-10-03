@@ -43,7 +43,7 @@ QUnit.module('store', function () {
   QUnit.test('fresh store: empty snapshot with defaults (pace 1, no current unit)', function (assert) {
     var s = storeOn(fakeLs(), memoryBackend());
     return s.init().then(function (snap) {
-      assert.deepEqual(snap, { completed: [], srsCards: {}, currentUnit: null, pace: 1, examDate: null, furiganaPref: null, uiLang: 'en' });
+      assert.deepEqual(snap, { completed: [], srsCards: {}, currentUnit: null, pace: 1, examDate: null, furiganaPref: null, uiLang: 'en', pendingCards: [] });
     });
   });
 

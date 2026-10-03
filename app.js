@@ -5,6 +5,53 @@
 var PLAN_CHECK = validatePlan(PLAN, CATALOG);
 var UNITS = PLAN_CHECK.valid ? buildUnits(PLAN, CATALOG) : [];
 
+// ── Unit completion + new-card cap (ticket 35, Q28/Q31/Q34) ─────────────────
+// Store writes, then 'store-changed' so App re-reads the snapshot.
+function notifyStoreChanged() {
+  if (typeof window !== 'undefined' && window.dispatchEvent && typeof CustomEvent !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('store-changed'));
+  }
+}
+// markUnitsDone(ids): marks units done and adds their SRS cards up to today's
+// new-card cap; the rest wait in prefs.pendingCards. A passed quiz calls it;
+// placement / skip-ahead (ticket 37) can call it with many ids.
+function markUnitsDone(ids, now) {
+  now = now || Date.now();
+  var snap = Store.snapshot();
+  var units = UNITS.filter(function (u) { return ids.indexOf(u.id) >= 0 && snap.completed.indexOf(u.id) < 0; });
+  if (!units.length) return;
+  units.forEach(function (u) { Store.putUnit(u.id, true); Store.logLesson(u.id); });
+  var cards = Object.assign({}, snap.srsCards);
+  var room = dailyCardCap(snap.pace, UNITS, units[0].index) - cardsAddedToday(cards, now);
+  var r = admitCards(unitItems(units), cards, snap.pendingCards, Math.max(0, room), now);
+  Store.putCards(cards);
+  Store.putPrefs({ pendingCards: r.pending });
+  notifyStoreChanged();
+}
+// releasePendingCards(extra): adds waiting cards — up to today's remaining room
+// (on load), or one more day's cap on top when `extra` ("learn extra today").
+// Returns how many were added.
+function releasePendingCards(extra, now) {
+  now = now || Date.now();
+  var snap = Store.snapshot();
+  if (!snap.pendingCards.length) return 0;
+  var cards = Object.assign({}, snap.srsCards);
+  var cap = dailyCardCap(snap.pace, UNITS, nextUnit(UNITS, new Set(snap.completed)));
+  var r = admitCards([], cards, snap.pendingCards, Math.max(0, extra ? cap : cap - cardsAddedToday(cards, now)), now);
+  if (!r.added) return 0;
+  Store.putCards(cards);
+  Store.putPrefs({ pendingCards: r.pending });
+  notifyStoreChanged();
+  return r.added;
+}
+// flagMissedItems(ids): quiz misses come back sooner in SRS (Q31).
+function flagMissedItems(ids, now) {
+  var cards = Object.assign({}, Store.snapshot().srsCards);
+  if (!srsFlagMissed(cards, ids, now || Date.now())) return;
+  Store.putCards(cards);
+  notifyStoreChanged();
+}
+
 var NAV_TABS = [
   { view: 'unit', label: 'view_today', icon: 'today' },
   { view: 'units', label: 'view_units', icon: 'units' },
@@ -64,6 +111,10 @@ function App() {
   var _React$useStateExam = React.useState(snap0.examDate),
     examDate = _React$useStateExam[0],
     setExamDate = _React$useStateExam[1];
+  // Passed items waiting for a later day's new-card room (Q34)
+  var _React$useStatePending = React.useState(snap0.pendingCards),
+    pendingCards = _React$useStatePending[0],
+    setPendingCards = _React$useStatePending[1];
   React.useEffect(function () {
     Store.putPrefs({ pace: pace, examDate: examDate });
   }, [pace, examDate]);
@@ -142,9 +193,12 @@ function App() {
       setSrsCards(s.srsCards);
       setFuriganaPref(s.furiganaPref);
       setUiLang(s.uiLang);
+      setPendingCards(s.pendingCards);
       setLogTick(function (n) { return n + 1; });
     }
     window.addEventListener('store-changed', refresh);
+    // A new day: waiting cards fill today's new-card room.
+    releasePendingCards(false);
     // Reconnect sync on load if the user connected before (saved login).
     var c = loadSyncCreds();
     if (c && c.connected) connectSync(c);
@@ -180,20 +234,18 @@ function App() {
     setPrevView(view);
     setView('settings');
   };
-  var toggleDone = function toggleDone() {
-    var wasDone = completed.has(unit.id);
-    Store.putUnit(unit.id, !wasDone);
-    if (!wasDone) Store.logLesson(unit.id);
+  // A unit completes only by passing its quiz (Q28); misses are flagged either way.
+  var onQuizResult = function onQuizResult(s) {
+    if (s.passed) markUnitsDone([unit.id]);
+    if (s.missed.length) flagMissedItems(s.missed);
+  };
+  // Un-marking only flips unit:<id> (sync design decision 10) — SRS cards are kept.
+  var unmarkDone = function unmarkDone() {
+    Store.putUnit(unit.id, false);
     setCompleted(function (prev) {
       var n = new Set(prev);
-      n.has(unit.id) ? n["delete"](unit.id) : n.add(unit.id);
+      n["delete"](unit.id);
       return n;
-    });
-    // Un-marking only flips unit:<id> (sync design decision 10) — SRS cards are kept.
-    if (!wasDone) setSrsCards(function (prev) {
-      var cards = Object.assign({}, prev);
-      if (srsAddCards(unit, cards)) Store.putCards(cards);
-      return cards;
     });
   };
   React.useEffect(function () {
@@ -242,6 +294,7 @@ function App() {
             setUiLang(s.uiLang);
             setPace(s.pace);
             setExamDate(s.examDate);
+            setPendingCards(s.pendingCards);
           });
         } catch (err) {
           alert('Failed to read file: ' + err.message);
@@ -326,8 +379,12 @@ function App() {
       return setView(prevView);
     }
   }) : view === 'review' ? /*#__PURE__*/React.createElement(ReviewMode, {
+    // remount when released cards change the due deck
+    key: pendingCards.length,
     cards: srsCards,
     level: level,
+    pending: pendingCards.length,
+    onLearnExtra: function () { releasePendingCards(true); },
     onUpdate: function onUpdate(updated) {
       setSrsCards(updated);
       Store.putCards(updated);
@@ -351,7 +408,8 @@ function App() {
     unit: unit,
     units: UNITS,
     completed: completed,
-    toggleDone: toggleDone,
+    unmarkDone: unmarkDone,
+    onQuizResult: onQuizResult,
     setUnit: setUnitIdx,
     pace: pace,
     doneToday: doneToday,

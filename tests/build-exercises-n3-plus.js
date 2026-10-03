@@ -76,7 +76,8 @@ QUnit.module('buildExercises (N3+ types)', {
     var u = unit('N3', 1, { vocab: [v('書く', 'かく', 'to write'), v('難しい', 'むずかしい', 'difficult')] });
     for (var i = 0; i < 10; i++) {
       buildExercises(u).filter(function (e) { return e.type === 'conjugation'; }).forEach(function (c) {
-        assert.strictEqual(c.question, '書く (かく)');
+        assert.strictEqual(c.question, '書く');
+        assert.deepEqual(c.parts, [{ t: '書く', r: 'かく' }], 'untaught kanji → reading as furigana');
         assert.deepEqual(c.answers, ['書かない', 'かかない']);
       });
     }
@@ -89,11 +90,11 @@ QUnit.module('buildExercises (N3+ types)', {
     assert.notOk(seen.reorder, 'reorder disabled (needs authored chunks)');
   });
 
-  QUnit.test('caps: N3 ≤ 7, N2 ≤ 9', function (assert) {
+  QUnit.test('lengths: N3+ lessons ask 16', function (assert) {
     var fields = { vocab: VERBS, kanji: [CATALOG.items['k:人'], CATALOG.items['k:大']], grammar: [CATALOG.items['g:mo']] };
-    for (var i = 0; i < 10; i++) {
-      assert.ok(buildExercises(unit('N3', 0, fields)).length <= 7);
-      assert.ok(buildExercises(unit('N2', 0, fields)).length <= 9);
+    for (var i = 0; i < 5; i++) {
+      assert.strictEqual(buildExercises(unit('N3', 0, fields)).length, 16);
+      assert.strictEqual(buildExercises(unit('N2', 0, fields)).length, 16);
     }
   });
 });

@@ -190,7 +190,7 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     units.forEach(function (u) {
       [true, false].forEach(function (furi) {
         try {
-          UnitView({ unit: u, units: units, completed: new Set([u.id]), toggleDone: noop, setUnit: noop,
+          UnitView({ unit: u, units: units, completed: new Set([u.id]), unmarkDone: noop, onQuizResult: noop, setUnit: noop,
             showFurigana: furi, toggleFurigana: noop });
         } catch (e) { a.ok(false, u.id + ": " + e.message); }
       });
@@ -273,46 +273,124 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     a.ok(["ogg", "mp3"].indexOf(SFX_EXT) !== -1, "SFX_EXT is ogg or mp3");
   });
 
-  // Render every exercise type buildExercises emits, both unanswered and
-  // answered, by forcing Exercises' useState slots in order:
-  // exs, cur, answer, selected, revealed, score, done, started, results, picks.
-  // Shipped units are N5 only, so they are also replayed at N2 (all types on).
-  test("React render: Exercises renders every exercise type without throwing", function (a) {
-    var origUseState = React.useState;
+  // Ticket 08 + 35: play whole quizzes through the real Exercises component.
+  // A tiny hook emulator (useState slots that persist + re-render) and a
+  // createElement that records elements, so the test clicks the same buttons a
+  // user would: every exercise type is rendered, answered right or wrong on
+  // purpose, misses come back once (re-queue), and onResult's score counts
+  // first attempts only. N5 units are also replayed at N4-N1 (all types on).
+  test("React render: Exercises plays every exercise type, right and wrong, with correct scoring", function (a) {
+    var orig = { useState: React.useState, createElement: React.createElement, useRef: React.useRef, setTimeout: global.setTimeout };
     var origSpeech = window.speechSynthesis;
     window.speechSynthesis = {}; // include listen exercises
     var seen = {}, errors = [];
-    var pool = units.concat(units.map(function (u) { return Object.assign({}, u, { level: "N2" }); }));
-    try {
-      for (var run = 0; run < 5; run++) pool.forEach(function (unit) {
-        var exs = buildExercises(unit);
-        exs.forEach(function (ex, cur) {
-          seen[ex.type] = true;
-          var n = (ex.items || []).length;
-          var allIdx = Array.apply(null, Array(n)).map(function (_, i) { return i; });
-          [[exs, cur, '', null, false, undefined, false, true, [], []],
-           [exs, cur, 'x', 0, true, undefined, false, true, [], ex.type === 'pair_match' ? allIdx.map(function () { return 0; }) : allIdx]
-          ].forEach(function (slots) {
-            var k = 0;
-            React.useState = function (init) {
-              var v = slots[k++];
-              if (v === undefined) v = typeof init === "function" ? init() : init;
-              return [v, function () {}];
-            };
-            try { Exercises({ unit: unit, onStart: noop, onFinish: noop }); }
-            catch (e) { errors.push(unit.id + "@" + unit.level + " " + ex.type + ": " + e.message); }
+    var sample = units.filter(function (u, i) { return i % 7 === 0; });
+    var pool = units.concat([].concat.apply([], ["N4", "N3", "N2", "N1"].map(function (lv) {
+      return sample.map(function (u) { return Object.assign({}, u, { level: lv }); });
+    })));
+    var play = function (unit, qi) {
+      var state = [], k = 0, els = [], result = null;
+      React.useState = function (init) {
+        var i = k++;
+        if (!(i in state)) state[i] = typeof init === "function" ? init() : init;
+        return [state[i], function (v) { state[i] = typeof v === "function" ? v(state[i]) : v; }];
+      };
+      React.createElement = function (type, props) {
+        var el = { type: type, props: props || {}, children: [].slice.call(arguments, 2) };
+        els.push(el);
+        return el;
+      };
+      var render = function () { k = 0; els = []; Exercises({ unit: unit, onStart: noop, onFinish: noop, onResult: function (s) { result = s; } }); return els; };
+      var find = function (pred) { return els.filter(pred); };
+      var cls = function (re) { return function (el) { return re.test(el.props.className || ""); }; };
+      render();
+      find(cls(/quiz-start-btn/))[0].props.onClick();
+      var plan = []; // [ex, answeredRight]
+      for (var guard = 0; guard < 80 && !result; guard++) {
+        render();
+        var exs = state[0], ex = exs[state[1]];
+        seen[ex.type] = true;
+        var right = ex.requeue || (qi + plan.length) % 3 !== 0; // every 3rd first attempt wrong
+        plan.push([ex, right]);
+        if (ex.options && typeof ex.correct === "number" && ex.type !== "pair_match") {
+          var opts = find(cls(/ex-option/));
+          var pick = right ? ex.correct : (ex.correct + 1) % ex.options.length;
+          if (answerIsRight(ex, pick) !== right) errors.push(unit.id + " " + ex.form + ": answerIsRight disagrees on option " + pick);
+          opts[pick].props.onClick();
+        } else if (ex.type === "pair_match") {
+          var meaningOf = {};
+          ex.pairs.forEach(function (p) { meaningOf[p[0]] = p[1]; });
+          ex.items.forEach(function (w, i) { // one pick per render, like a user
+            var oi = ex.options.indexOf(meaningOf[w]);
+            render();
+            find(function (el) { return el.type === "select"; })[i].props.onChange({ target: { value: String(right ? oi : (oi + 1) % ex.options.length) } });
           });
-        });
+          render();
+          find(cls(/ex-check-btn/)).slice(-1)[0].props.onClick();
+        } else {
+          var typed = right ? ex.answers[0] : "zzz";
+          if (answerIsRight(ex, typed) !== right) errors.push(unit.id + " " + ex.form + ": typed '" + typed + "' scored wrong way");
+          find(function (el) { return el.type === "input"; })[0].props.onChange({ target: { value: typed } });
+          render();
+          find(cls(/ex-check-btn/))[0].props.onClick();
+        }
+        var res = state[7]; // Exercises' results slot
+        if (res[res.length - 1] !== right) errors.push(unit.id + "@" + unit.level + " " + ex.form + ": answered " + (right ? "right" : "wrong") + ", scored the other way");
+      }
+      render(); // finish screen
+      if (!result) return errors.push(unit.id + "@" + unit.level + ": quiz never finished");
+      var first = plan.filter(function (p) { return !p[0].requeue; });
+      var wrongFirst = first.filter(function (p) { return !p[1]; });
+      if (result.total !== first.length || result.right !== first.length - wrongFirst.length) {
+        errors.push(unit.id + "@" + unit.level + ": score " + result.right + "/" + result.total + ", expected " + (first.length - wrongFirst.length) + "/" + first.length);
+      }
+      if (result.passed !== quizPassed(result.right, result.total, unit.kind)) errors.push(unit.id + ": passed flag");
+      var requeued = plan.filter(function (p) { return p[0].requeue; }).length;
+      if (requeued !== wrongFirst.length) errors.push(unit.id + "@" + unit.level + ": " + wrongFirst.length + " misses, " + requeued + " re-asked");
+      wrongFirst.forEach(function (p) { if (result.missed.indexOf(p[0].itemId) < 0) errors.push(unit.id + ": miss not flagged " + p[0].itemId); });
+      if (!find(cls(/ex-finish-verdict/)).length) errors.push(unit.id + ": no pass/fail verdict");
+    };
+    try {
+      global.setTimeout = function (fn) { fn(); };
+      React.useRef = function () { return { current: null }; };
+      pool.forEach(function (unit, qi) {
+        try { play(unit, qi); } catch (e) { errors.push(unit.id + "@" + unit.level + ": " + e.message); }
       });
     } finally {
-      React.useState = origUseState;
+      React.useState = orig.useState;
+      React.createElement = orig.createElement;
+      React.useRef = orig.useRef;
+      global.setTimeout = orig.setTimeout;
       window.speechSynthesis = origSpeech;
     }
-    a.equal(errors.length, 0, errors.slice(0, 5).join("\n"));
-    // ponytail: no "reading" (needs passage items) or "conjugation" (no shipped verbs) yet
-    ["mc", "listen", "typing", "pair_match", "fill_blank", "synonym", "kanji_reading"].forEach(function (t) {
-      a.ok(seen[t], "type " + t + " was rendered");
+    a.equal(errors.length, 0, errors.slice(0, 8).join("\n"));
+    // ponytail: no "reading" (needs passage items) or "reorder" (needs authored chunks) yet
+    ["mc", "listen", "typing", "conjugation", "gap", "pair_match", "fill_blank", "synonym", "kanji_reading"].forEach(function (t) {
+      a.ok(seen[t], "type " + t + " was played");
     });
+  });
+
+  // app.js: a passed quiz → markUnitsDone; cap + pending + learn extra + miss flag (Q31/Q34)
+  testAsync("markUnitsDone: cards up to today's cap, rest pending; learn extra releases; misses flagged", function (a) {
+    var before = Store.docs();
+    var lessons = UNITS.filter(function (x) { return x.kind === "lesson"; }).slice(0, 2);
+    return Store.replaceAll([]).then(function () {
+      markUnitsDone([lessons[0].id]);
+      var s = Store.snapshot();
+      a.ok(s.completed.indexOf(lessons[0].id) >= 0, "unit done");
+      a.equal(Object.keys(s.srsCards).length, Math.min(dailyCardCap(1, UNITS, lessons[0].index), unitItems([lessons[0]]).length));
+      markUnitsDone([lessons[1].id]);
+      s = Store.snapshot();
+      a.equal(Object.keys(s.srsCards).length + s.pendingCards.length, unitItems(lessons).length, "every item is a card or pending");
+      a.ok(s.pendingCards.length > 0, "a second unit the same day queues its cards");
+      var waiting = s.pendingCards.length;
+      a.equal(releasePendingCards(false), 0, "no room left today");
+      a.ok(releasePendingCards(true) > 0, "learn extra releases");
+      a.ok(Store.snapshot().pendingCards.length < waiting);
+      var id = Object.keys(Store.snapshot().srsCards)[0];
+      flagMissedItems([id]);
+      a.equal(Store.snapshot().srsCards[id].ease, 2.3, "missed item flagged");
+    }).then(function () { return Store.replaceAll(before); });
   });
 
   test("React render: ErrorBoundary renders children when no error", function (a) {

@@ -14,11 +14,14 @@ function translatePrompt(prompt, level) {
   return t(key, level);
 }
 
-// ── Exercises ────────────────────────────────────────────────────────────────
+// ── Exercises: the unit quiz (ticket 35) ────────────────────────────────────
+// Pass mark gates completion (Q28); a missed question comes back once at the
+// end in another form, unscored (Q31). onResult(scoreQuiz(...)) when finished.
 function Exercises(_ref9) {
   var unit = _ref9.unit,
     onStart = _ref9.onStart,
-    onFinish = _ref9.onFinish;
+    onFinish = _ref9.onFinish,
+    onResult = _ref9.onResult;
   var _React$useState9 = React.useState(function () {
       return buildExercises(unit);
     }),
@@ -41,13 +44,6 @@ function Exercises(_ref9) {
     _React$useState16 = _slicedToArray(_React$useState15, 2),
     revealed = _React$useState16[0],
     setRevealed = _React$useState16[1];
-  var _React$useState17 = React.useState({
-      right: 0,
-      total: 0
-    }),
-    _React$useState18 = _slicedToArray(_React$useState17, 2),
-    score = _React$useState18[0],
-    setScore = _React$useState18[1];
   var _React$useState19 = React.useState(false),
     _React$useState20 = _slicedToArray(_React$useState19, 2),
     done = _React$useState20[0],
@@ -56,7 +52,7 @@ function Exercises(_ref9) {
     _React$useState22 = _slicedToArray(_React$useState21, 2),
     started = _React$useState22[0],
     setStarted = _React$useState22[1];
-  // Per-answer results (true/false) in order, for the segmented progress bar
+  // Per-answer results (true/false) in order, parallel to exs (scoreQuiz)
   var _React$useStateRes = React.useState([]),
     _React$useStateRes2 = _slicedToArray(_React$useStateRes, 2),
     results = _React$useStateRes2[0],
@@ -68,6 +64,7 @@ function Exercises(_ref9) {
     setPicks = _React$useState24[1];
   var inputRef = React.useRef(null);
   if (exs.length === 0) return null;
+  var needPct = Math.round(passMark(unit.kind) * 100) + '%';
 
   // ── Not started: show Start Quiz button ──────────────────────────────────
   if (!started) {
@@ -79,7 +76,8 @@ function Exercises(_ref9) {
       className: "quiz-start-title"
     }, t('quiz_title', unit.level)), /*#__PURE__*/React.createElement("div", {
       className: "quiz-start-hint"
-    }, "The lesson content above will be hidden while you answer ", exs.length, " questions."), /*#__PURE__*/React.createElement("button", {
+    }, "The lesson content above will be hidden while you answer ", exs.length, " questions. Score ", needPct,
+      " or more to complete this unit."), /*#__PURE__*/React.createElement("button", {
       className: "quiz-start-btn",
       onClick: function onClick() {
         setStarted(true);
@@ -87,6 +85,7 @@ function Exercises(_ref9) {
       }
     }, t('start_quiz', unit.level))));
   }
+  // Retake: a fresh set of questions (Q28)
   var retry = function retry() {
     setExs(buildExercises(unit));
     setCur(0);
@@ -94,10 +93,6 @@ function Exercises(_ref9) {
     setSelected(null);
     setRevealed(false);
     setPicks([]);
-    setScore({
-      right: 0,
-      total: 0
-    });
     setResults([]);
     setDone(false);
     setStarted(false);
@@ -105,21 +100,20 @@ function Exercises(_ref9) {
   };
   var advance = function advance(wasRight) {
     playSfx(wasRight ? 'correct' : 'wrong');
-    setResults(function (r) {
-      return r.concat([wasRight]);
-    });
-    setScore(function (s) {
-      return {
-        right: s.right + (wasRight ? 1 : 0),
-        total: s.total + 1
-      };
-    });
+    var ex = exs[cur];
+    var again = !wasRight && !ex.requeue ? requeueExercise(unit, ex) : null;
+    var nextExs = again ? exs.concat([again]) : exs;
+    var nextRes = results.concat([wasRight]);
+    if (again) setExs(nextExs);
+    setResults(nextRes);
     setTimeout(function () {
-      if (cur + 1 >= exs.length) {
+      if (cur + 1 >= nextExs.length) {
+        var s = scoreQuiz(unit.kind, nextExs, nextRes);
         setDone(true);
-        Store.logQuiz(unit.id, score.right + (wasRight ? 1 : 0), score.total + 1);
+        Store.logQuiz(unit.id, s.right, s.total);
         playSfx('complete');
         onFinish && onFinish();
+        onResult && onResult(s);
       } else {
         setCur(function (c) {
           return c + 1;
@@ -134,7 +128,7 @@ function Exercises(_ref9) {
       }
     }, 1000);
   };
-  // One segment per question: answered → ok/bad, current → now
+  // One segment per question: answered → ok/bad, current → now; re-asked ones dashed
   var progressBar = function progressBar() {
     return /*#__PURE__*/React.createElement("div", {
       className: "quiz-progress",
@@ -152,8 +146,8 @@ function Exercises(_ref9) {
     }));
   };
   if (done) {
-    var pct = score.right / score.total;
-    var emoji = pct === 1 ? '🌟' : pct >= 0.6 ? '✅' : '📚';
+    var s = scoreQuiz(unit.kind, exs, results);
+    var pct = Math.round(s.right / s.total * 100);
     return /*#__PURE__*/React.createElement("div", {
       className: "section"
     }, /*#__PURE__*/React.createElement("div", {
@@ -164,28 +158,44 @@ function Exercises(_ref9) {
       className: "ex-finish"
     }, /*#__PURE__*/React.createElement("div", {
       className: "ex-finish-score"
-    }, emoji, " ", score.right, " / ", score.total, " correct"), /*#__PURE__*/React.createElement("button", {
+    }, s.passed ? (pct === 100 ? '🌟' : '✅') : '📚', " ", s.right, " / ", s.total, " correct (", pct, "%)"),
+    React.createElement("div", {
+      className: "ex-finish-verdict " + (s.passed ? 'pass' : 'fail'),
+      role: "status"
+    }, s.passed ? "Passed (pass mark " + needPct + ") — unit complete." : "Not passed yet: you need " + needPct + ". Retake with new questions."),
+    /*#__PURE__*/React.createElement("button", {
       className: "ex-retry-btn",
       onClick: retry
     }, t('try_again', unit.level)))));
   }
   var ex = exs[cur];
   var progress = "".concat(cur + 1, " / ").concat(exs.length);
+  // The question line: furigana parts (quiz rules, Q33) or plain text, plus the
+  // English of a gap sentence.
+  var questionEl = function questionEl() {
+    var body = ex.parts ? ex.parts.map(function (p, i) {
+      return p.r ? React.createElement("ruby", { key: i }, p.t, React.createElement("rt", null, p.r)) : p.t;
+    }) : ex.question;
+    return [(ex.question || ex.parts) && React.createElement("div", {
+      key: "q", className: "ex-question" + (ex.type === 'gap' ? ' sentence' : ''), lang: "ja"
+    }, body), ex.note && React.createElement("div", { key: "n", className: "ex-note" }, ex.note)];
+  };
+  var header = function header() {
+    return [React.createElement("div", {
+      key: "label", className: "section-label"
+    }, t('section_exercises', unit.level), " ", React.createElement("span", {
+      className: "ex-count"
+    }, progress), ex.requeue && React.createElement("span", { className: "ex-count" }, " · again, not scored"))];
+  };
   // Shared frame for the reorder / pair_match branches below
   var frame = function frame(body, feedback) {
     return React.createElement("div", {
       className: "section"
-    }, React.createElement("div", {
-      className: "section-label"
-    }, t('section_exercises', unit.level), " ", React.createElement("span", {
-      className: "ex-count"
-    }, progress)), React.createElement("div", {
+    }, header(), React.createElement("div", {
       className: "exercise-box"
     }, progressBar(), React.createElement("div", {
       className: "ex-prompt"
-    }, translatePrompt(ex.prompt, unit.level)), ex.question && React.createElement("div", {
-      className: "ex-question"
-    }, ex.question), body, revealed && React.createElement("div", {
+    }, translatePrompt(ex.prompt, unit.level)), questionEl(), body, revealed && React.createElement("div", {
       className: "ex-feedback ".concat(feedback.right ? 'correct' : 'wrong'),
       'aria-live': "polite",
       role: "status"
@@ -204,9 +214,7 @@ function Exercises(_ref9) {
 
   // Reorder: tap tiles to build the sentence, tap a placed tile to remove it
   if (ex.type === 'reorder') {
-    var built = picks.map(function (i) {
-      return ex.items[i];
-    }).join('');
+    var builtRight = answerIsRight(ex, picks);
     return frame([React.createElement("div", {
       key: "built",
       className: "ex-options ex-reorder-built"
@@ -242,8 +250,8 @@ function Exercises(_ref9) {
       onClick: function onClick() {
         setPicks([]);
       }
-    }, "Reset"), checkBtn(picks.length === ex.items.length, built === ex.answer))], {
-      right: built === ex.answer,
+    }, "Reset"), checkBtn(picks.length === ex.items.length, builtRight))], {
+      right: builtRight,
       answer: ex.answer
     });
   }
@@ -257,9 +265,7 @@ function Exercises(_ref9) {
     var allPicked = ex.items.every(function (_, i) {
       return typeof picks[i] === 'number';
     });
-    var pairsRight = allPicked && ex.items.every(function (w, i) {
-      return ex.options[picks[i]] === meaningOf[w];
-    });
+    var pairsRight = answerIsRight(ex, picks);
     return frame([ex.items.map(function (w, i) {
       return React.createElement("div", {
         key: i,
@@ -297,11 +303,7 @@ function Exercises(_ref9) {
   if (ex.options && typeof ex.correct === 'number') {
     return /*#__PURE__*/React.createElement("div", {
       className: "section"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "section-label"
-    }, t('section_exercises', unit.level), " ", /*#__PURE__*/React.createElement("span", {
-      className: "ex-count"
-    }, progress)), /*#__PURE__*/React.createElement("div", {
+    }, header(), /*#__PURE__*/React.createElement("div", {
       className: "exercise-box"
     }, progressBar(), /*#__PURE__*/React.createElement("div", {
       className: "ex-prompt"
@@ -313,9 +315,7 @@ function Exercises(_ref9) {
         return speak(ex.audio);
       },
       'aria-label': "Listen to audio"
-    }, "\uD83D\uDD0A Play")) : ex.question && /*#__PURE__*/React.createElement("div", {
-      className: "ex-question"
-    }, ex.question), /*#__PURE__*/React.createElement("div", {
+    }, "🔊 Play")) : questionEl(), /*#__PURE__*/React.createElement("div", {
       className: "ex-options"
     }, ex.options.map(function (opt, i) {
       var cls = 'ex-option';
@@ -328,34 +328,28 @@ function Exercises(_ref9) {
         disabled: selected !== null,
         onClick: function onClick() {
           setSelected(i);
-          advance(i === ex.correct);
+          advance(answerIsRight(ex, i));
         }
       }, opt);
     }))));
   }
 
-  // Typing exercise
+  // Typing exercise (typing, conjugation)
   var handleCheck = function handleCheck() {
     if (!answer.trim() || revealed) return;
     setRevealed(true);
-    advance(checkTyping(answer, ex.answers));
+    advance(answerIsRight(ex, answer));
   };
-  var isRight = revealed && checkTyping(answer, ex.answers);
+  var isRight = revealed && answerIsRight(ex, answer);
   return /*#__PURE__*/React.createElement("div", {
     className: "section"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "section-label"
-  }, t('section_exercises', unit.level), " ", /*#__PURE__*/React.createElement("span", {
-    className: "ex-count"
-  }, progress)), /*#__PURE__*/React.createElement("div", {
+  }, header(), /*#__PURE__*/React.createElement("div", {
     className: "exercise-box"
   }, progressBar(), /*#__PURE__*/React.createElement("div", {
     className: "ex-prompt"
   }, translatePrompt(ex.prompt, unit.level)), ex.passage && React.createElement("div", {
     className: "passage-box"
-  }, ex.passage), ex.question && /*#__PURE__*/React.createElement("div", {
-    className: "ex-question"
-  }, ex.question), /*#__PURE__*/React.createElement("div", {
+  }, ex.passage), questionEl(), /*#__PURE__*/React.createElement("div", {
     className: "ex-typing-row"
   }, /*#__PURE__*/React.createElement("input", {
     ref: inputRef,
@@ -366,18 +360,22 @@ function Exercises(_ref9) {
       return setAnswer(e.target.value);
     },
     onKeyDown: function onKeyDown(e) {
-      if (e.key === 'Enter') handleCheck();
+      // Enter while an IME is composing confirms the kana, not the answer
+      if (e.key === 'Enter' && !(e.nativeEvent && e.nativeEvent.isComposing)) handleCheck();
     },
     placeholder: ex.placeholder || 'Type your answer...',
+    'aria-label': ex.prompt,
     disabled: revealed,
     autoFocus: true
   }), /*#__PURE__*/React.createElement("button", {
     className: "ex-check-btn",
     onClick: handleCheck,
     disabled: !answer.trim() || revealed
-  }, t('check_btn', unit.level))), revealed && /*#__PURE__*/React.createElement("div", {
+  }, t('check_btn', unit.level))), ex.hint && React.createElement("div", {
+    className: "ex-hint"
+  }, ex.hint), revealed && /*#__PURE__*/React.createElement("div", {
     className: "ex-feedback ".concat(isRight ? 'correct' : 'wrong'),
     'aria-live': "polite",
     role: "status"
-  }, isRight ? '✓ Correct!' : "\u2717  Answer: ".concat((ex.answers || [])[0] || ''))));
+  }, isRight ? '✓ Correct!' : "✗  Answer: ".concat((ex.answers || [])[0] || ''))));
 }

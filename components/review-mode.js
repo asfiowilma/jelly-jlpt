@@ -3,7 +3,13 @@
 function ReviewMode(_ref1) {
   var cards = _ref1.cards,
     onUpdate = _ref1.onUpdate,
-    level = _ref1.level || 'N5';
+    level = _ref1.level || 'N5',
+    pending = _ref1.pending || 0,
+    onLearnExtra = _ref1.onLearnExtra;
+  // Passed items over the daily new-card cap (Q34): count + 'learn extra today'.
+  var pendingEl = pending > 0 && React.createElement("div", { className: "pending-line" },
+    pending, pending === 1 ? " new card" : " new cards", " waiting (daily new-card limit). ",
+    onLearnExtra && React.createElement("button", { className: "ex-retry-btn", onClick: onLearnExtra }, "Learn extra today"));
   var _React$useStateQ = React.useState(function() { return rndShuffle(srsDueCards(cards)); }),
     _React$useStateQS = _slicedToArray(_React$useStateQ, 2),
     due = _React$useStateQS[0];
@@ -24,7 +30,7 @@ function ReviewMode(_ref1) {
       className: "review-empty-title"
     }, t('all_caught_up', level)), /*#__PURE__*/React.createElement("div", {
       className: "review-empty-sub"
-    }, t('no_cards_due', level)));
+    }, t('no_cards_due', level)), pendingEl);
   }
   if (idx >= due.length) {
     return /*#__PURE__*/React.createElement("div", {
@@ -35,7 +41,7 @@ function ReviewMode(_ref1) {
       className: "review-empty-title"
     }, t('session_done', level)), /*#__PURE__*/React.createElement("div", {
       className: "review-empty-sub"
-    }, "Reviewed ", due.length, " card", due.length !== 1 ? 's' : '', "."));
+    }, "Reviewed ", due.length, " card", due.length !== 1 ? 's' : '', "."), pendingEl);
   }
   var card = due[idx];
   var rate = function rate(quality) {
@@ -108,5 +114,5 @@ function ReviewMode(_ref1) {
     }
   }, t('btn_easy', level))), !flipped && /*#__PURE__*/React.createElement("div", {
     className: "review-flip-hint"
-  }, t('click_reveal', level)));
+  }, t('click_reveal', level)), pendingEl);
 }

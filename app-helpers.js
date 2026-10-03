@@ -18,7 +18,6 @@ var UI_STRINGS = {
   view_stats:     { en: 'Stats',    ja: '統計', rt: 'とうけい',   since: 'N1' },
   view_review:    { en: 'Review',   ja: '復習', rt: 'ふくしゅう', since: 'N4'   },
   // Day status
-  mark_complete:   { en: '✓ Mark as done',   ja: '✓ かんりょう！', since: 'N4' },
   mark_incomplete: { en: '✕ Mark as not done', ja: '✕ まだ',         since: 'N4'  },
   complete_badge:  { en: '✓ Done',         ja: '✓ かんりょう',  since: 'N4' },
   // Navigation buttons

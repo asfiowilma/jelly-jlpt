@@ -15,14 +15,10 @@ QUnit.module('buildExercises', {
   }
 }, function () {
 
-  QUnit.test('never returns more than the N5 cap (5)', function (assert) {
+  QUnit.test('N5 lesson quiz length = quizLength (12, or one per item)', function (assert) {
     var exs = buildExercises(this.unit);
-    assert.ok(exs.length > 0 && exs.length <= 5, 'got ' + exs.length + ' exercises (max 5)');
-  });
-
-  QUnit.test('per-unit quiz.cap overrides the level cap', function (assert) {
-    var exs = buildExercises(Object.assign({}, this.unit, { quiz: { cap: 2 } }));
-    assert.strictEqual(exs.length, 2);
+    assert.strictEqual(exs.length, quizLength(this.unit, quizItems(this.unit).length));
+    assert.ok(exs.length >= 12);
   });
 
   QUnit.test('returns empty array for a unit with no items', function (assert) {
@@ -53,7 +49,7 @@ QUnit.module('buildExercises', {
     var unit = { id: 'n5.u999', level: 'N5', index: 0, vocab: [], kanji: [k, k], grammar: [] };
     var typing = null;
     for (var i = 0; i < 20 && !typing; i++) {
-      typing = buildExercises(unit).filter(function (e) { return e.type === 'typing'; })[0] || null;
+      typing = buildExercises(unit).filter(function (e) { return e.form === 'kanjiReadType'; })[0] || null;
     }
     assert.ok(typing, 'typing generated');
     ['ひと', 'ジン', 'じん'].forEach(function (a) { assert.ok(checkTyping(a, typing.answers), a); });
@@ -83,7 +79,7 @@ QUnit.module('buildExercises', {
       });
     }
     assert.deepEqual(Object.keys(types).sort(), ['toKana', 'toRomaji', 'typing']);
-    assert.strictEqual(buildExercises(kanaUnit).length, 10, 'quiz.cap 10 for a 10-kana unit');
+    assert.strictEqual(buildExercises(kanaUnit).length, 10, '10 questions for a 10-kana unit');
   });
 
   QUnit.test('kanaDistractors: look-alikes and dakuten siblings first, never a same-sounding kana', function (assert) {
@@ -103,9 +99,10 @@ QUnit.module('buildExercises', {
       var u = buildUnits(PLAN, CATALOG).filter(function (x) {
         return x.kind === 'lesson' && x.grammar.some(function (g) { return g.id === gid; });
       })[0];
-      var ex = buildExercises(Object.assign({}, u, { quiz: { cap: 99 } })).filter(function (e) { return e.type === 'conjugation'; })[0];
+      var ex = null;
+      for (var i = 0; i < 10 && !ex; i++) ex = buildExercises(u).filter(function (e) { return e.type === 'conjugation'; })[0] || null;
       assert.ok(ex && ex.targetForm === CATALOG.items[gid].conjForm, gid + ' → ' + (ex && ex.targetForm));
-      var v = ex && u.vocab.filter(function (x) { return ex.question.indexOf(x.word) === 0; })[0];
+      var v = ex && CATALOG.items[ex.conjItem];
       assert.ok(v && checkTyping(conjugate(v.word, v.reading, ex.targetForm, v.pos).kana, ex.answers), gid + ': answer for ' + (v && v.word));
     });
   });

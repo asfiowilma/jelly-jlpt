@@ -5,7 +5,7 @@ function UnitView(props) {
   var unit = props.unit,
     units = props.units,
     completed = props.completed,
-    toggleDone = props.toggleDone,
+    unmarkDone = props.unmarkDone,
     setUnit = props.setUnit,
     // Furigana pref is owned by App (shared with the navbar ruby labels)
     showFurigana = props.showFurigana,
@@ -124,7 +124,8 @@ function UnitView(props) {
         key: unit.id,
         unit: unit,
         onStart: function () { setQuizActive(true); },
-        onFinish: function () { setQuizActive(false); }
+        onFinish: function () { setQuizActive(false); },
+        onResult: props.onQuizResult
       })),
     React.createElement("div", { className: "nav-bar" },
       React.createElement("button", {
@@ -136,10 +137,12 @@ function UnitView(props) {
       React.createElement("div", null,
         React.createElement("div", { className: "day-counter" }, t('unit_label', lv), " ", unit.index + 1, " / ", units.length),
         props.pace && React.createElement("div", { className: "day-counter" }, paceTodayLine(props.pace, props.doneToday || 0, lv)),
-        React.createElement("button", {
-          className: "nav-btn complete " + (isDone ? 'done' : ''),
-          onClick: toggleDone
-        }, isDone ? t('mark_incomplete', lv) : t('mark_complete', lv))),
+        // Completion comes from passing the quiz (Q28); a done unit can be un-marked.
+        isDone ? React.createElement("button", {
+          className: "nav-btn complete done",
+          onClick: unmarkDone
+        }, t('mark_incomplete', lv)) : React.createElement("div", { className: "day-counter" },
+          "Pass the quiz (", Math.round(passMark(unit.kind) * 100), "%) to complete")),
       React.createElement("button", {
         className: "nav-btn next",
         onClick: function () { setUnit(Math.min(last, unit.index + 1)); },
