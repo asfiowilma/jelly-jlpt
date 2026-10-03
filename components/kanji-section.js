@@ -35,6 +35,17 @@ function StrokeOrder(props) {
   return React.createElement("div", { className: "stroke-viewer kj-stroke", dangerouslySetInnerHTML: { __html: st.svg } });
 }
 
+// charSectionHead: heading of a Kanji / Kana section: label, ⓘ popover (hover, focus or tap)
+// and the rows <-> focus toggle. opts: { label, popId, infoLabel, info: [nodes], toggle: {label, onClick} | false }
+function charSectionHead(opts) {
+  return React.createElement("div", { className: "section-label kj-head" },
+    React.createElement("span", { className: "kj-title" }, opts.label,
+      React.createElement("span", { className: "kj-info" },
+        React.createElement("button", { className: "kj-info-btn", 'aria-label': opts.infoLabel, 'aria-describedby': opts.popId }, "i"),
+        React.createElement("div", { id: opts.popId, role: "tooltip", className: "kj-pop" }, opts.info))),
+    opts.toggle && React.createElement("button", { className: "vocab-btn kj-toggle", onClick: opts.toggle.onClick }, opts.toggle.label));
+}
+
 // Kun readings carry okurigana after a dot ('なが.い'): stem normal, tail dimmed.
 function kanjiReading(r, extra) {
   var parts = r.split('.');
@@ -117,17 +128,17 @@ function KanjiSection(props) {
     });
   }
   return React.createElement("div", { className: "section" },
-    React.createElement("div", { className: "section-label kj-head" },
-      React.createElement("span", { className: "kj-title" }, t('section_kanji', lv),
-        React.createElement("span", { className: "kj-info" },
-          React.createElement("button", { className: "kj-info-btn", 'aria-label': t('kanji_info_label', lv), 'aria-describedby': "kj-pop" }, "i"),
-          React.createElement("div", { id: "kj-pop", role: "tooltip", className: "kj-pop" },
-            React.createElement("p", null, t('kanji_info_intro', lv)),
-            React.createElement("p", null, React.createElement("span", { className: "kj-tag kun" }, "kun"), " ", t('kanji_info_kun', lv)),
-            React.createElement("p", null, React.createElement("span", { className: "kj-tag on" }, "on"), " ", t('kanji_info_on', lv)),
-            React.createElement("p", null, t('kanji_info_extra', lv))))),
-      kanji.length > 1 && React.createElement("button", {
-        className: "vocab-btn kj-toggle", onClick: function () { props.setCharView(view === 'focus' ? 'rows' : 'focus'); }
-      }, view === 'focus' ? t('kanji_view_rows', lv) : t('kanji_view_focus', lv))),
+    charSectionHead({
+      label: t('section_kanji', lv), popId: "kj-pop", infoLabel: t('kanji_info_label', lv),
+      info: [
+        React.createElement("p", { key: "i" }, t('kanji_info_intro', lv)),
+        React.createElement("p", { key: "k" }, React.createElement("span", { className: "kj-tag kun" }, "kun"), " ", t('kanji_info_kun', lv)),
+        React.createElement("p", { key: "o" }, React.createElement("span", { className: "kj-tag on" }, "on"), " ", t('kanji_info_on', lv)),
+        React.createElement("p", { key: "e" }, t('kanji_info_extra', lv))],
+      toggle: kanji.length > 1 && {
+        label: view === 'focus' ? t('kanji_view_rows', lv) : t('kanji_view_focus', lv),
+        onClick: function () { props.setCharView(view === 'focus' ? 'rows' : 'focus'); }
+      }
+    }),
     body);
 }

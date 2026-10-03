@@ -119,20 +119,9 @@ function UnitView(props) {
     React.createElement("div", { className: "day-body" },
       React.createElement("div", { className: "lesson-blurrable" + (quizActive ? ' blurred' : '') },
         unit.notes && React.createElement("div", { className: "tip-box" }, unit.notes),
-        unit.kana.length > 0 && section(t('section_kana', lv),
-          React.createElement("div", { className: "chars-table" }, unit.kana.map(function (k) {
-            return React.createElement(CharCard, { key: k.id, kanji: k });
-          }))),
-        practice.length > 0 && section(t('section_read', lv),
-          React.createElement("table", { className: "vocab-table" },
-            React.createElement("tbody", null, practice.map(function (v) {
-              return React.createElement("tr", { key: v.id },
-                React.createElement("td", null, v.reading, React.createElement("button", {
-                  className: "speak-btn", onClick: function () { speak(v.reading); },
-                  title: "Listen to pronunciation", 'aria-label': "Listen to " + v.reading
-                }, "🔊")),
-                React.createElement("td", null, glossText(v)));
-            })))),
+        unit.kana.length > 0 && React.createElement(KanaSection, {
+          key: unit.id, unit: unit, charView: charView, setCharView: setCharView
+        }),
         unit.vocab.length > 0 && section(t('section_vocabulary', lv),
           React.createElement("div", { className: "vocab-bar" },
             React.createElement("span", { className: "vocab-count" }, t('vocab_checked', lv), " ", shownCount, " / ", unit.vocab.length),

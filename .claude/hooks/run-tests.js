@@ -58,6 +58,7 @@ var appFiles = [
   "sfx.js",
   path.join("components", "char-card.js"),
   path.join("components", "kanji-section.js"),
+  path.join("components", "kana-section.js"),
   path.join("components", "exercises.js"),
   path.join("components", "unit-view.js"),
   path.join("components", "review-mode.js"),
