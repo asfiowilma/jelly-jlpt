@@ -35,12 +35,18 @@ xmlns:kvg CDATA #FIXED "http://kanjivg.tagaini.net"
 kvg:type CDATA #IMPLIED >
 ]>
 <svg xmlns="http://www.w3.org/2000/svg" width="109" height="109" viewBox="0 0 109 109" xmlns:kvg="https://kanjivg.tagaini.net/">
-<g id="kvg:StrokePaths_04e00" style="fill:none;stroke:#000000;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;">
-<g id="kvg:04e00" kvg:element="一" kvg:radical="general">
-	<path id="kvg:04e00-s1" kvg:type="㇐" d="M11,54.25c3.19,0.62,6.25,0.75,9.73,0.5c20.64-1.5,50.39-5.12,68.58-5.24c3.6-0.02,5.77,0.24,7.57,0.49"/>
+<g id="kvg:StrokePaths_03069" style="fill:none;stroke:#000000;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;">
+<g id="kvg:03069" kvg:element="ど">
+	<path id="kvg:03069-s1" d="M35.5,18.38c1.74,0.74,3.62,2.62,4.12,5.37c0.5,2.75,4.75,25,5.38,28.12"/>
+	<path id="kvg:03069-s2" d="M78.12,25.5c0.25,1.88,0.04,4.09-2.25,5.75c-6.37,4.63-13.21,8.49-22.75,15.25c-12.88,9.12-21.62,18.38-21.62,27.5c0,10.12,8.5,13.88,26.88,13.88c6.25,0,14.75-0.12,21.62-1.25"/>
+	<path id="kvg:03069-s3" d="M84.24,14.5c2.75,1.75,6,5.38,7.75,8.5"/>
+	<path id="kvg:03069-s4" d="M90.62,9.62c3.06,1.57,6.68,4.82,8.62,7.62"/>
 </g>
 </g>
-<g id="kvg:StrokeNumbers_04e00" style="font-size:8;fill:#808080">
-	<text transform="matrix(1 0 0 1 4.25 54.13)">1</text>
+<g id="kvg:StrokeNumbers_03069" style="font-size:8;fill:#808080">
+	<text transform="matrix(1 0 0 1 27.87 18.75)">1</text>
+	<text transform="matrix(1 0 0 1 69.25 22.25)">2</text>
+	<text transform="matrix(1 0 0 1 76.62 13.5)">3</text>
+	<text transform="matrix(1 0 0 1 82.75 8.38)">4</text>
 </g>
 </svg>

@@ -480,6 +480,25 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       a.ok(attempts === 3, "fetch called 3 times (1 + 2 retries), got " + attempts);
     });
   });
+
+  test("loadStrokeOrderSvg: drops the KanjiVG <?xml?>/<!DOCTYPE> prolog before <svg>", function (a) {
+    _ssStore = {};
+    var raw = '<?xml version="1.0"?>\n<!DOCTYPE svg [\n<!ATTLIST g x CDATA #IMPLIED>\n]>\n<svg><path d="M0 0"/></svg>';
+    global.fetch = function () {
+      return Promise.resolve({ ok: true, text: function () { return Promise.resolve(raw); } });
+    };
+    return loadStrokeOrderSvg('学').then(function (v) {
+      a.equal(v, '<svg><path d="M0 0"/></svg>', "only the <svg> element is returned");
+    });
+  });
+
+  test("kanji-svg/: every N5 kanji and single kana in the catalog has a stroke SVG", function (a) {
+    var missing = Object.keys(CATALOG.items).map(function (id) { return CATALOG.items[id]; })
+      .filter(function (it) { return (it.kind === 'kanji' || it.kind === 'kana') && Array.from(it.char).length === 1; })
+      .filter(function (it) { return !fs.existsSync(path.join(projectDir, 'kanji-svg', kanjiToUnicodeHex(it.char) + '.svg')); })
+      .map(function (it) { return it.char; });
+    a.deepEqual(missing, [], "missing stroke SVGs");
+  });
 }());
 
 // ── summary ───────────────────────────────────────────────────────────────────

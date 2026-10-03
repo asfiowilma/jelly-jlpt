@@ -143,7 +143,7 @@ var UI_STRINGS = {
   pace_on_track:     { en: 'On track',          ja: '順調',             since: 'N1' },
   pace_behind:       { en: 'Behind',            ja: '遅れ気味',         since: 'N1' },
   pace_suggested:    { en: 'Suggested',         ja: 'おすすめ',         since: 'N1' },
-  pace_too_late:     { en: "Even Super intensive won't finish a week before the exam", ja: '超集中でも試験の1週間前までに終わりません', since: 'N1' },
+  pace_too_late:    { en: "Even Super intensive won't finish a week before the exam", ja: '超集中でも試験の1週間前までに終わりません', since: 'N1' },
 };
 // t(key, level): level = the learner's current unit level ('N5'…'N1').
 // window._uiLang ('auto' | 'en' | 'ja', set by App from prefs) overrides
@@ -219,6 +219,12 @@ function loadStrokeOrderSvg(char) {
       .then(function(response) {
         if (!response.ok) throw new Error('SVG not found');
         return response.text();
+      })
+      .then(function(svg) {
+        // KanjiVG files open with <?xml?> + a <!DOCTYPE [...]> internal subset; the HTML
+        // parser ends the doctype at its first '>' and leaks ']>' as text. Inline only <svg>.
+        var i = svg.indexOf('<svg');
+        return i > 0 ? svg.slice(i) : svg;
       })
       .then(function(svg) {
         try { sessionStorage.setItem(cacheKey, svg); } catch(e) {}
