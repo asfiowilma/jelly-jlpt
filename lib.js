@@ -173,6 +173,21 @@ function quizLength(unit, nItems) {
 
 // Catalog item → display strings
 function glossText(v) { return v.gloss.join(' / '); }
+
+// noteParts(notes): a unit note → { head, body[] } for the lesson note box. head = the first
+// sentence of the first paragraph; the rest of that paragraph is split into sentences, later
+// paragraphs (prep/mock notes: one per line) stay whole. "e.g." / "i.e." / "etc." don't end a sentence.
+function noteParts(notes) {
+  var paras = String(notes || '').split('\n').map(function (p) { return p.trim(); }).filter(Boolean);
+  if (!paras.length) return { head: '', body: [] };
+  var sentences = [];
+  paras[0].replace(/([.!?])\s+/g, '$1\u0000').split('\u0000').forEach(function (s) {
+    var last = sentences.length - 1;
+    if (last >= 0 && /(?:e\.g\.|i\.e\.|etc\.|vs\.)$/i.test(sentences[last])) sentences[last] += ' ' + s;
+    else sentences.push(s);
+  });
+  return { head: sentences[0], body: sentences.slice(1).concat(paras.slice(1)) };
+}
 function kataToHira(s) { return s.replace(/[ァ-ヶ]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0x60); }); }
 // kanjiReadings: readings as typed/shown (kun okurigana dot dropped, on in katakana).
 function kanjiReadings(k) {
