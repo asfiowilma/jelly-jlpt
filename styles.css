@@ -587,7 +587,8 @@ body.quiz-open{overflow:hidden}
 @keyframes ql-rise{from{transform:translateY(24px);opacity:0}}
 .ql svg{width:20px;height:20px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .ql button:focus-visible,.ql input:focus-visible{outline:2px solid var(--accent-fg);outline-offset:2px}
-.ql button{font:inherit;color:inherit;cursor:pointer}
+.ql button{font:inherit;cursor:pointer}
+:where(.ql) button{color:inherit}
 .ql button:disabled{cursor:default}
 .qz-top{display:flex;align-items:center;gap:12px;padding:10px 14px}
 .qz-x{width:44px;height:44px;flex:none;border:0;border-radius:8px;background:transparent;color:var(--muted);display:grid;place-items:center}
