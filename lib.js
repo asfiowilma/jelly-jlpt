@@ -777,9 +777,12 @@ function formsFor(item, ctx) {
   if (item.kind === 'kana') {
     var k = item;
     var mcKana = function (toRomaji) {
-      var d = kanaDistractors(k, 3, ctx.items.filter(function (x) { return x.kind === 'kana'; }));
+      var d = kanaDistractors(k, 8, ctx.items.filter(function (x) { return x.kind === 'kana'; }));
       var right = toRomaji ? k.romaji : k.char;
-      var opts = rndShuffle([right].concat(d.map(function (x) { return toRomaji ? x.romaji : x.char; })));
+      // ず / づ share a romaji: keep the first 3 distinct option texts
+      var texts = [right];
+      d.forEach(function (x) { var s = toRomaji ? x.romaji : x.char; if (texts.length < 4 && texts.indexOf(s) < 0) texts.push(s); });
+      var opts = rndShuffle(texts);
       return { type: 'mc', prompt: toRomaji ? 'How do you read this kana?' : 'Which kana is "' + k.romaji + '"?',
         question: toRomaji ? k.char : k.romaji, options: opts, correct: opts.indexOf(right) };
     };
