@@ -1,7 +1,7 @@
 "use strict";
 
 // ── Kana section of a kana lesson ────────────────────────────────────────────
-// Same `charView` pref as the Kanji section:
+// Same `kanjiView` pref as the Kanji section:
 //   'rows'  : gojūon chart (rows × vowel columns), tap a tile to hear it and open its detail
 //   'focus' : one kana at a time, picked from chips
 // Detail card: kana + romaji + Listen, stroke order (single kana only), and an info column
@@ -41,7 +41,7 @@ function kanaLookalikes(ch) {
 function KanaSection(props) {
   var unit = props.unit,
     lv = unit.level,
-    view = props.charView === 'focus' ? 'focus' : 'rows',
+    view = props.kanjiView === 'focus' ? 'focus' : 'rows',
     kana = unit.kana,
     chart = kanaChart(kana);
   var _sel = React.useState(null), sel = _sel[0], setSel = _sel[1];
@@ -132,7 +132,7 @@ function KanaSection(props) {
         React.createElement("p", { key: "c" }, t('kana_info_dot', lv))],
       toggle: kana.length > 1 && {
         label: view === 'focus' ? t('kana_view_rows', lv) : t('kanji_view_focus', lv),
-        onClick: function () { props.setCharView(view === 'focus' ? 'rows' : 'focus'); }
+        onClick: function () { props.setKanjiView(view === 'focus' ? 'rows' : 'focus'); }
       }
     }),
     body);

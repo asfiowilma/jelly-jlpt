@@ -206,7 +206,7 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     a.ok(withKanji.length > 0, "units with kanji exist");
     withKanji.forEach(function (u) {
       ["rows", "focus"].forEach(function (view) {
-        try { KanjiSection({ unit: u, charView: view, setCharView: noop }); }
+        try { KanjiSection({ unit: u, kanjiView: view, setKanjiView: noop }); }
         catch (e) { a.ok(false, u.id + " " + view + ": " + e.message); }
       });
     });
@@ -217,7 +217,7 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     a.ok(withKana.length > 0, "units with kana exist");
     withKana.forEach(function (u) {
       ["rows", "focus"].forEach(function (view) {
-        try { KanaSection({ unit: u, charView: view, setCharView: noop }); }
+        try { KanaSection({ unit: u, kanjiView: view, setKanjiView: noop }); }
         catch (e) { a.ok(false, u.id + " " + view + ": " + e.message); }
       });
     });

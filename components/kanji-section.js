@@ -1,7 +1,7 @@
 "use strict";
 
 // ── Kanji section of a lesson ────────────────────────────────────────────────
-// Two layouts of the same content, chosen by the synced `charView` pref:
+// Two layouts of the same content, chosen by the synced `kanjiView` pref:
 //   'rows'  : every kanji stacked (default)
 //   'focus' : one kanji at a time, picked from a row of chips
 // Per kanji: meaning, kun / on readings (okurigana dimmed), the unit's words that
@@ -56,7 +56,7 @@ function kanjiReading(r, extra) {
 function KanjiSection(props) {
   var unit = props.unit,
     lv = unit.level,
-    view = props.charView === 'focus' ? 'focus' : 'rows',
+    view = props.kanjiView === 'focus' ? 'focus' : 'rows',
     kanji = unit.kanji;
   var _sel = React.useState(0), sel = _sel[0], setSel = _sel[1];
   var _seen = React.useState({ 0: true }), seen = _seen[0], setSeen = _seen[1];
@@ -137,7 +137,7 @@ function KanjiSection(props) {
         React.createElement("p", { key: "e" }, t('kanji_info_extra', lv))],
       toggle: kanji.length > 1 && {
         label: view === 'focus' ? t('kanji_view_rows', lv) : t('kanji_view_focus', lv),
-        onClick: function () { props.setCharView(view === 'focus' ? 'rows' : 'focus'); }
+        onClick: function () { props.setKanjiView(view === 'focus' ? 'rows' : 'focus'); }
       }
     }),
     body);

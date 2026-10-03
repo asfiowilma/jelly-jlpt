@@ -43,7 +43,7 @@ QUnit.module('store', function () {
   QUnit.test('fresh store: empty snapshot with defaults (pace 1, no current unit)', function (assert) {
     var s = storeOn(fakeLs(), memoryBackend());
     return s.init().then(function (snap) {
-      assert.deepEqual(snap, { completed: [], srsCards: {}, currentUnit: null, pace: 1, examDate: null, furiganaPref: null, uiLang: 'en', charView: 'rows', pendingCards: [], mocks: [] });
+      assert.deepEqual(snap, { completed: [], srsCards: {}, currentUnit: null, pace: 1, examDate: null, furiganaPref: null, uiLang: 'en', kanjiView: 'rows', pendingCards: [], mocks: [] });
     });
   });
 
@@ -62,14 +62,14 @@ QUnit.module('store', function () {
     return s1.init().then(function () {
       s1.putUnit('n5.u002', true);
       s1.putCards({ 'v:家族|かぞく': CARD });
-      s1.putPrefs({ currentUnit: 'n5.u002', furigana: true, uiLang: 'auto', charView: 'focus' });
+      s1.putPrefs({ currentUnit: 'n5.u002', furigana: true, uiLang: 'auto', kanjiView: 'focus' });
       return s1.flush();
     }).then(function () {
       return storeOn(ls, backend).init();
     }).then(function (snap) {
       assert.deepEqual(snap.completed, ['n5.u002']);
       assert.deepEqual(snap.srsCards['v:家族|かぞく'], CARD);
-      assert.deepEqual([snap.currentUnit, snap.pace, snap.furiganaPref, snap.uiLang, snap.charView], ['n5.u002', 1, 'true', 'auto', 'focus']);
+      assert.deepEqual([snap.currentUnit, snap.pace, snap.furiganaPref, snap.uiLang, snap.kanjiView], ['n5.u002', 1, 'true', 'auto', 'focus']);
       return backend.loadAll();
     }).then(function (docs) {
       var ids = docs.map(function (d) { return d._id; }).sort();
@@ -83,7 +83,7 @@ QUnit.module('store', function () {
   QUnit.test('putPrefs/putUnit skip unchanged values (no updatedAt bump)', function (assert) {
     var s = storeOn(fakeLs(), memoryBackend());
     return s.init().then(function () {
-      s.putPrefs({ currentUnit: null, pace: 1, examDate: null, uiLang: 'en', furigana: null, charView: 'rows' });
+      s.putPrefs({ currentUnit: null, pace: 1, examDate: null, uiLang: 'en', furigana: null, kanjiView: 'rows' });
       assert.strictEqual(s.docs().length, 0, 'defaults are not written');
       s.putUnit('n5.u001', true);
       var first = s.docs()[0];

@@ -268,7 +268,7 @@ function createStore(opts) {
       });
     },
     // { completed: [unitId...], srsCards: {itemId: card}, currentUnit, pace, examDate,
-    //   furiganaPref: 'true'|'false'|null, uiLang, charView: 'rows'|'focus' }
+    //   furiganaPref: 'true'|'false'|null, uiLang, kanjiView: 'rows'|'focus' }
     snapshot: function () { return docsToSnapshot(store.docs()); },
     docs: function () { return Object.keys(mirror).map(function (k) { return mirror[k]; }); },
     // Re-marking with the same done state is a no-op (keeps completedAt).
