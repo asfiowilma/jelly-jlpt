@@ -430,7 +430,7 @@ function pickDistractors(target, pool, field, n, opts) {
   var lv = levelRank(target.level || opts.level);
   var ctx = rule.prep ? rule.prep(target) : null, cands = [];
   pool.forEach(function (it) {
-    if (it.id === target.id || it.kind !== target.kind) return;
+    if (it.id === target.id || it.kind !== target.kind || isBound(it)) return; // a bare suffix is no option (ticket 40)
     rule.texts(it, ans).forEach(function (text) { cands.push({ it: it, text: text, taught: !!taught[it.id] }); });
   });
   if (rule.fakes) readingFakes(kataToHira(ans)).forEach(function (text) { cands.push({ it: target, text: text, taught: true }); });
@@ -738,6 +738,86 @@ function quizContext(unit) {
   };
 }
 
+// ── Bound morphemes (ticket 40) ─────────────────────────────────────────────
+// Suffixes, prefixes and counters (人|じん, さん, 枚, お…) mean nothing on their own, so a quiz
+// only asks them inside one of their authored contexts (vocab `contexts`: host + morpheme, 日本人):
+// the morpheme that fills the blank, and the reading of the whole (sound changes: 三階 さんがい).
+var BOUND_POS = { suffix: true, prefix: true, counter: true };
+function isBound(it) { return !!it && it.kind === 'vocab' && !!BOUND_POS[it.pos]; }
+// Same meaning in the same slot: never distractors for each other (三回 = 三度, "three times").
+var BOUND_SYNONYMS = [['v:回|かい', 'v:度|ど']];
+var NUMERAL_HOST = /^[〇一二三四五六七八九十百千万]+$/;
+// boundContext(v, c): context { f (furigana), en, alt? } → { parts, at, end (the morpheme), word,
+// reading, host, answers (reading + alt), en }; null when the morpheme isn't its own block at the
+// end (the start, for a prefix).
+function boundContext(v, c) {
+  var parts = furiganaParts(c.f), text = parts.map(function (p) { return p.t; }).join('');
+  var pre = v.pos === 'prefix', at = pre ? 0 : text.length - v.word.length, end = at + v.word.length;
+  if (text.slice(at, end) !== v.word || cutsRuby(parts, pre ? end : at)) return null;
+  var reading = kataToHira(parts.map(function (p) { return p.r || p.t; }).join(''));
+  return { parts: parts, at: at, end: end, word: text, reading: reading, host: pre ? text.slice(end) : text.slice(0, at),
+    answers: [reading].concat(c.alt || []), en: c.en };
+}
+function boundContexts(v) {
+  return (v.contexts || []).map(function (c) { return boundContext(v, c); }).filter(Boolean);
+}
+// boundLabel(x): a morpheme as an option, with its reading: 人 (じん), さん.
+function boundLabel(x) { return hasKanji(x.word) ? x.word + ' (' + x.reading + ')' : x.word; }
+// boundGapOptions(v, bc): up to n wrong morphemes for v's blank in context bc, best first: the
+// same spelling (人 じん / にん), then one used after the same kind of host (numeral or not), then
+// any (a prefix has no prefix to compete with). Never a synonym, nor one whose meaning shares a
+// word with the context's English: only the English tells 三人 "three people" from 三枚 "three sheets".
+function boundGapOptions(v, bc, n) {
+  var syn = [].concat.apply([], BOUND_SYNONYMS.filter(function (s) { return s.indexOf(v.id) >= 0; }));
+  var numeric = NUMERAL_HOST.test(bc.host);
+  var tier = function (x) {
+    if (x.word === v.word) return 0;
+    if ((x.pos === 'prefix') !== (v.pos === 'prefix')) return 3;
+    return NUMERAL_HOST.test(boundContexts(x)[0].host) === numeric ? 1 : 2;
+  };
+  var cands = rndShuffle(catalogOf('vocab').filter(function (x) {
+    return isBound(x) && x.id !== v.id && !x.alt && boundContexts(x).length && syn.indexOf(x.id) < 0 &&
+      boundLabel(x) !== boundLabel(v) && !sharesSense(glossText(x), bc.en);
+  })).map(function (x) { return { x: x, t: tier(x) }; }).sort(function (a, b) { return a.t - b.t; });
+  return cands.slice(0, n || 3).map(function (c) { return c.x; });
+}
+// boundForms(v, ctx, f, typing): formsFor's forms for a bound item.
+function boundForms(v, ctx, f, typing) {
+  var bcs = boundContexts(v);
+  var pick = function () { return rndShuffle(bcs)[0]; };
+  // the compound with ruby on untaught host kanji; never on the morpheme (its reading is asked)
+  var shown = function (bc) { return quizFurigana(bc.parts, ctx.taughtKanji, v.word); };
+  var optParts = function (x) { return [hasKanji(x.word) ? { t: x.word, r: x.reading } : { t: x.word }]; };
+  return [
+    f('ctxGap', false, function () {
+      var bc = pick(), d = bc ? boundGapOptions(v, bc) : [];
+      if (d.length < 2) return null;
+      var parts = spliceParts(quizFurigana(bc.parts, ctx.taughtKanji, ''), bc.at, bc.end, [{ t: GAP_BLANK }]);
+      var items = rndShuffle([v].concat(d));
+      return parts && { type: 'gap', prompt: 'Choose what fills the gap:', question: parts.map(function (p) { return p.t; }).join(''),
+        parts: parts, note: bc.en, options: items.map(boundLabel), optionParts: items.map(optParts), correct: items.indexOf(v), speech: bc.reading };
+    }),
+    f('ctxRead', true, function () {
+      var bc = hasKanji(v.word) && pick();
+      return bc ? typing('Type the reading of this word in hiragana:', bc.word, bc.answers, 'hiragana…',
+        Object.assign({ parts: shown(bc), note: bc.en, speech: bc.reading }, KANA_INPUT)) : null;
+    }),
+    f('ctxReadMc', false, function () {
+      var bc = hasKanji(v.word) && pick();
+      if (!bc) return null;
+      // misreadings of the morpheme first (さんかい for 三回 is right, さんがい for 三階 too: alt)
+      var hostR = kataToHira(sliceParts(bc.parts, v.pos === 'prefix' ? bc.end : 0, v.pos === 'prefix' ? Infinity : bc.at).map(function (p) { return p.r || p.t; }).join(''));
+      var fakes = rndShuffle(readingFakes(bc.reading).filter(function (r) { return bc.answers.indexOf(r) < 0; }));
+      var mine = function (r) { return v.pos === 'prefix' ? r.slice(-hostR.length) === hostR : r.indexOf(hostR) === 0; };
+      fakes = fakes.filter(mine).concat(fakes.filter(function (r) { return !mine(r); })).slice(0, 3);
+      if (fakes.length < 2) return null;
+      var opts = rndShuffle([bc.reading].concat(fakes));
+      return { type: 'mc', prompt: 'How do you read this word?', question: bc.word, parts: shown(bc), note: bc.en, speech: bc.reading,
+        options: opts, correct: opts.indexOf(bc.reading) };
+    })
+  ];
+}
+
 // formsFor(item, ctx) → [{ name, recall, make() → exercise | null }]: every way
 // to ask about one item. recall = typed answer; the rest are MC.
 function formsFor(item, ctx) {
@@ -810,21 +890,33 @@ function formsFor(item, ctx) {
     ];
   }
 
+  if (isBound(item)) return boundForms(item, ctx, f, typing);
+
   if (item.kind === 'vocab') {
     var v = item, kanjiWord = hasKanji(v.word);
+    // Same spelling, other reading (人: ひと / じん / にん): typing one of those is not a miss but a
+    // retry (otherReading); while one of them is taught, the reading question names the meaning.
+    // Same meaning (九 きゅう / く, 私 わたし / わたくし): that reading is simply right too.
+    var spellings = catalogOf('vocab').filter(function (x) { return x.word === v.word && x.id !== v.id && kataToHira(x.reading) !== kataToHira(v.reading); });
+    var same = function (x) { return !isBound(x) && normEn(x.gloss[0]) === normEn(v.gloss[0]); };
+    var alsoRight = spellings.filter(same).map(function (x) { return kataToHira(x.reading); });
+    var homographs = spellings.filter(function (x) { return !same(x); });
+    var others = homographs.map(function (x) { return { id: x.id, word: x.word, reading: kataToHira(x.reading), gloss: glossText(x) }; });
+    var kanaIn = Object.assign({ others: others }, KANA_INPUT);
     var forms = [
       f('meaningType', true, function () {
-        return typing('What does this word mean? (type in English)', v.word, meaningAnswers(v.gloss), 'English meaning...', { parts: wordParts(v) });
+        return typing('What does this word mean? (type in English)', v.word, meaningAnswers(v.gloss).concat(v.accept || []), 'English meaning...', { parts: wordParts(v) });
       }),
       f('readingType', true, function () {
-        return kanjiWord ? typing('Type the reading of this word in hiragana:', v.word, [kataToHira(v.reading), v.reading].filter(function (a, i, arr) { return arr.indexOf(a) === i; }),
-          'hiragana…', KANA_INPUT) : null;
+        var hint = homographs.some(function (x) { return ctx.taught[x.id]; }) ? { note: '"' + glossText(v) + '"' } : {};
+        return kanjiWord ? typing('Type the reading of this word in hiragana:', v.word, [kataToHira(v.reading), v.reading].concat(alsoRight).filter(function (a, i, arr) { return arr.indexOf(a) === i; }),
+          'hiragana…', Object.assign(hint, kanaIn)) : null;
       }),
       f('enToJp', true, function () {
         // only when no other taught word shares a sense (else two right answers)
-        var clash = ctx.vPool.some(function (x) { return x !== v && ctx.taught[x.id] && x.word !== v.word && sharesSense(glossText(x), glossText(v)); });
-        var ans = [v.reading, kataToHira(v.reading), v.word].filter(function (a, i, arr) { return arr.indexOf(a) === i; });
-        return clash ? null : typing('Type the Japanese for "' + glossText(v) + '":', '', ans, 'in Japanese…', KANA_INPUT);
+        var clash = ctx.vPool.some(function (x) { return x !== v && ctx.taught[x.id] && x.word !== v.word && !isBound(x) && sharesSense(glossText(x), glossText(v)); });
+        var ans = [v.reading, kataToHira(v.reading), v.word].concat(alsoRight).filter(function (a, i, arr) { return arr.indexOf(a) === i; });
+        return clash ? null : typing('Type the Japanese for "' + glossText(v) + '":', '', ans, 'in Japanese…', kanaIn);
       }),
       f('meaningMc', false, function () { return mc('mc', 'What does this word mean?', v.word, 'gloss', ctx.vPool, null, { parts: wordParts(v) }); }),
       f('wordMc', false, function () { return mc('mc', 'Which word means "' + glossText(v) + '"?', '', 'word', ctx.vPool); }),
@@ -867,8 +959,9 @@ function formsFor(item, ctx) {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       forms.push(f('listen', false, function () { return mc('listen', 'Listen and choose the meaning:', v.word, 'gloss', ctx.vPool, null, { audio: v.word }); }));
     }
-    if (rank >= 2 && ctx.vocab.length >= 4) forms.push(f('pairMatch', false, function () {
-      var pairs = [v].concat(rndShuffle(ctx.vocab.filter(function (x) { return x !== v; })).slice(0, 3)).map(function (x) { return [x.word, glossText(x)]; });
+    var free = ctx.vocab.filter(function (x) { return x !== v && !isBound(x); });
+    if (rank >= 2 && free.length >= 3) forms.push(f('pairMatch', false, function () {
+      var pairs = [v].concat(rndShuffle(free).slice(0, 3)).map(function (x) { return [x.word, glossText(x)]; });
       var ans = pairs.map(function (p) { return p[1]; });
       return { type: 'pair_match', prompt: 'Match each word to its meaning:', question: '', items: rndShuffle(pairs.map(function (p) { return p[0]; })),
         answers: ans, pairs: pairs, options: rndShuffle(ans) };
@@ -884,7 +977,7 @@ function formsFor(item, ctx) {
       f('kanjiReadType', true, function () {
         return typing('Type the reading for this character:', kj.char, rs.concat((kj.on || []).map(kataToHira)), 'reading…', KANA_INPUT);
       }),
-      f('kanjiMeanType', true, function () { return typing('What does this kanji mean? (type in English)', kj.char, meaningAnswers(kj.meaning), 'English meaning...'); }),
+      f('kanjiMeanType', true, function () { return typing('What does this kanji mean? (type in English)', kj.char, meaningAnswers(kj.meaning).concat(kj.accept || []), 'English meaning...'); }),
       f('kanjiReadMc', false, function () {
         return rank >= 3 ? mc('kanji_reading', 'Select the correct reading:', kj.char, 'kanjiReading', ctx.kPool, rndShuffle(rs)[0])
           : mc('mc', 'Which is a reading of this kanji?', kj.char, 'kanjiReading', ctx.kPool, rndShuffle(rs)[0]);
@@ -1375,7 +1468,9 @@ function answerIsRight(ex, resp) {
   }
   if (ex.type === 'reorder') return Array.isArray(resp) && resp.map(function (i) { return ex.items[i]; }).join('') === ex.answer;
   if (ex.options && typeof ex.correct === 'number') return resp === ex.correct;
-  return checkTyping(String(resp == null ? '' : resp), ex.answers);
+  // ponytail: romaji answers (kana items) go through the English path too; at ≤ 3 letters no typo
+  // or plural rule can fire on them
+  return checkTyping(String(resp == null ? '' : resp), ex.answers, englishPool());
 }
 
 // scoreQuiz(kind, exs, results): results[i] = was exs[i] right. Score = first
@@ -1399,12 +1494,83 @@ function foldAns(s) {
 function normAns(s) {
   return foldAns(s).replace(/[!"#$%&'()*+,./:;<=>?@[\]^_`{|}~\\]/g, '').trim();
 }
-function checkTyping(userAns, answers) {
+// ── English answers (ticket 41) ─────────────────────────────────────────────
+// normEn(s): an English answer reduced to what matters: lower case, no accents, punctuation or
+// parenthetical, hyphens as spaces, no leading article / "to ", British spellings folded to
+// American (colour → color, -ise → -ize, theatre → theater). Applied to both sides.
+var EN_SPELLING = [
+  [/([a-z]{2})our(s|ite|ites|able|ed|ing|er|ers|hood|hoods)?\b/g, '$1or$2'], [/([a-z]{2})tre(s?)\b/g, '$1ter$2'],
+  [/([a-z]{2})is(e|es|ed|ing|ation|ations)\b/g, '$1iz$2'], [/([a-z])ys(e|es|ed|ing)\b/g, '$1yz$2'],
+  [/\b(travel|cancel|jewel|model|label)l(ed|ing|er|ers)\b/g, '$1$2'], [/\bgrey/g, 'gray'], [/\bprogramme/g, 'program'],
+  [/\baeroplane/g, 'airplane'], [/\bstorey/g, 'story'], [/\btyre/g, 'tire'], [/\bpyjama/g, 'pajama'], [/\bpractise/g, 'practice'],
+  [/\bmum(s?)\b/g, 'mom$1'], [/\bcheque/g, 'check']
+];
+var _enMemo = {};
+function normEn(s) {
+  if (_enMemo[s] !== undefined) return _enMemo[s];
+  var t = String(s).normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\([^)]*\)/g, ' ')
+    .replace(/['’]/g, '').replace(/[-_/]/g, ' ').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+  while (/^(to|a|an|the) ./.test(t)) t = t.replace(/^(to|a|an|the) /, '');
+  EN_SPELLING.forEach(function (r) { t = t.replace(r[0], r[1]); });
+  return (_enMemo[s] = t);
+}
+// enStem: plural -s / -es / -ies off every word (boxes → box, cities → city, glasses → glass).
+function enStem(s) {
+  return s.split(' ').map(function (w) {
+    if (w.length > 4 && /ies$/.test(w)) return w.slice(0, -3) + 'y';
+    if (/(s|x|z|ch|sh)es$/.test(w)) return w.slice(0, -2);
+    return w.length > 3 && /[^su]s$/.test(w) && !/is$/.test(w) ? w.slice(0, -1) : w;
+  }).join(' ');
+}
+// osaDistance: edit distance counting a swap of two neighbours as one edit (hosue → house).
+function osaDistance(a, b) {
+  var d = [], i, j;
+  for (i = 0; i <= a.length; i++) { d[i] = [i]; }
+  for (j = 0; j <= b.length; j++) d[0][j] = j;
+  for (i = 1; i <= a.length; i++) {
+    for (j = 1; j <= b.length; j++) {
+      var c = a[i - 1] === b[j - 1] ? 0 : 1;
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + c);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+    }
+  }
+  return d[a.length][b.length];
+}
+// typoTolerance(answer): edits forgiven for a normalised answer: 1 from 5 letters, 2 from 10.
+function typoTolerance(a) { var n = a.replace(/ /g, '').length; return n >= 10 ? 2 : n >= 5 ? 1 : 0; }
+var _rejectMemo = { src: null, set: null };
+// enSet(list): { normalised and stemmed form: true } of English strings (split on / and ,).
+function enSet(list) {
+  if (_rejectMemo.src === list) return _rejectMemo.set;
+  var set = {};
+  (list || []).forEach(function (s) {
+    String(s).split(/[\/,]/).forEach(function (p) { var n = normEn(p); if (n) { set[n] = true; set[enStem(n)] = true; } });
+  });
+  _rejectMemo = { src: list, set: set };
+  return set;
+}
+// englishPool(): every English meaning the catalog teaches (vocab gloss + accept, kanji meaning +
+// accept), the reject set for typed English answers. Built once.
+var _englishPool = null;
+function englishPool() {
+  if (_englishPool) return _englishPool;
+  var out = [];
+  catalogOf('vocab').forEach(function (v) { out.push.apply(out, meaningAnswers(v.gloss).concat(v.accept || [])); });
+  catalogOf('kanji').forEach(function (k) { out.push.apply(out, meaningAnswers(k.meaning || []).concat(k.accept || [])); });
+  return (_englishPool = out);
+}
+
+// checkTyping(typed, answers, reject?): exact (case, width, punctuation, / and , alternatives)
+// for every answer. English answers also match after normEn, with the space dropped
+// (well-lit / welllit), as a plural, or with a typo (typoTolerance) — but never when the typed
+// text is the meaning of something else (reject: English strings, e.g. englishPool()).
+// Kana answers stay exact: hiragana and katakana are different answers.
+function checkTyping(userAns, answers, reject) {
   if (userAns.length > 200) return false;
   var u = foldAns(userAns);
   var uNorm = normAns(userAns);
   if (!answers || !answers.length) return false;
-  return answers.some(function (a) {
+  var exact = answers.some(function (a) {
     if (typeof a !== 'string') return false;
     // split before folding so full-width ／ ， in an answer stay literal, as before
     var parts = a.split(/[\/,]/).map(foldAns);
@@ -1413,6 +1579,47 @@ function checkTyping(userAns, answers) {
     });
     return foldAns(a) === u || parts.includes(u) || partsNorm.includes(uNorm);
   });
+  if (exact) return true;
+  var en = answers.filter(function (a) { return typeof a === 'string' && !JA_CHARS.test(a); });
+  if (!en.length || JA_CHARS.test(userAns)) return false;
+  var n = normEn(userAns), ns = enStem(n);
+  if (!n) return false;
+  var forms = [].concat.apply([], en.map(function (a) { return a.split(/[\/,]/); })).map(normEn).filter(Boolean);
+  var flat = function (s) { return s.replace(/ /g, ''); };
+  if (forms.some(function (f) { return f === n || flat(f) === flat(n); })) return true;
+  var own = {}, ownStem = {};
+  forms.forEach(function (f) { own[f] = true; ownStem[enStem(f)] = true; });
+  var rej = enSet(reject);
+  if ((rej[n] && !own[n]) || (rej[ns] && !ownStem[ns])) return false; // someone else's meaning (news ≠ new)
+  return forms.some(function (f) {
+    var fs = enStem(f), tol = typoTolerance(f);
+    return fs === ns || (tol > 0 && (osaDistance(n, f) <= tol || osaDistance(ns, fs) <= tol));
+  });
+}
+// acceptedAnswers(ex): a typed question's answers as shown after a miss, one per meaning
+// (to see (a person) and its derived "see" count once).
+function acceptedAnswers(ex) {
+  var seen = {}, out = [];
+  (ex.answers || []).forEach(function (a) {
+    var k = JA_CHARS.test(a) ? kataToHira(a) : normEn(a);
+    if (!seen[k]) { seen[k] = true; out.push(a); }
+  });
+  return out;
+}
+// otherReading(ex, typed): the homograph whose reading was typed (人 → じん when ひと is asked),
+// or null. Not a miss: the learner is told which word is meant and tries again (ex.others, set
+// by formsFor on kana-answer questions about a word that shares its spelling).
+function otherReading(ex, typed) {
+  if (!ex.others || !ex.others.length) return null;
+  var s = String(typed == null ? '' : typed);
+  if (checkTyping(s, ex.answers)) return null;
+  var u = kataToHira(foldAns(s));
+  return ex.others.filter(function (o) { return o.reading === u; })[0] || null;
+}
+function otherReadingNote(ex, o) {
+  var it = ex.item || {};
+  return o.reading + ' is a reading of ' + o.word + ' too, as in "' + o.gloss + '". This question wants ' + o.word +
+    (it.gloss ? ' meaning "' + glossText(it) + '"' : '') + '. Try again.';
 }
 
 // ── Storage helpers ──────────────────────────────────────────────────────────
@@ -1801,13 +2008,14 @@ function firstQuizAttempts(logs) {
   return first;
 }
 // activityTotals: lifetime { lessons (distinct units marked done), quizzes,
-// perfectQuizzes, reviews }.
+// perfectQuizzes, reviews, overrides ("I was right" on a typed answer) }.
 function activityTotals(logs) {
-  var days = {}, t = { lessons: 0, quizzes: 0, perfectQuizzes: 0, reviews: 0 };
+  var days = {}, t = { lessons: 0, quizzes: 0, perfectQuizzes: 0, reviews: 0, overrides: 0 };
   logs.forEach(function (raw) {
     var l = normalizeLog(raw);
     l.lessons.forEach(function (n) { days[n] = true; });
     t.quizzes += l.quizzes.length;
+    t.overrides += l.quizzes.reduce(function (n, q) { return n + (q.overrides || 0); }, 0);
     t.perfectQuizzes += l.quizzes.filter(function (q) { return q.total > 0 && q.right === q.total; }).length;
     t.reviews += l.reviews.count;
   });

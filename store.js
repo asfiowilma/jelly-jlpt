@@ -313,8 +313,13 @@ function createStore(opts) {
     logLesson: function (unitId) {
       return appendLog(function (l) { if (l.lessons.indexOf(unitId) === -1) l.lessons.push(unitId); });
     },
-    logQuiz: function (unitId, right, total) {
-      return appendLog(function (l) { l.quizzes.push({ unit: unitId, right: right, total: total, at: Date.now() }); });
+    // overrides: typed answers the learner counted as right ("I was right", ticket 41); kept only when > 0
+    logQuiz: function (unitId, right, total, overrides) {
+      return appendLog(function (l) {
+        var q = { unit: unitId, right: right, total: total, at: Date.now() };
+        if (overrides > 0) q.overrides = overrides;
+        l.quizzes.push(q);
+      });
     },
     // quality: ReviewMode grade 0–3 (0 = Again, see srsReview).
     logReview: function (quality) {

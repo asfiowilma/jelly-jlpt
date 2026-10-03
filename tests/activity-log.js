@@ -57,7 +57,9 @@ QUnit.module('activity-log', function () {
   });
 
   QUnit.test('activityTotals: lifetime lessons/quizzes/perfect/reviews', function (assert) {
-    assert.deepEqual(activityTotals(LOGS), { lessons: 2, quizzes: 2, perfectQuizzes: 1, reviews: 9 });
+    assert.deepEqual(activityTotals(LOGS), { lessons: 2, quizzes: 2, perfectQuizzes: 1, reviews: 9, overrides: 0 });
+    var withOverride = LOGS.concat([log('2026-05-05', 'devA', { quizzes: [{ unit: 'n5.u002', right: 9, total: 10, at: 300, overrides: 2 }] })]);
+    assert.equal(activityTotals(withOverride).overrides, 2, '"I was right" overrides counted');
   });
 
   QUnit.test('firstQuizAttempts: earliest entry per lesson across devices', function (assert) {
@@ -103,7 +105,7 @@ QUnit.module('activity-log', function () {
         return s2.replaceAll(progressFileToDocs(file).docs);
       }).then(function () {
         assert.strictEqual(s2.logs().length, LOGS.length + 1, 'all log docs imported');
-        assert.deepEqual(activityTotals(s2.logs()), { lessons: 2, quizzes: 3, perfectQuizzes: 1, reviews: 9 });
+        assert.deepEqual(activityTotals(s2.logs()), { lessons: 2, quizzes: 3, perfectQuizzes: 1, reviews: 9, overrides: 0 });
       });
     });
   });

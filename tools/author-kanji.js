@@ -8,7 +8,8 @@
 //
 // Inputs:
 //   tools/ref/n5.json               the 79 N5 kanji (Tanos list)
-//   tools/n5-kanji-overrides.json   per kanji: meaning (own words, required), optional extra
+//   tools/n5-kanji-overrides.json   per kanji: meaning (own words, required), optional accept (extra
+//                                   English answers for the typed meaning question), extra
 //                                   (≤2 common readings no N5 word uses), notes, and special =
 //                                   N5 words read as a whole (jukujikun: 今日 きょう) with the reason
 //   data/n5/vocab.js                N5 words: which readings a learner needs, and `words`
@@ -200,6 +201,7 @@ chars.forEach(function (c) {
   if (!strokes) why.push("stroke count: KANJIDIC " + k.strokes + ", Wiktionary " + w.strokes);
   const it = { id: "k:" + c, kind: "kanji", level: "N5", char: c,
     on: core.filter(isKata), kun: core.filter(function (r) { return !isKata(r); }), meaning: o.meaning };
+  if (o.accept) it.accept = o.accept;
   if (extra.length) it.extra = extra;
   if (strokes) it.strokes = strokes;
   it.words = wordsOf[c];

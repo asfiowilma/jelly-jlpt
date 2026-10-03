@@ -366,7 +366,7 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       cancel: function () {}, speak: function (u) { spoken.push(u); if (u.onend) u.onend(); } };
     var origUtt = global.SpeechSynthesisUtterance;
     global.SpeechSynthesisUtterance = function (text) { this.text = text; };
-    var seen = {}, errors = [];
+    var seen = {}, errors = [], retried = 0, overridden = 0;
     var playable = units.filter(function (u) { return u.kind !== "mock"; }); // mock units run MockExam (played below)
     var sample = playable.filter(function (u, i) { return i % 7 === 0 && u.kind !== "prep"; });
     var pool = playable.concat([].concat.apply([], ["N4", "N3", "N2", "N1"].map(function (lv) {
@@ -427,11 +427,28 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
           });
           click(/qz-check/);
         } else {
+          var input = function (v) { find(function (el) { return el.type === "input"; })[0].props.onChange({ target: { value: v } }); render(); };
+          if (ex.others && ex.others.length) {
+            // another reading of the same spelling (人: じん for ひと): a notice and a retry, not a miss
+            var before = state[7].length;
+            input(ex.others[0].reading);
+            click(/qz-check/);
+            if (state[7].length !== before) errors.push(unit.id + " " + ex.form + ": homograph reading " + ex.others[0].reading + " scored");
+            if (!find(cls(/qz-other/)).length) errors.push(unit.id + " " + ex.form + ": no homograph notice");
+            retried++;
+          }
           var typed = right ? ex.answers[0] : "zzz";
           if (answerIsRight(ex, typed) !== right) errors.push(unit.id + " " + ex.form + ": typed '" + typed + "' scored wrong way");
-          find(function (el) { return el.type === "input"; })[0].props.onChange({ target: { value: typed } });
-          render();
+          input(typed);
           click(/qz-check/);
+          if (!right && acceptedAnswers(ex).length > 1 && !find(function (el) { return el.children.indexOf("Accepted answers: ") >= 0; }).length) {
+            errors.push(unit.id + " " + ex.form + ": accepted answers not listed");
+          }
+          if (!right && (overridden++ % 2 === 0)) { // "I was right" on every other typed miss
+            click(/qz-override/);
+            right = true;
+            plan[plan.length - 1][1] = true;
+          }
         }
         var res = state[7]; // Exercises' results slot
         if (res[res.length - 1] !== right) errors.push(unit.id + "@" + unit.level + " " + ex.form + ": answered " + (right ? "right" : "wrong") + ", scored the other way");
@@ -477,6 +494,8 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       global.SpeechSynthesisUtterance = origUtt;
     }
     a.equal(errors.length, 0, errors.slice(0, 8).join("\n"));
+    a.ok(retried > 0, retried + " homograph retries played");
+    a.ok(overridden > 1, Math.ceil(overridden / 2) + " \"I was right\" overrides played");
     // ponytail: no "reading" (passage items, ticket 15); tap-to-order "reorder" stays unused
     // (★ sentence composition is the MC "order" type)
     ["mc", "listen", "typing", "conjugation", "gap", "pair_match", "fill_blank", "synonym", "kanji_reading",

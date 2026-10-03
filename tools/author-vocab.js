@@ -11,7 +11,11 @@
 //   tools/n5-vocab-overrides.json  gloss/tags (own wording, English only, required per item) and optional
 //                                usage (Japanese usage hint shown in lessons, never in quiz prompts), pos,
 //                                notes, q (Jisho keyword), jmWord / jmReading (form to match in JMdict),
-//                                alt (word|reading of the spelling the plan teaches instead)
+//                                alt (word|reading of the spelling the plan teaches instead), accept (extra
+//                                English answers for typed meaning questions, own wording), contexts (bound
+//                                items, pos suffix/prefix/counter: [furigana compound, English, extra readings?],
+//                                the morpheme its own [kanji|reading] block or plain kana at the end/start;
+//                                quizzes ask these items only inside a context, ticket 40)
 //   D:/…/.scratch/content-audit/research/data/vocab-n5.json  list sources (tanos/elzup) per row
 //   <cache>/<keyword>.json       raw Jisho responses (JMdict-based, CC BY-SA: used only as a check,
 //                                nothing from it is copied into the output except pos labels)
@@ -36,11 +40,18 @@ const keys = [];
 ref.forEach(function (e) { [].concat(e).forEach(function (k) { if (!ov.skip[k] && keys.indexOf(k) < 0) keys.push(k); }); });
 const split = function (k) { const i = k.indexOf("|"); return [k.slice(0, i), k.slice(i + 1)]; };
 const queryOf = function (k) { return (ov.items[k] && ov.items[k].q) || split(k)[0]; };
+// ctxWords(f): a context's furigana ('[三|さん][階|がい]') → [word, reading]
+const ctxWords = function (f) {
+  const t = f.replace(/\[([^|\]]+)[^\]]*\]/g, "$1");
+  const r = f.replace(/\[[^|\]]+((?:\|[^|\]]*)+)\]/g, function (_, rs) { return rs.split("|").join(""); });
+  return [t, r];
+};
 const cacheFile = function (q) { return path.join(cacheDir, q.replace(/[\\/:*?"<>|]/g, "_") + ".json"); };
 
 if (flag === "--fetch") {
   fs.mkdirSync(cacheDir, { recursive: true });
-  const todo = Array.from(new Set(keys.map(queryOf))).filter(function (q) { return !fs.existsSync(cacheFile(q)); });
+  const compounds = [].concat.apply([], keys.map(function (k) { return ((ov.items[k] || {}).contexts || []).map(function (c) { return ctxWords(c[0])[0]; }); }));
+  const todo = Array.from(new Set(keys.map(queryOf).concat(compounds))).filter(function (q) { return !fs.existsSync(cacheFile(q)); });
   console.log(todo.length + " to fetch");
   (async function () {
     for (const q of todo) {
@@ -124,6 +135,8 @@ keys.forEach(function (k) {
   const it = { id: "v:" + k, kind: "vocab", level: "N5", word: w, reading: r, gloss: o.gloss, pos: c.pos || o.pos || "noun", tags: o.tags,
     sources: (listSources[k] || ["tanos"]).concat(c.ok ? ["jmdict"] : []), verified: !!c.ok };
   const notes = [o.notes, c.ok ? null : "unverified: " + c.reason].filter(Boolean).join(" ");
+  if (o.accept) it.accept = o.accept;
+  if (o.contexts) it.contexts = o.contexts.map(function (c) { const x = { f: c[0], en: c[1] }; if (c[2]) x.alt = c[2]; return x; });
   if (o.usage) it.usage = o.usage;
   if (notes) it.notes = notes;
   if (o.alt) it.alt = "v:" + o.alt; // duplicate spelling: not taught, covered by the alt item (ticket 34)
@@ -141,3 +154,24 @@ fs.writeFileSync(path.join(root, "data", "n5", "vocab.js"), header + "CATALOG.ad
 const count = function (f) { const m = {}; out.forEach(function (it) { [].concat(it[f]).forEach(function (x) { m[x] = (m[x] || 0) + 1; }); }); return m; };
 console.log(JSON.stringify({ items: out.length, verified: out.filter(function (i) { return i.verified; }).length, unverified: reasons, pos: count("pos"), tags: count("tags") }, null, 1));
 for (const it of out) if (!it.verified) console.log("  " + it.id + "  " + it.notes);
+// Context readings vs JMdict (cached by compound). Numeral + counter compounds are mostly not
+// JMdict entries: those were checked by hand against the counter sound-change rules and Tatoeba
+// furigana (ticket 40). A JMdict entry that disagrees fails the build.
+const notInJm = [];
+let jmOk = 0;
+out.forEach(function (it) {
+  (it.contexts || []).forEach(function (c) {
+    const [w, r] = ctxWords(c.f), file = cacheFile(w);
+    const rs = !fs.existsSync(file) ? [] : [].concat.apply([], JSON.parse(fs.readFileSync(file, "utf8")).data.map(function (e) {
+      return e.japanese.filter(function (j) { return j.word === w; }).map(function (j) { return j.reading; });
+    }));
+    if (!rs.length) { notInJm.push(w + " " + r); return; }
+    if (![r].concat(c.alt || []).some(function (x) { return rs.indexOf(x) >= 0; })) {
+      console.error("context " + w + " " + r + ": JMdict reads " + rs.join("/"));
+      process.exitCode = 1;
+      return;
+    }
+    jmOk++;
+  });
+});
+console.log("contexts confirmed by JMdict: " + jmOk + "; not in JMdict (hand-checked): " + notInJm.join(", "));

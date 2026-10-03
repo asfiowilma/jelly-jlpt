@@ -79,7 +79,10 @@ Adding a file means adding its `<script src>` by hand:
   | passage | `p:<level>-<slug>`: own reading texts (`format` short / mid / info), review units list them in `passages` |
   | listening | `l:<level>-<slug>`: own dialogue scripts (`format` task / point / utterance / quick), review units list one in `listening` |
 
-  Items carry `level`, `sources`, `verified`. Vocab has `pos` (drives conjugation).
+  Items carry `level`, `sources`, `verified`. Vocab has `pos` (drives conjugation). Vocab and kanji
+  may carry `accept` (extra English answers for typed meaning questions). Bound vocab (pos
+  suffix / prefix / counter: 人|じん, 枚, お…) carries `contexts` (`{ f: furigana compound, en, alt? }`)
+  and is only ever asked inside one (`boundForms`: fill the blank, reading of the compound).
   A duplicate spelling carries `alt: <id of the spelling the plan teaches>`.
 - **Plan** (`data/<lvl>/plan.js`, `PLAN.push({ level, units: [...] })`): ordered units that
   reference item ids (`kana`, `vocab`, `kanji`, `grammar`, `practice`). Unit ids
@@ -111,7 +114,7 @@ Device-only prefs (palette, theme, TTS rate, sfx mute) stay in localStorage
 | Area | Functions |
 |---|---|
 | Units | `validatePlan`, `buildUnits`, `nextUnit`, `levelRamp`, `taughtIds` |
-| Quiz | `buildExercises(unit)`, `quizLength`, `passMark`/`quizPassed`, `scoreQuiz`, `pickDistractors`, `checkTyping` |
+| Quiz | `buildExercises(unit)`, `quizLength`, `passMark`/`quizPassed`, `scoreQuiz`, `pickDistractors`, `checkTyping` (English: `normEn`, plural, typos, reject set `englishPool()`), `otherReading` (homograph reading = retry), `isBound`/`boundForms` |
 | Distractors | `pickDistractors` (+ `DISTRACTOR_RULES`), `kanaDistractors`, `readingFakes`, `spellingFakes` |
 | Mocks + timing (ticket 18) | `MOCK_BLUEPRINT`, `MOCK_PACE` (real N5 pacing), `quizSeconds`, `isTimedQuiz`, `mockSections`, `mockResult`, `mockEstimate` (linear scaled-score estimate, `JLPT_PASS`), `prepDrill` |
 | Exam formats (N5 mondai) | `MONDAI` table, `mondaiQuestions(type, item, ctx)` (for mocks); in quizzes via `formsFor`: kanjiYomi, hyouki, bunmyaku (vocab), hyouki (kanji), gap, order ★ (grammar); iikae / bunshou authored in `mondai.js` |

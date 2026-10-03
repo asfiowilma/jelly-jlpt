@@ -48,6 +48,7 @@ function exQuestionText(ex) {
 // What the dock speaker reads out after answering: the word or kana asked about. '' = none.
 function exSpeech(ex) {
   var it = ex.item;
+  if (ex.speech) return ex.speech; // a bound morpheme: the whole compound (日本人), never the bare suffix
   if (!it || ex.type === 'listen_dialog' || ex.type === 'listen') return '';
   if (it.kind === 'vocab') return it.reading || it.word;
   if (it.kind === 'kana') return it.char || it.kana || '';
@@ -108,6 +109,8 @@ function Exercises(_ref9) {
   var _leaving = React.useState(false), leaving = _leaving[0], setLeaving = _leaving[1]; // "Leave the quiz?"
   var _left = React.useState(null), pairLeft = _left[0], setPairLeft = _left[1]; // pair_match: word waiting for its meaning
   var _speaking = React.useState(false), speaking = _speaking[0], setSpeaking = _speaking[1];
+  // typed another reading of the same spelling (人: じん for ひと): which word is meant, try again
+  var _notice = React.useState(null), notice = _notice[0], setNotice = _notice[1];
   var stopAudio = function () { if (stopRef.current) stopRef.current(); stopRef.current = null; setSpeaking(false); };
   React.useEffect(function () { return stopAudio; }, [cur, started]); // question change / unmount
   React.useEffect(function () {
@@ -172,7 +175,7 @@ function Exercises(_ref9) {
     setResults(nextRes);
     setLeaving(false);
     setDone(true);
-    Store.logQuiz(unit.id, s.right, s.total);
+    Store.logQuiz(unit.id, s.right, s.total, nextExs.filter(function (e) { return e.overridden; }).length);
     playSfx('complete');
     onResult && onResult(s);
   };
@@ -245,7 +248,7 @@ function Exercises(_ref9) {
     playSfx(wasRight ? 'correct' : 'wrong');
     var ex = exs[cur];
     var again = !wasRight && !ex.requeue ? requeueExercise(unit, ex) : null;
-    if (again) setExs(exs.concat([again]));
+    if (again) setExs(exs.concat([Object.assign(again, { requeueOf: cur })]));
     setResults(results.concat([wasRight]));
   };
   var proceed = function proceed(nextExs, nextRes) {
@@ -372,6 +375,9 @@ function Exercises(_ref9) {
     if (revealed || !ready) return;
     var resp = isOpt ? pick : isReorder || isPair ? picks : (ex.kana ? answer.replace(/n$/, 'ん') : answer);
     if (typeof resp === 'string') setAnswer(resp);
+    var other = isType && otherReading(ex, resp);
+    if (other) return setNotice(otherReadingNote(ex, other)); // not a miss: say which word, try again
+    setNotice(null);
     if (isOpt) setSelected(pick);
     stopAudio();
     setRevealed(true);
@@ -384,7 +390,16 @@ function Exercises(_ref9) {
     setRevealed(true);
     advance(false);
   };
-  var next = function () { proceed(exs, results); };
+  var next = function () { setNotice(null); proceed(exs, results); };
+  // "I was right" (typed answers only): the miss counts as right for the score and the SRS, its
+  // re-ask is dropped, and the quiz log counts the override.
+  var overrule = function () {
+    playSfx('correct');
+    setResults(results.map(function (r, i) { return i === cur ? true : r; }));
+    setExs(exs.filter(function (e) { return e.requeueOf !== cur; }).map(function (e, i) {
+      return i === cur ? Object.assign({}, e, { overridden: true }) : e;
+    }));
+  };
   keyRef.current = function (e) {
     if (trapTab(e)) return;
     if (e.key === 'Escape') { if (leaving) setLeaving(false); else setLeaving(true); return; }
@@ -406,7 +421,7 @@ function Exercises(_ref9) {
   var partsEl = function partsEl(parts) {
     return parts.map(function (p, i) {
       if (ex.type === 'gap' && p.t === GAP_BLANK) {
-        return h("span", { key: i, className: "qz-blank" + (revealed && selected === -1 ? ' ok' : tone) }, chosen === null ? " " : ex.options[chosen]);
+        return h("span", { key: i, className: "qz-blank" + (revealed && selected === -1 ? ' ok' : tone) }, chosen !== null && ex.optionParts ? partsEl(ex.optionParts[chosen]) : chosen === null ?" " : ex.options[chosen]);
       }
       if (ex.type === 'order' && /＿/.test(p.t)) {
         return h("span", { key: i, className: "qz-slots" }, p.t.trim().split(' ').map(function (slot, k) {
@@ -563,11 +578,12 @@ function Exercises(_ref9) {
         key: "in", ref: inputRef, className: "qz-input" + tone, type: "text", value: answer, 'aria-label': ex.prompt, lang: "ja",
         placeholder: ex.placeholder || 'Type your answer...', disabled: revealed, autoFocus: true,
         autoComplete: "off", autoCapitalize: "off", spellCheck: false,
-        onChange: function (e) { setAnswer(ex.kana ? romajiToKana(e.target.value) : e.target.value); },
+        onChange: function (e) { setNotice(null); setAnswer(ex.kana ? romajiToKana(e.target.value) : e.target.value); },
         // Enter while an IME is composing confirms the kana, not the answer
         onKeyDown: function (e) { if (e.key === 'Enter' && !(e.nativeEvent && e.nativeEvent.isComposing)) { e.stopPropagation(); check(); } }
       }),
-      ex.hint && h("p", { key: "hint", className: "qz-hint" }, ex.hint)];
+      ex.hint && h("p", { key: "hint", className: "qz-hint" }, ex.hint),
+      notice && !revealed && h("div", { key: "other", className: "qz-warn qz-other", role: "status" }, notice)];
   }
 
   // The dock: Skip + Check while asking; feedback + Continue once checked
@@ -580,11 +596,15 @@ function Exercises(_ref9) {
       h("span", { className: "qz-sp" }, isOpt && h("span", { className: "qz-keys" }, h("kbd", null, "1–" + ex.options.length), " choose ", h("kbd", null, "Enter"), " check")),
       h("button", { className: "qz-btn qz-check", disabled: !ready, onClick: check }, t('check_btn', lv))));
   } else {
+    // a missed typed answer lists every accepted answer, so the learner sees the range
+    var accepted = isType && !okNow ? acceptedAnswers(ex) : [];
+    var ansText = accepted.length > 1 ? accepted.join(' · ') : exAnswer(ex);
     dock = h("div", { className: "qz-dock " + (okNow ? 'right' : 'wrong') }, h("div", { className: "qz-in" },
       h("div", { className: "qz-fb", role: "status", 'aria-live': "polite" },
-        h("b", null, icon(okNow ? 'check' : 'x'), okNow ? "Correct" : "Not quite"),
-        !okNow && h("div", { className: "ans" }, "Answer: ", h("span", { lang: QZ_JA.test(exAnswer(ex)) ? "ja" : "en" }, exAnswer(ex))),
+        h("b", null, icon(okNow ? 'check' : 'x'), okNow ? (ex.overridden ? "Counted as right" : "Correct") : "Not quite"),
+        !okNow && h("div", { className: "ans" }, accepted.length > 1 ? "Accepted answers: " : "Answer: ", h("span", { lang: QZ_JA.test(ansText) ? "ja" : "en" }, ansText)),
         ex.explain && h("p", null, ex.explain)),
+      isType && !okNow && answer.trim() !== '' && h("button", { className: "qz-gb qz-override", onClick: overrule, title: "Count this answer as right (a typo or a fair synonym)" }, "I was right"),
       say && h("button", { className: "qz-gb", 'aria-label': "Hear it", onClick: function () { speak(say); } }, icon('speaker')),
       h("button", { className: "qz-btn qz-next " + (okNow ? 'ok' : 'bad'), onClick: next }, "Continue")));
   }
