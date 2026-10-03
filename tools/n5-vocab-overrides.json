@@ -576,7 +576,7 @@
   "勉強|べんきょう": {"gloss":["study","to study"],"accept":["studying"],"usage":"～する","tags":["school"],"pos":"verb-suru","notes":"The Tanos list gives the reading as べんきょうする; する is the verb, not part of the reading."},
   "便利|べんり": {"gloss":["convenient","handy"],"accept":["useful"],"tags":["describing"],"pos":"adj-na"},
   "帽子|ぼうし": {"gloss":["hat","cap"],"tags":["clothing"]},
-  "ボールペン|ボールペン": {"gloss":["ballpoint pen"],"accept":["pen","biro"],"tags":["school"]},
+  "ボールペン|ボールペン": {"gloss":["ballpoint pen"],"accept":["ballpoint","ball pen","pen","biro"],"tags":["school"]},
   "ほか|ほか": {"gloss":["other","else","besides"],"accept":["another","except","other than","somewhere else"],"tags":["function-words"],"notes":"Also written 外 / 他."},
   "ポケット|ポケット": {"gloss":["pocket"],"tags":["clothing"]},
   "欲しい|ほしい": {"gloss":["wanted","to want (something)"],"accept":["to desire","desired","to wish for"],"tags":["describing"]},
