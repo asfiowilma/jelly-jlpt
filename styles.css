@@ -869,8 +869,7 @@ body.quiz-open .toast-stack{bottom:calc(100px + env(safe-area-inset-bottom))}
 
 /* Achievements screen + stamps (components/stamp.js). Ink is per stamp, never the palette:
    two precomputed inks (--ink-d / --ink-l) and the theme picks one. */
-.stamp{--ink:var(--ink-d);--stamp-gold:oklch(0.82 0.13 85);color:var(--ink);display:block;width:100%;height:auto;overflow:visible}
-:root[data-theme="light"] .stamp{--ink:var(--ink-l);--stamp-gold:oklch(0.62 0.13 75)}
+.stamp{--stamp-gold:oklch(0.82 0.13 85);color:var(--ink);display:block;width:100%;height:auto;overflow:visible}
 .stamp.earned{filter:drop-shadow(0 1px 2px rgb(0 0 0 / .35))}
 .stamp.locked{color:var(--muted)}
 .stamp-wrap{display:block;width:84px;margin:0 auto 6px}

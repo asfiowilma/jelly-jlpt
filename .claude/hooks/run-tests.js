@@ -319,13 +319,20 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     a.equal(Object.keys(STAMP_ICONS).length, ACHIEVEMENTS.length);
   });
 
-  test("stamp ink: category hue fixed, tier steps L/C, level steps hue, light lowers L only", function (a) {
-    var c = stampInkParts("quiz", "common", "n5", false), r = stampInkParts("quiz", "rare", "n5", false), l = stampInkParts("quiz", "common", "n5", true);
-    a.ok(r.l < c.l && r.c > c.c, "higher tier: darker, more chroma");
-    a.equal(l.l, +(c.l - 0.14).toFixed(3)); a.equal(l.c, c.c); a.equal(l.h, c.h);
-    a.equal(stampInkParts("quiz", "common", "n4", false).h, (c.h + 62) % 360);
-    a.notEqual(stampInkParts("quiz", "common", null).h, stampInkParts("mock", "common", null).h, "categories differ");
-    a.equal(stampInk("quiz", "common", "n5", false), "oklch(" + c.l + " " + c.c + " " + c.h + ")");
+  test("stamp ink: per-id variation around the category hue, never theme or rarity", function (a) {
+    var ids = ACHIEVEMENTS.filter(function (d) { return d.category === "mock"; }).map(function (d) { return d.id; });
+    var parts = ids.map(function (id) { return stampInkParts(id, "mock", "n5"); });
+    a.deepEqual(stampInkParts(ids[0], "mock", "n5"), parts[0], "same id, same ink");
+    parts.forEach(function (p) {
+      var dh = Math.abs(((p.h - STAMP_CATS.mock.hue + 540) % 360) - 180);
+      a.ok(dh <= STAMP_SPREAD + 0.1, "hue within the spread of the base");
+      a.ok(p.l >= 0.56 && p.l <= 0.73 && p.c >= 0.09 && p.c <= 0.19, "lightness and chroma in range");
+    });
+    a.ok(new Set(parts.map(function (p) { return p.h; })).size > 1, "ids differ in hue");
+    a.ok(stampInkParts(ids[0], "mock", "n4").h !== parts[0].h, "level steps the hue");
+    a.equal(stampInk(ids[0], "mock", "n5"), "oklch(" + parts[0].l.toFixed(3) + " " + parts[0].c.toFixed(3) + " " + parts[0].h.toFixed(1) + ")");
+    a.ok(!/ink-l|ink-d/.test(stampSVG({ id: ids[0], category: "mock", rarity: "common", earned: true, name: "x" })), "no theme variants");
+    a.equal(stampSVG({ id: ids[0], category: "mock", rarity: "common", earned: true, name: "x" }, "a"), stampSVG({ id: ids[0], category: "mock", rarity: "common", earned: true, name: "x" }, "a"));
   });
 
   test("stampSVG: rarity ladder, locked, hidden", function (a) {
@@ -417,7 +424,7 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
         a.ok(text().indexOf("install-card") >= 0, "card shows in every state: " + state);
         a.strictEqual(text().indexOf(L("install_none")) >= 0, state === "none", "browser-menu hint only when no prompt: " + state);
         a.strictEqual(text().indexOf(L("install_file")) >= 0, state === "hidden", "hosted-version hint only on file://: " + state);
-        a.strictEqual(text().indexOf(L("install_btn")) >= 0, state === "prompt", "install button only when installable: " + state);
+        a.strictEqual(text().indexOf(L("install_btn")) >= 0, state === "prompt" || state === "none" || state === "hidden", "install button (disabled unless installable): " + state);
         a.strictEqual(text().indexOf(L("install_ios")) >= 0, state === "ios", "iOS hint only on iOS: " + state);
         if (state === "installed") a.ok(text().indexOf(L("install_done_title")) >= 0, "installed state");
       });
