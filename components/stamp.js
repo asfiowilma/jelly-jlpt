@@ -70,7 +70,7 @@ function stampSVG(s, uid) {
     });
   }
   body += '<g transform="translate(32 27) scale(' + 36 / 5 + ')" fill="' + fg + '" opacity="' + (earned ? 1 : 0.18) + '"><path d="' + d + '"/></g>' +
-    '<text x="22" y="77" font-size="7.5" font-weight="800" fill="' + fg + '">' + STAMP_PRICE[t] + '</text>' +
+    '<text x="22" y="77" font-size="9.5" font-weight="800" fill="' + fg + '">' + STAMP_PRICE[t] + '</text>' +
     '<text x="78" y="77" font-size="7" font-weight="700" text-anchor="end" fill="' + fg + '" font-family="Yu Mincho, Hiragino Mincho ProN, serif">' + cat.jp + '</text>';
   if (t >= 3) body += '<text x="50" y="25.5" font-size="6" text-anchor="middle" letter-spacing="1" fill="' + (legend ? foil : fg) + '">★★★</text>';
   if (legend) body += '<rect x="13" y="13" width="74" height="74" rx="2" fill="none" stroke="' + foil + '" stroke-width="2.4"/>';
