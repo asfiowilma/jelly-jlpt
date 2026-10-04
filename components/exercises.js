@@ -198,7 +198,7 @@ function Exercises(_ref9) {
     setResults(nextRes);
     setLeaving(false);
     setDone(true);
-    Store.logQuiz(unit.id, s.right, s.total, nextExs.filter(function (e) { return e.overridden; }).length);
+    Store.logQuiz(unit.id, s.right, s.total, nextExs.filter(function (e) { return e.overridden; }).length, s.passed);
     playSfx('complete');
     if (s.passed) setSupportAsk(supportAskNow(unit));
     onResult && onResult(s);

@@ -189,6 +189,11 @@ QUnit.module('achievements', function () {
     var split = [logDoc('2026-02-01', { quizzes: HIRA.slice(0, 9).map(function (u, i) { return pass(u, at(2026, 2, 1, 8, i)); }) }),
       logDoc('2026-02-02', { quizzes: [pass(HIRA[9], at(2026, 2, 2, 8))] })];
     assert.ok(earned(split).indexOf('hiragana-blitz') < 0);
+    // a kana quiz passes on chars 90% / words 80%, which can be under 90% overall (16/18)
+    var lowish = logDoc('2026-02-01', { quizzes: HIRA.map(function (u, i) { return quiz(u.id, 16, 18, at(2026, 2, 1, 8, i)); }) });
+    assert.ok(earned([lowish]).indexOf('hiragana-blitz') >= 0, 'legacy entry, 89% overall');
+    var flagged = logDoc('2026-02-01', { quizzes: HIRA.map(function (u, i) { return Object.assign(quiz(u.id, 2, 10, at(2026, 2, 1, 8, i)), { passed: true }); }) });
+    assert.ok(earned([flagged]).indexOf('hiragana-blitz') >= 0, 'logged passed flag wins');
     var failing = logDoc('2026-02-01', { quizzes: HIRA.map(function (u, i) { return quiz(u.id, 2, 10, at(2026, 2, 1, 8, i)); }) });
     assert.ok(earned([failing]).indexOf('hiragana-blitz') < 0);
   });

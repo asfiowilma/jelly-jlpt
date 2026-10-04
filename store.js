@@ -323,10 +323,11 @@ function createStore(opts) {
       return appendLog(function (l) { if (l.lessons.indexOf(unitId) === -1) l.lessons.push(unitId); });
     },
     // overrides: typed answers the learner counted as right ("I was right", ticket 41); kept only when > 0
-    logQuiz: function (unitId, right, total, overrides) {
+    logQuiz: function (unitId, right, total, overrides, passed) {
       return appendLog(function (l) {
         var q = { unit: unitId, right: right, total: total, at: Date.now() };
         if (overrides > 0) q.overrides = overrides;
+        if (passed !== undefined) q.passed = passed; // kana quizzes pass on a chars/words split, not right/total
         l.quizzes.push(q);
       });
     },

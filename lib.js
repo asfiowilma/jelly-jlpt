@@ -2694,7 +2694,8 @@ function levelAchievements(L, units, catalog) {
       var byDate = {}, best = false;
       hira.forEach(function (u) {
         (s.byUnit[u.id] || []).forEach(function (q) {
-          if (!quizPassed(q.right, q.total, u.kind)) return;
+          // legacy entries have no `passed`: kana quizzes pass at >= 80% overall (words mark), so use that
+          if (!(q.passed !== undefined ? q.passed : quizPassed(q.right, q.total, isKanaQuiz(u) ? 'lesson' : u.kind))) return;
           var d = localDate(new Date(q.at)), e = byDate[d] || (byDate[d] = {});
           if (!e[u.id] || q.at < e[u.id]) e[u.id] = q.at;
         });
