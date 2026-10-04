@@ -585,7 +585,9 @@ function Exercises(_ref9) {
       wide = true;
       main = h("div", { className: "qz-split" },
         h("div", null, promptEl, h("div", { className: "qz-passage", lang: "ja" }, rubyEls(ex.passage))),
-        h("div", null, optionsList()));
+        h("div", null,
+          ex.parts && h("div", { className: "qz-sent qz-readq", lang: "ja" }, partsEl(ex.parts)),
+          optionsList()));
     } else main = [promptEl, sound || questionEl(), optionsList()];
   } else {
     // Typing exercise (typing, conjugation)

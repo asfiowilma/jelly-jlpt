@@ -570,6 +570,9 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
         render();
         var exs = state[0], ex = exs[state[1]];
         seen[ex.type] = true;
+        // every question that has a question line must show it (the reading split layout once dropped it)
+        if ((ex.parts || ex.question) && !/listen/.test(ex.type) && !ex.passageParts && !find(cls(/qz-(sent|big|readq)/)).length)
+          errors.push(unit.id + " " + ex.type + ": question line not rendered");
         var right = ex.requeue || (qi + plan.length) % 3 !== 0; // every 3rd first attempt wrong
         plan.push([ex, right]);
         // Choices are picked, then checked (Check button), then the learner presses Continue.
