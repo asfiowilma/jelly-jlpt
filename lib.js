@@ -2427,6 +2427,70 @@ function newCardCap(pace, upcomingUnits) {
   }, 0);
 }
 
+// ── Day plan (Today tab): read → quiz → review as a checklist, from pace + progress ──
+// realCompletions(unitDocs): stages passed for real (not skipped by placement), oldest first → [{ id, at }].
+function realCompletions(unitDocs) {
+  return unitDocs.filter(function (d) {
+    return d._id.indexOf('unit:') === 0 && d.done && !d.skipped && d.completedAt;
+  }).map(function (d) { return { id: d._id.slice(5), at: d.completedAt }; })
+    .sort(function (a, b) { return a.at - b.at; });
+}
+var BACKLOG_OVERDUE = 20; // cards overdue before today's midnight: review goes first
+// dayPlan(o) → { steps, done, rest, backlog, levelEnd, nextStageIn, stageTarget, stagesDone, due, overdue }
+//   o.pace, o.now (ms), o.cards (srs map), o.doneToday: units passed today (oldest first),
+//   o.lastStageDate: 'YYYY-MM-DD' of the last real pass (or null), o.ahead: units not done, in order,
+//   o.reviewedToday: reviews logged today.
+// steps: { kind: 'stage'|'review'|'complete', status: 'done'|'now'|'next'|'rest', unit?, due? }. Exactly one
+// step is 'now' until the day is done. 'rest' (casual off day) is informational, not part of the plan.
+// Review goes last (a passed stage's cards are due at once) unless a backlog sends it first.
+function dayPlan(o) {
+  var now = o.now, cards = o.cards || {}, doneToday = o.doneToday || [], ahead = o.ahead || [];
+  var tgt = todayTarget(o.pace), today = localDate(new Date(now));
+  var due = Object.keys(cards).filter(function (id) { return cards[id].due <= now; }).length;
+  var overdue = dueForecast(cards, now, 1).overdue;
+  var since = o.lastStageDate ? dateToDayIndex(today) - dateToDayIndex(o.lastStageDate) : Infinity;
+  var rest = tgt.everyDays > 1 && !doneToday.length && since < tgt.everyDays;
+  var stageTarget = rest ? 0 : tgt.units;
+  var left = Math.min(Math.max(0, stageTarget - doneToday.length), ahead.length);
+  var backlog = overdue >= BACKLOG_OVERDUE && due > 0;
+  var stages = doneToday.map(function (u) { return { kind: 'stage', done: true, unit: u }; })
+    .concat(ahead.slice(0, left).map(function (u) { return { kind: 'stage', done: false, unit: u }; }));
+  var reviewDone = due === 0 && (o.reviewedToday > 0 || doneToday.length > 0 || stageTarget === 0 || !ahead.length);
+  var review = { kind: 'review', done: reviewDone, due: due, overdue: overdue };
+  var steps = backlog ? [review].concat(stages) : stages.concat([review]);
+  var seenNow = false;
+  steps.forEach(function (s) {
+    s.status = s.done ? 'done' : seenNow ? 'next' : (seenNow = true, 'now');
+    delete s.done;
+  });
+  if (rest && ahead.length) steps.push({ kind: 'stage', status: 'rest', unit: ahead[0] });
+  var allDone = !seenNow;
+  steps.push({ kind: 'complete', status: allDone ? 'done' : 'next' });
+  return {
+    steps: steps, done: allDone, rest: rest, backlog: backlog, levelEnd: !ahead.length,
+    nextStageIn: rest ? tgt.everyDays - since : 0, stageTarget: stageTarget,
+    stagesDone: doneToday.length, due: due, overdue: overdue
+  };
+}
+
+// dayPlural(n, one, other): '{n}' in the chosen form becomes the count.
+function dayPlural(n, one, other) { return (n === 1 ? one : other).replace('{n}', n); }
+// quizHandoff: what the passed-quiz screen offers next, from the day plan after the pass.
+// → { line, primary: { label, onClick }, secondary: { label, onClick } | null }
+function quizHandoff(plan, unit, units, handlers) {
+  var rev = plan.steps.filter(function (s) { return s.kind === 'review'; })[0];
+  var nextStage = plan.steps.filter(function (s) { return s.kind === 'stage' && s.status === 'now'; })[0];
+  var target = Math.max(plan.stageTarget, 1);
+  var line = "Today: " + Math.min(plan.stagesDone, target) + ' / ' + target + ' stages';
+  var next = unit.index < units.length - 1 ? { label: t('nav_next_stage', unit.level), onClick: handlers.nextStage } : null;
+  var reviewLabel = dayPlural(rev.due, 'Review {n} card', 'Review {n} cards');
+  if (nextStage) return { line: line + '. ' + (plan.stageTarget - plan.stagesDone > 1 ? (plan.stageTarget - plan.stagesDone) + ' more' : 'One more') + ', then review.',
+    primary: { label: 'Start stage ' + (nextStage.unit.index + 1), onClick: function () { handlers.openStage(nextStage.unit.index); } },
+    secondary: rev.due ? { label: reviewLabel, onClick: handlers.review } : null };
+  if (rev.due) return { line: line + " ✓. Review left, then you're done.", primary: { label: reviewLabel.replace(/$/, ' now'), onClick: handlers.review }, secondary: next };
+  return { line: line + " ✓. That's today done.", primary: { label: 'Back to Today', onClick: handlers.today }, secondary: next };
+}
+
 // docsToSnapshot: docs → App's synchronous state shape.
 function docsToSnapshot(docs) {
   var snap = { completed: [], srsCards: {}, currentUnit: null, pace: 1, examDate: null, furiganaPref: null, uiLang: 'en', kanjiView: 'rows', pendingCards: [], mocks: [], unlocked: {}, skipped: [] };
