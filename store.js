@@ -25,7 +25,9 @@ function memoryBackend() {
     // put → { rev, doc }: doc = what ended up stored when it isn't the one passed
     // (another writer won the merge), else null.
     put: function (doc) { data[doc._id] = Object.assign({}, doc); return Promise.resolve({ rev: '1', doc: null }); },
-    remove: function (id) { delete data[id]; return Promise.resolve(); }
+    remove: function (id) { delete data[id]; return Promise.resolve(); },
+    // wipe → Promise<backend>: the emptied backend (same object here)
+    wipe: function () { data = {}; return Promise.resolve(this); }
   };
 }
 
@@ -94,6 +96,8 @@ function pouchBackend(db) {
       feed.on('error', function (e) { console.error('Store changes feed stopped:', e); });
       return feed;
     },
+    // Destroy the database (no tombstones: a later sync can never replicate deletes) and open a new one.
+    wipe: function () { return db.destroy().then(openDefaultBackend); },
     db: db
   };
 }
@@ -122,6 +126,7 @@ function createStore(opts) {
   var revs = {};   // _id → latest known _rev
   var backend = memoryBackend();
   var queue = Promise.resolve();
+  var feed = null; // live changes feed of the current backend
 
   var deviceId = ls.get('jlpt_device_id');
   if (!deviceId) {
@@ -256,7 +261,7 @@ function createStore(opts) {
       }).then(function (r) {
         backend = r.b;
         store.backend = r.b.name;
-        if (backend.watch) backend.watch(applyIncoming, applyDelete);
+        if (backend.watch) feed = backend.watch(applyIncoming, applyDelete);
         r.docs.forEach(function (d) {
           revs[d._id] = d._rev;
           var c = Object.assign({}, d);
@@ -363,6 +368,26 @@ function createStore(opts) {
       return queue;
     },
     flush: function () { return queue; },
+    // Clear all data (Settings → Danger zone). Sync is stopped first so nothing replicates; the mirror
+    // is emptied at once, which also makes every queued put a no-op (putNow skips superseded docs).
+    // Resolves once the backend is empty; the device id stays (identity, not progress).
+    wipe: function () {
+      store.disconnect();
+      mirror = {};
+      revs = {};
+      return new Promise(function (resolve, reject) {
+        enqueue(function () {
+          if (feed && feed.cancel) feed.cancel();
+          feed = null;
+          return backend.wipe().then(function (b) {
+            backend = b;
+            store.backend = b.name;
+            if (b.watch) feed = b.watch(applyIncoming, applyDelete);
+            resolve();
+          }, function (e) { reject(e); throw e; });
+        });
+      });
+    },
 
     // Remote sync. syncInfo = { connected (replication running or retrying),
     // status: 'off'|'connecting'|'syncing'|'synced'|'offline'|'error', error:

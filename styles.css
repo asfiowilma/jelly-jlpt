@@ -931,3 +931,21 @@ body.quiz-open{overflow:hidden}
 .toast-update{cursor:default;border-color:var(--accent-fg)}
 .toast-update .toast-body{flex:1}
 @media(max-width:639px){.update-stack{top:8px;bottom:auto}}
+
+/* Settings danger zone + clear-all-data dialog (ticket 43) */
+.danger-zone{border-color:var(--bad)}
+.danger-zone h3{color:var(--bad)}
+.data-btn.danger-btn{border-color:var(--bad);color:var(--bad);background:transparent}
+.data-btn.danger-btn:hover:not(:disabled){background:var(--bad);color:var(--on-color)}
+.data-btn.danger-btn.solid{background:var(--bad);color:var(--on-color)}
+.data-btn.danger-btn:disabled{opacity:0.45;cursor:not-allowed}
+.data-btn:focus-visible,.sync-input:focus-visible{outline:2px solid var(--accent-fg);outline-offset:2px}
+.reset-scrim{position:fixed;inset:0;z-index:120;background:rgb(0 0 0 / .55);display:grid;place-items:center;padding:16px}
+.reset-dlg{background:var(--surface);color:var(--text);border:1px solid var(--bad);border-radius:14px;padding:20px;max-width:420px;width:100%;max-height:90vh;overflow:auto;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px}
+.reset-dlg h2{font-size:1.1rem;color:var(--bad)}
+.reset-dlg p{font-size:0.88rem;color:var(--muted)}
+.reset-dlg .reset-sync{color:var(--text)}
+.reset-label{font-size:0.88rem}
+.reset-row{display:flex;gap:8px;justify-content:flex-end}
+.reset-dlg .sync-input{flex:none;max-width:none;width:100%}
+.reset-dlg>.data-btn{align-self:flex-start}

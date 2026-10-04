@@ -136,6 +136,20 @@ function achSeenIds() {
 function achievementBadge() { return unseenUnlocks(achievementUnlocks(), achSeenIds()).length; }
 function markAchievementsSeen() { safeSave(ACH_SEEN_KEY, JSON.stringify(Object.keys(achievementUnlocks()))); }
 
+// Clear all data (ticket 43). Order matters: stop the achievement timer and sync (so no deletion replicates
+// and nothing evaluates a half-cleared store), wipe the Store, then drop the device-only keys. The device id
+// and the service worker + caches stay.
+function resetAllData() {
+  if (_achTimer) { clearTimeout(_achTimer); _achTimer = null; }
+  _achMode = 'retro';
+  disconnectSync(true);
+  var keys = DEVICE_PREF_KEYS.concat([ACH_SEEN_KEY, WELCOME_SEEN_KEY, PERSIST_KEY]);
+  return Store.wipe().then(function () {
+    if (_achTimer) { clearTimeout(_achTimer); _achTimer = null; }
+    keys.forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
+  });
+}
+
 var NAV_TABS = [
   { view: 'unit', label: 'view_today', icon: 'today' },
   { view: 'units', label: 'view_units', icon: 'units' },
@@ -422,6 +436,30 @@ function App() {
     return function () { window.removeEventListener('open-achievements', open); };
   }, []);
   React.useEffect(function () { if (view === 'achievements') markAchievementsSeen(); }, [view]);
+  // After resetAllData: App state back to a first launch (in place, no reload: a reload would add nothing,
+  // and in the in-memory fallback it would be the same).
+  function onReset() {
+    return resetAllData().then(function () {
+      var s = Store.snapshot();
+      setCompleted(new Set(s.completed));
+      setSrsCards(s.srsCards);
+      setFuriganaPref(s.furiganaPref);
+      setUiLang(s.uiLang);
+      setKanjiViewState(s.kanjiView);
+      setPace(s.pace);
+      setExamDate(s.examDate);
+      setPendingCards(s.pendingCards);
+      setUnitIdx(nextUnit(UNITS, new Set(s.completed)));
+      setThemePrefs(normalizeThemePrefs(null, null));
+      setSpeechRate(0.85);
+      setSfxOn(true);
+      setToastBatch(null);
+      setPersist(null);
+      setPrevView('unit');
+      setView('unit');
+      setFlow({ screen: 'welcome' });
+    });
+  }
   function handleExport() {
     var data = exportProgress(Store.docs(), function (k) {
       try { return localStorage.getItem(k); } catch (e) { return null; }
@@ -541,6 +579,7 @@ function App() {
     setFuriganaMode: setFuriganaMode,
     onExport: handleExport,
     onImport: handleImport,
+    onReset: onReset,
     persist: persist,
     sync: Store.syncInfo,
     savedCreds: loadSyncCreds(),

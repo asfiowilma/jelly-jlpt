@@ -355,6 +355,18 @@ var UI_STRINGS = {
   set_placement_done: { en: 'You have completed every teaching stage, so there is nothing left to skip.', ja: 'すべての学習ステージを完了済みです。', since: 'N1' },
   set_welcome:       { en: 'Show the welcome again', ja: 'ようこそ画面をもう一度見る', since: 'N1' },
   set_welcome_hint:  { en: 'The first-launch screen with pace, exam date and the start options.', ja: 'ペース、試験日、開始方法を選ぶ最初の画面です。', since: 'N1' },
+  // Danger zone (ticket 43). JA lines are placeholders awaiting a native review.
+  set_danger:        { en: 'Danger zone', ja: '危険な操作', since: 'N1' },
+  reset_hint:        { en: 'Delete all progress and settings on this device and start over.', ja: 'この端末の学習記録と設定をすべて削除して、最初からやり直します。', since: 'N1' },
+  reset_btn:         { en: 'Clear all data', ja: 'すべてのデータを消去', since: 'N1' },
+  reset_title:       { en: 'Clear all data?', ja: 'すべてのデータを消去しますか？', since: 'N1' },
+  reset_body:        { en: 'This permanently deletes your finished stages, review cards, activity history, mock results, achievements and settings on this device. It cannot be undone.', ja: 'この端末の完了ステージ、復習カード、学習履歴、模試の結果、実績、設定を完全に削除します。元に戻せません。', since: 'N1' },
+  reset_sync:        { en: 'Sync will be turned off and the saved login forgotten. Your copy on the server is not touched.', ja: '同期を停止し、保存したログインを削除します。サーバー上のデータは変更されません。', since: 'N1' },
+  reset_backup:      { en: 'Download a backup first', ja: '先にバックアップをダウンロード', since: 'N1' },
+  reset_type:        { en: 'Type {word} to confirm', ja: '確認のため {word} と入力してください', since: 'N1' },
+  reset_cancel:      { en: 'Cancel', ja: 'キャンセル', since: 'N1' },
+  reset_go:          { en: 'Delete everything', ja: 'すべて削除する', since: 'N1' },
+  reset_failed:      { en: 'Could not clear the data. Close other tabs of this app and try again.', ja: 'データを消去できませんでした。このアプリの他のタブを閉じてからもう一度お試しください。', since: 'N1' },
   // PWA (ticket 42). JA lines are placeholders awaiting a native review.
   install_title:     { en: 'Install Jelly JLPT', ja: 'Jelly JLPTをインストール', since: 'N1' },
   install_lead:      { en: 'Works fully offline. No account. Your progress stays on your device.', ja: '完全オフラインで使えます。アカウント不要。学習データは端末の中だけに残ります。', since: 'N1' },

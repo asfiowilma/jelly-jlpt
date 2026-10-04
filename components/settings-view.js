@@ -133,7 +133,59 @@ function SettingsView(props) {
           React.createElement("a", { href: c.url, target: "_blank", rel: "noopener noreferrer" }, c.name),
           ': ' + L(c.key) + ' (',
           React.createElement("a", { href: c.licenseUrl, target: "_blank", rel: "noopener noreferrer" }, c.license), ')');
-      }))));
+      }))),
+    React.createElement(ResetZone, { L: L, onExport: props.onExport, onReset: props.onReset, synced: !!(props.sync && props.sync.connected) }));
+}
+
+// Settings → Danger zone (ticket 43): one button, a confirm dialog that needs the word typed.
+var RESET_WORD = 'RESET';
+function resetWordOk(text) { return String(text || '').trim().toUpperCase() === RESET_WORD; }
+function ResetZone(props) {
+  var L = props.L, ce = React.createElement;
+  var _o = React.useState(false), open = _o[0], setOpen = _o[1];
+  return ce("section", { className: "settings-section danger-zone", 'aria-labelledby': "set-danger" },
+    ce("h3", { id: "set-danger" }, L("set_danger")),
+    ce("div", { className: "setting-row" },
+      ce("span", { className: "setting-hint" }, L("reset_hint")),
+      ce("button", { id: "set-reset", className: "data-btn danger-btn", type: "button", onClick: function () { setOpen(true); } }, L("reset_btn"))),
+    open && ce(ResetDialog, { L: L, synced: props.synced, onExport: props.onExport, onReset: props.onReset, onClose: function () { setOpen(false); } }));
+}
+function ResetDialog(props) {
+  var L = props.L, ce = React.createElement;
+  var _t = React.useState(''), word = _t[0], setWord = _t[1];
+  var _b = React.useState(false), busy = _b[0], setBusy = _b[1];
+  var _e = React.useState(false), failed = _e[0], setFailed = _e[1];
+  var ref = React.useRef(null), cancelRef = React.useRef(null);
+  var ready = resetWordOk(word) && !busy;
+  React.useEffect(function () { if (cancelRef.current && cancelRef.current.focus) cancelRef.current.focus(); }, []); // Cancel is the default focus
+  // Escape closes; Tab wraps inside the dialog (same idea as the quiz layer's trapTab)
+  var onKey = function (e) {
+    if (e.key === 'Escape') { if (!busy) props.onClose(); return; }
+    if (e.key !== 'Tab' || !ref.current) return;
+    var f = [].slice.call(ref.current.querySelectorAll('button,input')).filter(function (el) { return !el.disabled; });
+    var a = document.activeElement;
+    if (e.shiftKey && (a === f[0] || !ref.current.contains(a))) { e.preventDefault(); f[f.length - 1].focus(); }
+    else if (!e.shiftKey && (a === f[f.length - 1] || !ref.current.contains(a))) { e.preventDefault(); f[0].focus(); }
+  };
+  var go = function () {
+    if (!ready) return;
+    setBusy(true);
+    setFailed(false);
+    Promise.resolve(props.onReset()).then(props.onClose, function () { setBusy(false); setFailed(true); });
+  };
+  return ce("div", { className: "reset-scrim", onMouseDown: function (e) { if (e.target === e.currentTarget && !busy) props.onClose(); } },
+    ce("div", { className: "reset-dlg", ref: ref, role: "dialog", 'aria-modal': "true", 'aria-labelledby': "reset-title", 'aria-describedby': "reset-body", onKeyDown: onKey },
+      ce("h2", { id: "reset-title" }, L("reset_title")),
+      ce("p", { id: "reset-body" }, L("reset_body")),
+      props.synced && ce("p", { className: "reset-sync" }, L("reset_sync")),
+      ce("button", { id: "reset-backup", className: "data-btn", type: "button", onClick: props.onExport }, L("reset_backup")),
+      ce("label", { htmlFor: "reset-word", className: "reset-label" }, L("reset_type").replace("{word}", RESET_WORD)),
+      ce("input", { id: "reset-word", className: "sync-input", type: "text", value: word, autoComplete: "off", spellCheck: false, autoCapitalize: "characters",
+        onChange: function (e) { setWord(e.target.value); }, onKeyDown: function (e) { if (e.key === 'Enter') go(); } }),
+      failed && ce("p", { className: "sync-form-err", role: "alert" }, L("reset_failed")),
+      ce("div", { className: "reset-row" },
+        ce("button", { id: "reset-cancel", className: "data-btn", type: "button", ref: cancelRef, onClick: props.onClose }, L("reset_cancel")),
+        ce("button", { id: "reset-go", className: "data-btn danger-btn solid", type: "button", disabled: !ready, onClick: go }, L("reset_go")))));
 }
 
 // Third-party content shipped with the app (map Q4: credits live in Settings).

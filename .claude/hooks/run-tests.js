@@ -442,6 +442,70 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     } catch (e) { a.ok(false, e.message); }
   });
 
+  // Clear all data (ticket 43): ResetZone / ResetDialog render, and resetAllData end to end on the global Store.
+  test("React render: ResetZone and ResetDialog; the delete button stays disabled until RESET is typed", function (a) {
+    var L = function (k) { return t(k, "N5"); };
+    var orig = { useState: React.useState, createElement: React.createElement };
+    var els, slots = [], k;
+    function draw(fn) {
+      els = []; k = 0;
+      React.useState = function (init) { var i = k++; if (!(i in slots)) slots[i] = typeof init === "function" ? init() : init; return [slots[i], function (v) { slots[i] = v; }]; };
+      React.createElement = function (type, props) { var el = { type: type, props: props || {}, children: [].slice.call(arguments, 2) }; els.push(el); return el; };
+      fn();
+    }
+    function byId(id) { return els.filter(function (e) { return e.props.id === id; })[0]; }
+    function byClass(c) { return els.some(function (e) { return e.props.className === c; }); }
+    var zone = function (synced) { return function () { ResetZone({ L: L, onExport: noop, onReset: noop, synced: synced }); }; };
+    var dialog = function (synced) { return function () { ResetDialog({ L: L, synced: synced, onExport: noop, onReset: noop, onClose: noop }); }; };
+    try {
+      draw(zone(false));
+      a.ok(byId("set-danger") && byId("set-reset"), "section + button");
+      a.ok(String(byId("set-reset").props.className).indexOf("danger-btn") >= 0, "danger style");
+      a.ok(!byId("reset-go"), "no dialog until the button is pressed");
+      slots[0] = true; draw(zone(true));
+      a.ok(els.some(function (e) { return e.type === ResetDialog; }), "pressing the button opens the dialog");
+      slots = []; draw(dialog(true));
+      var dlg = els.filter(function (e) { return e.props.role === "dialog"; })[0];
+      a.strictEqual(dlg.props["aria-modal"], "true");
+      a.ok(dlg.props["aria-labelledby"] && dlg.props["aria-describedby"], "labelled + described");
+      a.strictEqual(byId("reset-go").props.disabled, true, "disabled at start");
+      a.ok(byClass("reset-sync"), "sync note shown when connected");
+      a.ok(byId("reset-cancel") && byId("reset-backup"), "cancel + backup present");
+      slots[0] = "RESE"; draw(dialog(false));
+      a.strictEqual(byId("reset-go").props.disabled, true, "still disabled on a partial word");
+      a.ok(!byClass("reset-sync"), "no sync note when not connected");
+      slots[0] = "reset"; draw(dialog(false));
+      a.strictEqual(byId("reset-go").props.disabled, false, "enabled once typed");
+    } catch (e) { a.ok(false, e.stack); }
+    finally { React.useState = orig.useState; React.createElement = orig.createElement; }
+  });
+
+  testAsync("resetAllData: sync off first, store + device keys wiped, device id kept, welcome shows again", function (a) {
+    var ls = {};
+    var origLs = global.localStorage;
+    global.localStorage = { getItem: function (k) { return k in ls ? ls[k] : null; }, setItem: function (k, v) { ls[k] = String(v); }, removeItem: function (k) { delete ls[k]; } };
+    var order = [], origDisc = Store.disconnect, origWipe = Store.wipe;
+    var done = function () { global.localStorage = origLs; Store.disconnect = origDisc; Store.wipe = origWipe; };
+    return Store.init().then(function () {
+      Store.putUnit("n5.u001", true); Store.putCards({ x: { id: "x", interval: 1, ease: 2.5, due: 1, reps: 0 } }); Store.logLesson("n5.u001");
+      ["jlpt_palette", "jlpt_theme", "jlpt_tts_rate", "jlpt_sfx_mute", "jlpt_ach_seen", "jlpt_welcome_seen", "jlpt_persist"].forEach(function (k) { ls[k] = "x"; });
+      ls.jlpt_device_id = "dev-1";
+      a.ok(!progressIsEmpty(Store.docs()), "has progress");
+      Store.disconnect = function () { order.push("disconnect"); return origDisc.apply(Store, arguments); };
+      Store.wipe = function () { order.push("wipe"); return origWipe.apply(Store, arguments); };
+      scheduleAchievements("live"); // a pending evaluation must not survive the reset
+      return resetAllData();
+    }).then(function () {
+      a.strictEqual(order[0], "disconnect", "sync stopped before the wipe");
+      a.ok(order.indexOf("wipe") > 0, "then wiped");
+      a.deepEqual(Object.keys(ls), ["jlpt_device_id"], "only the device id is left in localStorage");
+      a.strictEqual(Store.docs().length, 0, "store empty");
+      a.ok(progressIsEmpty(Store.docs()) && !welcomeSeen(), "welcome shows again");
+      a.strictEqual(_achTimer, null, "achievement timer cancelled");
+      done();
+    }, function (e) { done(); throw e; });
+  });
+
   test("playSfx: no-op without Audio (Node) and never throws", function (a) {
     a.equal(typeof playSfx, "function");
     playSfx("correct"); playSfx("nope");
