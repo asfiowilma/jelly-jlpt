@@ -39,10 +39,11 @@ function PacePanel(props) {
 
 // Overview = the Stages tab: course progress card (level ramp + Pace panel side
 // by side), the "Up next" card, then a level picker over the stage list (a few stages
-// from the first not done, "Show all" for the rest). Nothing is locked (Q22): every unit
+// around the first not done (a row of done ones before it), "Show all" for the rest). Nothing is locked (Q22): every unit
 // opens; the next suggested unit (first not done) is highlighted. Levels
 // without units yet collapse to "Coming soon" (Q24).
-var UP_AHEAD = 12; // stages listed from the first one not done, before "Show all" (divides evenly into 1-4 columns)
+var WINDOW = 12; // stages listed before "Show all" (divides evenly into 1-4 columns)
+var LOOK_BACK = 4; // of those, done stages kept above the first one not done, for context
 function Overview(props) {
   var units = props.units,
     completed = props.completed,
@@ -62,8 +63,8 @@ function Overview(props) {
   var allState = React.useState(false), all = allState[0], setAll = allState[1];
   var lvUnits = units.filter(function (u) { return u.level === level; });
   var firstOpen = lvUnits.findIndex(function (u) { return !completed.has(u.id); });
-  var start = firstOpen < 0 ? Math.max(0, lvUnits.length - UP_AHEAD) : firstOpen;
-  var windowEnd = Math.min(lvUnits.length, start + UP_AHEAD);
+  var start = firstOpen < 0 ? Math.max(0, lvUnits.length - WINDOW) : Math.max(0, firstOpen - LOOK_BACK);
+  var windowEnd = Math.min(lvUnits.length, start + WINDOW);
   var shown = all ? lvUnits : lvUnits.slice(start, windowEnd);
   var hidden = start;
   var head = function (label, right) {
