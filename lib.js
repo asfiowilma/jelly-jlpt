@@ -3066,3 +3066,24 @@ function pwaInstallState(env) {
   if (env.ios) return 'ios';
   return 'none';
 }
+
+// ── Donation jar soft prompt (components/donate.js) ──────────────────────────
+// Shown on the passed-quiz result screen at milestones only: the level's last unit ('level'), a
+// mock ('mock') or a review unit ('review'). At most once per SUPPORT_ASK_GAP_DAYS, never after
+// "Don't ask again". State is device-only, { dismissed, lastAskedAt }.
+var SUPPORT_ASK_GAP_DAYS = 14;
+// supportMilestone(unit, units): which milestone a passed unit is, or null.
+function supportMilestone(unit, units) {
+  var same = units.filter(function (u) { return u.level === unit.level; });
+  if (same.length && same[same.length - 1].id === unit.id) return 'level';
+  if (unit.kind === 'mock') return 'mock';
+  if (unit.kind === 'review') return 'review';
+  return null;
+}
+// shouldAskSupport(milestone, state, now): milestone = supportMilestone result.
+function shouldAskSupport(milestone, state, now) {
+  state = state || {};
+  if (!milestone || state.dismissed) return false;
+  if (!state.lastAskedAt) return true;
+  return now - state.lastAskedAt >= SUPPORT_ASK_GAP_DAYS * 86400000;
+}

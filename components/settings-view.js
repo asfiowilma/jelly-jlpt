@@ -134,6 +134,7 @@ function SettingsView(props) {
           ': ' + L(c.key) + ' (',
           React.createElement("a", { href: c.licenseUrl, target: "_blank", rel: "noopener noreferrer" }, c.license), ')');
       }))),
+    SupportSection({ L: L, section: section }),
     React.createElement(ResetZone, { L: L, onExport: props.onExport, onReset: props.onReset, synced: !!(props.sync && props.sync.connected) }));
 }
 

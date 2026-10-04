@@ -126,6 +126,7 @@ function Exercises(_ref9) {
   var timed = isTimedQuiz(unit);
   var _dl = React.useState(null), deadline = _dl[0], setDeadline = _dl[1];
   var _to = React.useState(false), timedOut = _to[0], setTimedOut = _to[1];
+  var _ask = React.useState(null), supportAsk = _ask[0], setSupportAsk = _ask[1]; // milestone to ask for (donation jar), set on a pass
   var _tick = React.useState(0), setTick = _tick[1];
   var _pick = React.useState(null), pick = _pick[0], setPick = _pick[1]; // chosen option, not checked yet
   var _leaving = React.useState(false), leaving = _leaving[0], setLeaving = _leaving[1]; // "Leave the quiz?"
@@ -199,6 +200,7 @@ function Exercises(_ref9) {
     setDone(true);
     Store.logQuiz(unit.id, s.right, s.total, nextExs.filter(function (e) { return e.overridden; }).length);
     playSfx('complete');
+    if (s.passed) setSupportAsk(supportAskNow(unit));
     onResult && onResult(s);
   };
 
@@ -369,6 +371,7 @@ function Exercises(_ref9) {
               " · ", Math.round(p[1].need * 100), "% needed · ", ok ? "passed" : "not yet");
           })),
           timedOut && h("p", { className: "qz-timeup" }, "Time is up: unanswered questions count as wrong."))),
+      supportAsk && h(SupportAsk, { key: "ask", kind: supportAsk, level: lv, onNo: function () { supportDismiss(); setSupportAsk(null); } }),
       missed.length > 0 && h("div", { key: "mh", className: "qz-miss-h" }, "Missed (", missed.length, ")"),
       missed.length > 0 && h("ul", { key: "ml", className: "qz-miss" }, shown.map(function (e, i) {
         var say = exSpeech(e);

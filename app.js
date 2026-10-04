@@ -143,7 +143,7 @@ function resetAllData() {
   if (_achTimer) { clearTimeout(_achTimer); _achTimer = null; }
   _achMode = 'retro';
   disconnectSync(true);
-  var keys = DEVICE_PREF_KEYS.concat([ACH_SEEN_KEY, WELCOME_SEEN_KEY, PERSIST_KEY]);
+  var keys = DEVICE_PREF_KEYS.concat([ACH_SEEN_KEY, WELCOME_SEEN_KEY, PERSIST_KEY, SUPPORT_KEY]);
   return Store.wipe().then(function () {
     if (_achTimer) { clearTimeout(_achTimer); _achTimer = null; }
     keys.forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
@@ -550,7 +550,7 @@ function App() {
     role: "img",
     'aria-label': "Current streak: " + streak + (streak === 1 ? " day" : " days"),
     title: "Current streak"
-  }, "🔥 ", streak), /*#__PURE__*/React.createElement("button", {
+  }, "🔥 ", streak), React.createElement(SupportPopover, { level: level }), /*#__PURE__*/React.createElement("button", {
     className: "icon-btn",
     'aria-label': Store.syncInfo.connected ? "Settings (sync: " + Store.syncInfo.status + ")" : "Settings",
     title: Store.syncInfo.connected ? "Settings · " + t('sync_' + Store.syncInfo.status, level) : "Settings",

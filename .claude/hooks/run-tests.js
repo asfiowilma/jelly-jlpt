@@ -73,6 +73,7 @@ var appFiles = [
   path.join("components", "placement-view.js"),
   path.join("components", "settings-view.js"),
   path.join("components", "toast-stack.js"),
+  path.join("components", "donate.js"),
   path.join("components", "pwa-ui.js"),
   "app.js",
 ];
@@ -383,6 +384,20 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       });
       a.ok(true);
     } catch (e) { a.ok(false, e.message); }
+  });
+
+  test("Donation jar: links are safe external tabs, logos ship, strings resolve without em dashes", function (a) {
+    DONATE_LINKS.forEach(function (l) {
+      a.ok(/^https:\/\//.test(l.url), l.id + " url is https");
+      a.ok(fs.existsSync(path.join(projectDir, l.logo)), l.id + " logo file exists: " + l.logo);
+    });
+    ["support_label", "support_pop_title", "support_pop_gloss", "support_pop_body", "support_card_title",
+      "support_card_body", "support_rails", "support_fine", "support_thanks"].forEach(function (k) {
+      var s = t(k, "N5");
+      a.notEqual(s, k, k + " has a string");
+      a.ok(s.indexOf("—") < 0, k + " has no em dash");
+    });
+    try { SupportPopover({ level: "N5" }); DonateButtons({}); a.ok(true); } catch (e) { a.ok(false, e.message); }
   });
 
   test("React render: InstallCard, UpdateToast, NetLine and the Data persist line render in every state", function (a) {
