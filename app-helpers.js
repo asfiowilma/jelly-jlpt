@@ -296,6 +296,7 @@ var UI_STRINGS = {
   wl_fact_4:         { en: 'Your progress stays in this browser. Back it up or sync in Settings.', ja: '進捗はこのブラウザにだけ保存されます。設定でバックアップや同期ができます。', since: 'N1' },
   wl_pace:           { en: 'Pace', ja: 'ペース', since: 'N1' },
   wl_pace_weeks:     { en: 'About {n} weeks to finish {lv} at this pace.', ja: 'このペースで{lv}を終えるまで約{n}週間。', since: 'N1' },
+  paste_choose:      { en: 'Choose file', ja: 'ファイルを選ぶ', since: 'N1' },
   wl_pace_week:      { en: 'About 1 week to finish {lv} at this pace.', ja: 'このペースで{lv}を終えるまで約1週間。', since: 'N1' },
   wl_exam:           { en: 'Exam date (optional)', ja: '試験日（任意）', since: 'N1' },
   wl_exam_bad:       { en: 'Enter a full date, like 2027-07-04.', ja: '2027-07-04のように日付を入力してください。', since: 'N1' },

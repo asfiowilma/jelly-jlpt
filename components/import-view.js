@@ -28,8 +28,8 @@ function ImportSettings(props) {
     levels.map(function (lv) {
       var items = quickSortItems(units, lv);
       var left = QuickSort.deck(items, cards, QuickSort.load(lv).notYet).length;
-      return ce("div", { key: lv, className: "setting-row" },
-        ce("span", null, lv, " · ", fill(L("qs_progress"), { done: items.length - left, total: items.length })),
+      return ce("div", { key: lv, className: "qs-level", style: { '--lv': LEVEL_COLORS[lv] } },
+        ce("div", null, ce("b", null, lv), ce("span", { className: "setting-sub" }, fill(L("qs_progress"), { done: items.length - left, total: items.length }))),
         ce("button", { className: "data-btn", type: "button", onClick: function () { setSorting(lv); } }, fill(L("qs_start"), { lv: lv })));
     }),
     ce("h4", { className: "import-h" }, L("paste_title")),
@@ -173,9 +173,11 @@ function PasteImport(props) {
     ce("textarea", { id: "paste-text", className: "paste-text", rows: 5, value: text, lang: "ja", placeholder: "食べる\tたべる\tto eat",
       onChange: function (e) { setText(e.target.value); setPreview(null); } }),
     ce("div", { className: "setting-row" },
-      ce("label", { className: "setting-hint" }, L("paste_file"), " ",
-        ce("input", { type: "file", accept: ".txt,.csv,.tsv,text/plain,text/csv,text/tab-separated-values", onChange: onFile })),
-      ce("button", { className: "data-btn", type: "button", disabled: !text.trim(), onClick: find }, L("paste_find"))),
+      ce("span", { className: "setting-hint" }, L("paste_file")),
+      ce("div", { className: "setting-btns" },
+        ce("label", { className: "data-btn file-btn" }, L("paste_choose"),
+          ce("input", { type: "file", className: "file-input", accept: ".txt,.csv,.tsv,text/plain,text/csv,text/tab-separated-values", onChange: onFile })),
+        ce("button", { className: "data-btn", type: "button", disabled: !text.trim(), onClick: find }, L("paste_find")))),
     result && ce("p", { className: "setting-hint", role: "status" }, result),
     preview && ce("div", { className: "paste-preview", role: "region", 'aria-label': fill(L("paste_found"), { n: preview.ids.length }) },
       !preview.ids.length && ce("p", { role: "status" }, L("paste_none")),
