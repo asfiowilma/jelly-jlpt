@@ -20,7 +20,7 @@
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--muted) 45%,transparent);border-radius:8px}
 ::-webkit-scrollbar-thumb:hover{background:var(--accent-fg)}
-:root{--radius:8px;--btn-again:var(--bad);--btn-hard:var(--warn);--btn-good:var(--ok);--btn-easy:var(--info);--level-n5:var(--n5);--level-n4:var(--n4);--level-n3:var(--n3);--level-n2:var(--n2);--level-n1:var(--n1);--shadow:0 2px 12px var(--shadow-c)}
+:root{--hdr:60px;--entry-grad:linear-gradient(135deg,color-mix(in srgb,var(--info) 15%,var(--surface)),color-mix(in srgb,var(--accent) 18%,var(--surface)));--radius:8px;--btn-again:var(--bad);--btn-hard:var(--warn);--btn-good:var(--ok);--btn-easy:var(--info);--level-n5:var(--n5);--level-n4:var(--n4);--level-n3:var(--n3);--level-n2:var(--n2);--level-n1:var(--n1);--shadow:0 2px 12px var(--shadow-c)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 .app{display:flex;flex-direction:column;min-height:100vh}
@@ -799,7 +799,7 @@ body.quiz-open{overflow:hidden}
 
 /* Quiz entry on the stage page: gradient card, the one filled button until the stage is passed (sketch: .scratch/quiz-entry-sketch) */
 .ql:focus{outline:none}
-.qz-entry{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;margin:18px 0 20px;padding:20px 22px;border:1px solid color-mix(in srgb,var(--accent) 38%,var(--border));border-radius:14px;background:linear-gradient(135deg,color-mix(in srgb,var(--info) 15%,var(--surface)),color-mix(in srgb,var(--accent) 18%,var(--surface)))}
+.qz-entry{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;margin:18px 0 20px;padding:20px 22px;border:1px solid color-mix(in srgb,var(--accent) 38%,var(--border));border-radius:14px;background:var(--entry-grad)}
 .qz-entry .txt{flex:1 1 260px;min-width:0}
 .up-next .txt{flex-basis:170px}
 .qz-entry .eyebrow{font-size:0.7rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent-fg);margin-bottom:2px}

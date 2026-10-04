@@ -497,7 +497,8 @@ var JELLY_PATHS = {};
 function jellyPath(mood) { return JELLY_PATHS[mood] || (JELLY_PATHS[mood] = jellyPathOf(JELLY_MOODS[mood])); }
 
 // One renderer for static moods and animated frames: S = mood vector, id = unique gradient/clip prefix.
-function jellyFrom(S, size, id, d, wobble) {
+function jellyFrom(S, size, id, d, wobble, crop) {
+  var top = crop ? Math.max(0, 492 - 2 * S.ry - 6) : 0, vh = 500 - top;
   var h = React.createElement, ry = S.ry, cy = 492 - ry, eyeCy = cy + S.ey;
   var sc = function (k, v) { var o = {}; o[k] = v; return { style: o }; };
   var stop = function (off, v, op) { return h('stop', Object.assign({ offset: off, stopOpacity: op }, sc('stopColor', 'var(' + v + ')'))); };
@@ -516,7 +517,7 @@ function jellyFrom(S, size, id, d, wobble) {
     eyes.push(h('text', Object.assign({ key: 'z1', x: 404, y: 180, fontSize: 64, fontWeight: 700, opacity: 0.85 * S.z, fontFamily: 'sans-serif' }, sc('fill', 'var(--jrim)')), 'z'));
     eyes.push(h('text', Object.assign({ key: 'z2', x: 440, y: 120, fontSize: 44, fontWeight: 700, opacity: 0.6 * S.z, fontFamily: 'sans-serif' }, sc('fill', 'var(--jrim)')), 'z'));
   }
-  return h('svg', { className: 'jelly' + (wobble ? ' jelly-wob' : ''), viewBox: '0 0 512 512', width: size, height: size, 'aria-hidden': 'true', focusable: 'false' },
+  return h('svg', { className: 'jelly' + (wobble ? ' jelly-wob' : ''), viewBox: crop ? '0 ' + top + ' 512 ' + vh : '0 0 512 512', width: size, height: crop ? Math.round(size * vh / 512) : size, 'aria-hidden': 'true', focusable: 'false' },
     h('defs', null,
       h('radialGradient', { id: id + 'b', cx: 0.5, cy: 0.4, r: 0.7 }, stop(0, '--jl'), stop(0.65, '--jm'), stop(1, '--jd')),
       h('radialGradient', { id: id + 'g', cx: 0.5, cy: 1.05, r: 0.7 }, stop(0, '--jg', 0.85), stop(1, '--jg', 0)),
@@ -529,9 +530,9 @@ function jellyFrom(S, size, id, d, wobble) {
       h('circle', { cx: 256 + S.rx * 0.5, cy: cy - ry * 0.7, r: 14, fill: '#fff', opacity: 0.7 })),
     eyes);
 }
-function jelly(mood, size, wobble) {
+function jelly(mood, size, wobble, crop) {
   mood = JELLY_MOODS[mood] ? mood : 'idle';
-  return jellyFrom(JELLY_MOODS[mood], size, 'jl-' + mood, jellyPath(mood), wobble);
+  return jellyFrom(JELLY_MOODS[mood], size, 'jl-' + mood, jellyPath(mood), wobble, crop);
 }
 
 // Excited jelly: loops idle -> squash -> spring up to cheer -> back to idle.

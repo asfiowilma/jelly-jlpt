@@ -90,7 +90,7 @@ function Overview(props) {
           doneToday: props.doneToday || 0, examDate: props.examDate }))),
     // Up next: gradient entry card (same look as the stage quiz entry), hidden once every stage is done
     completed.size < units.length && ce("section", { className: "qz-entry up-next", 'aria-label': "Up next" },
-      jelly('idle', 64, true),
+      jelly('idle', 64, true, true),
       ce("div", { className: "txt" },
         ce("div", { className: "eyebrow" }, "Up next · ", t('unit_label', next.level), " ", suggested + 1),
         ce("h3", null, next.title),
