@@ -180,7 +180,7 @@ function Exercises(_ref9) {
     if (!started || typeof document === 'undefined' || !document.querySelector) return undefined;
     var l = layerRef.current;
     if (l && l.focus && !(l.contains && l.contains(document.activeElement))) l.focus();
-    return function () { setTimeout(function () { var b = document.querySelector('#unit-quiz .quiz-start-btn'); if (b && b.focus) b.focus(); }, 0); };
+    return function () { setTimeout(function () { var b = document.querySelector('#unit-quiz .quiz-start-btn'); if (b && b.focus) b.focus({ preventScroll: true }); }, 0); };
   }, [started]);
   React.useEffect(function () {
     var d = leaving && typeof document !== 'undefined' && document.querySelector && document.querySelector('.qz-dlg button');

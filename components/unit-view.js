@@ -15,7 +15,7 @@ function UnitView(props) {
     setKanjiView = props.setKanjiView;
   var lv = unit.level;
   // a new stage opens at the top (Next stage from the quiz result leaves the page scrolled down)
-  React.useEffect(function () { window.scrollTo(0, 0); }, [unit.id]);
+  React.useEffect(function () { window.scrollTo({ top: 0, behavior: 'smooth' }); }, [unit.id]);
   var isDone = completed.has(unit.id), isSkipped = isDone && !!props.skipped && props.skipped.has(unit.id);
   var section = function (label) {
     var children = Array.prototype.slice.call(arguments, 1);
