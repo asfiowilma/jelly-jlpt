@@ -1,6 +1,6 @@
 "use strict";
 
-// Donation jar (おひねり): a heart in the navbar that opens a small popover, and a Settings section.
+// Donation jar (たすかる): a heart in the navbar that opens a small popover, and a Settings section.
 // Plain links to two tip pages, no gating, no tracking. Trakteer covers Indonesian rails (QRIS,
 // e-wallets), Ko-fi covers cards and PayPal. Logos are local files (CSP img-src 'self').
 var DONATE_LINKS = [
@@ -47,16 +47,23 @@ function SupportPopover(props) {
       ce('p', { className: 'dj-body' }, L('support_pop_body')),
       ce(DonateButtons, { onTip: function () { setThanked(true); } }),
       thanked && ce('p', { className: 'dj-thanks', role: 'status' }, L('support_thanks')),
-      ce('p', { className: 'dj-fine' }, L('support_rails') + ' ' + L('support_fine'))));
+      ce('p', { className: 'dj-fine' }, L('support_rails'))));
 }
 
-// SupportSection: the Settings → "おひねり (tip jar)" block. `section` is SettingsView's helper.
+// SupportSection: the Settings → "たすかる" tip jar block. `section` is SettingsView's helper.
 function SupportSection(props) {
   var ce = React.createElement, L = props.L;
-  return props.section('set-support', L('support_card_title'),
-    ce('p', { className: 'dj-body' }, L('support_card_body')),
+  // Gradient entry card, not a plain section: this is the one place we ask for support
+  return ce('section', { className: 'tip-card', 'aria-labelledby': 'set-support' },
+    ce('span', { className: 'tip-chip' }, L('support_chip')),
+    ce('div', { className: 'tip-top' },
+      ce('div', { className: 'txt' },
+        ce('h3', { id: 'set-support' }, L('support_card_title')),
+        ce('p', { className: 'tip-gloss' }, L('support_pop_gloss')),
+        ce('p', { className: 'tip-body' }, L('support_card_body'))),
+      jelly('happy', 104, true)),
     ce(DonateButtons, {}),
-    ce('p', { className: 'dj-fine' }, L('support_rails') + ' ' + L('support_fine')));
+    ce('p', { className: 'dj-fine' }, L('support_rails')));
 }
 
 // ── Soft prompt on the passed-quiz result screen ─────────────────────────────
