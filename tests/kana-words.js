@@ -35,7 +35,14 @@ QUnit.module('kana unit words (ticket 42)', function () {
     var ok = [['ちょっと', 'chotto'], ['ちょっと', 'tyotto'], ['ちょっと', 'CHOTTO '], ['マッチ', 'macchi'], ['マッチ', 'matti'],
       ['コーヒー', 'kōhī'], ['コーヒー', 'ko-hi-'], ['しょうゆ', 'shōyu'], ['しょうゆ', 'syouyu'], ['つまらない', 'tumaranai'],
       ['ふろ', 'huro'], ['きれい', 'kirei'], ['きれい', 'kirē'], ['テレビ', 'te re bi'], ['かばん', 'kabann']];
+    // traditional Hepburn m for ん before p / b / m
+    ok = ok.concat([['コンピューター', 'kompyuutaa'], ['コンピューター', 'konpyuutaa'], ['さんびゃく', 'sambyaku'], ['しんぶん', 'shimbun'],
+      ['しんぶん', 'shinbun'], ['あんまり', 'ammari'], ['てんぷら', 'tempura']]);
     ok.forEach(function (c) { assert.ok(romajiMatches(c[1], c[0]), c[0] + ' ← ' + c[1]); });
+    [['きんようび', 'kimyoubi'], ['ほんや', 'homya'], ['かばん', 'kabam'], ['しんぶん', 'shimbum']].forEach(function (c) {
+      assert.notOk(romajiMatches(c[1], c[0]), c[0] + ' ✗ ' + c[1] + ' (m only before p/b/m)');
+    });
+    assert.strictEqual(kanaToRomaji('しんぶん'), 'shinbun', 'displayed romaji unchanged');
     var bad = [['テレビ', 'terebe'], ['コーヒー', 'kohi'], ['コーヒー', 'koohi'], ['ちょっと', 'choto'], ['おばあさん', 'obasan'],
       ['かぎ', 'kaki'], ['テレビ', 'テレビ'], ['テレビ', ''], ['テレビ', null]];
     bad.forEach(function (c) { assert.notOk(romajiMatches(c[1], c[0]), c[0] + ' ✗ ' + c[1]); });

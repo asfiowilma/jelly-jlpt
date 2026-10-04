@@ -352,10 +352,13 @@ function kanaToRomaji(word, macron) {
   return out;
 }
 // romajiMatches(typed, word): typed romaji spells word exactly — any kana's accepted spelling
-// (shi / si), macrons (kōhī), case and spaces ignored. No typo tolerance: a wrong kana is wrong.
+// (shi / si; m for ん before p/b/m), macrons (kōhī), case and spaces ignored. No typo tolerance: a wrong kana is wrong.
 function romajiMatches(typed, word) {
   var esc = function (s) { return s.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&'); };
-  var re = new RegExp('^' + kanaChunks(word).map(function (a) { return '(?:' + a.map(esc).join('|') + ')'; }).join('') + '$');
+  var ch = kanaChunks(word).map(function (a, i, all) { // ん before p / b / m: traditional Hepburn m too (shimbun)
+    return a.indexOf("n'") >= 0 && all[i + 1] && /^[pbm]/.test(all[i + 1][0]) ? a.concat('m') : a;
+  });
+  var re = new RegExp('^' + ch.map(function (a) { return '(?:' + a.map(esc).join('|') + ')'; }).join('') + '$');
   var s = String(typed == null ? '' : typed).normalize('NFC').toLowerCase().replace(/[\s’]/g, function (c) { return c === '’' ? "'" : ''; });
   var dbl = { 'ā': 'aa', 'ī': 'ii', 'ū': 'uu', 'ē': 'ee', 'ō': 'oo', 'â': 'aa', 'î': 'ii', 'û': 'uu', 'ê': 'ee', 'ô': 'oo' };
   return [s.replace(/[āīūēōâîûêô]/g, function (c) { return dbl[c]; }), s.replace(/[āīūēōâîûêô]/g, function (c) { return c === 'ō' || c === 'ô' ? 'ou' : c === 'ē' || c === 'ê' ? 'ei' : dbl[c]; })]
