@@ -22,6 +22,10 @@ that defines top-level globals. React 18 and PouchDB 9 are vendored in `vendor/`
 ```
 index.html            CSP, <script src> list in load order, <div id="root">
 styles.css            all app CSS (palettes + light/dark themes)
+manifest.webmanifest  PWA manifest (relative paths, Kokuban dark colours); icons/icon-*.png from tools/build-icons.js
+sw.js                 GENERATED service worker (precache list + content-hash cache version): never edit by hand
+sw-register.js        registers sw.js (http/https only); emits `sw-update-ready`, exposes `__swApplyUpdate()`
+vercel.json           no-cache headers for sw.js + manifest (static deploy, no build)
 data/
   catalog.js          CATALOG { items, add } + PLAN = [] + CATALOG_ID_PREFIX
   n5/                 one file per item kind + plan.js
@@ -63,6 +67,14 @@ Adding a file means adding its `<script src>` by hand:
 | `data/<lvl>/*.js` | add tag | add tag | automatic (reads `data/` sorted) |
 | `components/*.js` | add tag | — | add to `appFiles` |
 | `tests/*.js` | — | add tag | automatic (reads `tests/` sorted) |
+
+**PWA rule: relative paths only (no leading `/`, no absolute URLs) so one tree serves GitHub Pages
+(subpath) and Vercel (root). After adding or changing ANY shipped file (script, css, data, icon,
+sfx, kanji-svg, index.html), rerun `node tools/build-sw.js` and commit `sw.js`.** `run-tests.js`
+regenerates in memory and fails if `sw.js` is stale, if a script `index.html` loads or a shipped js
+on disk is missing from the precache list, or if a listed file is missing. The pre-commit hook runs
+that suite, so a forgotten rerun blocks the commit. Any new top-level shipped file type needs
+adding to `listFiles` in `tools/build-sw.js`. Progress is per-origin: see README "Install and deploy".
 
 ### Catalog + plan
 
@@ -153,6 +165,8 @@ and the rule that prevents it.
 | Kana | hand-authored table in `data/n5/kana.js` |
 | Plan | `node tools/author-plan.js` → `data/n5/plan.js`, from the outline inside the script |
 | Coverage report | `node tools/coverage.js` (catalog vs ref list, taught vs not, verified counts) |
+| Service worker | `node tools/build-sw.js` → `sw.js` (rerun after any shipped-file change) |
+| PWA icons | `node tools/build-icons.js` → `icons/icon-{192,512,maskable-512}.png` from `icons/icon.svg` via headless Edge/Chrome (one-off) |
 
 Generated files (`vocab.js`, `kanji.js`, `plan.js`) say "do not edit by hand": change the
 overrides JSON or the plan outline and rerun the script. The research inputs and fetch caches

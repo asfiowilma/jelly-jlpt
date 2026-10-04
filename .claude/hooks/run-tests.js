@@ -997,6 +997,59 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
   });
 }());
 
+// ── PWA: sw.js precache list (tools/build-sw.js) ──────────────────────────────
+(function () {
+  var sw = require(path.join(projectDir, "tools", "build-sw.js"));
+  var built = sw.build(projectDir);
+  var html = fs.readFileSync(path.join(projectDir, "index.html"), "utf8");
+  function walkJs(dir) {
+    return fs.readdirSync(path.join(projectDir, dir), { withFileTypes: true }).reduce(function (acc, e) {
+      return acc.concat(e.isDirectory() ? walkJs(dir + "/" + e.name) : /\.js$/.test(e.name) ? [dir + "/" + e.name] : []);
+    }, []);
+  }
+
+  test("sw.js: precache list covers every script/stylesheet index.html loads and every shipped js on disk", function (a) {
+    var loaded = [];
+    html.replace(/<(?:script[^>]*\ssrc|link[^>]*\shref)="([^"]+)"/g, function (_, u) { loaded.push(u); });
+    a.deepEqual(loaded.filter(function (u) { return built.files.indexOf(u) < 0; }), [], "loaded by index.html but not precached");
+    var shipped = ["data", "components", "vendor"].reduce(function (acc, d) { return acc.concat(walkJs(d)); }, [])
+      .concat(["lib.js", "store.js", "app-helpers.js", "sfx.js", "app.js", "sw-register.js", "styles.css"]);
+    a.deepEqual(shipped.filter(function (u) { return built.files.indexOf(u) < 0; }), [], "on disk but not in the list (add a <script> tag to index.html)");
+    ["index.html", "manifest.webmanifest", "kanji-svg/strokes.js", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png"].forEach(function (u) {
+      a.ok(built.files.indexOf(u) >= 0, u + " precached");
+    });
+  });
+
+  test("sw.js: every precached file exists, all URLs are relative", function (a) {
+    a.deepEqual(built.files.filter(function (u) { return !fs.existsSync(path.join(projectDir, u)); }), [], "listed but missing on disk");
+    a.deepEqual(built.files.filter(function (u) { return /^([a-z]+:|\/|\.\.)/i.test(u); }), [], "absolute or parent-relative URLs");
+    var m = JSON.parse(fs.readFileSync(path.join(projectDir, "manifest.webmanifest"), "utf8"));
+    var urls = [m.start_url, m.scope].concat(m.icons.map(function (i) { return i.src; }));
+    a.deepEqual(urls.filter(function (u) { return /^([a-z]+:|\/)/i.test(u); }), [], "manifest urls relative");
+    m.icons.forEach(function (i) { a.ok(fs.existsSync(path.join(projectDir, i.src)), i.src + " exists"); });
+    a.ok(/rel="manifest" href="manifest\.webmanifest"/.test(html), "index.html links the manifest");
+  });
+
+  test("sw.js: committed file is up to date (run node tools/build-sw.js)", function (a) {
+    var onDisk = fs.readFileSync(path.join(projectDir, "sw.js"), "utf8").replace(/\r\n/g, "\n");
+    a.ok(onDisk === built.source, "sw.js differs from generator output: run node tools/build-sw.js");
+  });
+
+  test("sw.js: version changes when a precached file changes; passes node --check", function (a) {
+    var tmp = fs.mkdtempSync(path.join(require("os").tmpdir(), "jelly-sw-"));
+    ["manifest.webmanifest", "styles.css"].forEach(function (f) { fs.copyFileSync(path.join(projectDir, f), path.join(tmp, f)); });
+    fs.writeFileSync(path.join(tmp, "index.html"), '<link rel="stylesheet" href="styles.css">');
+    var before = sw.build(tmp).version;
+    fs.appendFileSync(path.join(tmp, "styles.css"), "\n/* x */");
+    a.notEqual(sw.build(tmp).version, before, "version bumps on content change");
+    fs.writeFileSync(path.join(tmp, "styles.css"), fs.readFileSync(path.join(projectDir, "styles.css")).toString().replace(/\r\n/g, "\n").replace(/\n/g, "\r\n"));
+    a.equal(sw.build(tmp).version, before, "CRLF checkout hashes the same");
+    require("child_process").execFileSync(process.execPath, ["--check", path.join(projectDir, "sw.js")]);
+    require("child_process").execFileSync(process.execPath, ["--check", path.join(projectDir, "sw-register.js")]);
+    a.ok(true, "node --check ok");
+  });
+}());
+
 // ── summary ───────────────────────────────────────────────────────────────────
 _asyncChain.then(function () {
   var total = _pass + _fail;

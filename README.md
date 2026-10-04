@@ -139,6 +139,25 @@ node .claude/hooks/run-tests.js
 
 Or open `tests.html` in a browser. See `CLAUDE.md` for how the code and content are organised.
 
+## Install and deploy (PWA)
+
+The app is a static folder: no build, no server code. It ships a web app manifest and a service worker (`sw.js`) that precaches every file on the first visit, so after one online load it works fully offline and can be installed to the home screen. The worker only registers on `http(s)`, not `file://`.
+
+Every path is relative, so the same files work at a host root and under a subpath.
+
+- **GitHub Pages** (served at `https://<user>.github.io/jelly-jlpt/`): publish the repo root from the Pages settings. Nothing else to configure.
+- **Vercel** (root of a domain or custom subdomain): import the repo, framework "Other", no build command, output directory `.`. `vercel.json` makes sure `sw.js` and the manifest are never cached by the CDN, so updates reach users.
+
+Progress is stored in the browser, per origin. The github.io and Vercel copies do not share progress, so pick one canonical host, tell learners to use it, and move progress between hosts with Settings -> export / import.
+
+After adding or changing any shipped file (script, style, data, icon, sound), regenerate the worker or offline users keep the old copy, and the test suite fails until you do:
+
+```bash
+node tools/build-sw.js
+```
+
+Icons are rendered once from `icons/icon.svg` with `node tools/build-icons.js` (needs Edge or Chrome installed).
+
 ## Credits and licenses
 
 | Source | Used for | License |
