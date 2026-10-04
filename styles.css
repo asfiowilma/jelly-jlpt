@@ -840,18 +840,31 @@ body.quiz-open{overflow:hidden}
 .rv-hub .pending-line .ex-retry-btn:hover{background:none;color:var(--text)}
 
 /* Achievement toasts (ticket 08): bottom-right on desktop, above the bottom tab bar on phones */
-.toast-stack{position:fixed;right:16px;bottom:16px;z-index:50;display:flex;flex-direction:column;gap:8px;max-width:min(340px,calc(100vw - 32px))}
-.toast{display:flex;align-items:center;gap:10px;text-align:left;font-family:inherit;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;cursor:pointer;box-shadow:var(--shadow);animation:toast-slam .28s cubic-bezier(.2,1.4,.4,1)}
-.toast-body{display:flex;flex-direction:column;min-width:0}
+.toast-stack{position:fixed;right:16px;bottom:16px;z-index:50;display:flex;flex-direction:column;gap:8px;max-width:min(400px,calc(100vw - 32px))}
+.toast{display:flex;align-items:center;gap:16px;min-width:min(300px,calc(100vw - 32px));text-align:left;font-family:inherit;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:8px 16px 8px 8px;cursor:pointer;box-shadow:var(--shadow);animation:toast-pop .42s cubic-bezier(.21,1.02,.73,1) calc(var(--i,0) * 70ms) both}
+.toast-body{display:flex;flex-direction:column;flex:1;min-width:0}
 .toast-kicker{font-size:.66rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
-.toast-sub{font-size:.75rem;color:var(--muted)}
-.toast-stamp{flex:none;width:40px;height:40px;display:grid;place-items:center;font-size:1.3rem;font-weight:700;border-radius:4px;background:var(--surface2);color:var(--accent-fg);border:1px dashed currentColor}
+.toast-sub{font-size:.75rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.toast-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.toast-summary,.toast-more,.toast-update{padding:8px 16px} /* no stamp on these, so no tight stamp-side padding */
+.toast-stamp{flex:none;width:64px}
+.toast-chip{flex:none;margin:-3px 0;font-size:.5rem;font-weight:700;line-height:1;text-transform:uppercase;letter-spacing:.05em;padding:2px 6px;border-radius:99px;color:var(--c);background:color-mix(in srgb,var(--c) 18%,var(--surface));border:1px solid var(--c)}
+.toast-chip-uncommon{--c:#5fb37c}.toast-chip-rare{--c:#5b9bd5}.toast-chip-epic{--c:#a77be0}.toast-chip-legendary{--c:#d9a441}
+.toast-stamp .stamp-wrap{width:64px;margin:0}
+/* light theme: the stock shadow is heavy on a small card */
+:root[data-theme="light"] .toast{box-shadow:0 1px 6px color-mix(in srgb,var(--text) 8%,transparent)}
 .toast-more{justify-content:center;color:var(--muted)}
-.toast-legendary{border:2px solid #d9a441;background:linear-gradient(110deg,var(--surface) 35%,color-mix(in srgb,#d9a441 30%,var(--surface)) 50%,var(--surface) 65%) 0 0/250% 100%;animation:toast-slam .28s cubic-bezier(.2,1.4,.4,1),toast-shimmer 2.4s linear infinite}
-@keyframes toast-slam{from{transform:scale(1.35);opacity:0}to{transform:none;opacity:1}}
+.toast-legendary{border:2px solid #d9a441;background:linear-gradient(110deg,var(--surface) 35%,color-mix(in srgb,#d9a441 30%,var(--surface)) 50%,var(--surface) 65%) 0 0/250% 100%;animation:toast-pop .42s cubic-bezier(.21,1.02,.73,1) calc(var(--i,0) * 70ms) both,toast-shimmer 2.4s linear infinite}
+/* popup in (react-hot-toast / sonner style: rise, slight overshoot) and a quicker fade-down out */
+@keyframes toast-pop{0%{opacity:0;transform:translateY(28px) scale(.9)}60%{opacity:1;transform:translateY(-3px) scale(1.02)}100%{opacity:1;transform:none}}
+.toast-stack .toast-out{animation:toast-out .3s cubic-bezier(.06,.71,.55,1) both;pointer-events:none}
+@keyframes toast-out{to{opacity:0;transform:translateY(18px) scale(.94)}}
 @keyframes toast-shimmer{to{background-position:-250% 0}}
 @media(max-width:639px){.toast-stack{right:8px;left:8px;max-width:none;bottom:calc(64px + env(safe-area-inset-bottom))}}
-@media(prefers-reduced-motion:reduce){.toast,.toast-legendary{animation:none}}
+/* over the quiz layer (.ql, z 100); same corner as elsewhere, lifted to clear the quiz dock */
+.toast-stack{z-index:110}
+body.quiz-open .toast-stack{bottom:calc(100px + env(safe-area-inset-bottom))}
+@media(prefers-reduced-motion:reduce){.toast,.toast-legendary,.toast-stack .toast-out{animation:none}.toast-stack .toast-out{opacity:0}}
 
 /* Achievements screen + stamps (components/stamp.js). Ink is per stamp, never the palette:
    two precomputed inks (--ink-d / --ink-l) and the theme picks one. */
