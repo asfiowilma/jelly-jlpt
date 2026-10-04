@@ -40,9 +40,26 @@ function AchievementsView(props) {
   var data = props.defs ? { defs: props.defs, unlocks: props.unlocks } : achievementsData();
   var g = groupAchievements(data.defs, data.unlocks);
   var h = React.createElement;
+  // Stamps earned since this screen was last opened (the navbar badge set): sheened once as they scroll into view.
+  // Read on mount, before App marks them seen, so a later visit shows them as usual.
+  var fresh = React.useState(function () {
+    var ids = props.fresh || (typeof achSeenIds === 'function' ? unseenUnlocks(data.unlocks, achSeenIds()) : []);
+    return ids.reduce(function (m, id) { m[id] = true; return m; }, {});
+  })[0];
+  var rootRef = React.useRef(null);
+  React.useEffect(function () {
+    var els = rootRef.current ? rootRef.current.querySelectorAll('.ach.fresh') : [];
+    var play = function (el) { el.classList.add('sheen'); };
+    if (typeof IntersectionObserver !== 'function') { [].forEach.call(els, play); return undefined; }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) { play(e.target); io.unobserve(e.target); } });
+    }, { threshold: 0.6 });
+    [].forEach.call(els, function (el) { io.observe(el); });
+    return function () { io.disconnect(); };
+  }, []);
   var of = ' ' + t('ach_of', level) + ' ';
   if (!g.total) return h('div', { className: 'panel ach-empty' }, t('ach_empty', level));
-  return h('div', { className: 'achievements' },
+  return h('div', { className: 'achievements', ref: rootRef },
     h('div', { className: 'panel' },
       h('h2', { className: 'ach-title' }, t('view_achievements', level) + ' · ' + g.earned + of + g.total),
       h('div', { className: 'ach-bar', role: 'progressbar', 'aria-valuemin': 0, 'aria-valuemax': g.total, 'aria-valuenow': g.earned },
@@ -54,7 +71,7 @@ function AchievementsView(props) {
           t('ach_cat_' + grp.category, level), h('span', { className: 'r' }, grp.earned + of + grp.total)),
         h('div', { className: 'ach-grid' }, grp.items.map(function (a) {
           var earned = !!a.earnedAt, secret = a.hidden && !earned;
-          return h('div', { key: a.id, className: 'ach' + (earned ? ' earned' : ' locked') },
+          return h('div', { key: a.id, className: 'ach' + (earned ? ' earned' : ' locked') + (earned && fresh[a.id] ? ' fresh' : '') },
             h(Stamp, { id: a.id, category: a.category, rarity: a.rarity, level: a.level, earned: earned, hidden: a.hidden, name: a.name }),
             h('b', { className: 'ach-name' }, secret ? '???' : a.name),
             h('span', { className: 'ach-desc' }, secret ? t('ach_secret', level) : (earned && a.revealed) || a.desc),
