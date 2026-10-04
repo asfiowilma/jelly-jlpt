@@ -5,137 +5,177 @@
 function SettingsView(props) {
   var themePrefs = props.themePrefs,
     setThemePrefs = props.setThemePrefs;
+  var ce = React.createElement;
   var L = function (key) { return t(key, props.level); };
   var section = function (id, title) {
     var children = Array.prototype.slice.call(arguments, 2);
-    return React.createElement.apply(React, ["section", { className: "settings-section", 'aria-labelledby': id },
-      React.createElement("h3", { id: id }, title)].concat(children));
+    return ce.apply(React, ["section", { className: "settings-section", 'aria-labelledby': id },
+      ce("h3", { id: id }, title)].concat(children));
   };
-  return React.createElement("div", { className: "settings" },
-    React.createElement("div", { className: "settings-head" },
-      React.createElement("button", { className: "back-btn", onClick: props.onBack }, L("settings_back")),
-      React.createElement("h2", null, L("settings_title"))),
-    React.createElement(InstallCardLive, { L: L }),
-    section("set-appearance", L("set_appearance"),
-      React.createElement("div", { className: "setting-row" },
-        React.createElement("label", { htmlFor: "set-palette" }, L("set_palette")),
-        React.createElement("select", {
-          id: "set-palette",
-          className: "theme-select",
-          value: themePrefs.palette,
-          onChange: function (e) { setThemePrefs({ palette: e.target.value, theme: themePrefs.theme }); }
-        }, THEME_PALETTES.map(function (p) {
-          return React.createElement("option", { key: p.id, value: p.id }, p.k + ' ' + p.name);
+  // A setting row: label + helper text on the left, the control on the right
+  var field = function (id, label, hint, control) {
+    return ce("div", { className: "setting-row" },
+      ce("div", { className: "setting-l" },
+        ce("label", { htmlFor: id }, label),
+        hint && ce("span", { className: "setting-sub", id: id + "-hint" }, hint)),
+      control);
+  };
+  var labeled = function (label, hint, control) {
+    return ce("div", { className: "setting-row" },
+      ce("div", { className: "setting-l" }, ce("span", { className: "setting-lbl" }, label), ce("span", { className: "setting-sub" }, hint)),
+      control);
+  };
+  var group = function (id, title, desc) {
+    var children = Array.prototype.slice.call(arguments, 3);
+    return ce.apply(React, ["div", { className: "set-grp set-grp-" + id, id: "set-grp-" + id },
+      ce("h2", null, title), desc && ce("p", null, desc)].concat(children));
+  };
+  var jump = function (id) {
+    return function () {
+      var el = document.getElementById(id);
+      var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (el) el.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' });
+    };
+  };
+  var GROUPS = ['study', 'look', 'data', 'about'];
+  var mode = PACE_MODES.filter(function (m) { return m.pace === props.pace; })[0] || PACE_MODES[1];
+  var dots = ['--bg', '--accent', '--jm'].map(function (v) {
+    return ce("i", { key: v, style: { background: 'var(' + v + ')' } });
+  });
+  var made = L("set_made_with").split("♥");
+  return ce("div", { className: "settings" },
+    ce("div", { className: "settings-head" },
+      ce("button", { className: "back-btn", onClick: props.onBack }, L("settings_back")),
+      ce("h2", null, L("settings_title"))),
+    ce(InstallCardLive, { L: L }),
+    ce("nav", { className: "set-chips", 'aria-label': L("settings_title") }, GROUPS.map(function (g) {
+      return ce("button", { key: g, type: "button", className: "set-chip", onClick: jump("set-grp-" + g) }, L("set_grp_" + g));
+    })),
+    group("study", L("set_grp_study"), L("set_grp_study_d"),
+      section("set-pace", L("set_pace_section"),
+        field("set-pace-mode", L("set_pace"), L(mode.key + "_h"),
+          ce("select", {
+            id: "set-pace-mode",
+            className: "theme-select",
+            'aria-describedby': "set-pace-mode-hint",
+            value: String(props.pace),
+            onChange: function (e) { props.setPace(parseFloat(e.target.value)); }
+          }, PACE_MODES.map(function (m) {
+            return ce("option", { key: m.pace, value: String(m.pace) }, L(m.key + "_n"));
+          }))),
+        props.pace >= 3 && ce("p", { className: "setting-hint setting-note", role: "note" }, L("pace_super_note")),
+        field("set-exam-date", L("set_exam_date"), L("set_exam_hint"),
+          ce("input", {
+            id: "set-exam-date",
+            type: "date",
+            className: "theme-select",
+            'aria-describedby': "set-exam-date-hint",
+            value: props.examDate || "",
+            onChange: function (e) { props.setExamDate(e.target.value || null); }
+          }))),
+      section("set-language", L("set_language"),
+        field("set-ui-lang", L("set_ui_lang"), L("set_lang_h_" + props.uiLang),
+          ce("select", {
+            id: "set-ui-lang",
+            className: "theme-select",
+            'aria-describedby': "set-ui-lang-hint",
+            value: props.uiLang,
+            onChange: function (e) { props.setUiLang(e.target.value); }
+          },
+            ce("option", { value: "auto" }, L("set_lang_auto")),
+            ce("option", { value: "en" }, "English"),
+            ce("option", { value: "ja" }, "日本語"))),
+        field("set-furigana", L("set_furigana"), L("set_furi_h_" + props.furiganaMode),
+          ce("select", {
+            id: "set-furigana",
+            className: "theme-select",
+            'aria-describedby': "set-furigana-hint",
+            value: props.furiganaMode,
+            onChange: function (e) { props.setFuriganaMode(e.target.value); }
+          },
+            ce("option", { value: "auto" }, L("set_furi_auto")),
+            ce("option", { value: "true" }, L("set_furi_always")),
+            ce("option", { value: "false" }, L("set_furi_never"))))),
+      section("set-start", L("set_start"),
+        labeled(L("set_placement_l"), L(props.placementOpen ? "set_placement_hint" : "set_placement_done"),
+          ce("button", { id: "set-placement", className: "data-btn", type: "button", disabled: !props.placementOpen, onClick: props.onPlacement }, L("set_placement"))),
+        labeled(L("set_welcome_l"), L("set_welcome_hint"),
+          ce("button", { id: "set-welcome", className: "data-btn", type: "button", onClick: props.onWelcome }, L("set_welcome")))),
+      section("set-known", L("set_known"),
+        ce(ImportSettings, { L: L, level: props.level, cards: props.cards, units: props.units }))),
+    group("look", L("set_grp_look"), L("set_grp_look_d"),
+      section("set-appearance", L("set_appearance"),
+        ce("div", { className: "setting-row" },
+          ce("label", { htmlFor: "set-palette" }, L("set_palette")),
+          ce("div", { className: "setting-ctl" },
+            ce("span", { className: "pal-dots", 'aria-hidden': "true" }, dots),
+            ce("select", {
+              id: "set-palette",
+              className: "theme-select",
+              value: themePrefs.palette,
+              onChange: function (e) { setThemePrefs({ palette: e.target.value, theme: themePrefs.theme }); }
+            }, THEME_PALETTES.map(function (p) {
+              return ce("option", { key: p.id, value: p.id }, p.k + ' ' + p.name);
+            })))),
+        ce("div", { className: "setting-row" },
+          ce("span", { id: "set-dark-label" }, L("set_dark")),
+          ce("button", {
+            className: "theme-toggle",
+            role: "switch",
+            'aria-checked': themePrefs.theme === 'dark',
+            'aria-labelledby': "set-dark-label",
+            onClick: function () { setThemePrefs({ palette: themePrefs.palette, theme: themePrefs.theme === 'dark' ? 'light' : 'dark' }); }
+          }, themePrefs.theme === 'dark' ? L("set_on") : L("set_off")))),
+      section("set-audio", L("set_audio"),
+        ce("div", { className: "setting-row" },
+          ce("label", { htmlFor: "set-tts-rate" }, L("set_speech_speed")),
+          ce("select", {
+            id: "set-tts-rate",
+            className: "tts-rate-select",
+            value: String(props.speechRate),
+            onChange: function (e) { props.setSpeechRate(parseFloat(e.target.value)); }
+          }, ["0.5", "0.75", "0.85", "1", "1.25"].map(function (v) {
+            return ce("option", { key: v, value: v }, (v === "1" ? "1.0" : v) + "×");
+          }))),
+        ce("div", { className: "setting-row" },
+          ce("span", { id: "set-sfx-label" }, L("set_sfx")),
+          ce("button", {
+            className: "theme-toggle",
+            role: "switch",
+            'aria-checked': props.sfxOn,
+            'aria-labelledby': "set-sfx-label",
+            onClick: function () { props.setSfxOn(!props.sfxOn); if (!props.sfxOn) playSfx('correct'); }
+          }, props.sfxOn ? L("set_on") : L("set_off"))),
+        // Listening in the app is the browser's own voice (ticket 16); the official samples are real audio
+        labeled(L("set_official_audio_l"), L("set_official_audio_hint"),
+          ce("a", { className: "data-btn", href: "https://www.jlpt.jp/e/samples/sampleindex.html", target: "_blank", rel: "noopener noreferrer" }, L("set_official_audio"))))),
+    group("data", L("set_grp_data"), L("set_grp_data_d"),
+      section("set-data", L("set_data"),
+        ce("div", { className: "setting-row" },
+          ce("span", { className: "setting-hint" }, L("set_data_hint")),
+          ce("div", { className: "setting-btns" },
+            ce("button", { className: "data-btn", onClick: props.onExport, 'aria-label': "Export progress to file" }, L("set_export")),
+            ce("button", { className: "data-btn", onClick: props.onImport, 'aria-label': "Import progress from file" }, L("set_import")))),
+        ce("p", { id: "persist-status", className: "setting-hint persist-" + (props.persist || "pending"), role: "status" },
+          L(props.persist === "granted" ? "persist_granted" : props.persist ? "persist_denied" : "persist_pending"))),
+      section("set-sync", L("set_sync"),
+        ce(NetLineLive, { L: L }),
+        ce(SyncSettings, { L: L, sync: props.sync, savedCreds: props.savedCreds,
+          onConnect: props.onConnect, onDisconnect: props.onDisconnect, onSyncNow: props.onSyncNow }))),
+    group("about", L("set_grp_about"), null,
+      SupportSection({ L: L }),
+      ce("details", { className: "settings-section credits-card" },
+        ce("summary", null,
+          ce("span", { className: "cr-t" }, L("set_credits")),
+          ce("span", { className: "cr-n" }, L("set_credits_n").replace("{n}", CREDITS.length))),
+        ce("ul", { className: "credits" }, CREDITS.map(function (c) {
+          return ce("li", { key: c.name },
+            ce("a", { href: c.url, target: "_blank", rel: "noopener noreferrer" }, c.name),
+            ': ' + L(c.key) + ' (',
+            ce("a", { href: c.licenseUrl, target: "_blank", rel: "noopener noreferrer" }, c.license), ')');
         }))),
-      React.createElement("div", { className: "setting-row" },
-        React.createElement("span", { id: "set-dark-label" }, L("set_dark")),
-        React.createElement("button", {
-          className: "theme-toggle",
-          role: "switch",
-          'aria-checked': themePrefs.theme === 'dark',
-          'aria-labelledby': "set-dark-label",
-          onClick: function () { setThemePrefs({ palette: themePrefs.palette, theme: themePrefs.theme === 'dark' ? 'light' : 'dark' }); }
-        }, themePrefs.theme === 'dark' ? L("set_on") : L("set_off")))),
-    section("set-pace", L("set_pace_section"),
-      React.createElement("div", { className: "setting-row" },
-        React.createElement("label", { htmlFor: "set-pace-mode" }, L("set_pace")),
-        React.createElement("select", {
-          id: "set-pace-mode",
-          className: "theme-select",
-          value: String(props.pace),
-          onChange: function (e) { props.setPace(parseFloat(e.target.value)); }
-        }, PACE_MODES.map(function (m) {
-          return React.createElement("option", { key: m.pace, value: String(m.pace) }, L(m.key));
-        }))),
-      props.pace >= 3 && React.createElement("p", { className: "setting-hint", role: "note" }, L("pace_super_note")),
-      React.createElement("div", { className: "setting-row" },
-        React.createElement("label", { htmlFor: "set-exam-date" }, L("set_exam_date")),
-        React.createElement("input", {
-          id: "set-exam-date",
-          type: "date",
-          className: "theme-select",
-          value: props.examDate || "",
-          onChange: function (e) { props.setExamDate(e.target.value || null); }
-        })),
-      React.createElement("p", { className: "setting-hint" }, L("set_exam_hint"))),
-    section("set-language", L("set_language"),
-      React.createElement("div", { className: "setting-row" },
-        React.createElement("label", { htmlFor: "set-ui-lang" }, L("set_ui_lang")),
-        React.createElement("select", {
-          id: "set-ui-lang",
-          className: "theme-select",
-          value: props.uiLang,
-          onChange: function (e) { props.setUiLang(e.target.value); }
-        },
-          React.createElement("option", { value: "auto" }, L("set_lang_auto")),
-          React.createElement("option", { value: "en" }, "English"),
-          React.createElement("option", { value: "ja" }, "日本語"))),
-      React.createElement("div", { className: "setting-row" },
-        React.createElement("label", { htmlFor: "set-furigana" }, L("set_furigana")),
-        React.createElement("select", {
-          id: "set-furigana",
-          className: "theme-select",
-          value: props.furiganaMode,
-          onChange: function (e) { props.setFuriganaMode(e.target.value); }
-        },
-          React.createElement("option", { value: "auto" }, L("set_furi_auto")),
-          React.createElement("option", { value: "true" }, L("set_furi_always")),
-          React.createElement("option", { value: "false" }, L("set_furi_never"))))),
-    section("set-audio", L("set_audio"),
-      React.createElement("div", { className: "setting-row" },
-        React.createElement("label", { htmlFor: "set-tts-rate" }, L("set_speech_speed")),
-        React.createElement("select", {
-          id: "set-tts-rate",
-          className: "tts-rate-select",
-          value: String(props.speechRate),
-          onChange: function (e) { props.setSpeechRate(parseFloat(e.target.value)); }
-        }, ["0.5", "0.75", "0.85", "1", "1.25"].map(function (v) {
-          return React.createElement("option", { key: v, value: v }, (v === "1" ? "1.0" : v) + "×");
-        }))),
-      React.createElement("div", { className: "setting-row" },
-        React.createElement("span", { id: "set-sfx-label" }, L("set_sfx")),
-        React.createElement("button", {
-          className: "theme-toggle",
-          role: "switch",
-          'aria-checked': props.sfxOn,
-          'aria-labelledby': "set-sfx-label",
-          onClick: function () { props.setSfxOn(!props.sfxOn); if (!props.sfxOn) playSfx('correct'); }
-        }, props.sfxOn ? L("set_on") : L("set_off"))),
-      // Listening in the app is the browser's own voice (ticket 16); the official samples are real audio
-      React.createElement("div", { className: "setting-row" },
-        React.createElement("span", { className: "setting-hint" }, L("set_official_audio_hint")),
-        React.createElement("a", { className: "data-btn", href: "https://www.jlpt.jp/e/samples/sampleindex.html", target: "_blank", rel: "noopener noreferrer" }, L("set_official_audio")))
-    ),
-    section("set-data", L("set_data"),
-      React.createElement("div", { className: "setting-row" },
-        React.createElement("span", { className: "setting-hint" }, L("set_data_hint")),
-        React.createElement("div", { className: "setting-btns" },
-          React.createElement("button", { className: "data-btn", onClick: props.onExport, 'aria-label': "Export progress to file" }, L("set_export")),
-          React.createElement("button", { className: "data-btn", onClick: props.onImport, 'aria-label': "Import progress from file" }, L("set_import")))),
-      React.createElement("p", { id: "persist-status", className: "setting-hint persist-" + (props.persist || "pending"), role: "status" },
-        L(props.persist === "granted" ? "persist_granted" : props.persist ? "persist_denied" : "persist_pending"))),
-    section("set-start", L("set_start"),
-      React.createElement("div", { className: "setting-row" },
-        React.createElement("span", { className: "setting-hint" }, L(props.placementOpen ? "set_placement_hint" : "set_placement_done")),
-        React.createElement("button", { id: "set-placement", className: "data-btn", type: "button", disabled: !props.placementOpen, onClick: props.onPlacement }, L("set_placement"))),
-      React.createElement("div", { className: "setting-row" },
-        React.createElement("span", { className: "setting-hint" }, L("set_welcome_hint")),
-        React.createElement("button", { id: "set-welcome", className: "data-btn", type: "button", onClick: props.onWelcome }, L("set_welcome")))),
-    section("set-known", L("set_known"),
-      React.createElement(ImportSettings, { L: L, level: props.level, cards: props.cards, units: props.units })),
-    section("set-sync", L("set_sync"),
-      React.createElement(NetLineLive, { L: L }),
-      React.createElement(SyncSettings, { L: L, sync: props.sync, savedCreds: props.savedCreds,
-        onConnect: props.onConnect, onDisconnect: props.onDisconnect, onSyncNow: props.onSyncNow })),
-    section("set-credits", L("set_credits"),
-      React.createElement("ul", { className: "credits" }, CREDITS.map(function (c) {
-        return React.createElement("li", { key: c.name },
-          React.createElement("a", { href: c.url, target: "_blank", rel: "noopener noreferrer" }, c.name),
-          ': ' + L(c.key) + ' (',
-          React.createElement("a", { href: c.licenseUrl, target: "_blank", rel: "noopener noreferrer" }, c.license), ')');
-      }))),
-    SupportSection({ L: L, section: section }),
-    React.createElement(ResetZone, { L: L, onExport: props.onExport, onReset: props.onReset, synced: !!(props.sync && props.sync.connected) }));
+      ce(ResetZone, { L: L, onExport: props.onExport, onReset: props.onReset, synced: !!(props.sync && props.sync.connected) })),
+    ce("footer", { className: "settings-foot" }, made[0], icon("heart"), made[1]));
 }
 
 // Settings → Danger zone (ticket 43): one button, a confirm dialog that needs the word typed.
@@ -191,6 +231,7 @@ function ResetDialog(props) {
 
 // Third-party content shipped with the app (map Q4: credits live in Settings).
 var CREDITS = [
+  { name: 'alanfwilliams/jlpt', url: 'https://github.com/alanfwilliams/jlpt', key: 'cred_upstream', license: 'MIT', licenseUrl: 'https://github.com/alanfwilliams/jlpt' }, // ponytail: upstream README states MIT, no LICENSE file to deep-link
   { name: 'KanjiVG', url: 'https://kanjivg.tagaini.net/', key: 'cred_kanjivg', license: 'CC BY-SA 3.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/' },
   { name: 'Tanos', url: 'https://www.tanos.co.uk/jlpt/', key: 'cred_tanos', license: 'CC BY', licenseUrl: 'https://www.tanos.co.uk/jlpt/' }, // ponytail: site states CC BY without a version
   { name: 'Tatoeba', url: 'https://tatoeba.org/', key: 'cred_tatoeba', license: 'CC BY 2.0 FR', licenseUrl: 'https://creativecommons.org/licenses/by/2.0/fr/' },
@@ -214,17 +255,17 @@ function SyncSettings(props) {
   var _g = React.useState(false), forget = _g[0], setForget = _g[1];
   var errText = function (key, detail) { return L(key) + (key === 'sync_err_other' && detail ? ' ' + detail : ''); };
   var hint = React.createElement("p", { className: "setting-hint" }, L("set_sync_hint"));
-  var status = React.createElement("p", { className: "sync-status", role: "status" },
+  var status = React.createElement("p", { className: "sync-status sync-corner", role: "status" },
     React.createElement("span", { className: "sync-dot sync-" + sync.status, 'aria-hidden': "true" }),
     L("sync_" + sync.status),
-    sync.connected && sync.error ? ". " + errText(sync.error, sync.detail) : null,
     sync.summary ? " · " + L("sync_merged").replace('{units}', sync.summary.units).replace('{cards}', sync.summary.cards) : null);
   var check = function (checked, onChange, label, describedBy) {
     return React.createElement("label", { className: "sync-check" },
       React.createElement("input", { type: "checkbox", checked: checked, onChange: onChange, 'aria-describedby': describedBy }), label);
   };
   if (sync.connected) {
-    return React.createElement(React.Fragment, null, hint, status,
+    return React.createElement(React.Fragment, null, status, hint,
+      sync.error ? React.createElement("p", { className: "sync-form-err", role: "alert" }, errText(sync.error, sync.detail)) : null,
       React.createElement("p", { className: "setting-hint sync-who" }, L("set_sync_as") + ' ' + saved.username + ' · ' + saved.url),
       React.createElement("div", { className: "setting-row" },
         check(forget, function (e) { setForget(e.target.checked); }, L("set_sync_forget")),
@@ -254,7 +295,7 @@ function SyncSettings(props) {
         onChange: function (e) { var v = e.target.value; setForm(function (f) { var n = Object.assign({}, f); n[key] = v; return n; }); }
       }));
   };
-  return React.createElement("form", { className: "sync-form", onSubmit: submit, noValidate: true }, hint,
+  return React.createElement("form", { className: "sync-form", onSubmit: submit, noValidate: true }, status, hint,
     input("url", "set_sync_url", "url", "url"),
     input("username", "set_sync_user", "text", "username"),
     input("password", "set_sync_pass", "password", "current-password"),
@@ -263,5 +304,5 @@ function SyncSettings(props) {
         L("set_sync_remember"), "sync-remember-hint"),
       React.createElement("button", { className: "data-btn", type: "submit", disabled: busy }, busy ? L("sync_connecting") : L("set_sync_connect"))),
     React.createElement("p", { id: "sync-remember-hint", className: "setting-hint" }, L("set_sync_remember_hint")),
-    formErr ? React.createElement("p", { id: "sync-form-err", className: "sync-form-err", role: "alert" }, errText(formErr.error, formErr.detail)) : status);
+    formErr ? React.createElement("p", { id: "sync-form-err", className: "sync-form-err", role: "alert" }, errText(formErr.error, formErr.detail)) : null);
 }

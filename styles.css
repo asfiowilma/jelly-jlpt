@@ -89,7 +89,7 @@ a.data-btn{display:inline-flex;align-items:center;text-decoration:none}
 .settings-head h2{font-size:1.3rem}
 .back-btn{min-height:44px;padding:0 14px;border:1px solid var(--border);background:transparent;color:var(--text);border-radius:8px;cursor:pointer;font-family:inherit;font-size:0.85rem}
 .back-btn:hover{background:var(--surface2)}
-.settings-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;margin-bottom:14px}
+.settings-section{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;margin-bottom:14px}
 .settings-section h3{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:6px}
 .setting-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:6px 0;font-size:0.92rem}
 .setting-hint{font-size:0.85rem;color:var(--muted)}
@@ -107,7 +107,20 @@ a.data-btn{display:inline-flex;align-items:center;text-decoration:none}
 .credits li{padding:8px 0;border-top:1px solid var(--border);font-size:0.9rem;color:var(--muted);line-height:1.4}
 .credits li:first-child{border-top:0}
 .credits a{color:var(--accent-fg);text-underline-offset:2px}
-/* Settings → already known (ticket 37) */
+/* Settings page layout: install hero, jump chips, 4 groups, tip card, collapsible credits, footer */
+.set-chips{position:sticky;top:var(--hdr);z-index:4;background:var(--bg);padding:12px 0 8px;display:flex;gap:6px;overflow-x:auto}
+.set-chip{white-space:nowrap;min-height:44px;padding:0 14px;border:1px solid var(--border);border-radius:99px;background:transparent;color:var(--text);font:inherit;font-size:0.88rem;cursor:pointer}
+.set-chip:hover{border-color:var(--accent-fg)}
+.set-grp{margin-top:22px;scroll-margin-top:calc(var(--hdr) + 76px)}
+.set-grp>h2{font-size:1.05rem}
+.set-grp>p{font-size:0.82rem;color:var(--muted);margin-bottom:10px}
+.set-grp-about>h2{margin-bottom:16px}
+.setting-l{flex:1 1 220px;min-width:0}
+.setting-l label{font-weight:500}
+.setting-sub{display:block;font-size:0.8rem;color:var(--muted)}
+.setting-ctl{display:flex;align-items:center;gap:10px}
+.pal-dots{display:inline-flex;gap:4px}
+.pal-dots i{width:16px;height:16px;border-radius:50%;border:1px solid var(--border)}
 .tip-card{margin-bottom:14px;padding:22px;border:1px solid color-mix(in srgb,var(--accent) 38%,var(--border));border-radius:14px;background:var(--entry-grad)}
 .tip-top{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
 .tip-top .txt{flex:1 1 260px;min-width:0}
@@ -117,6 +130,18 @@ a.data-btn{display:inline-flex;align-items:center;text-decoration:none}
 .tip-body{font-size:0.95rem;white-space:pre-line}
 .tip-card .dj-btns{margin-top:18px;gap:10px}
 .tip-card .dj-btn{flex:1 1 180px;min-height:52px;font-size:0.95rem;font-weight:700}
+.credits-card{padding:0}
+.credits-card>summary{list-style:none;cursor:pointer;min-height:52px;padding:10px 20px;display:flex;align-items:center;gap:10px}
+.credits-card>summary::-webkit-details-marker{display:none}
+.credits-card>summary::after{content:"›";color:var(--muted);transition:transform 0.15s}
+.credits-card[open]>summary::after{transform:rotate(90deg)}
+.credits-card .cr-t{font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted)}
+.credits-card .cr-n{margin-left:auto;font-size:0.82rem;color:var(--muted)}
+.credits-card>summary:focus-visible{outline:2px solid var(--accent-fg);outline-offset:-2px;border-radius:12px}
+.credits-card>.credits{padding:0 20px 14px}
+.settings-foot{margin-top:30px;display:flex;gap:6px;align-items:center;justify-content:center;font-size:0.85rem;color:var(--muted)}
+.settings-foot svg{width:18px;height:18px;fill:var(--jm);stroke:var(--jd);stroke-width:1.5;stroke-linejoin:round;transition:fill 0.2s}
+/* Settings → already known (ticket 37) */
 .import-h{font-size:0.92rem;margin:14px 0 4px}
 .import-hist{list-style:none}
 .quick-sort .level-progress-bar{width:100%;margin:8px 0 4px}
@@ -1011,6 +1036,20 @@ body.quiz-open .toast-stack{bottom:calc(100px + env(safe-area-inset-bottom))}
 .pop-wrap+.icon-btn{margin-left:-18px}
 @media(max-width:639px){.pop-wrap+.icon-btn{margin-left:-6px}}
 .ask .dj-quiet{font-size:0.7rem}
+.install-card .install-hint{border-top-color:color-mix(in srgb,var(--text) 20%,transparent)}
+.setting-note{margin:4px 0 10px}
+.setting-lbl{font-weight:500}
+.sync-corner{position:absolute;top:12px;right:20px;padding:0;font-size:0.8rem;color:var(--muted)}
+.qs-level{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 14px;margin:8px 0;border:1px solid color-mix(in srgb,var(--lv) 40%,var(--border));border-radius:10px;background:color-mix(in srgb,var(--lv) 12%,var(--surface))}
+.qs-level b{font-size:1.05rem}
+.paste-text{margin-top:10px}
+.file-btn{position:relative;display:inline-flex;align-items:center;cursor:pointer}
+.file-input{position:absolute;inset:0;width:100%;opacity:0;cursor:pointer}
+.file-btn:focus-within{outline:2px solid var(--accent-fg);outline-offset:2px}
+.tip-card{position:relative}
+.tip-chip{position:absolute;top:14px;right:16px;font-size:0.7rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:2px 10px;border-radius:99px;color:var(--accent-fg);border:1px solid color-mix(in srgb,var(--accent) 45%,transparent);background:color-mix(in srgb,var(--accent) 16%,transparent)}
+.tip-card .dj-btn{background:transparent;border-color:color-mix(in srgb,var(--text) 35%,transparent)}
+.tip-card .dj-btn:hover{border-color:var(--accent-fg)}
 
 /* Today tab (day plan: read → quiz → review) */
 .today{display:flex;flex-direction:column;gap:14px;max-width:760px;margin:0 auto}
@@ -1036,17 +1075,7 @@ body.quiz-open .toast-stack{bottom:calc(100px + env(safe-area-inset-bottom))}
 .td-step.done .td-ic{background:var(--ok);border-color:var(--ok);color:var(--bg)}
 .td-step.now .td-ic{border-color:var(--accent);color:var(--accent-fg)}
 .td-t{font-weight:600}
-.qs-level{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 14px;margin:8px 0;border:1px solid color-mix(in srgb,var(--lv) 40%,var(--border));border-radius:10px;background:color-mix(in srgb,var(--lv) 12%,var(--surface))}
-.qs-level b{font-size:1.05rem}
-.paste-text{margin-top:10px}
-.file-btn{position:relative;display:inline-flex;align-items:center;cursor:pointer}
-.file-input{position:absolute;inset:0;width:100%;opacity:0;cursor:pointer}
-.file-btn:focus-within{outline:2px solid var(--accent-fg);outline-offset:2px}
 .td-m{font-size:.8rem;color:var(--muted)}
-.tip-card{position:relative}
-.tip-chip{position:absolute;top:14px;right:16px;font-size:0.7rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:2px 10px;border-radius:99px;color:var(--accent-fg);border:1px solid color-mix(in srgb,var(--accent) 45%,transparent);background:color-mix(in srgb,var(--accent) 16%,transparent)}
-.tip-card .dj-btn{background:transparent;border-color:color-mix(in srgb,var(--text) 35%,transparent)}
-.tip-card .dj-btn:hover{border-color:var(--accent-fg)}
 .td-step.next .td-t,.td-step.rest .td-t{color:var(--muted)}
 .td-step.done .td-t{text-decoration:line-through;text-decoration-color:var(--muted)}
 .td-link{background:none;border:0;color:var(--accent-fg);cursor:pointer;font:inherit;font-size:.85rem;font-weight:600;min-height:44px;padding:0 4px}
@@ -1056,7 +1085,6 @@ body.quiz-open .toast-stack{bottom:calc(100px + env(safe-area-inset-bottom))}
 .unit-back:hover{color:var(--text)}
 .qz-today{font-size:.85rem;color:var(--muted);margin-top:6px}
 .tab-short{display:none}
-.install-card .install-hint{border-top-color:color-mix(in srgb,var(--text) 20%,transparent)}
 @media(max-width:639px){
   .tab-full{display:none}
   .tab-short{display:inline}
