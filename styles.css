@@ -611,6 +611,8 @@ rt{font-size:0.6em;color:var(--accent-fg);font-weight:400;letter-spacing:0.02em}
 body.quiz-open{overflow:hidden}
 .ql{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;background:var(--bg);container-type:inline-size;animation:ql-rise .28s cubic-bezier(.2,.8,.2,1)}
 @keyframes ql-rise{from{transform:translateY(24px);opacity:0}}
+/* welcome <-> placement swap: no rise, or the page blinks (old layer gone, new one fades in from nothing) */
+.ql.ql-swap{animation:none}
 .ql svg:where(:not(.jelly)){width:20px;height:20px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .ql button:focus-visible,.ql input:focus-visible{outline:2px solid var(--accent-fg);outline-offset:2px}
 .ql button{font:inherit;cursor:pointer}

@@ -666,16 +666,18 @@ function App() {
     examDate: examDate,
     setExamDate: setExamDate,
     again: flow.again,
+    swap: flow.swap,
     onZero: function () { startAt(0); },
-    onFind: function () { setFlow({ screen: 'placement', fromWelcome: true, again: flow.again }); },
+    onFind: function () { setFlow({ screen: 'placement', fromWelcome: true, again: flow.again, swap: true }); },
     onSkip: closeFlow
   }), flow && flow.screen === 'placement' && React.createElement(PlacementFlow, {
     units: UNITS,
     completed: completed,
     level: level,
+    swap: flow.swap,
     onApply: onPlacementApply,
     // leaving saves nothing: back to the welcome it came from, else straight to where the learner was
-    onClose: function () { setFlow(flow.fromWelcome ? { screen: 'welcome', again: flow.again } : null); }
+    onClose: function () { setFlow(flow.fromWelcome ? { screen: 'welcome', again: flow.again, swap: true } : null); }
   }));
 }
 

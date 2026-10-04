@@ -45,7 +45,7 @@ function WelcomeView(props) {
     return ce("button", { id: id, className: "pl-choice", type: "button", onClick: onClick },
       ce("b", null, title), ce("span", null, sub));
   };
-  return ce("div", { className: "ql pl-layer", ref: layerRef, tabIndex: -1, role: "dialog", 'aria-modal': "true", 'aria-labelledby': "wl-title" },
+  return ce("div", { className: "ql pl-layer" + (props.swap ? " ql-swap" : ""), ref: layerRef, tabIndex: -1, role: "dialog", 'aria-modal': "true", 'aria-labelledby': "wl-title" },
     ce("div", { className: "qz-top" },
       ce("span", { className: "pl-brand" }, jelly('idle', 28), "日本語"),
       ce("span", { className: "qz-sp" }),

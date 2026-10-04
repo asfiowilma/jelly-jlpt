@@ -125,7 +125,7 @@ function PlacementFlow(props) {
       meta && h("div", { className: "qz-meta" }, h("span", null, meta)));
   };
   var layer = function () {
-    return h.apply(null, ["div", { className: "ql pl-layer", ref: layerRef, tabIndex: -1, role: "dialog", 'aria-modal': "true", 'aria-label': L('pt_title') }]
+    return h.apply(null, ["div", { className: "ql pl-layer" + (props.swap ? " ql-swap" : ""), ref: layerRef, tabIndex: -1, role: "dialog", 'aria-modal': "true", 'aria-label': L('pt_title') }]
       .concat(Array.prototype.slice.call(arguments), [leaveDialog]));
   };
 
