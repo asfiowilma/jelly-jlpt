@@ -2908,3 +2908,92 @@ function placementQuestions(unit, count, taken) {
   }
   return out;
 }
+
+// ── Placement engine (roadmap ticket 36) ────────────────────────────────────
+// Binary search over the teaching stages (kana + lesson units; review/prep/mock never), then
+// spot-checks below the boundary. State is a plain mutable object:
+//   s = placementStart(units, rnd?)      rnd = () => [0,1), default Math.random
+//   set = placementNext(s)               { kind: 'probe'|'spot', stageId, round, wanted, questions[] } | null when done
+//   placementAnswer(s, answers)          answers[i] = response to set.questions[i] (option index or typed
+//                                        text, graded by answerIsRight); null/undefined = "I don't know" = wrong
+//   placementResult(s)                   { passedStageIds, holeStageIds, startStageId, log }
+// Probe = 2 questions of one stage, all right = known through it. No stage is asked twice and no item
+// twice (s.taken). Spot round r (max 2; round 2 only when round 1 found a hole): 3 untested stages
+// below the boundary at different fractions per round, 1 question each. A missed spot-check makes its
+// stage a hole; it does NOT move the boundary. A stage that gives fewer questions than wanted is judged
+// on what it gave (log entry asked < wanted); one that gives none counts as failed (probe) or is
+// skipped (spot). s.answered = questions answered so far (progress bar: about 17).
+var PLACEMENT_PROBE_QUESTIONS = 2;
+var PLACEMENT_SPOT_FRACTIONS = [[0.2, 0.5, 0.85], [0.35, 0.65, 0.95]];
+function placementStart(units, rnd) {
+  var stages = units.filter(function (u) { return u.kind === 'kana' || u.kind === 'lesson'; });
+  return { stages: stages, rnd: rnd || Math.random, lo: 0, hi: stages.length, searching: true, round: 0, roundMissed: false,
+    tested: {}, taken: [], holes: [], spots: [], cur: null, done: false, log: [], answered: 0 };
+}
+function _placementAsk(s, stage, count) {
+  var real = Math.random;
+  Math.random = s.rnd; // the quiz builders shuffle with Math.random: inject ours for determinism
+  try { return placementQuestions(stage, count, s.taken); } finally { Math.random = real; }
+}
+function _placementRound(s) { // queue the next spot round's stages (untested ones nearest each fraction of the boundary)
+  var b = s.lo, f = PLACEMENT_SPOT_FRACTIONS[s.round++];
+  s.roundMissed = false;
+  f.forEach(function (fr) {
+    var want = Math.max(1, Math.round(fr * b)), best = 0;
+    for (var d = 0; d < b && !best; d++) {
+      [want - d, want + d].forEach(function (n) { if (!best && n >= 1 && n <= b && !s.tested[s.stages[n - 1].id]) best = n; });
+    }
+    if (best) { s.tested[s.stages[best - 1].id] = true; s.spots.push(s.stages[best - 1]); }
+  });
+  if (!s.spots.length) s.done = true;
+}
+function placementNext(s) {
+  while (!s.cur && !s.done) {
+    if (s.spots.length) {
+      var st = s.spots.shift(), qs = _placementAsk(s, st, 1);
+      if (qs.length) s.cur = { kind: 'spot', stageId: st.id, round: s.round, wanted: 1, questions: qs };
+      else s.log.push({ k: 'spot', stageId: st.id, right: 0, asked: 0, wanted: 1, pass: null, note: 'no questions available, skipped' });
+    } else if (s.searching && s.lo < s.hi) {
+      var m = Math.ceil((s.lo + s.hi) / 2), pu = s.stages[m - 1], pq = _placementAsk(s, pu, PLACEMENT_PROBE_QUESTIONS);
+      s.tested[pu.id] = true;
+      if (pq.length) s.cur = { kind: 'probe', stageId: pu.id, stage: m, round: 0, wanted: PLACEMENT_PROBE_QUESTIONS, questions: pq };
+      else { s.hi = m - 1; s.log.push({ k: 'probe', stageId: pu.id, right: 0, asked: 0, wanted: PLACEMENT_PROBE_QUESTIONS, pass: false, note: 'no questions available, counted as not known' }); }
+    } else if (s.round === 0 || (s.round < PLACEMENT_SPOT_FRACTIONS.length && s.roundMissed)) {
+      s.searching = false; _placementRound(s);
+    } else s.done = true;
+  }
+  return s.cur;
+}
+function placementAnswer(s, answers) {
+  var c = s.cur;
+  if (!c) return s;
+  var right = c.questions.filter(function (q, i) { return answers && answers[i] != null && answerIsRight(q, answers[i]); }).length;
+  c.questions.forEach(function (q) { s.taken.push(q.itemId); });
+  s.answered += c.questions.length;
+  var pass = right === c.questions.length;
+  s.log.push({ k: c.kind, stageId: c.stageId, right: right, asked: c.questions.length, wanted: c.wanted, pass: pass,
+    note: c.kind === 'probe' ? (pass ? 'known through this stage, search higher' : 'not yet, search lower') : (pass ? 'confirmed' : 'hole found') });
+  if (c.kind === 'probe') { if (pass) s.lo = c.stage; else s.hi = c.stage - 1; }
+  else if (!pass) { s.holes.push(c.stageId); s.roundMissed = true; }
+  s.cur = null;
+  return s;
+}
+function placementResult(s) {
+  var passed = s.stages.slice(0, s.lo).map(function (u) { return u.id; }).filter(function (id) { return s.holes.indexOf(id) < 0; });
+  return { passedStageIds: passed, holeStageIds: s.holes.slice(), startStageId: s.stages[s.lo] ? s.stages[s.lo].id : null, log: s.log.slice() };
+}
+// placementApply(result, units) → what the caller writes (pure; no store here):
+//   doneIds     stages to mark done with skipped: true (= result.passedStageIds, plan order)
+//   skippedIds  hole stages left unmarked ("you might revisit"), plan order
+//   cardItems   item ids to seed as known cards via seedKnownCards: passed stages only, deduped
+function placementApply(result, units) {
+  var pass = {}, hole = {};
+  result.passedStageIds.forEach(function (id) { pass[id] = true; });
+  result.holeStageIds.forEach(function (id) { hole[id] = true; });
+  var done = units.filter(function (u) { return pass[u.id]; });
+  return {
+    doneIds: done.map(function (u) { return u.id; }),
+    skippedIds: units.filter(function (u) { return hole[u.id]; }).map(function (u) { return u.id; }),
+    cardItems: unitItems(done).map(function (it) { return it.id; })
+  };
+}
