@@ -73,6 +73,7 @@ var appFiles = [
   path.join("components", "placement-view.js"),
   path.join("components", "settings-view.js"),
   path.join("components", "toast-stack.js"),
+  path.join("components", "pwa-ui.js"),
   "app.js",
 ];
 
@@ -382,6 +383,45 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       });
       a.ok(true);
     } catch (e) { a.ok(false, e.message); }
+  });
+
+  test("React render: InstallCard, UpdateToast, NetLine and the Data persist line render in every state", function (a) {
+    var L = function (k) { return t(k, "N5"); };
+    // the stub createElement drops children: record every call's arguments instead
+    var made;
+    function rec(fn) {
+      var ce0 = React.createElement; made = [];
+      React.createElement = function () { made.push(JSON.stringify([].slice.call(arguments, 1))); return {}; };
+      try { return fn(); } finally { React.createElement = ce0; }
+    }
+    function text() { return made.join(" "); }
+    try {
+      ["prompt", "ios", "installed", "none", "hidden"].forEach(function (state) {
+        var el = rec(function () { return InstallCard({ L: L, state: state, onInstall: noop }); });
+        if (state === "hidden") return a.strictEqual(el, null, "hidden renders nothing");
+        a.ok(text().length > 20, state);
+        if (state === "none") a.ok(text().indexOf(L("install_none")) >= 0, "quiet line");
+        else a.ok(text().indexOf("install-card") >= 0, "card " + state);
+        a.strictEqual(text().indexOf(L("install_btn")) >= 0, state === "prompt", "install button only when installable: " + state);
+        a.strictEqual(text().indexOf(L("install_ios")) >= 0, state === "ios", "iOS hint only on iOS: " + state);
+        if (state === "installed") a.ok(text().indexOf(L("install_done_title")) >= 0, "installed state");
+      });
+      [true, false].forEach(function (busy) {
+        rec(function () { return UpdateToast({ L: L, busy: busy, onApply: noop, onLater: noop }); });
+        a.ok(text().indexOf(L(busy ? "update_wait" : "update_body")) >= 0, "update toast busy=" + busy);
+        a.ok(text().indexOf('"disabled":' + busy) >= 0, "reload button disabled=" + busy);
+      });
+      NetLine({ L: L, online: true }); NetLine({ L: L, online: false });
+      ["granted", "denied", "unsupported", null].forEach(function (persist) {
+        SettingsView({
+          themePrefs: { palette: "ai", theme: "dark" }, setThemePrefs: noop, speechRate: 0.85, setSpeechRate: noop,
+          level: "N5", uiLang: "auto", setUiLang: noop, sfxOn: true, setSfxOn: noop, furiganaMode: "auto", setFuriganaMode: noop,
+          onExport: noop, onImport: noop, onBack: noop, persist: persist,
+          sync: Store.syncInfo, savedCreds: null, onConnect: noop, onDisconnect: noop, onSyncNow: noop,
+        });
+      });
+      a.ok(true);
+    } catch (e) { a.ok(false, e.stack); }
   });
 
   test("React render: SyncSettings() renders off, connecting, connected and error states", function (a) {

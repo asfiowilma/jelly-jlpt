@@ -3036,3 +3036,33 @@ function placementTrim(res, stages, pos) {
 function placementReviewsWaiting(units, startIndex, doneIds) {
   return units.filter(function (u) { return u.kind === 'review' && u.index < startIndex && !doneIds.has(u.id); });
 }
+
+// ── PWA (ticket 42) ──────────────────────────────────────────────────────────
+// Storage persist: asked once per device, silently, after the first progress exists. The outcome lives in
+// localStorage under PERSIST_KEY (device-only: deliberately NOT in DEVICE_PREF_KEYS, never exported).
+var PERSIST_KEY = 'jlpt_persist'; // 'granted' | 'denied'
+function hasProgressDocs(docs) {
+  return docs.some(function (d) { return /^(unit|card|log):/.test(d._id || ''); });
+}
+// persistOnce(docs, storage, ls) → Promise<'granted'|'denied'|'unsupported'|null>. null = no progress yet (retry
+// later); 'unsupported' is not remembered (a browser update may add it). ls = { get, set }.
+function persistOnce(docs, storage, ls) {
+  var known = ls.get(PERSIST_KEY);
+  if (known) return Promise.resolve(known);
+  if (!hasProgressDocs(docs)) return Promise.resolve(null);
+  if (!storage || typeof storage.persist !== 'function') return Promise.resolve('unsupported');
+  return storage.persist().then(function (ok) {
+    var r = ok ? 'granted' : 'denied';
+    ls.set(PERSIST_KEY, r);
+    return r;
+  }, function () { return 'unsupported'; });
+}
+// pwaInstallState(env) → 'hidden' (file:// or no worker support) | 'installed' | 'prompt' | 'ios' | 'none'.
+// env: { http, standalone, hasPrompt, ios }.
+function pwaInstallState(env) {
+  if (env.standalone) return 'installed';
+  if (!env.http) return 'hidden';
+  if (env.hasPrompt) return 'prompt';
+  if (env.ios) return 'ios';
+  return 'none';
+}

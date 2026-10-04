@@ -6,7 +6,13 @@
   if (!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
   var waiting = null, reloading = false;
   function ready(w) { waiting = w; window.dispatchEvent(new Event('sw-update-ready')); }
-  window.__swApplyUpdate = function () { if (waiting) waiting.postMessage('SKIP_WAITING'); };
+  // also works when the app found the waiting worker before register() resolved (waiting still null)
+  window.__swApplyUpdate = function () {
+    navigator.serviceWorker.getRegistration().then(function (r) {
+      var w = waiting || (r && r.waiting);
+      if (w) { waiting = w; w.postMessage('SKIP_WAITING'); }
+    });
+  };
   navigator.serviceWorker.addEventListener('controllerchange', function () {
     if (reloading || !waiting) return; // first install claims clients too: only reload for an update
     reloading = true; location.reload();

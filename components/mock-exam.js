@@ -34,6 +34,7 @@ function MockExam(props) {
     return a;
   };
   var _ph = React.useState('intro'), phase = _ph[0], setPhase = _ph[1]; // intro | part | between | results
+  useQuizBusy(phase === 'part' || phase === 'between');
   var _sec = React.useState(0), sec = _sec[0], setSec = _sec[1];
   var _cur = React.useState(0), cur = _cur[0], setCur = _cur[1];
   var _ans = React.useState(blank), answers = _ans[0], setAnswers = _ans[1];

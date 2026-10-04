@@ -355,10 +355,38 @@ var UI_STRINGS = {
   set_placement_done: { en: 'You have completed every teaching stage, so there is nothing left to skip.', ja: 'すべての学習ステージを完了済みです。', since: 'N1' },
   set_welcome:       { en: 'Show the welcome again', ja: 'ようこそ画面をもう一度見る', since: 'N1' },
   set_welcome_hint:  { en: 'The first-launch screen with pace, exam date and the start options.', ja: 'ペース、試験日、開始方法を選ぶ最初の画面です。', since: 'N1' },
+  // PWA (ticket 42). JA lines are placeholders awaiting a native review.
+  install_title:     { en: 'Install Jelly JLPT', ja: 'Jelly JLPTをインストール', since: 'N1' },
+  install_lead:      { en: 'Works fully offline. No account. Your progress stays on your device.', ja: '完全オフラインで使えます。アカウント不要。学習データは端末の中だけに残ります。', since: 'N1' },
+  install_btn:       { en: 'Install app', ja: 'アプリをインストール', since: 'N1' },
+  install_ios:       { en: 'In Safari, tap Share, then Add to Home Screen.', ja: 'Safariで共有ボタンを押し、「ホーム画面に追加」を選びます。', since: 'N1' },
+  install_done_title: { en: 'Installed', ja: 'インストール済み', since: 'N1' },
+  install_done:      { en: 'Open Jelly JLPT from your home screen or app list.', ja: 'ホーム画面またはアプリ一覧から開けます。', since: 'N1' },
+  install_none:      { en: 'This browser has no install button here. Look for Install or Add to Home Screen in its menu.', ja: 'このブラウザにはインストールボタンがありません。メニューの「インストール」または「ホーム画面に追加」を探してください。', since: 'N1' },
+  update_title:      { en: 'Update ready', ja: '更新の準備ができました', since: 'N1' },
+  update_body:       { en: 'Reload to get the latest version.', ja: '再読み込みで最新版になります。', since: 'N1' },
+  update_wait:       { en: 'Finish your quiz first, then reload.', ja: 'クイズを終えてから再読み込みしてください。', since: 'N1' },
+  update_btn:        { en: 'Reload', ja: '再読み込み', since: 'N1' },
+  update_later:      { en: 'Later', ja: 'あとで', since: 'N1' },
+  persist_granted:   { en: 'Protected from browser clean-up', ja: 'ブラウザの自動削除から保護されています', since: 'N1' },
+  persist_denied:    { en: 'Not protected: back up regularly', ja: '保護されていません。こまめにバックアップしてください', since: 'N1' },
+  persist_pending:   { en: 'Protection turns on after your first saved progress.', ja: '最初の学習記録を保存すると保護が有効になります。', since: 'N1' },
+  net_online:        { en: 'You are online.', ja: 'オンラインです。', since: 'N1' },
+  net_offline:       { en: 'You are offline. Everything still works, and sync resumes when you are back online.', ja: 'オフラインです。学習は続けられ、接続が戻ると同期を再開します。', since: 'N1' },
 };
 // t(key, level): level = the learner's current unit level ('N5'…'N1').
 // window._uiLang ('auto' | 'en' | 'ja', set by App from prefs) overrides
 // the progressive switch; 'auto' / unset keeps the level-based behavior.
+// useQuizBusy(active): marks a quiz or mock as running while `active`, so the update toast waits (ticket 42).
+// window.__quizBusy counts running ones; 'quiz-busy' fires on every change.
+function useQuizBusy(active) {
+  React.useEffect(function () {
+    if (!active) return undefined;
+    window.__quizBusy = (window.__quizBusy || 0) + 1;
+    window.dispatchEvent(new Event('quiz-busy'));
+    return function () { window.__quizBusy -= 1; window.dispatchEvent(new Event('quiz-busy')); };
+  }, [active]);
+}
 function t(key, level) {
   var s = UI_STRINGS[key];
   if (!s) return key;

@@ -284,6 +284,28 @@ function App() {
       window.removeEventListener('sync-status', bump);
     };
   }, []);
+  // PWA (ticket 42): update toast (held while a quiz or mock runs) and the one-time storage-persist request.
+  var _upd = React.useState(false), updateReady = _upd[0], setUpdateReady = _upd[1];
+  var _qb = React.useState((window.__quizBusy || 0) > 0), quizBusy = _qb[0], setQuizBusy = _qb[1];
+  var _per = React.useState(function () { try { return localStorage.getItem(PERSIST_KEY); } catch (e) { return null; } }), persist = _per[0], setPersist = _per[1];
+  React.useEffect(function () {
+    var ls = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+    function onUpdate() { setUpdateReady(true); }
+    function onBusy() { setQuizBusy((window.__quizBusy || 0) > 0); }
+    function askPersist() { persistOnce(Store.docs(), navigator.storage, ls).then(function (r) { if (r) setPersist(r); }); }
+    window.addEventListener('sw-update-ready', onUpdate);
+    window.addEventListener('quiz-busy', onBusy);
+    window.addEventListener('activity-logged', askPersist);
+    askPersist();
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
+      navigator.serviceWorker.getRegistration().then(function (r) { if (r && r.waiting && navigator.serviceWorker.controller) setUpdateReady(true); }, function () {});
+    }
+    return function () {
+      window.removeEventListener('sw-update-ready', onUpdate);
+      window.removeEventListener('quiz-busy', onBusy);
+      window.removeEventListener('activity-logged', askPersist);
+    };
+  }, []);
   // Achievements: evaluate on start, after every logged event and when docs change under us; show the batch.
   var _React$useStateToast = React.useState(null),
     toastBatch = _React$useStateToast[0],
@@ -519,6 +541,7 @@ function App() {
     setFuriganaMode: setFuriganaMode,
     onExport: handleExport,
     onImport: handleImport,
+    persist: persist,
     sync: Store.syncInfo,
     savedCreds: loadSyncCreds(),
     onConnect: connectSync,
@@ -582,7 +605,12 @@ function App() {
     kanjiView: kanjiView,
     setKanjiView: setKanjiView,
     cards: srsCards
-  })), React.createElement(ToastStack, {
+  })), updateReady && React.createElement(UpdateToast, {
+    L: function (k) { return t(k, level); },
+    busy: quizBusy,
+    onApply: function () { window.__swApplyUpdate && window.__swApplyUpdate(); },
+    onLater: function () { setUpdateReady(false); }
+  }), React.createElement(ToastStack, {
     batch: toastBatch,
     onDone: function () { setToastBatch(null); },
     // The Achievements screen (ticket 09) listens for 'open-achievements' ({ id? }) and navigates.

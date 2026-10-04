@@ -110,6 +110,7 @@ function Exercises(_ref9) {
   var _revealed = React.useState(false), revealed = _revealed[0], setRevealed = _revealed[1]; // this question is checked
   var _done = React.useState(false), done = _done[0], setDone = _done[1];
   var _started = React.useState(false), started = _started[0], setStarted = _started[1];
+  useQuizBusy(started && !done);
   // Per-answer results (true/false) in order, parallel to exs (scoreQuiz)
   var _results = React.useState([]), results = _results[0], setResults = _results[1];
   // reorder: picked item indices in order; pair_match: picks[itemIdx] = optionIdx
