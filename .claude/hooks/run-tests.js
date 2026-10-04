@@ -69,6 +69,8 @@ var appFiles = [
   path.join("components", "stamp.js"),
   path.join("components", "achievements-view.js"),
   path.join("components", "import-view.js"),
+  path.join("components", "welcome-view.js"),
+  path.join("components", "placement-view.js"),
   path.join("components", "settings-view.js"),
   path.join("components", "toast-stack.js"),
   "app.js",
@@ -678,6 +680,115 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       var id = Object.keys(Store.snapshot().srsCards)[0];
       flagMissedItems([id]);
       a.equal(Store.snapshot().srsCards[id].ease, 2.3, "missed item flagged");
+    }).then(function () { return Store.replaceAll(before); });
+  });
+
+  // ── Welcome + placement UI (ticket 39) ──────────────────────────────────────
+  // seq(React, state, refs): feed useState / useRef from a call-order list (the stub React has no state),
+  // run fn, restore. State order in PlacementFlow: scope, screen, cur, qi, res, pos, leaving; refs: eng, answers, layer, key.
+  function withState(states, refs, fn) {
+    var us = React.useState, ur = React.useRef, i = 0, j = 0;
+    React.useState = function (init) { var k = i++; return [k < states.length ? states[k] : (typeof init === "function" ? init() : init), noop]; };
+    React.useRef = function () { var k = j++; return refs && refs[k] ? refs[k] : { current: null }; };
+    try { return fn(); } finally { React.useState = us; React.useRef = ur; }
+  }
+  // a learner who knows stages 1..known (1-based, teaching stages), optionally missing `hole`
+  function scriptedPlacement(scope, known, hole) {
+    var s = placementStart(scope, function () { return 0.5; }), set, n = 0, num = {};
+    s.stages.forEach(function (u, i) { num[u.id] = i + 1; });
+    while ((set = placementNext(s))) {
+      if (++n > 60) throw new Error("runaway");
+      var ok = num[set.stageId] <= known && num[set.stageId] !== hole;
+      placementAnswer(s, set.questions.map(function (q) { return ok ? (q.options && typeof q.correct === "number" ? q.correct : q.answers[0]) : null; }));
+    }
+    return s;
+  }
+
+  test("React render: WelcomeView() renders first-launch and 'again' variants", function (a) {
+    try {
+      [false, true].forEach(function (again) {
+        WelcomeView({ level: "N5", units: units, pace: 1, setPace: noop, examDate: null, setExamDate: noop, again: again, onZero: noop, onFind: noop, onSkip: noop });
+      });
+      WelcomeView({ level: "N5", units: units, pace: 3, setPace: noop, examDate: "2020-01-01", setExamDate: noop, onZero: noop, onFind: noop, onSkip: noop });
+      a.ok(true);
+    } catch (e) { a.ok(false, e.message); }
+  });
+
+  test("React render: PlacementQuestion() renders every question type the engine builds", function (a) {
+    var seen = {};
+    units.filter(function (u) { return u.kind === "kana" || u.kind === "lesson"; }).forEach(function (u) {
+      placementQuestions(u, 2, []).forEach(function (ex) {
+        seen[ex.type] = true;
+        try { PlacementQuestion({ ex: ex, level: "N5", onAnswer: noop }); } catch (e) { a.ok(false, u.id + " " + ex.type + ": " + e.message); }
+      });
+    });
+    a.ok(seen.typing && seen.gap && seen.order && seen.mc, "typed, gap, order and mc all rendered: " + Object.keys(seen));
+  });
+
+  test("React render: PlacementFlow() renders intro, a test question, and the result (incl. retake + holes)", function (a) {
+    try {
+      var props = { units: units, completed: new Set(), level: "N5", onApply: noop, onClose: noop };
+      PlacementFlow(props);
+      var s = scriptedPlacement(units, 20, 8), cur = placementNext(placementStart(units));
+      withState([units, "test", cur, 0], [{ current: placementStart(units) }, { current: [] }], function () { return PlacementFlow(props); });
+      var res = placementResult(s), pos = s.stages.map(function (u) { return u.id; }).indexOf(res.startStageId);
+      [pos, 0, 3].forEach(function (p) {
+        withState([units, "result", null, 0, res, p], [{ current: s }, { current: [] }], function () { return PlacementFlow(props); });
+      });
+      var done = new Set(units.filter(function (u) { return u.index < 10; }).map(function (u) { return u.id; }));
+      var scope = placementScope(units, done), s2 = scriptedPlacement(scope, 4);
+      withState([scope, "intro"], null, function () { return PlacementFlow(Object.assign({}, props, { completed: done })); });
+      withState([scope, "result", null, 0, placementResult(s2), 4], [{ current: s2 }, { current: [] }], function () { return PlacementFlow(Object.assign({}, props, { completed: done })); });
+      var all = scriptedPlacement(units, 999);
+      withState([units, "result", null, 0, placementResult(all), all.stages.length], [{ current: all }, { current: [] }], function () { return PlacementFlow(props); });
+      a.ok(true);
+    } catch (e) { a.ok(false, e.stack); }
+  });
+
+  test("React render: SettingsView() shows the starting-point section (open and nothing left to skip)", function (a) {
+    try {
+      [true, false].forEach(function (open) {
+        SettingsView({
+          themePrefs: { palette: "ai", theme: "dark" }, setThemePrefs: noop, speechRate: 0.85, setSpeechRate: noop,
+          level: "N5", uiLang: "auto", setUiLang: noop, sfxOn: true, setSfxOn: noop, furiganaMode: "auto", setFuriganaMode: noop,
+          onExport: noop, onImport: noop, onBack: noop, placementOpen: open, onPlacement: noop, onWelcome: noop,
+          sync: Store.syncInfo, savedCreds: null, onConnect: noop, onDisconnect: noop, onSyncNow: noop,
+        });
+      });
+      a.ok(true);
+    } catch (e) { a.ok(false, e.message); }
+  });
+
+  // Headless end to end: a scripted learner through the real engine, then the real apply path
+  // (app.js applyPlacement → Store). Asserts the docs the store ends up holding.
+  testAsync("placement end to end: scripted learner → apply → unit docs (skipped), cards (one undoable batch), holes unmarked", function (a) {
+    var before = Store.docs();
+    var teach = units.filter(function (u) { return u.kind === "kana" || u.kind === "lesson"; });
+    var s = scriptedPlacement(units, 40, 8), res = placementResult(s);
+    var plan = placementApply(res, units);
+    return Store.replaceAll([]).then(function () {
+      a.ok(progressIsEmpty(Store.docs()), "store starts empty");
+      var out = applyPlacement(res);
+      var snap = Store.snapshot(), docs = Store.docs();
+      a.equal(out.marked, plan.doneIds.length);
+      a.ok(out.marked >= 30 && out.marked <= 40, "about 40 stages marked: " + out.marked);
+      a.deepEqual(snap.completed.slice().sort(), plan.doneIds.slice().sort(), "exactly the passed stages are done");
+      a.deepEqual(snap.skipped.slice().sort(), plan.doneIds.slice().sort(), "…all flagged skipped");
+      a.ok(snap.skipped.indexOf(teach[7].id) < 0 && res.holeStageIds.indexOf(teach[7].id) >= 0, "the hole stage stays unmarked");
+      a.ok(!progressIsEmpty(docs), "progress is no longer empty (welcome never returns)");
+      a.ok(docs.filter(function (d) { return /^log:/.test(d._id); }).length === 0, "skipped stages write no lesson log");
+      var cards = snap.srsCards, ids = Object.keys(cards);
+      a.equal(ids.length, plan.cardItems.length, "one card per item of the passed stages, none for others");
+      a.ok(ids.every(function (id) { return cards[id].imported && cards[id].imported.source === "placement" && cards[id].lastReviewedAt === 0; }), "known cards, unreviewed");
+      var batches = importBatches(cards);
+      a.equal(batches.length, 1, "one batch in Settings → Already known");
+      a.equal(batches[0].source, "placement");
+      a.equal(snap.pendingCards.length, 0, "no pending queue");
+      var again = applyPlacement(res);
+      a.equal(again.cards, 0, "applying twice adds no cards");
+      undoKnown(batches[0].batchId);
+      a.equal(Object.keys(Store.snapshot().srsCards).length, 0, "undo takes the cards back");
+      a.equal(Store.snapshot().completed.length, plan.doneIds.length, "stages stay marked (un-mark per stage as today)");
     }).then(function () { return Store.replaceAll(before); });
   });
 

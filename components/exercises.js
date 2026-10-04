@@ -60,6 +60,27 @@ function exBigClass(text) {
   return n <= 2 ? '' : n <= 6 ? ' md' : ' sm';
 }
 
+// Furigana parts (quiz rules, Q33) → ruby; u = the underlined / asked part (mondai). The （　）
+// of a gap question shows the chosen option; the ★ slot of an order question does too.
+// st = { chosen, revealed, selected, tone }: shared by the quiz layer and the placement test.
+function exPartsEl(ex, parts, st) {
+  var h = React.createElement, chosen = st.chosen, tone = st.tone;
+  return parts.map(function (p, i) {
+    if (ex.type === 'gap' && p.t === GAP_BLANK) {
+      return h("span", { key: i, className: "qz-blank" + (st.revealed && st.selected === -1 ? ' ok' : tone) }, chosen !== null && ex.optionParts ? exPartsEl(ex, ex.optionParts[chosen], st) : chosen === null ?" " : ex.options[chosen]);
+    }
+    if (ex.type === 'order' && /＿/.test(p.t)) {
+      return h("span", { key: i, className: "qz-slots" }, p.t.trim().split(' ').map(function (slot, k) {
+        if (slot.indexOf('★') < 0) return h("span", { key: k, className: "qz-slot" }, k + 1);
+        return h("span", { key: k, className: "qz-slot star" + (chosen !== null ? ' f' : '') + tone },
+          chosen === null ? '★' : ex.optionParts ? exPartsEl(ex, ex.optionParts[chosen], st) : ex.options[chosen]);
+      }));
+    }
+    var el = p.r ? h("ruby", { key: i }, p.t, h("rt", null, p.r)) : p.t;
+    return p.u ? h("u", { key: i, className: "ex-u" }, el) : el;
+  });
+}
+
 // ── Exercises: the unit quiz (ticket 35) ────────────────────────────────────
 // Pass mark gates completion (Q28); a missed question comes back once at the
 // end in another form, unscored (Q31). onResult(scoreQuiz(...)) when finished.
@@ -425,20 +446,7 @@ function Exercises(_ref9) {
   // of a gap question shows the chosen option; the ★ slot of an order question does too.
   var chosen = revealed ? (selected !== null && selected >= 0 ? selected : ex.correct) : pick;
   var partsEl = function partsEl(parts) {
-    return parts.map(function (p, i) {
-      if (ex.type === 'gap' && p.t === GAP_BLANK) {
-        return h("span", { key: i, className: "qz-blank" + (revealed && selected === -1 ? ' ok' : tone) }, chosen !== null && ex.optionParts ? partsEl(ex.optionParts[chosen]) : chosen === null ?" " : ex.options[chosen]);
-      }
-      if (ex.type === 'order' && /＿/.test(p.t)) {
-        return h("span", { key: i, className: "qz-slots" }, p.t.trim().split(' ').map(function (slot, k) {
-          if (slot.indexOf('★') < 0) return h("span", { key: k, className: "qz-slot" }, k + 1);
-          return h("span", { key: k, className: "qz-slot star" + (chosen !== null ? ' f' : '') + tone },
-            chosen === null ? '★' : ex.optionParts ? partsEl(ex.optionParts[chosen]) : ex.options[chosen]);
-        }));
-      }
-      var el = p.r ? h("ruby", { key: i }, p.t, h("rt", null, p.r)) : p.t;
-      return p.u ? h("u", { key: i, className: "ex-u" }, el) : el;
-    });
+    return exPartsEl(ex, parts, { chosen: chosen, revealed: revealed, selected: selected, tone: tone });
   };
   var promptEl = h("p", { key: "pr", className: "qz-prompt" }, translatePrompt(ex.prompt, lv));
   // The question line, the passage of a text-with-blanks, and the English of a gap sentence.

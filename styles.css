@@ -870,3 +870,48 @@ body.quiz-open{overflow:hidden}
 .ach-name{font-size:0.82rem;line-height:1.25}
 .ach-desc{font-size:0.74rem;color:var(--muted);line-height:1.3}
 .ach-meta{font-size:0.68rem;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* ── Welcome + placement test (ticket 39): reuse the quiz layer (.ql); pl- = this flow only ── */
+.pl-layer .qz-main{overflow:auto}
+.ql .qz-col.pl-col{max-width:760px;padding-bottom:24px}
+.pl-brand{display:inline-flex;align-items:center;gap:8px;font-family:'Yu Mincho','Hiragino Mincho ProN','Noto Serif JP',serif;font-weight:600}
+.pl-h1{font-size:1.6rem;line-height:1.25;margin:18px 0 6px}
+.pl-sub{color:var(--muted);margin-bottom:16px;max-width:62ch}
+.pl-facts{list-style:none;display:grid;gap:8px;margin-bottom:20px}
+.pl-facts li{display:grid;grid-template-columns:2ch 1fr;gap:8px;font-size:0.94rem}
+.pl-facts li::before{content:"・";color:var(--accent-fg);font-weight:700}
+.pl-field{display:flex;align-items:center;gap:10px 12px;flex-wrap:wrap;margin:8px 0 2px;font-size:0.92rem}
+.pl-field .theme-select{font-size:0.9rem;padding:3px 10px}
+.pl-field input[type=range]{width:min(320px,100%);accent-color:var(--accent-fg)}
+.pl-note{font-size:0.85rem;color:var(--muted);margin:4px 0 6px;max-width:62ch}
+.pl-note.bad{color:var(--bad)}
+.pl-fork{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:22px}
+.pl-choice{text-align:left;display:flex;flex-direction:column;gap:4px;padding:16px;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--text)}
+.pl-choice:hover{border-color:var(--accent)}
+.pl-choice b{font-size:1.02rem}
+.pl-choice span{color:var(--muted);font-size:0.88rem}
+.ql .pl-link{border:0;background:none;color:var(--muted);text-decoration:underline;min-height:44px;padding:0 10px}
+.ql .pl-link:hover{color:var(--text)}
+.pl-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:18px 0 10px}
+.pl-bar{height:8px;border-radius:99px;background:var(--surface2);overflow:hidden;display:block;align-self:center}
+.pl-fill{display:block;height:100%;background:var(--accent);transition:width .25s}
+.pl-rail{display:flex;flex-wrap:wrap;gap:3px;margin:12px 0 8px}
+.pl-seg{display:inline-block;width:11px;height:11px;border-radius:3px;background:var(--surface2)}
+.pl-seg.marked{background:var(--info)}
+.pl-seg.done{background:var(--ok)}
+.pl-seg.hole{background:var(--warn)}
+.pl-seg.start{background:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,transparent)}
+.pl-legend{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:0.78rem;color:var(--muted);margin-bottom:14px}
+.pl-legend .pl-seg{margin-right:5px;vertical-align:-1px;width:10px;height:10px}
+.pl-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
+.pl-stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.pl-stat b{display:block;font-size:1.5rem;font-variant-numeric:tabular-nums}
+.pl-stat span{font-size:0.8rem;color:var(--muted)}
+.pl-how{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-size:0.86rem;margin-top:12px}
+.pl-how summary{cursor:pointer;color:var(--muted)}
+.pl-how table{border-collapse:collapse;width:100%;margin-top:8px}
+.pl-how th,.pl-how td{border-bottom:1px solid var(--border);padding:6px 8px;text-align:left;font-size:0.84rem;vertical-align:top}
+.pl-how th{color:var(--muted);font-weight:500}
+.pl-how .ok{color:var(--ok)}
+.pl-how .no{color:var(--bad)}
+@media (max-width:640px){.pl-fork,.pl-stats{grid-template-columns:1fr}.pl-h1{font-size:1.35rem}}

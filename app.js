@@ -66,7 +66,7 @@ function flagMissedItems(ids, now) {
 // ── Already-known import (ticket 37) ────────────────────────────────────────
 // seedKnown(ids, source, batchId): seeds the items as known cards (lib.js
 // seedKnownCards), spread under today's review budget. Returns the result.
-function seedKnown(ids, source, batchId, now) {
+function seedKnown(ids, source, batchId, now, mode) {
   now = now || Date.now();
   var snap = Store.snapshot();
   var cards = Object.assign({}, snap.srsCards);
@@ -75,10 +75,26 @@ function seedKnown(ids, source, batchId, now) {
   if (r.added.length || r.replaced.length) {
     Store.putCards(cards);
     notifyStoreChanged();
-    scheduleAchievements('live');
+    scheduleAchievements(mode || 'live'); // placement passes 'retro': one summary toast, no per-achievement toasts
   }
   return r;
 }
+// applyPlacement(result): the confirmed placement result (lib.js placementApply) → stages done+skipped
+// (no cards of their own), their items seeded as known cards in one undoable "placement" batch
+// (Settings → Already known). Returns { marked, cards }.
+function applyPlacement(res, now) {
+  now = now || Date.now();
+  var plan = placementApply(res, UNITS);
+  markUnitsDone(plan.doneIds, now, { skipped: true });
+  var r = plan.cardItems.length ? seedKnown(plan.cardItems, 'placement', newBatchId('placement'), now, 'retro') : null;
+  return { marked: plan.doneIds.length, cards: r ? r.added.length + r.replaced.length : 0 };
+}
+// Welcome screen (ticket 39): "seen" is a device-only flag (like jlpt_ach_seen), not a synced pref and
+// not in the export: it is about this browser having greeted the learner. New devices that sync in
+// progress never show it anyway (progressIsEmpty).
+var WELCOME_SEEN_KEY = 'jlpt_welcome_seen';
+function welcomeSeen() { try { return localStorage.getItem(WELCOME_SEEN_KEY) === '1'; } catch (e) { return false; } }
+function markWelcomeSeen() { safeSave(WELCOME_SEEN_KEY, '1'); }
 // undoKnown(batchId, ids?): takes back a batch (or some of its ids).
 function undoKnown(batchId, ids) {
   var cards = Object.assign({}, Store.snapshot().srsCards);
@@ -192,6 +208,13 @@ function App() {
   var _React$useStatePending = React.useState(snap0.pendingCards),
     pendingCards = _React$useStatePending[0],
     setPendingCards = _React$useStatePending[1];
+  // Full-screen takeovers (ticket 39): null | { screen: 'welcome', again? } | { screen: 'placement', fromWelcome? }.
+  // The welcome opens once on a completely empty store (never after an import or sync brought data).
+  var _React$useStateFlow = React.useState(function () {
+      return !welcomeSeen() && progressIsEmpty(Store.docs()) ? { screen: 'welcome' } : null;
+    }),
+    flow = _React$useStateFlow[0],
+    setFlow = _React$useStateFlow[1];
   React.useEffect(function () {
     Store.putPrefs({ pace: pace, examDate: examDate });
   }, [pace, examDate]);
@@ -295,6 +318,8 @@ function App() {
       setUiLang(s.uiLang);
       setKanjiViewState(s.kanjiView);
       setPendingCards(s.pendingCards);
+      // data arrived under the first-launch welcome (sync, another tab): close it
+      setFlow(function (f) { return f && f.screen === 'welcome' && !f.again && !progressIsEmpty(Store.docs()) ? null : f; });
       setLogTick(function (n) { return n + 1; });
     }
     window.addEventListener('store-changed', refresh);
@@ -352,6 +377,29 @@ function App() {
   React.useEffect(function () {
     if (unit) Store.putPrefs({ currentUnit: unit.id });
   }, [unit && unit.id]);
+  // Welcome / placement exits. Any way out of the welcome marks it seen on this device.
+  var closeFlow = function closeFlow() {
+    markWelcomeSeen();
+    setFlow(null);
+  };
+  var startAt = function startAt(i, nextView) {
+    setUnitIdx(i);
+    setView(nextView || 'unit');
+    closeFlow();
+  };
+  // Confirmed placement result: write it, then land on the start stage (or the diagnostic mock).
+  var onPlacementApply = function onPlacementApply(res, startUnit, opts) {
+    applyPlacement(res);
+    var next = startUnit || UNITS[nextUnit(UNITS, new Set(Store.snapshot().completed))];
+    startAt(next.index, opts && opts.diagnostic ? 'diagnostic' : 'unit');
+  };
+  var teachingLeft = placementScope(UNITS, completed).some(function (u) { return u.kind === 'kana' || u.kind === 'lesson'; });
+  React.useEffect(function () {
+    var open = function () { setView('achievements'); };
+    window.addEventListener('open-achievements', open);
+    return function () { window.removeEventListener('open-achievements', open); };
+  }, []);
+  React.useEffect(function () { if (view === 'achievements') markAchievementsSeen(); }, [view]);
   function handleExport() {
     var data = exportProgress(Store.docs(), function (k) {
       try { return localStorage.getItem(k); } catch (e) { return null; }
@@ -478,6 +526,9 @@ function App() {
     onSyncNow: Store.syncNow,
     cards: srsCards,
     units: UNITS,
+    placementOpen: teachingLeft,
+    onPlacement: function () { setFlow({ screen: 'placement' }); },
+    onWelcome: function () { setFlow({ screen: 'welcome', again: true }); },
     onBack: function onBack() {
       return setView(prevView);
     }
@@ -537,6 +588,24 @@ function App() {
     // The Achievements screen (ticket 09) listens for 'open-achievements' ({ id? }) and navigates.
     onOpen: function (id) { setToastBatch(null); window.dispatchEvent(new CustomEvent('open-achievements', { detail: { id: id } })); },
     onMore: function () { setToastBatch(null); window.dispatchEvent(new CustomEvent('open-achievements', { detail: {} })); }
+  }), flow && flow.screen === 'welcome' && React.createElement(WelcomeView, {
+    level: level,
+    units: UNITS,
+    pace: pace,
+    setPace: setPace,
+    examDate: examDate,
+    setExamDate: setExamDate,
+    again: flow.again,
+    onZero: function () { startAt(0); },
+    onFind: function () { setFlow({ screen: 'placement', fromWelcome: true, again: flow.again }); },
+    onSkip: closeFlow
+  }), flow && flow.screen === 'placement' && React.createElement(PlacementFlow, {
+    units: UNITS,
+    completed: completed,
+    level: level,
+    onApply: onPlacementApply,
+    // leaving saves nothing: back to the welcome it came from, else straight to where the learner was
+    onClose: function () { setFlow(flow.fromWelcome ? { screen: 'welcome', again: flow.again } : null); }
   }));
 }
 

@@ -2997,3 +2997,42 @@ function placementApply(result, units) {
     cardItems: unitItems(done).map(function (it) { return it.id; })
   };
 }
+
+// ── Welcome + placement UI helpers (roadmap ticket 39) ──────────────────────
+// progressIsEmpty(docs): no unit / card / log / mock doc at all. Prefs and unlock docs don't count
+// (the app writes prefs on first open), so the welcome shows once and never after an import or sync.
+function progressIsEmpty(docs) {
+  return !docs.some(function (d) { return /^(unit|card|log|mock):/.test(d._id); });
+}
+// examDateError(text, now) → null when it is a real date today or later, else 'bad' | 'past'.
+function examDateError(text, now) {
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text || '');
+  if (!m) return 'bad';
+  var d = new Date(+m[1], +m[2] - 1, +m[3]);
+  if (d.getMonth() !== +m[2] - 1 || d.getDate() !== +m[3]) return 'bad';
+  return text < localDate(new Date(now)) ? 'past' : null;
+}
+// placementScope(units, doneIds) → the units a (re)take may newly mark: those after the highest
+// teaching stage already done. A first take (nothing done) gets every unit.
+function placementScope(units, doneIds) {
+  var top = -1;
+  units.forEach(function (u) { if ((u.kind === 'kana' || u.kind === 'lesson') && doneIds.has(u.id)) top = Math.max(top, u.index); });
+  return units.filter(function (u) { return u.index > top; });
+}
+// placementTrim(result, stages, pos) → the result as if the learner started at stages[pos]
+// ("start earlier": only ever lower than the test's own start): fewer stages marked, holes below it kept.
+function placementTrim(res, stages, pos) {
+  var before = {};
+  stages.slice(0, pos).forEach(function (u) { before[u.id] = true; });
+  return {
+    passedStageIds: res.passedStageIds.filter(function (id) { return before[id]; }),
+    holeStageIds: res.holeStageIds.filter(function (id) { return before[id]; }),
+    startStageId: stages[pos] ? stages[pos].id : null,
+    log: res.log
+  };
+}
+// placementReviewsWaiting(units, startIndex, doneIds) → review units inside the skipped range
+// (before the start stage) that are still open. startIndex = units.length when everything is skipped.
+function placementReviewsWaiting(units, startIndex, doneIds) {
+  return units.filter(function (u) { return u.kind === 'review' && u.index < startIndex && !doneIds.has(u.id); });
+}
