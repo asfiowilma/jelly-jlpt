@@ -15,11 +15,22 @@ function notifyStoreChanged() {
 // markUnitsDone(ids): marks units done and adds their SRS cards up to today's
 // new-card cap; the rest wait in prefs.pendingCards. A passed quiz calls it;
 // placement / skip-ahead (ticket 37) can call it with many ids.
-function markUnitsDone(ids, now) {
+function markUnitsDone(ids, now, opts) {
   now = now || Date.now();
+  var skipped = !!(opts && opts.skipped);
   var snap = Store.snapshot();
-  var units = UNITS.filter(function (u) { return ids.indexOf(u.id) >= 0 && snap.completed.indexOf(u.id) < 0; });
+  // A real pass also takes a skipped stage (clears its flag); placement (opts.skipped) never
+  // touches a stage that is already done. Skipped stages add no cards (placement seeds them
+  // with seedKnown) and no lesson log, so they don't count toward today's pace.
+  var units = UNITS.filter(function (u) {
+    return ids.indexOf(u.id) >= 0 && (snap.completed.indexOf(u.id) < 0 || (!skipped && snap.skipped.indexOf(u.id) >= 0));
+  });
   if (!units.length) return;
+  if (skipped) {
+    units.forEach(function (u) { Store.putUnit(u.id, true, true); });
+    notifyStoreChanged();
+    return;
+  }
   units.forEach(function (u) { Store.putUnit(u.id, true); Store.logLesson(u.id); });
   var cards = Object.assign({}, snap.srsCards);
   var room = dailyCardCap(snap.pace, UNITS, units[0].index) - cardsAddedToday(cards, now);
@@ -488,6 +499,7 @@ function App() {
   }) : view === 'units' ? /*#__PURE__*/React.createElement(Overview, {
     units: UNITS,
     completed: completed,
+    skipped: new Set(Store.snapshot().skipped),
     current: unit.index,
     suggested: nextUnit(UNITS, completed),
     pace: pace,
@@ -506,6 +518,7 @@ function App() {
     unit: unit,
     units: UNITS,
     completed: completed,
+    skipped: new Set(Store.snapshot().skipped),
     unmarkDone: unmarkDone,
     onQuizResult: onQuizResult,
     sfxOn: sfxOn,

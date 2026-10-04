@@ -261,6 +261,10 @@ a.data-btn{display:inline-flex;align-items:center;text-decoration:none}
 .unit-row.done{background:color-mix(in srgb,var(--ok) 11%,var(--surface));border-color:color-mix(in srgb,var(--ok) 45%,var(--border));border-left-color:var(--ok)}
 .unit-row.done:hover{background:color-mix(in srgb,var(--ok) 18%,var(--surface))}
 .unit-row.done .unit-num{color:var(--ok)}
+.unit-row.skipped{background:var(--surface);border-style:dashed;border-color:var(--border);border-left:3px dashed var(--info);color:var(--muted)}
+.unit-row.skipped:hover{background:var(--surface2)}
+.unit-row.skipped .unit-num{color:var(--info)}
+.unit-skipped{color:var(--info);font-weight:700}
 .unit-row .week-badge{padding:1px 8px;font-size:0.66rem;font-weight:700}
 .overview .qz-entry{margin:0}
 .up-next p{margin-top:4px;font-size:0.82rem;color:var(--muted)}

@@ -36,6 +36,9 @@ var UI_STRINGS = {
   ach_r_legendary:  { en: 'legendary', ja: 'レジェンド', since: 'N1' },
   // Day status
   mark_incomplete: { en: 'Mark not done', ja: 'まだ',         since: 'N4'  },
+  skipped_badge:   { en: '» Skipped',      ja: '» スキップ',    since: 'N4' },
+  skipped_label:   { en: 'Skipped, verified by placement', ja: 'スキップ（きじゅんテストでかくにん）', since: 'N4' },
+  skipped_count:   { en: '{n} skipped',     ja: 'スキップ：{n}', since: 'N4' },
   complete_badge:  { en: '✓ Done',         ja: '✓ かんりょう',  since: 'N4' },
   // Navigation buttons
   nav_prev: { en: '← Previous', ja: '← まえ',   since: 'N4'  },

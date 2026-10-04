@@ -48,7 +48,8 @@ function Overview(props) {
     completed = props.completed,
     current = props.current,
     suggested = props.suggested,
-    setUnit = props.setUnit;
+    setUnit = props.setUnit,
+    skipped = props.skipped || new Set();
   var ramp = levelRamp(units, current);
   var cur = units[current];
   var ce = React.createElement;
@@ -70,7 +71,7 @@ function Overview(props) {
   };
   return ce("div", { className: "overview" },
     ce("section", { className: "panel", 'aria-label': "Course progress" },
-      head("Course progress", completed.size + " of " + units.length + " stages done"),
+      head("Course progress", (completed.size - skipped.size) + " of " + units.length + " stages done" + (skipped.size ? " · " + t('skipped_count', cur.level).replace('{n}', skipped.size) : "")),
       ce("div", { className: "course" },
         // Level ramp: one segment per level with units, filled up to the current unit
         ce("div", {
@@ -99,13 +100,13 @@ function Overview(props) {
       // Level picker: one card per level; levels without stages yet are disabled ("Coming soon")
       ce("div", { className: "lv-cards", role: "group", 'aria-label': "Level" }, LEVELS.map(function (lv) {
         var us = units.filter(function (u) { return u.level === lv; });
-        var d = us.filter(function (u) { return completed.has(u.id); }).length;
+        var d = us.filter(function (u) { return completed.has(u.id); }).length, sk = us.filter(function (u) { return skipped.has(u.id); }).length;
         return ce("button", {
           key: lv, className: "lv-card", disabled: us.length === 0, style: { '--lv': LEVEL_COLORS[lv] },
           'aria-pressed': lv === level ? "true" : "false",
           onClick: function () { setLevel(lv); setAll(false); }
         }, ce("b", null, lv),
-          us.length ? ce("small", null, d, " of ", us.length, " done") : ce("small", null, "Coming soon"),
+          us.length ? ce("small", null, d - sk, " of ", us.length, " done", sk ? " · " + sk + " skipped" : "") : ce("small", null, "Coming soon"),
           us.length > 0 && ce("span", { className: "level-progress-bar" },
             ce("span", { className: "level-progress-fill", style: { width: d / us.length * 100 + '%' } })));
       })),
@@ -113,9 +114,9 @@ function Overview(props) {
         !all && hidden > 0 && ce("li", { className: "unit-fold-li" },
           ce("button", { className: "unit-fold", onClick: function () { setAll(true); } }, "✓ Show ", hidden, " completed ", hidden === 1 ? "stage" : "stages")),
         shown.map(function (u) {
-          var isDone = completed.has(u.id);
+          var isDone = completed.has(u.id), isSkipped = isDone && skipped.has(u.id);
           var known = knownCount(unitItems([u]), props.cards || {});
-          var cls = "unit-row" + (isDone ? " done" : "") + (u.index === current ? " current" : "") + (u.index === suggested ? " next" : "");
+          var cls = "unit-row" + (isSkipped ? " skipped" : isDone ? " done" : "") + (u.index === current ? " current" : "") + (u.index === suggested ? " next" : "");
           return ce("li", { key: u.id },
             ce("button", {
               className: cls,
@@ -127,7 +128,8 @@ function Overview(props) {
               u.kind !== 'lesson' && u.kind !== 'kana' && ce("span", { className: "week-badge" }, u.kind),
               known > 0 && ce("span", { className: "week-badge" }, t('unit_known', level).replace('{n}', known)),
               u.index === suggested && !isDone && ce("span", { className: "unit-next" }, "Up next"),
-              isDone && ce("span", { className: "unit-done", 'aria-label': "completed" }, "✓")));
+              isSkipped ? ce("span", { className: "unit-skipped", role: "img", 'aria-label': t('skipped_label', level) }, "»")
+                : isDone && ce("span", { className: "unit-done", 'aria-label': "completed" }, "✓")));
         })),
       lvUnits.length > windowEnd - start && ce("button", { className: "unit-showall", 'aria-expanded': all ? "true" : "false", onClick: function () { setAll(!all); } },
         all ? "Show fewer" : "Show all " + lvUnits.length + " stages")),

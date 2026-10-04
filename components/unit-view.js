@@ -14,7 +14,7 @@ function UnitView(props) {
     kanjiView = props.kanjiView,
     setKanjiView = props.setKanjiView;
   var lv = unit.level;
-  var isDone = completed.has(unit.id);
+  var isDone = completed.has(unit.id), isSkipped = isDone && !!props.skipped && props.skipped.has(unit.id);
   var section = function (label) {
     var children = Array.prototype.slice.call(arguments, 1);
     return React.createElement.apply(React, ["div", { className: "section" },
@@ -174,7 +174,7 @@ function UnitView(props) {
       React.createElement("div", { className: "nav-mid" },
         React.createElement("b", null, t('unit_label', lv), " ", unit.index + 1, " ", React.createElement("span", null, "/ ", units.length)),
         React.createElement("div", { className: "nav-status" }, isDone
-          ? [React.createElement("span", { key: "d", className: "nav-ok" }, t('complete_badge', lv)), " · ",
+          ? [React.createElement("span", { key: "d", className: "nav-ok", title: isSkipped ? t('skipped_label', lv) : undefined }, t(isSkipped ? 'skipped_badge' : 'complete_badge', lv)), " · ",
             React.createElement("button", { key: "u", className: "nav-link", onClick: unmarkDone }, t('mark_incomplete', lv))]
           : unit.kind === 'mock' ? "Take the mock to finish" : "Pass the quiz (" + passMarkText(unit) + ") to finish"),
         props.pace && React.createElement("div", { className: "nav-pace" }, paceTodayLine(props.pace, props.doneToday || 0, lv))),

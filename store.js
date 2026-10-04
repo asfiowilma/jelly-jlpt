@@ -272,10 +272,14 @@ function createStore(opts) {
     snapshot: function () { return docsToSnapshot(store.docs()); },
     docs: function () { return Object.keys(mirror).map(function (k) { return mirror[k]; }); },
     // Re-marking with the same done state is a no-op (keeps completedAt).
-    putUnit: function (id, done) {
-      var cur = mirror['unit:' + id];
-      if (cur && cur.done === !!done) return queue;
-      return write('unit:' + id, { done: !!done, completedAt: done ? Date.now() : null });
+    // skipped (placement, ticket 38) is stored as skipped:true only; a plain putUnit(id, true) on a
+    // skipped unit (real quiz pass) rewrites the doc without the flag.
+    putUnit: function (id, done, skipped) {
+      var cur = mirror['unit:' + id], sk = !!(done && skipped);
+      if (cur && cur.done === !!done && !!cur.skipped === sk) return queue;
+      var body = { done: !!done, completedAt: done ? Date.now() : null };
+      if (sk) body.skipped = true;
+      return write('unit:' + id, body);
     },
     // Writes only the cards that differ from what's stored.
     // ponytail: O(cards) JSON compare per call; track dirty ids if reviews get slow.

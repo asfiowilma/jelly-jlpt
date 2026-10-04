@@ -2060,7 +2060,9 @@ function matchCatalogText(text) {
 
 // ── Store docs (synced learning data, persisted by store.js) ────────────────
 // One doc per entity; every doc also carries updatedAt (ms) + deviceId.
-//   unit:<unitId>   { done, completedAt (ms | null) }
+//   unit:<unitId>   { done, completedAt (ms | null), skipped? }  skipped:true = done by placement,
+//                   not by passing the quiz (ticket 38). Absent otherwise. It travels with done:true;
+//                   a real quiz pass rewrites the doc without it, un-marking clears it. Merge: last write wins.
 //   card:<itemId>   SRS card fields (id, type, front, back, reading?, interval,
 //                   ease, due, reps) + lastReviewedAt (0 = never reviewed)
 //                   + imported? { source, at, batchId, prior? } (seeded as
@@ -2400,7 +2402,7 @@ function todayTarget(pace) {
 function unitsDoneToday(unitDocs, now) {
   var today = localDate(new Date(now));
   return unitDocs.filter(function (d) {
-    return d._id.indexOf('unit:') === 0 && d.done && d.completedAt && localDate(new Date(d.completedAt)) === today;
+    return d._id.indexOf('unit:') === 0 && d.done && !d.skipped && d.completedAt && localDate(new Date(d.completedAt)) === today;
   }).length;
 }
 // projectFinish → local Date, ceil(remaining / pace) calendar days after now.
@@ -2427,10 +2429,10 @@ function newCardCap(pace, upcomingUnits) {
 
 // docsToSnapshot: docs → App's synchronous state shape.
 function docsToSnapshot(docs) {
-  var snap = { completed: [], srsCards: {}, currentUnit: null, pace: 1, examDate: null, furiganaPref: null, uiLang: 'en', kanjiView: 'rows', pendingCards: [], mocks: [], unlocked: {} };
+  var snap = { completed: [], srsCards: {}, currentUnit: null, pace: 1, examDate: null, furiganaPref: null, uiLang: 'en', kanjiView: 'rows', pendingCards: [], mocks: [], unlocked: {}, skipped: [] };
   docs.forEach(function (d) {
     if (d._id.indexOf('unit:') === 0) {
-      if (d.done) snap.completed.push(d._id.slice(5));
+      if (d.done) { snap.completed.push(d._id.slice(5)); if (d.skipped) snap.skipped.push(d._id.slice(5)); } // skipped units are also in completed
     } else if (d._id.indexOf('card:') === 0) {
       snap.srsCards[d._id.slice(5)] = stripDocMeta(d);
     } else if (d._id === 'prefs:learning') {
@@ -2497,6 +2499,7 @@ function validateProgressData(data) {
     }
     if (typeof d.updatedAt !== 'number') return bad(d._id + ' missing updatedAt');
     if (d._id.indexOf('unit:') === 0 && typeof d.done !== 'boolean') return bad(d._id + ' missing done');
+    if (d._id.indexOf('unit:') === 0 && d.skipped !== undefined && (d.skipped !== true || !d.done)) return bad(d._id + ' bad skipped flag');
     if (d._id.indexOf('card:') === 0 && ['interval', 'ease', 'due', 'reps'].some(function (f) {
       return typeof d[f] !== 'number';
     })) return bad(d._id + ' missing SRS fields');
@@ -2535,11 +2538,12 @@ function mockCounted(m) { // ≥ 50% of the questions answered (a blank submit d
 
 // achievementState(docs, units, catalog, now): everything the rules read, derived once.
 function achievementState(docs, units, catalog, now) {
-  var s = { units: units, catalog: catalog, now: now, done: {}, cards: {}, mocks: [] };
+  var s = { units: units, catalog: catalog, now: now, done: {}, skipped: {}, cards: {}, mocks: [] };
   var known = {};
   units.forEach(function (u) { known[u.id] = true; });
   docs.forEach(function (d) {
-    if (d._id.indexOf('unit:') === 0) { if (d.done && known[d._id.slice(5)]) s.done[d._id.slice(5)] = d.completedAt || 0; }
+    if (d._id.indexOf('unit:') === 0) { if (d.done && known[d._id.slice(5)]) { s.done[d._id.slice(5)] = d.completedAt || 0; if (d.skipped) s.skipped[d._id.slice(5)] = true; } }
+    // skipped (placement) counts as done for progress rows; quiz rows read s.quizzes/byUnit, never s.done
     else if (d._id.indexOf('card:') === 0) s.cards[d._id.slice(5)] = d;
     else if (d._id.indexOf('mock:') === 0 && catalog.items[d.mockId] && mockCounted(d)) s.mocks.push(d);
   });
@@ -2570,7 +2574,7 @@ function _nth(times, n) { times = times.slice().sort(function (a, b) { return a 
 function _perDay(s, n) { // earliest moment some day reached n done units
   var days = {}, best = false;
   Object.keys(s.done).forEach(function (id) {
-    if (s.done[id]) (days[localDate(new Date(s.done[id]))] = days[localDate(new Date(s.done[id]))] || []).push(s.done[id]);
+    if (s.done[id] && !s.skipped[id]) (days[localDate(new Date(s.done[id]))] = days[localDate(new Date(s.done[id]))] || []).push(s.done[id]);
   });
   Object.keys(days).forEach(function (k) {
     days[k].sort(function (a, b) { return a - b; });
