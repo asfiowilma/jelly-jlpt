@@ -27,17 +27,17 @@ function pwaEnv() {
   };
 }
 
-// state = pwaInstallState(...) in lib.js. 'hidden' renders nothing.
+// state = pwaInstallState(...) in lib.js. The card always shows (it is the offline pitch); 'none' and 'hidden' replace the button with a hint.
 function InstallCard(props) {
   var L = props.L, h = React.createElement, state = props.state;
-  if (state === 'hidden') return null;
-  if (state === 'none') return h('p', { className: 'setting-hint install-quiet' }, L('install_none'));
   var installed = state === 'installed';
   return h('section', { className: 'install-card' + (installed ? ' installed' : ''), 'aria-labelledby': 'install-title' },
     h('h3', { id: 'install-title' }, L(installed ? 'install_done_title' : 'install_title')),
     h('p', { className: 'install-lead' }, L(installed ? 'install_done' : 'install_lead')),
     state === 'prompt' && h('button', { id: 'install-btn', className: 'install-btn', type: 'button', onClick: props.onInstall }, L('install_btn')),
-    state === 'ios' && h('p', { className: 'install-ios' }, L('install_ios')));
+    state === 'ios' && h('p', { className: 'install-ios' }, L('install_ios')),
+    state === 'none' && h('p', { className: 'install-ios' }, L('install_none')),
+    state === 'hidden' && h('p', { className: 'install-ios' }, L('install_file')));
 }
 
 function InstallCardLive(props) {

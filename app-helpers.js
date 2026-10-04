@@ -376,6 +376,7 @@ var UI_STRINGS = {
   install_done:      { en: 'Open Jelly JLPT from your home screen or app list.', ja: 'ホーム画面またはアプリ一覧から開けます。', since: 'N1' },
   install_none:      { en: 'This browser has no install button here. Look for Install or Add to Home Screen in its menu.', ja: 'このブラウザにはインストールボタンがありません。メニューの「インストール」または「ホーム画面に追加」を探してください。', since: 'N1' },
   update_title:      { en: 'Update ready', ja: '更新の準備ができました', since: 'N1' },
+  install_file:      { en: 'Installing needs the hosted version. Open the site over https to get the install button.', ja: 'インストールにはホスティング版が必要です。https でサイトを開くとインストールボタンが出ます。', since: 'N1' },
   update_body:       { en: 'Reload to get the latest version.', ja: '再読み込みで最新版になります。', since: 'N1' },
   update_wait:       { en: 'Finish your quiz first, then reload.', ja: 'クイズを終えてから再読み込みしてください。', since: 'N1' },
   update_btn:        { en: 'Reload', ja: '再読み込み', since: 'N1' },

@@ -398,10 +398,10 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     try {
       ["prompt", "ios", "installed", "none", "hidden"].forEach(function (state) {
         var el = rec(function () { return InstallCard({ L: L, state: state, onInstall: noop }); });
-        if (state === "hidden") return a.strictEqual(el, null, "hidden renders nothing");
         a.ok(text().length > 20, state);
-        if (state === "none") a.ok(text().indexOf(L("install_none")) >= 0, "quiet line");
-        else a.ok(text().indexOf("install-card") >= 0, "card " + state);
+        a.ok(text().indexOf("install-card") >= 0, "card shows in every state: " + state);
+        a.strictEqual(text().indexOf(L("install_none")) >= 0, state === "none", "browser-menu hint only when no prompt: " + state);
+        a.strictEqual(text().indexOf(L("install_file")) >= 0, state === "hidden", "hosted-version hint only on file://: " + state);
         a.strictEqual(text().indexOf(L("install_btn")) >= 0, state === "prompt", "install button only when installable: " + state);
         a.strictEqual(text().indexOf(L("install_ios")) >= 0, state === "ios", "iOS hint only on iOS: " + state);
         if (state === "installed") a.ok(text().indexOf(L("install_done_title")) >= 0, "installed state");
