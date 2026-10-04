@@ -31,13 +31,15 @@ function pwaEnv() {
 function InstallCard(props) {
   var L = props.L, h = React.createElement, state = props.state;
   var installed = state === 'installed';
-  return h('section', { className: 'install-card' + (installed ? ' installed' : ''), 'aria-labelledby': 'install-title' },
-    h('h3', { id: 'install-title' }, L(installed ? 'install_done_title' : 'install_title')),
-    h('p', { className: 'install-lead' }, L(installed ? 'install_done' : 'install_lead')),
-    state === 'prompt' && h('button', { id: 'install-btn', className: 'install-btn', type: 'button', onClick: props.onInstall }, L('install_btn')),
-    state === 'ios' && h('p', { className: 'install-ios' }, L('install_ios')),
-    state === 'none' && h('p', { className: 'install-ios' }, L('install_none')),
-    state === 'hidden' && h('p', { className: 'install-ios' }, L('install_file')));
+  var hint = { ios: 'install_ios', none: 'install_none', hidden: 'install_file' }[state];
+  // Same gradient entry card as Up next / stage quiz; notice is helper text, the button keeps its label
+  return h('section', { className: 'qz-entry install-card' + (installed ? ' installed' : ''), 'aria-labelledby': 'install-title' },
+    jelly('idle', 64, true, true),
+    h('div', { className: 'txt' },
+      h('h3', { id: 'install-title' }, L(installed ? 'install_done_title' : 'install_title')),
+      h('p', { className: 'install-lead' }, L(installed ? 'install_done' : 'install_lead')),),
+    !installed && state !== 'ios' && h('button', { id: 'install-btn', className: 'quiz-start-btn', type: 'button', disabled: state !== 'prompt', onClick: props.onInstall }, L('install_btn')),
+    hint && h('p', { className: 'install-hint' }, h('span', { 'aria-hidden': 'true' }, '💡'), L(hint)));
 }
 
 function InstallCardLive(props) {
