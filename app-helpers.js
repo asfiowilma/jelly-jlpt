@@ -38,6 +38,7 @@ var UI_STRINGS = {
   mark_incomplete: { en: 'Mark not done', ja: 'まだ',         since: 'N4'  },
   skipped_badge:   { en: '» Skipped',      ja: '» スキップ',    since: 'N4' },
   skipped_label:   { en: 'Skipped, verified by placement', ja: 'スキップ（きじゅんテストでかくにん）', since: 'N4' },
+  skipped_tag:     { en: 'Skipped', ja: 'スキップ', since: 'N4' },
   skipped_count:   { en: '{n} skipped',     ja: 'スキップ：{n}', since: 'N4' },
   complete_badge:  { en: '✓ Done',         ja: '✓ かんりょう',  since: 'N4' },
   // Navigation buttons
@@ -375,8 +376,8 @@ var UI_STRINGS = {
   install_done_title: { en: 'Installed', ja: 'インストール済み', since: 'N1' },
   install_done:      { en: 'Open Jelly JLPT from your home screen or app list.', ja: 'ホーム画面またはアプリ一覧から開けます。', since: 'N1' },
   install_none:      { en: 'This browser has no install button here. Look for Install or Add to Home Screen in its menu.', ja: 'このブラウザにはインストールボタンがありません。メニューの「インストール」または「ホーム画面に追加」を探してください。', since: 'N1' },
-  update_title:      { en: 'Update ready', ja: '更新の準備ができました', since: 'N1' },
   install_file:      { en: 'Installing needs the hosted version. Open the site over https to get the install button.', ja: 'インストールにはホスティング版が必要です。https でサイトを開くとインストールボタンが出ます。', since: 'N1' },
+  update_title:      { en: 'Update ready', ja: '更新の準備ができました', since: 'N1' },
   update_body:       { en: 'Reload to get the latest version.', ja: '再読み込みで最新版になります。', since: 'N1' },
   update_wait:       { en: 'Finish your quiz first, then reload.', ja: 'クイズを終えてから再読み込みしてください。', since: 'N1' },
   update_btn:        { en: 'Reload', ja: '再読み込み', since: 'N1' },

@@ -120,15 +120,16 @@ function Overview(props) {
           return ce("li", { key: u.id },
             ce("button", {
               className: cls,
+              title: isSkipped ? t('skipped_label', level) + (known > 0 ? " · " + t('unit_known', level).replace('{n}', known) : "") : undefined,
               'aria-current': u.index === current ? 'true' : undefined,
               onClick: function () { setUnit(u.index); }
             },
               ce("span", { className: "unit-num" }, u.index + 1),
               ce("span", { className: "unit-title" }, u.title),
               u.kind !== 'lesson' && u.kind !== 'kana' && ce("span", { className: "week-badge" }, u.kind),
-              known > 0 && ce("span", { className: "week-badge" }, t('unit_known', level).replace('{n}', known)),
+              known > 0 && !isSkipped && ce("span", { className: "week-badge" }, t('unit_known', level).replace('{n}', known)),
               u.index === suggested && !isDone && ce("span", { className: "unit-next" }, "Up next"),
-              isSkipped ? ce("span", { className: "unit-skipped", role: "img", 'aria-label': t('skipped_label', level) }, "»")
+              isSkipped ? ce("span", { className: "unit-skipped", 'aria-label': t('skipped_label', level) }, t('skipped_tag', level))
                 : isDone && ce("span", { className: "unit-done", 'aria-label': "completed" }, "✓")));
         })),
       lvUnits.length > windowEnd - start && ce("button", { className: "unit-showall", 'aria-expanded': all ? "true" : "false", onClick: function () { setAll(!all); } },
