@@ -75,7 +75,7 @@ function seedKnown(ids, source, batchId, now, mode) {
   if (r.added.length || r.replaced.length) {
     Store.putCards(cards);
     notifyStoreChanged();
-    scheduleAchievements(mode || 'live'); // placement passes 'retro': one summary toast, no per-achievement toasts
+    scheduleAchievements(mode || 'live');
   }
   return r;
 }
@@ -86,7 +86,10 @@ function applyPlacement(res, now) {
   now = now || Date.now();
   var plan = placementApply(res, UNITS);
   markUnitsDone(plan.doneIds, now, { skipped: true });
-  var r = plan.cardItems.length ? seedKnown(plan.cardItems, 'placement', newBatchId('placement'), now, 'retro') : null;
+  var r = plan.cardItems.length ? seedKnown(plan.cardItems, 'placement', newBatchId('placement'), now) : null;
+  // live, not retro: placement unlocks get the stacked toasts (max 3 + "+N more") and the jingle; the
+  // 'store-changed' retro pass from marking stages done folds into this one (live wins the debounce)
+  scheduleAchievements('live');
   return { marked: plan.doneIds.length, cards: r ? r.added.length + r.replaced.length : 0 };
 }
 // Welcome screen (ticket 39): "seen" is a device-only flag (like jlpt_ach_seen), not a synced pref and
