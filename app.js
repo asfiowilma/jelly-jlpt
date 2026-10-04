@@ -154,10 +154,10 @@ function resetAllData() {
 }
 
 var NAV_TABS = [
-  { view: 'unit', label: 'view_today', icon: 'today' },
+  { view: 'today', label: 'view_today', icon: 'today' },
   { view: 'units', label: 'view_units', icon: 'units' },
-  { view: 'stats', label: 'view_stats', icon: 'stats' },
   { view: 'review', label: 'view_review', icon: 'review' },
+  { view: 'stats', label: 'view_stats', icon: 'stats' },
   { view: 'achievements', label: 'view_achievements', icon: 'achievements' }
 ];
 
@@ -184,12 +184,15 @@ function App() {
     }),
     unitIdx = _React$useStateUnit[0],
     setUnitIdx = _React$useStateUnit[1];
-  var _React$useState29 = React.useState('unit'),
+  var _React$useState29 = React.useState('today'),
     _React$useState30 = _slicedToArray(_React$useState29, 2),
     view = _React$useState30[0],
     setView = _React$useState30[1];
+  // A stage page is a drill-down, not a tab: it keeps the tab it was opened from highlighted
+  // ('today' or 'units') and shows a back link to it.
+  var _unitFrom = React.useState('today'), unitFrom = _unitFrom[0], setUnitFrom = _unitFrom[1];
   // View to return to when Settings is closed
-  var _React$useStatePrev = React.useState('unit'),
+  var _React$useStatePrev = React.useState('today'),
     _React$useStatePrev2 = _slicedToArray(_React$useStatePrev, 2),
     prevView = _React$useStatePrev2[0],
     setPrevView = _React$useStatePrev2[1];
@@ -382,6 +385,15 @@ function App() {
   var unit = UNITS[Math.min(unitIdx, UNITS.length - 1)];
   var level = unit.level;
   var dueCount = srsDueCards(srsCards).length;
+  // Today's plan (read → quiz → review): drives the Today tab, the tab dot and the quiz-result hand-off.
+  var dayCtx = currentDayPlan(UNITS, completed, pace, srsCards);
+  var _rvAuto = React.useState(false), reviewAuto = _rvAuto[0], setReviewAuto = _rvAuto[1];
+  var openReview = function (auto) { setReviewAuto(!!auto); setView('review'); };
+  var openStage = function (i, from) {
+    setUnitIdx(i);
+    setUnitFrom(from || 'today');
+    setView('unit');
+  };
   // Re-derived each render; completing a unit re-renders App (setCompleted).
   var doneToday = unitsDoneToday(Store.docs(), Date.now());
   var showFurigana = furiganaOn(furiganaPref, level);
@@ -458,8 +470,8 @@ function App() {
       setSfxOn(true);
       setToastBatch(null);
       setPersist(null);
-      setPrevView('unit');
-      setView('unit');
+      setPrevView('today');
+      setView('today');
       setFlow({ screen: 'welcome' });
     });
   }
@@ -537,11 +549,14 @@ function App() {
     return /*#__PURE__*/React.createElement("button", {
       key: tab.view,
       className: "tab",
-      'aria-current': view === tab.view ? 'page' : undefined,
+      'aria-current': view === tab.view || (view === 'unit' && unitFrom === tab.view) ? 'page' : undefined,
       onClick: function onClick() {
+        setReviewAuto(false);
         return setView(tab.view);
       }
-    }, icon(tab.icon), /*#__PURE__*/React.createElement("span", null, tRuby(tab.label, level, showFurigana)), tab.view === 'review' && dueCount > 0 && /*#__PURE__*/React.createElement("span", {
+    }, icon(tab.icon), tab.view === 'achievements' && t(tab.label, level) === UI_STRINGS[tab.label].en
+      ? React.createElement(React.Fragment, null, React.createElement("span", { className: "tab-full" }, UI_STRINGS[tab.label].en), React.createElement("span", { className: "tab-short" }, "Stamps"))
+      : /*#__PURE__*/React.createElement("span", null, tRuby(tab.label, level, showFurigana)), tab.view === 'today' && !dayCtx.plan.done && React.createElement("span", { className: "dot", title: "Plan not finished" }, React.createElement("span", { className: "sr-only" }, "Today's plan not finished")), tab.view === 'review' && dueCount > 0 && /*#__PURE__*/React.createElement("span", {
       className: "pill"
     }, dueCount, /*#__PURE__*/React.createElement("span", {
       className: "sr-only"
@@ -597,12 +612,31 @@ function App() {
     onBack: function onBack() {
       return setView(prevView);
     }
+  }) : view === 'today' ? React.createElement(TodayView, {
+    plan: dayCtx.plan,
+    reviewedToday: dayCtx.reviewedToday,
+    studiedToday: dayCtx.studiedToday,
+    quizzes: dayCtx.quizzes,
+    units: UNITS,
+    completed: completed,
+    cards: srsCards,
+    level: level,
+    pace: pace,
+    streak: streak,
+    onOpenStage: function (i) { openStage(i, 'today'); },
+    onReview: function () { openReview(true); },
+    onMock: function () { setView('diagnostic'); },
+    onSettings: openSettings
   }) : view === 'review' ? /*#__PURE__*/React.createElement(ReviewMode, {
     // remount when released cards change the due deck
     key: pendingCards.length,
     cards: srsCards,
     level: level,
     pending: pendingCards.length,
+    autoStart: reviewAuto,
+    dayDone: dayCtx.plan.done,
+    streak: streak,
+    onToday: function () { setView('today'); },
     onLearnExtra: function () { releasePendingCards(true); },
     onKnown: function (id) { seedKnown([id], 'known-button', 'known-button:' + localDate()); },
     onUpdate: function onUpdate(updated) {
@@ -622,15 +656,21 @@ function App() {
     doneToday: doneToday,
     examDate: examDate,
     cards: srsCards,
-    setUnit: function setUnit(i) {
-      setUnitIdx(i);
-      setView('unit');
-    },
+    setUnit: function setUnit(i) { openStage(i, 'units'); },
     onDiagnostic: function () { setView('diagnostic'); }
   }) : view === 'diagnostic' ? React.createElement(MockExam, {
     mock: CATALOG.items[DIAGNOSTIC_MOCK],
     onClose: function () { setView('units'); }
-  }) : /*#__PURE__*/React.createElement(UnitView, {
+  }) : React.createElement(React.Fragment, null, React.createElement("button", {
+    className: "unit-back",
+    onClick: function () { setView(unitFrom); }
+  }, "← ", t(unitFrom === 'units' ? 'view_units' : 'view_today', level)), /*#__PURE__*/React.createElement(UnitView, {
+    handoff: quizHandoff(dayCtx.plan, unit, UNITS, {
+      nextStage: function () { setUnitIdx(unit.index + 1); },
+      openStage: function (i) { openStage(i, unitFrom); },
+      review: function () { openReview(true); },
+      today: function () { setView('today'); }
+    }),
     unit: unit,
     units: UNITS,
     completed: completed,
@@ -647,7 +687,7 @@ function App() {
     kanjiView: kanjiView,
     setKanjiView: setKanjiView,
     cards: srsCards
-  })), updateReady && React.createElement(UpdateToast, {
+  }))), updateReady && React.createElement(UpdateToast, {
     L: function (k) { return t(k, level); },
     busy: quizBusy,
     onApply: function () { window.__swApplyUpdate && window.__swApplyUpdate(); },

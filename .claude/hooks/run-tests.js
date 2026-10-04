@@ -65,6 +65,7 @@ var appFiles = [
   path.join("components", "unit-view.js"),
   path.join("components", "review-mode.js"),
   path.join("components", "overview.js"),
+  path.join("components", "today-view.js"),
   path.join("components", "stats-view.js"),
   path.join("components", "stamp.js"),
   path.join("components", "achievements-view.js"),
@@ -399,7 +400,7 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       a.ok(fs.existsSync(path.join(projectDir, l.logo)), l.id + " logo file exists: " + l.logo);
     });
     ["support_label", "support_pop_title", "support_pop_gloss", "support_pop_body", "support_card_title",
-      "support_card_body", "support_rails", "support_fine", "support_thanks"].forEach(function (k) {
+      "support_card_body", "support_rails", "support_thanks"].forEach(function (k) {
       var s = t(k, "N5");
       a.notEqual(s, k, k + " has a string");
       a.ok(s.indexOf("—") < 0, k + " has no em dash");
