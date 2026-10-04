@@ -117,6 +117,7 @@ in `.scratch/content-audit/issues/`.
 | **Reorder split words in half** (信頼で\|きる) | ★ questions use authored chunks only, with `star` slots restricted where several orders are valid. |
 | **文脈規定 with more than one fitting word** | Generated ones rely on the English shown. Mocks use authored items with exactly one fit. |
 | **Generator types with no renderer crashed the quiz** | Every type has a renderer. The full playthrough test answers every type, right and wrong. |
+| **Quiz UI redesign dropped the reading question** (passage + options shown, no question) | The playthrough test fails any question whose question line isn't rendered. After any quiz-layout change, play one question of every type in the browser. |
 | **Flaky tests from randomness** | Seed random in tests, and run the suite 3× before merging. |
 
 ## 7. Passages, listening, mocks
