@@ -92,8 +92,11 @@ in `.scratch/content-audit/issues/`.
   kana no word holds; passed with ≥85% on reading and ≥80% on the taught words' meanings.
 - **Single-sound kana questions felt like flashcards** (ticket 44). Check per stage how many
   new kana no level word holds: on N5, にゃ–りょ, katakana yōon and the first katakana rows
-  have almost no words, so those stages stay 50–70% single kana. A higher level has more
-  katakana words; rerun the per-stage word/single count after building its catalog.
+  have almost no words. Reading-only words from higher Tanos lists (N4/N3, reading checked
+  against JMdict, `tools/build-read-words.js`) fill them in; N5 words always come first.
+- **Old-kana filler words** (owner, Q47): a kana stage's words must each hold one of that
+  stage's new kana or marks; a review is exempt. Run the per-stage word/single count after
+  any change to the kana plan or word lists.
 - **Load guide per lesson** (N5: about 8 vocab, about 2 kanji, 1 grammar; ±25%). Vocab-only
   lessons are fine when grammar runs out.
 - **A kanji appears only at or after the first lesson teaching a word that uses it.**
@@ -124,7 +127,7 @@ in `.scratch/content-audit/issues/`.
 | **Generator types with no renderer crashed the quiz** | Every type has a renderer. The full playthrough test answers every type, right and wrong. |
 | **Quiz UI redesign dropped the reading question** (passage + options shown, no question) | The playthrough test fails any question whose question line isn't rendered. After any quiz-layout change, play one question of every type in the browser. |
 | **Same question over and over** (kana items asked up to 4×, "cigarette" a wrong option 31× in 10 quizzes) | Quiz length is a maximum: few items → shorter quiz (min 8), an item ≤2× and 3+ questions apart. Fewer than 15 taught candidates → widen with untaught same-level items (no cap on a good trap). Device-local recent memory steers retakes to other forms. Measure max-per-item and quiz length over many builds after any composition change. |
-| **Romaji that names two spellings** (zu: ず/づ, o: お/を, ti: チ/ティ, koohii: コーヒー) | Typed romaji → kana only when the romaji names one spelling (`kanaSpellable`); ん before a vowel shown as n'. |
+| **Romaji that names two spellings** (zu: ず/づ, o: お/を, ti: チ/ティ, koohii: コーヒー or コオヒイ) | Typed romaji → kana only when the romaji names one spelling (`kanaSpellable`); ん before a vowel shown as n'; ー shown as a macron (kōhī) and typed as -, like an IME. |
 | **Flaky tests from randomness** | Seed random in tests, and run the suite 3× before merging. |
 
 ## 7. Passages, listening, mocks

@@ -107,9 +107,11 @@ adding to `listFiles` in `tools/build-sw.js`. Progress is per-origin: see README
 - **Kana units** teach their kana plus 2–5 real vocab words written only in kana learned so far
   (moved out of later lessons; read-only `practice` words fill gaps). Their quiz tests reading
   mostly through words (`kanaReadWords`: any verified N5 word spelled only with kana learned up
-  to the stage, hiragana readings of kanji words included; katakana stages katakana words only),
-  read only, never their meaning; a single-kana question only for a new kana no word holds
-  (`kanaQuizSlots`). Taught words also get a meaning question. It passes only with ≥85% on
+  to the stage and holding at least one of the stage's new kana/marks (reviews: any), hiragana
+  readings of kanji words included; katakana stages katakana words only; then Tanos N4/N3 words
+  from `data/n5/read-words.js`), read only, never their meaning, no card; a single-kana question
+  only for a new kana no word holds (`kanaQuizSlots`). Romaji → kana typing shows ー as a macron
+  (kōhī) and the box types - as ー. Taught words also get a meaning question. It passes only with ≥85% on
   reading and ≥80% on meanings (`scoreQuiz` split by `ex.part`). A review quizzes every
   kana/lesson unit since the previous review.
 - **Quiz variety** (ticket 43): `quizLength` is a maximum; `quizSize` shortens to the items
@@ -173,6 +175,7 @@ and the rule that prevents it.
 | Kanji | `node tools/author-kanji.js <wiktionary-cache dir> [--fetch]` → `data/n5/kanji.js`, from `tools/ref` + `tools/n5-kanji-overrides.json`, checked against KANJIDIC + Wiktionary |
 | Grammar + sentences | hand-authored in `data/n5/grammar.js` / `sentences.js`; method in `tools/n5-grammar-notes.md` |
 | Kana | hand-authored table in `data/n5/kana.js` |
+| Kana reading words beyond N5 | `node tools/build-read-words.js <jisho-cache dir> [--fetch]` → `data/n5/read-words.js` (Tanos N4/N3 katakana + yōon/ぱ-row words, reading checked against JMdict; read only) |
 | Plan | `node tools/author-plan.js` → `data/n5/plan.js`, from the outline inside the script |
 | Coverage report | `node tools/coverage.js` (catalog vs ref list, taught vs not, verified counts) |
 | Service worker | `node tools/build-sw.js` → `sw.js` (rerun after any shipped-file change) |

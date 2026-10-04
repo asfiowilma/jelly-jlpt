@@ -92,7 +92,10 @@ QUnit.module('kana unit words (ticket 42)', function () {
           if (answerLeaks(e)) assert.ok(false, tag + ': leaks ' + answerLeaks(e));
           if (e.form === 'romajiType') assert.ok(answerIsRight(e, kanaToRomaji(e.item.word)) && !answerIsRight(e, e.item.word + 'x'), tag);
           if (e.form === 'kanaSpell') {
-            var typeKana = function (s) { return kanaBox(e, kanaBox(e, s).replace(/n$/, 'ん')); }; // as the answer box + Check do
+            var typeKana = function (s) { // as a learner types it (ō → o-), then the answer box + Check
+              s = s.replace(/[āīūēō]/g, function (c) { return 'aiueo'.charAt('āīūēō'.indexOf(c)) + '-'; });
+              return kanaBox(e, kanaBox(e, s).replace(/n$/, 'ん'));
+            };
             if (!answerIsRight(e, typeKana(e.question)) || answerIsRight(e, typeKana(e.question + 'a'))) assert.ok(false, tag + ': typing the shown romaji must spell the word, nothing else');
             if (!kanaReadable(e.answers[0], learned)) assert.ok(false, tag + ': answer uses unlearned kana');
           }

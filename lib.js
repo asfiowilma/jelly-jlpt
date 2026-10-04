@@ -191,7 +191,7 @@ var KANA_READ_PASS = 0.85, KANA_MEANING_PASS = 0.8, KANA_REVIEW_MEANING_SHARE = 
 function quizSize(unit, items) {
   var target = quizLength(unit, items.length + (unit.kind === 'kana' ? (unit.marks || []).length : 0));
   if (!items.some(function (it) { return it.kind === 'kana'; })) return Math.min(target, quizCapacity(items.length));
-  var words = items.filter(function (it) { return it.kind !== 'kana'; }), reads = kanaReadWords(unit, items).concat(words), has = {};
+  var words = items.filter(function (it) { return it.kind !== 'kana'; }), reads = kanaReadWords(unit, items).concat(words.filter(function (w) { return hasNewKana(unit, w.word); })), has = {};
   reads.forEach(function (w) { kanaSyllables(w.word).forEach(function (c) { has[c] = true; }); });
   var singles = items.filter(function (it) { return it.kind === 'kana' && !has[it.char]; }).length;
   // room for enough words that single kana stay ≤ KANA_SINGLE_SHARE of the reading, up to the cap
@@ -339,12 +339,17 @@ function kanaChunks(word) {
   return out;
 }
 // kanaToRomaji(word): modified Hepburn, long vowels doubled (コーヒー koohii, マッチ matchi);
-// ん before a vowel or y is n' (きんようび kin'youbi, never read as き + にょ).
-function kanaToRomaji(word) {
-  var ch = kanaChunks(word);
-  return ch.map(function (a, i) {
-    return a.indexOf("n'") >= 0 && ch[i + 1] && /^[aiueoy]/.test(ch[i + 1][0]) ? "n'" : a[0];
-  }).join('');
+// ん before a vowel or y is n' (きんようび kin'youbi, never read as き + にょ). macron: ー as a macron
+// on its vowel (コーヒー kōhī), for romaji the learner spells back in kana: ō is typed o-, while
+// oo / ou stay おお / おう.
+var MACRON = { a: 'ā', i: 'ī', u: 'ū', e: 'ē', o: 'ō' };
+function kanaToRomaji(word, macron) {
+  var ch = kanaChunks(word), out = '';
+  ch.forEach(function (a, i) {
+    if (macron && a[1] === '-' && MACRON[out.slice(-1)]) { out = out.slice(0, -1) + MACRON[out.slice(-1)]; return; }
+    out += a.indexOf("n'") >= 0 && ch[i + 1] && /^[aiueoy]/.test(ch[i + 1][0]) ? "n'" : a[0];
+  });
+  return out;
 }
 // romajiMatches(typed, word): typed romaji spells word exactly — any kana's accepted spelling
 // (shi / si), macrons (kōhī), case and spaces ignored. No typo tolerance: a wrong kana is wrong.
@@ -414,23 +419,37 @@ function kanaWordFakes(word, learned) {
 // to this stage (plan order, not the learner's history). Hiragana stages read the hiragana reading
 // of any word (魚 → さかな); katakana stages only katakana words (never a transliterated one). Never
 // a word the quiz asks as an item, nor a single syllable (that is a single-kana question). One per
-// spelling. Item shape { kind: 'kanaword', id: 'w:<kana>', word, level }: no card, no meaning asked.
+// spelling. On a kana stage every word holds a new kana or mark of the stage (hasNewKana). The
+// level's words first, then (N5) Tanos N4 / N3 words from KANA_READ_EXTRA. Item shape
+// { kind: 'kanaword', id: 'w:<kana>', word, level }: no card, no meaning asked.
 function kanaReadWords(unit, items) {
   items = items || quizItems(unit);
   var ks = items.filter(function (it) { return it.kind === 'kana'; });
   if (!ks.length) return [];
   var kata = ks[ks.length - 1].script === 'katakana', learned = learnedKana(unit), seen = {}, out = [];
   items.forEach(function (it) { if (it.kind === 'vocab') seen[it.word] = true; });
-  catalogOf('vocab').forEach(function (v) {
-    var s = kata ? v.word : v.reading;
-    if (!v.verified || v.level !== unit.level || isBound(v) || v.pos === 'particle' || seen[s]) return;
-    // ponytail: では / それでは read "dewa" (particle は); the only such N5 readings
-    if (!(kata ? /^[ァ-ヺー]+$/ : /^[ぁ-ゖ]+$/).test(s) || /では$/.test(s)) return;
-    if (kanaSyllables(s).length < 2 || !kanaReadable(s, learned)) return;
+  var add = function (s, level) {
+    // ponytail: では / それでは read "dewa" (particle は); the only such readings
+    if (seen[s] || !(kata ? /^[ァ-ヺー]+$/ : /^[ぁ-ゖ]+$/).test(s) || /では$/.test(s)) return;
+    if (kanaSyllables(s).length < 2 || !kanaReadable(s, learned) || !hasNewKana(unit, s)) return;
     seen[s] = true;
-    out.push({ kind: 'kanaword', id: 'w:' + s, word: s, level: v.level });
+    out.push({ kind: 'kanaword', id: 'w:' + s, word: s, level: level });
+  };
+  catalogOf('vocab').forEach(function (v) {
+    if (v.verified && v.level === unit.level && !isBound(v) && v.pos !== 'particle') add(kata ? v.word : v.reading, v.level);
   });
+  // beyond the level (Q47-1): Tanos N4 then N3 words, reading checked against JMdict (data/n5/read-words.js)
+  if (unit.level === 'N5' && typeof KANA_READ_EXTRA !== 'undefined') {
+    ['N4', 'N3'].forEach(function (lv) { (KANA_READ_EXTRA[lv] || []).forEach(function (s) { add(s, lv); }); });
+  }
   return out;
+}
+// hasNewKana(unit, word): on a kana stage, word holds one of the stage's new kana or marks (owner
+// rule, Q47: no word made only of earlier kana). A review teaches nothing new: any word passes.
+function hasNewKana(unit, word) {
+  if (unit.kind !== 'kana') return true;
+  var fresh = (unit.kana || []).map(function (k) { return k.char; }).concat(unit.marks || []);
+  return kanaSyllables(word).some(function (c) { return fresh.indexOf(c) >= 0; });
 }
 // kanaSyllables(word): the kana a word is read with: combos whole (きゃ, ティ), っ and ー as marks.
 function kanaSyllables(word) {
@@ -441,10 +460,11 @@ function kanaSyllables(word) {
   return out;
 }
 // kanaSpellable(word): the word's romaji names exactly one kana spelling, so it can be typed from
-// romaji: no ぢ/づ/を (read like じ/ず/お), no small ァィゥェォ (ティ is typed ti → チ), and in
-// no ー (koohii would type コオヒイ).
-function kanaSpellable(word) { return !/[ぢづをヂヅヲァィゥェォー]/.test(word); }
-// kanaBox(ex, typed): what a kana answer box shows: romaji → hiragana, or katakana (ex.kata).
+// romaji: no ぢ/づ/を (read like じ/ず/お), no small ァィゥェォ (ティ is typed ti → チ). ー is fine:
+// the romaji shows it as a macron (kōhī) and the box types it from - (Q47-2).
+function kanaSpellable(word) { return !/[ぢづをヂヅヲァィゥェォ]/.test(word); }
+// kanaBox(ex, typed): what a kana answer box shows: romaji → hiragana, or katakana (ex.kata);
+// - is ー, as with a Japanese IME (ko-hi- → コーヒー).
 function kanaBox(ex, typed) { var s = romajiToKana(typed); return ex.kata ? hiraToKata(s) : s; }
 
 // ── Distractor engine (ticket 09) ───────────────────────────────────────────
@@ -1092,18 +1112,20 @@ function formsFor(item, ctx) {
   // Reading a kana word (ticket 44): kana → romaji typed, romaji → kana typed (only when the romaji
   // names one spelling) or picked among one-edit fakes in learned kana. Never its meaning.
   if (item.kind === 'kanaword' || item.kind === 'vocab' && ctx.kanaMode) {
-    var kw = item, rom = kanaToRomaji(kw.word), kata = /[ァ-ヺ]/.test(kw.word);
+    // shown romaji: ー as a macron (kōhī), so it names one spelling; typed answers take kōhī or koohii
+    var kw = item, rom = kanaToRomaji(kw.word), shown = kanaToRomaji(kw.word, true), kata = /[ァ-ヺ]/.test(kw.word);
     var read = [
       f('romajiType', true, function () { return typing('Type this word in romaji:', kw.word, [rom], 'romaji…', { romaji: kw.word }); }),
       f('romajiPick', false, function () {
         var fakes = kanaWordFakes(kw.word, ctx.learned).slice(0, 3);
         if (fakes.length < 2) return null;
         var opts = rndShuffle([kw.word].concat(fakes));
-        return { type: 'mc', prompt: 'Which is "' + rom + '"?', question: rom, options: opts, correct: opts.indexOf(kw.word) };
+        return { type: 'mc', prompt: 'Which is "' + shown + '"?', question: shown, options: opts, correct: opts.indexOf(kw.word) };
       }),
       f('kanaSpell', true, function () {
-        return kanaSpellable(kw.word) ? typing('Type this word in ' + (kata ? 'katakana' : 'hiragana') + ':', rom, [kw.word],
-          kata ? 'katakana…' : 'hiragana…', Object.assign({}, KANA_INPUT, kata ? { kata: true } : {})) : null;
+        var hint = kata ? { hint: IME_HINT + ' Type - for ー (ō is o-).' } : {};
+        return kanaSpellable(kw.word) ? typing('Type this word in ' + (kata ? 'katakana' : 'hiragana') + ':', shown, [kw.word],
+          kata ? 'katakana…' : 'hiragana…', Object.assign({}, KANA_INPUT, kata ? { kata: true } : {}, hint)) : null;
       })
     ];
     if (item.kind === 'kanaword') return read;
@@ -1389,11 +1411,14 @@ function kanaQuizSlots(unit, ctx, n) {
   };
   var once = function (it) { return !readN[it.id] && (count[it.id] || 0) < QUIZ_ITEM_MAX; };
   kana.map(function (k) { return k.char; }).concat(unit.kind === 'kana' ? unit.marks || [] : []).forEach(function (c) { left[c] = true; });
-  var pool = fresh(ctx.readWords.concat(words)).map(function (w) { return { it: w, syl: kanaSyllables(w.word) }; });
+  // taught words read only when they hold a new kana (hasNewKana); the level's words before N4, N3
+  var pool = fresh(ctx.readWords.concat(words.filter(function (w) { return hasNewKana(unit, w.word); }))).map(function (w) {
+    return { it: w, syl: kanaSyllables(w.word), rank: levelRank(w.level || unit.level) - levelRank(unit.level) };
+  }).sort(function (a, b) { return a.rank - b.rank; });
   var gain = function (w) { return w.syl.filter(function (c, i) { return left[c] && w.syl.indexOf(c) === i; }).length; };
-  while (reads.length < r) { // greedy cover: the first word with the most kana not covered yet
+  while (reads.length < r) { // greedy cover: the lowest-level word with the most kana not covered yet
     var best = null, bestGain = 0;
-    pool.forEach(function (w) { var g = once(w.it) && gain(w); if (g > bestGain) { best = w; bestGain = g; } });
+    pool.forEach(function (w) { var g = once(w.it) && gain(w); if (g > 0 && (!best || w.rank < best.rank || w.rank === best.rank && g > bestGain)) { best = w; bestGain = g; } });
     if (!best) break;
     add(best.it);
     best.syl.forEach(function (c) { left[c] = false; });
