@@ -2116,6 +2116,15 @@ function srsFlagMissed(cards, ids, now) {
   });
   return changed;
 }
+// srsPreview(card) → { again, hard, good, easy }: days until the next review for each rating.
+// pass = the SM-2 pass interval (reps 0 → 1d, reps 1 → 6d, else round(interval × ease)).
+// Good = pass; Hard = max(1, round(pass × 0.8)); Easy = max(pass + 1, round(pass × 1.3));
+// Again = 1 (and the card starts over). srsReview takes its interval from here, so the
+// preview on the buttons can never drift from what a rating does.
+function srsPreview(card) {
+  var pass = card.reps === 0 ? 1 : card.reps === 1 ? 6 : Math.round(card.interval * card.ease);
+  return { again: 1, hard: Math.max(1, Math.round(pass * 0.8)), good: pass, easy: Math.max(pass + 1, Math.round(pass * 1.3)) };
+}
 function srsReview(card, quality) {
   var q = [0, 3, 4, 5][quality];
   var interval = card.interval,
@@ -2125,7 +2134,7 @@ function srsReview(card, quality) {
     reps = 0;
     interval = 1;
   } else {
-    if (reps === 0) interval = 1;else if (reps === 1) interval = 6;else interval = Math.round(interval * ease);
+    interval = srsPreview(card)[['again', 'hard', 'good', 'easy'][quality]];
     reps += 1;
   }
   ease = Math.max(1.3, ease + 0.1 - (5 - q) * (0.08 + (5 - q) * 0.02));
@@ -2143,6 +2152,45 @@ function srsDueCards(cards) {
   return Object.values(cards).filter(function (c) {
     return c.due <= now;
   });
+}
+
+// stageOf(id, units?) → the unit (stage) that teaches the item, or null. First unit in order wins.
+function stageOf(id, units) {
+  units = units || allUnits();
+  for (var i = 0; i < units.length; i++) {
+    if (unitItems([units[i]]).some(function (it) { return it.id === id; })) return units[i];
+  }
+  return null;
+}
+var EXAMPLE_MAX_UNTAUGHT = 2;
+// cardExample(id, units?) → { s: sentence, at, end } | null: a catalog sentence for the card's back.
+// Picks the sentence using the fewest items not yet taught by the item's stage (0 = all taught), then
+// the shortest, then lowest id: deterministic. null for kana, items without a sentence, and when even
+// the best one leans on more than EXAMPLE_MAX_UNTAUGHT items learned later.
+// at/end = char range of the word in s.jp (vocab: wordSpan, else the word spelled exactly once; kanji: the
+// char), or null when it can't be found once and unambiguously (grammar, inflected words).
+function cardExample(id, units) {
+  if (id.indexOf('v:') !== 0 && id.indexOf('k:') !== 0 && id.indexOf('g:') !== 0) return null;
+  var stage = stageOf(id, units);
+  if (!stage) return null;
+  var known = taughtIds(stage), best = null, bestKey = null;
+  sentencesUsing(id).forEach(function (s) {
+    var miss = (s.uses || []).filter(function (u) { return !known[u]; }).length;
+    var key = [miss, s.jp.length, s.id];
+    if (!bestKey || key[0] < bestKey[0] || (key[0] === bestKey[0] && (key[1] < bestKey[1] || (key[1] === bestKey[1] && key[2] < bestKey[2])))) { best = s; bestKey = key; }
+  });
+  if (!best || bestKey[0] > EXAMPLE_MAX_UNTAUGHT) return null;
+  var it = CATALOG.items[id], span = null;
+  if (it && it.kind === 'vocab') {
+    span = best.furigana ? wordSpan(furiganaParts(best.furigana), it.word, it.reading) : null;
+    if (!span && best.jp.indexOf(it.word) >= 0 && best.jp.indexOf(it.word, best.jp.indexOf(it.word) + 1) < 0) {
+      var a = best.jp.indexOf(it.word); span = { at: a, end: a + it.word.length };
+    }
+  } else if (it && it.kind === 'kanji') {
+    var k = best.jp.indexOf(it.char);
+    if (k >= 0 && best.jp.indexOf(it.char, k + 1) < 0) span = { at: k, end: k + 1 };
+  }
+  return { s: best, at: span ? span.at : null, end: span ? span.end : null };
 }
 
 // ── Already-known import (ticket 37, Q35) ───────────────────────────────────
