@@ -634,9 +634,14 @@ function App() {
     level: level,
     pending: pendingCards.length,
     autoStart: reviewAuto,
-    dayDone: dayCtx.plan.done,
+    plan: dayCtx.plan,
+    showFurigana: showFurigana,
     streak: streak,
     onToday: function () { setView('today'); },
+    onStats: function () { setView('stats'); },
+    onLearn: function () { openStage(nextUnit(UNITS, completed), 'review'); },
+    onOpenStage: function (i) { openStage(i, 'review'); },
+    onPlanStage: function (i) { openStage(i, 'today'); },
     onLearnExtra: function () { releasePendingCards(true); },
     onKnown: function (id) { seedKnown([id], 'known-button', 'known-button:' + localDate()); },
     onUpdate: function onUpdate(updated) {
@@ -664,7 +669,7 @@ function App() {
   }) : React.createElement(React.Fragment, null, React.createElement("button", {
     className: "unit-back",
     onClick: function () { setView(unitFrom); }
-  }, "← ", t(unitFrom === 'units' ? 'view_units' : 'view_today', level)), /*#__PURE__*/React.createElement(UnitView, {
+  }, "← ", t({ units: 'view_units', review: 'view_review' }[unitFrom] || 'view_today', level)), /*#__PURE__*/React.createElement(UnitView, {
     handoff: quizHandoff(dayCtx.plan, unit, UNITS, {
       nextStage: function () { setUnitIdx(unit.index + 1); },
       openStage: function (i) { openStage(i, unitFrom); },
