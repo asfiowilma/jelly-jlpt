@@ -36,7 +36,7 @@ store.js              Store: PouchDB persistence + optional CouchDB sync
 app-helpers.js        t() progressive UI strings, TTS, icons, stroke-order SVG fetch
 sfx.js                quiz/achievement sounds from sfx/ (Kenney, CC0)
 components/           one React component per file, React.createElement, no JSX
-  kanji-section.js kana-section.js exercises.js unit-view.js review-mode.js
+  kanji-section.js kana-section.js exercises.js unit-view.js review-mode.js today-view.js
   overview.js stats-view.js settings-view.js mock-exam.js toast-stack.js stamp.js achievements-view.js
 app.js                App: builds UNITS from PLAN + CATALOG, awaits Store.init(), mounts
 vendor/               React 18.2.0, ReactDOM, PouchDB 9.0.0 (minified) + LICENSE-*.txt. Upgrade = replace file, update index.html/tests.html/credits
@@ -141,6 +141,7 @@ Device-only prefs (palette, theme, TTS rate, sfx mute) stay in localStorage
 | Grammar | `conjugate(dict, reading, form, pos)` (rule-based, by `pos`) |
 | SRS | `srsAddCards(unit, cards)`, `srsReview(card, quality)`, `srsDueCards`, `srsFlagMissed`, `admitCards` (app.js: `releasePendingCards`, `markUnitsDone`) |
 | Already known (import) | `seedKnownCards` (21–28 day cards, spread under `reviewBudget` = 5 × `dailyCardCap`), `undoImport`, `importBatches`, `knownCount`, `quickSortItems`, `matchCatalogText` (app.js: `seedKnown`, `undoKnown`; UI in `components/import-view.js`) |
+| Day plan (Today tab) | `dayPlan` (steps stage/review/complete from pace + progress; review first when ≥20 cards overdue), `realCompletions`, `quizHandoff` (what the passed-quiz screen offers next). `components/today-view.js`: `currentDayPlan`, `TodayView` (copy: `.scratch/today-home/copy.md`) |
 | Pace | `PACE_MODES`, `todayTarget`, `projectFinish`, `suggestPace`, `newCardCap`, `dailyCardCap` (enforced via pending cards) |
 | Store | `docsToSnapshot`, `mergeStoreDocs`, `exportProgress`, `validateProgressData` |
 | Stats | `srsStats`, `dueForecast`, `computeStreak`, `retention`, `studyHeatmap` |
