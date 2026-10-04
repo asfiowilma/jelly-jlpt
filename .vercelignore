@@ -7,3 +7,6 @@ docs
 .claude
 .vscode
 CLAUDE.md
+.env.local
+.env*
+.vercel

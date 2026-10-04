@@ -1,2 +1,4 @@
 .scratch/
 .playwright-mcp/
+.vercel
+.env*
