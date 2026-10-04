@@ -160,6 +160,7 @@ function UnitView(props) {
         passed: isDone,
         sfxOn: props.sfxOn,
         setSfxOn: props.setSfxOn,
+        handoff: props.handoff,
         onNextStage: unit.index < last ? function () { setUnit(unit.index + 1); } : null
       }))),
     // Bottom bar: one action that follows the stage state. Skip only navigates; a stage is done

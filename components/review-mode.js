@@ -51,12 +51,16 @@ function ReviewMode(_ref1) {
     level = _ref1.level || 'N5',
     pending = _ref1.pending || 0,
     onLearnExtra = _ref1.onLearnExtra,
-    onKnown = _ref1.onKnown;
+    onKnown = _ref1.onKnown,
+    dayDone = _ref1.dayDone,
+    streak = _ref1.streak,
+    onToday = _ref1.onToday;
   // Passed items over the daily new-card cap (Q34): count + 'learn extra today'.
   var pendingEl = pending > 0 && React.createElement("div", { className: "pending-line" },
     pending, pending === 1 ? " new card" : " new cards", " waiting (daily new-card limit). ",
     onLearnExtra && React.createElement("button", { className: "ex-retry-btn", onClick: onLearnExtra }, "Learn extra today"));
-  var _s = React.useState(null),
+  // autoStart (from the Today plan): skip the hub and start on the due deck
+  var _s = React.useState(function () { return _ref1.autoStart && srsDueCards(cards).length ? rndShuffle(srsDueCards(cards)) : null; }),
     due = _s[0],
     setDue = _s[1];
   var _f = React.useState('all'),
@@ -90,7 +94,7 @@ function ReviewMode(_ref1) {
       className: "review-empty-title"
     }, t('session_done', level)), /*#__PURE__*/React.createElement("div", {
       className: "review-empty-sub"
-    }, "Reviewed ", due.length, " card", due.length !== 1 ? 's' : '', "."), backBtn);
+    }, "Reviewed ", due.length, " card", due.length !== 1 ? 's' : '', ".", dayDone && " That's today done." + (streak ? " Streak " + streak + " 🔥" : "")), onToday && React.createElement("button", { className: "quiz-start-btn", onClick: onToday }, "Back to Today"), backBtn);
   }
   var card = due[idx];
   var rate = function rate(quality) {

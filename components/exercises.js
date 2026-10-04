@@ -98,6 +98,7 @@ function Exercises(_ref9) {
     onFinish = _ref9.onFinish,
     onResult = _ref9.onResult,
     onNextStage = _ref9.onNextStage,
+    handoff = _ref9.handoff, // Today's plan after a pass: { line, primary, secondary } (quizHandoff)
     sfxOn = _ref9.sfxOn,
     setSfxOn = _ref9.setSfxOn, // same pref as Settings; omitted = no mute button
     passed = _ref9.passed, // the stage is already done: the entry card offers a retake
@@ -362,8 +363,9 @@ function Exercises(_ref9) {
             h("circle", { className: "v " + (s.passed ? 'pass' : 'fail'), cx: 70, cy: 70, r: 60, strokeDasharray: (QZ_RING * pct / 100) + " " + QZ_RING })),
           h("span", { className: "qz-jelly" }, s.passed ? h(JellyExcited, { size: 84 }) : jelly('oops', 84))),
         h("div", null,
-          h("h3", { className: "qz-verdict " + (s.passed ? 'pass' : 'fail'), role: "status" }, s.passed ? "Passed — stage complete" : "Not passed yet"),
-          h("p", null, s.right, " / ", s.total, " · ", pct, "% · pass mark ", needPct, s.passed ? "." : ". Retake with new questions."),
+          h("h3", { className: "qz-verdict " + (s.passed ? 'pass' : 'fail'), role: "status" }, s.passed ? "Quiz passed. Stage complete" : "Not quite yet"),
+          h("p", null, s.right, " / ", s.total, " · ", pct, "% · pass mark ", needPct, s.passed ? "." : ". Reread the lesson, then try again. Your answers so far still count toward review."),
+          s.passed && handoff && h("p", { className: "qz-today" }, handoff.line),
           // kana quizzes (ticket 42): both parts must pass
           s.split && h("ul", { className: "qz-parts" }, [["Characters", s.split.chars], ["Words", s.split.words]].map(function (p) {
             var ok = p[1].right / p[1].total >= p[1].need - 1e-9;
@@ -382,11 +384,14 @@ function Exercises(_ref9) {
       })),
       missed.length > shown.length && h("p", { key: "more", className: "qz-more" }, "and ", missed.length - shown.length, " more")
     ], h("div", { className: "qz-dock resd" }, h("div", { className: "qz-in" },
-      h("button", { className: "qz-gb", onClick: leaveQuiz }, "Back to lesson"),
+      h("button", { className: "qz-gb", onClick: leaveQuiz }, "Back to the lesson"),
       s.passed && h("button", { className: "qz-gb", onClick: retake }, "Retake"),
       h("span", { className: "qz-sp" }),
-      s.passed ? onNextStage && h("button", { className: "qz-btn ok", onClick: onNextStage }, "Next stage →")
-        : h("button", { className: "qz-btn", onClick: retake }, "Retake with new questions"))));
+      s.passed ? (handoff
+        ? [handoff.secondary && h("button", { key: "s", className: "qz-gb", onClick: handoff.secondary.onClick }, handoff.secondary.label),
+           h("button", { key: "p", className: "qz-btn ok", onClick: handoff.primary.onClick }, handoff.primary.label)]
+        : onNextStage && h("button", { className: "qz-btn ok", onClick: onNextStage }, "Next stage →"))
+        : h("button", { className: "qz-btn", onClick: retake }, "Try again"))));
   }
 
   // ── A question ────────────────────────────────────────────────────────────
