@@ -2869,3 +2869,38 @@ function achievementBatch(newly, mode, maxShown) {
 function unseenUnlocks(unlocked, seen) {
   return Object.keys(unlocked).filter(function (id) { return (seen || []).indexOf(id) < 0; });
 }
+
+// ── Placement questions (roadmap ticket 37) ─────────────────────────────────
+// placementQuestions(unit, count, taken): up to `count` hardest-form questions about distinct items
+// the stage (a kana or lesson unit) teaches, none already in `taken` (item ids asked earlier in the
+// test). Same exercise shape as a quiz question plus itemId / item / form / recall. Typed answers
+// first; grammar asks the hardest multiple choice (order, then gap). A kana stage asks only real
+// words written in kana (its vocab + practice, 2+ kana), never a single letter. Bound vocab only
+// in context (formsFor → boundForms). Fewer than `count` back when the stage can't make that many.
+var PLACEMENT_FORMS = { grammar: ['order', 'gap', 'patternMc'] };
+function placementQuestions(unit, count, taken) {
+  if (unit.kind !== 'kana' && unit.kind !== 'lesson') return [];
+  var ctx = quizContext(unit), seen = {}, out = [];
+  (taken || []).forEach(function (id) { seen[id] = true; });
+  var kanaStage = unit.kind === 'kana';
+  // a practice word is shown in kana on the stage (read-only list), so it is asked as its reading
+  var asKana = function (it) { return it.word === it.reading || !KANA_WORD_RE.test(it.reading) ? it : Object.assign({}, it, { word: it.reading }); };
+  var pool = kanaStage ? (unit.vocab || []).concat((unit.practice || []).map(asKana)) : ctx.items;
+  pool = rndShuffle(pool.filter(function (it, i, a) {
+    if (!it || seen[it.id] || a.map(function (x) { return x.id; }).indexOf(it.id) !== i) return false;
+    return kanaStage ? it.kind === 'vocab' && KANA_WORD_RE.test(it.word) && Array.from(it.word).length >= 2 && kanaReadable(it.word, ctx.learned) : it.kind !== 'kana';
+  }));
+  for (var i = 0; i < pool.length && out.length < count; i++) {
+    var it = pool[i], forms = rndShuffle(formsFor(it, ctx)), want = PLACEMENT_FORMS[it.kind];
+    var rank = function (fm) { return want ? (want.indexOf(fm.name) < 0 ? 99 : want.indexOf(fm.name)) : fm.recall ? 0 : 1; };
+    forms.sort(function (a, b) { return rank(a) - rank(b); });
+    for (var j = 0; j < forms.length; j++) {
+      var ex = forms[j].make();
+      if (ex && !answerLeaks(Object.assign(ex, { item: it }))) {
+        out.push(Object.assign(ex, { itemId: it.id, item: it, form: forms[j].name, recall: forms[j].recall }));
+        break;
+      }
+    }
+  }
+  return out;
+}
