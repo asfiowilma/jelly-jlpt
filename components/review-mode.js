@@ -23,12 +23,12 @@ function ReviewHub(p) {
     h('div', { className: 'rv-due' },
       h('div', null, h('strong', null, n), h('span', null, n === 1 ? t('rv_card_due', level) : t('rv_cards_due', level))),
       h('button', { className: 'ex-retry-btn', disabled: !n, onClick: function () { p.onStart(filter); } }, t('rv_start', level))),
-    n === 0 && h('div', { className: 'rv-caught' }, jelly('sleepy', 64), t('all_caught_up', level)),
+    n === 0 && h('div', { className: 'rv-caught' }, jelly('sleepy', 64), t(st.total ? 'all_caught_up' : 'rv_no_cards', level)),
     types.length > 0 && h('div', { className: 'rv-chips', role: 'group' },
       chip('all', t('rv_all', level), due.length),
       types.map(function (ty) { return chip(ty, t(labels[ty], level), byType[ty]); })),
-    h('h3', { className: 'rv-h' }, t('rv_next7', level)),
-    h('div', { className: 'rv-fc' }, perDay.map(function (v, i) {
+    st.total > 0 && h('h3', { className: 'rv-h' }, t('rv_next7', level)),
+    st.total > 0 && h('div', { className: 'rv-fc' }, perDay.map(function (v, i) {
       var day = i === 0 ? t('rv_today', level) : new Date(dayStart(Date.now(), i)).toLocaleDateString(undefined, { weekday: 'short' });
       return h('div', { key: i, className: i === 0 ? 'today' : '' }, v, h('i', { style: { height: v / max * 72 } }), day);
     })),

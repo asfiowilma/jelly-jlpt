@@ -343,6 +343,11 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       var cards = {};
       units.forEach(function (u) { srsAddCards(u, cards); });
       ReviewMode({ cards: cards, level: "N5", onUpdate: noop });
+      var made = [], ce0 = React.createElement;
+      React.createElement = function () { made.push(JSON.stringify([].slice.call(arguments, 1))); return {}; };
+      try { ReviewHub({ cards: {}, level: "N5", filter: "all", setFilter: noop }); } finally { React.createElement = ce0; }
+      var hub = made.join("");
+      a.ok(hub.indexOf("No cards yet") >= 0 && hub.indexOf("All caught up") < 0 && hub.indexOf("rv-fc") < 0, "empty deck: no 'caught up', no zero chart");
       a.ok(true);
     } catch (e) { a.ok(false, e.message); }
   });

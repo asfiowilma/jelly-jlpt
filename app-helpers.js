@@ -113,6 +113,7 @@ var UI_STRINGS = {
   rv_cards_due:{ en: 'cards due',     ja: 'まい',           since: 'N4' },
   rv_card_due: { en: 'card due',      ja: 'まい',           since: 'N4' },
   rv_all:      { en: 'All',           ja: 'ぜんぶ',         since: 'N4' },
+  rv_no_cards:    { en: 'No cards yet. Finish a stage and its words and kanji land here for review.', ja: 'まだカードがありません。ステージをおわらせるとここにでます。', since: 'N4' },
   rv_next7:    { en: 'Next 7 days',   ja: 'これから7にち',  since: 'N4' },
   rv_today:    { en: 'Today',         ja: 'きょう',         since: 'N4' },
   rv_know:     { en: 'What you know', ja: 'おぼえたカード', since: 'N4' },
