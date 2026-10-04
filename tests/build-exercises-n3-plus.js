@@ -90,11 +90,12 @@ QUnit.module('buildExercises (N3+ types)', {
     assert.notOk(seen.reorder, 'reorder disabled (needs authored chunks)');
   });
 
-  QUnit.test('lengths: N3+ lessons ask 16', function (assert) {
+  QUnit.test('lengths: N3+ lessons aim at 16, a 7-item lesson is shortened to 8 (ticket 43)', function (assert) {
     var fields = { vocab: VERBS, kanji: [CATALOG.items['k:人'], CATALOG.items['k:大']], grammar: [CATALOG.items['g:mo']] };
+    assert.strictEqual(quizLength(unit('N3', 0, fields), 7), 16);
     for (var i = 0; i < 5; i++) {
-      assert.strictEqual(buildExercises(unit('N3', 0, fields)).length, 16);
-      assert.strictEqual(buildExercises(unit('N2', 0, fields)).length, 16);
+      assert.strictEqual(buildExercises(unit('N3', 0, fields)).length, 8);
+      assert.strictEqual(buildExercises(unit('N2', 0, fields)).length, 8);
     }
   });
 });

@@ -17,18 +17,18 @@ QUnit.module('quiz difficulty model', {
     return Object.assign({}, u, { level: level });
   };
 
-  QUnit.test('Q28 pass marks: kana 90%, lessons and reviews 80%', function (assert) {
-    assert.strictEqual(passMark('kana'), 0.9);
+  QUnit.test('Q28 pass marks: kana 85% (the reading mark, ticket 44), lessons and reviews 80%', function (assert) {
+    assert.strictEqual(passMark('kana'), 0.85);
     assert.strictEqual(passMark('lesson'), 0.8);
     assert.strictEqual(passMark('review'), 0.8);
-    assert.ok(quizPassed(9, 10, 'kana'));
+    assert.ok(quizPassed(17, 20, 'kana'));
     assert.notOk(quizPassed(8, 10, 'kana'));
     assert.ok(quizPassed(8, 10, 'lesson'), '80% exactly passes');
     assert.notOk(quizPassed(11, 14, 'lesson'), '78.6% fails');
     assert.notOk(quizPassed(0, 0, 'lesson'), 'empty quiz never passes');
   });
 
-  QUnit.test('Q29 counts: kana 10, N5 12, N4 14, N3+ 16, review 20; raised to cover every item, max 30', function (assert) {
+  QUnit.test('Q29 counts (maximums since ticket 43): kana 10, N5 12, N4 14, N3+ 16, review 20; raised to cover every item, max 30', function (assert) {
     assert.strictEqual(quizLength({ kind: 'kana', level: 'N5' }, 5), 10);
     assert.strictEqual(quizLength({ kind: 'kana', level: 'N5' }, 21), 21);
     assert.strictEqual(quizLength({ kind: 'lesson', level: 'N5' }, 3), 12);
@@ -40,17 +40,29 @@ QUnit.module('quiz difficulty model', {
     assert.strictEqual(quizLength({ kind: 'review', level: 'N5' }, 70), 20, 'review samples, never raised');
   });
 
-  QUnit.test('Q29 every shipped kana/lesson quiz has its length and asks every taught item', function (assert) {
+  QUnit.test('Q29 every shipped kana/lesson quiz has its length and asks every taught item (a kana: in a word or alone)', function (assert) {
     this.units.filter(function (u) { return u.kind === 'kana' || u.kind === 'lesson'; }).forEach(function (u) {
       var items = quizItems(u);
       var exs = buildExercises(u);
       assert.strictEqual(exs.length, quizSize(u, items), u.id + ' length');
-      if (u.kind === 'lesson') assert.strictEqual(quizSize(u, items), quizLength(u, items.length), u.id + ' lesson size = quizLength');
+      if (u.kind === 'lesson') assert.strictEqual(quizSize(u, items), Math.min(quizLength(u, items.length), quizCapacity(items.length)), u.id + ' lesson size');
       var asked = {};
-      exs.forEach(function (e) { asked[e.itemId] = true; });
+      exs.forEach(function (e) {
+        asked[e.itemId] = true;
+        if (e.part === 'read' && e.item.word) kanaSyllables(e.item.word).forEach(function (c) { asked['c:' + c] = true; });
+      });
       var missing = items.filter(function (it) { return !asked[it.id]; }).map(function (it) { return it.id; });
       if (missing.length) assert.ok(false, u.id + ' never asks ' + missing.join(' '));
     });
+  });
+
+  QUnit.test('quizCapacity (ticket 43): few items → shorter quiz, min 8, a second ask only to reach it', function (assert) {
+    assert.strictEqual(quizCapacity(14), 14);
+    assert.strictEqual(quizCapacity(8), 8);
+    assert.strictEqual(quizCapacity(5), 8);
+    assert.strictEqual(quizCapacity(3), 6, 'each item at most twice');
+    var lesson = { kind: 'lesson', level: 'N5' };
+    assert.strictEqual(quizSize(lesson, [1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (i) { return { id: 'x' + i, kind: 'vocab' }; })), 9, '9 items: 9, not 12');
   });
 
   QUnit.test('Q29 review quiz: 20 questions drawn from the lessons since the previous review', function (assert) {

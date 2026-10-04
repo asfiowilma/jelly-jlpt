@@ -511,7 +511,7 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     var done = function () { global.localStorage = origLs; Store.disconnect = origDisc; Store.wipe = origWipe; };
     return Store.init().then(function () {
       Store.putUnit("n5.u001", true); Store.putCards({ x: { id: "x", interval: 1, ease: 2.5, due: 1, reps: 0 } }); Store.logLesson("n5.u001");
-      ["jlpt_palette", "jlpt_theme", "jlpt_tts_rate", "jlpt_sfx_mute", "jlpt_ach_seen", "jlpt_welcome_seen", "jlpt_persist"].forEach(function (k) { ls[k] = "x"; });
+      ["jlpt_palette", "jlpt_theme", "jlpt_tts_rate", "jlpt_sfx_mute", "jlpt_ach_seen", "jlpt_welcome_seen", "jlpt_persist", "jlpt_recent_q"].forEach(function (k) { ls[k] = "x"; });
       ls.jlpt_device_id = "dev-1";
       a.ok(!progressIsEmpty(Store.docs()), "has progress");
       Store.disconnect = function () { order.push("disconnect"); return origDisc.apply(Store, arguments); };
@@ -650,11 +650,11 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
         errors.push(unit.id + "@" + unit.level + ": score " + result.right + "/" + result.total + ", expected " + (first.length - wrongFirst.length) + "/" + first.length);
       }
       var sp = result.split, part = function (p) { return p.right / p.total >= p.need - 1e-9; };
-      if (result.passed !== (sp ? part(sp.chars) && part(sp.words) : quizPassed(result.right, result.total, unit.kind))) errors.push(unit.id + ": passed flag");
+      if (result.passed !== (sp ? (!sp.read.total || part(sp.read)) && (!sp.meaning.total || part(sp.meaning)) : quizPassed(result.right, result.total, unit.kind))) errors.push(unit.id + ": passed flag");
       if (sp && !find(cls(/qz-parts/)).length) errors.push(unit.id + ": no per-part score on a kana quiz");
       var requeued = plan.filter(function (p) { return p[0].requeue; }).length;
       if (requeued !== wrongFirst.length) errors.push(unit.id + "@" + unit.level + ": " + wrongFirst.length + " misses, " + requeued + " re-asked");
-      wrongFirst.forEach(function (p) { if (result.missed.indexOf(p[0].itemId) < 0) errors.push(unit.id + ": miss not flagged " + p[0].itemId); });
+      wrongFirst.forEach(function (p) { if (p[0].itemId && result.missed.indexOf(p[0].itemId) < 0) errors.push(unit.id + ": miss not flagged " + p[0].itemId); });
       if (!find(cls(/qz-verdict/)).length) errors.push(unit.id + ": no pass/fail verdict");
     };
     try {

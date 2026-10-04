@@ -51,15 +51,26 @@ QUnit.module('pickDistractors', function () {
     });
   });
 
-  QUnit.test('taught items come first', function (assert) {
+  QUnit.test('taught items come first once there are ≥15; fewer: widened with untaught same-level items (ticket 43)', function (assert) {
     var pool = catalogOf('vocab');
     var t = I('v:食べる|たべる');
-    var taught = {};
-    ['v:飲む|のむ', 'v:書く|かく', 'v:読む|よむ'].forEach(function (id) { taught[id] = true; });
+    var verbs = pool.filter(function (v) { return /^verb/.test(v.pos) && v !== t && !sharesSense(glossText(v), glossText(t)); });
+    var many = {}, few = {};
+    verbs.slice(0, DISTRACTOR_MIN_POOL).forEach(function (v) { many[v.id] = true; });
+    verbs.slice(0, 3).forEach(function (v) { few[v.id] = true; });
+    var seen = {};
     each(function () {
-      assert.deepEqual(pickDistractors(t, pool, 'gloss', 3, { taught: taught }).sort(),
-        ['v:飲む|のむ', 'v:書く|かく', 'v:読む|よむ'].map(function (id) { return glossText(I(id)); }).sort());
+      pickDistractors(t, pool, 'gloss', 3, { taught: many }).forEach(function (g) {
+        assert.ok(verbs.some(function (v) { return many[v.id] && glossText(v) === g; }), g + ' is a taught verb');
+      });
+      pickDistractors(t, pool, 'gloss', 3, { taught: few }).forEach(function (g) {
+        var it = pool.filter(function (v) { return glossText(v) === g; })[0];
+        assert.ok(/^verb/.test(it.pos) && it.level === 'N5', g + ' is still an N5 verb');
+        seen[g] = true;
+      });
     });
+    var untaught = Object.keys(seen).filter(function (g) { return !verbs.some(function (v) { return few[v.id] && glossText(v) === g; }); });
+    assert.ok(untaught.length >= 5, 'only 3 taught: ' + untaught.length + ' untaught verbs offered across runs');
   });
 
   QUnit.test('word: same script shape, no option meaning the same thing', function (assert) {

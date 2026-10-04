@@ -105,9 +105,18 @@ adding to `listFiles` in `tools/build-sw.js`. Progress is per-origin: see README
   `buildUnits` resolves items and gives a review unit the items of the units since the
   previous review. `app.js` does this once at load into `UNITS`.
 - **Kana units** teach their kana plus 2–5 real vocab words written only in kana learned so far
-  (moved out of later lessons; read-only `practice` words fill gaps). Their quiz is ~60%
-  characters / ~40% words and passes only with ≥90% on characters and ≥80% on words
-  (`scoreQuiz` split). A review quizzes every kana/lesson unit since the previous review.
+  (moved out of later lessons; read-only `practice` words fill gaps). Their quiz tests reading
+  mostly through words (`kanaReadWords`: any verified N5 word spelled only with kana learned up
+  to the stage, hiragana readings of kanji words included; katakana stages katakana words only),
+  read only, never their meaning; a single-kana question only for a new kana no word holds
+  (`kanaQuizSlots`). Taught words also get a meaning question. It passes only with ≥85% on
+  reading and ≥80% on meanings (`scoreQuiz` split by `ex.part`). A review quizzes every
+  kana/lesson unit since the previous review.
+- **Quiz variety** (ticket 43): `quizLength` is a maximum; `quizSize` shortens to the items
+  (min 8, each item at most twice, `spaceOut` keeps repeats 3+ questions apart). Early units
+  widen the distractor pool with untaught same-level items (`DISTRACTOR_MIN_POOL`), with no cap
+  on how often a word is a wrong option. `localStorage` `jlpt_recent_q` (last 100 item|form,
+  device-only, never synced, no SRS effect) steers the next quiz to other forms and items.
 
 ### Persistence (store.js)
 

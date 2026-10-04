@@ -1,8 +1,9 @@
 "use strict";
 
-// Ticket 42 (Q45): kana units teach real N5 words spelled in kana. Their quiz is ~60% character
-// questions and ~40% word questions (romaji typing, romaji → kana, meaning, word for a meaning),
-// and passes only with ≥90% on characters AND ≥80% on words. Seeded Math.random so a failure reproduces.
+// Ticket 42 (Q45): kana units teach real N5 words spelled in kana; their quiz asks them in romaji,
+// spelled from romaji, their meaning and the word for a meaning. Ticket 44: the quiz reads mostly
+// words (tests/kana-reading.js) and passes only with ≥85% on reading AND ≥80% on meanings.
+// Seeded Math.random so a failure reproduces.
 QUnit.module('kana unit words (ticket 42)', function () {
   function withSeed(seed, fn) {
     var rnd = Math.random;
@@ -77,40 +78,24 @@ QUnit.module('kana unit words (ticket 42)', function () {
     });
   });
 
-  QUnit.test('quiz mix: ~60% characters / ~40% words in every kana unit and kana review (20 builds each)', function (assert) {
-    var all = 0, words = 0;
-    withSeed(42, function () {
-      kanaUnits().concat(kanaReviews()).forEach(function (u) {
-        for (var run = 0; run < 20; run++) {
-          var exs = buildExercises(u), w = exs.filter(function (e) { return !isChar(e); }).length;
-          all += exs.length; words += w;
-          var share = w / exs.length;
-          if (share < 0.3 - 1e-9 || share > 0.45) assert.ok(false, u.id + ' run ' + run + ': word share ' + share.toFixed(2));
-          if (run === 0 && u.kind === 'kana') {
-            var asked = {};
-            exs.forEach(function (e) { asked[e.itemId] = true; });
-            quizItems(u).forEach(function (it) { if (!asked[it.id]) assert.ok(false, u.id + ' never asks ' + it.id); });
-          }
-        }
-      });
-    });
-    var mean = words / all;
-    assert.ok(Math.abs(mean - 0.4) <= 0.05, 'mean word share ' + mean.toFixed(3));
-  });
-
-  QUnit.test('word questions: the four kana forms only, kana only, options readable, one right answer', function (assert) {
+  QUnit.test('word questions: the five kana-word forms only, kana only, options readable, one right answer', function (assert) {
     var forms = {};
     withSeed(3, function () {
       kanaUnits().concat(kanaReviews()).forEach(function (u) {
         var learned = learnedKana(u), taught = taughtIds(u);
         for (var run = 0; run < 5; run++) buildExercises(u).filter(function (e) { return !isChar(e); }).forEach(function (e) {
           forms[e.form] = true;
-          var tag = u.id + ' ' + e.form + ' ' + e.itemId;
-          if (['romajiType', 'romajiPick', 'meaningMc', 'wordMc'].indexOf(e.form) < 0) assert.ok(false, tag + ': unexpected form');
+          var tag = u.id + ' ' + e.form + ' ' + e.item.id;
+          if (['romajiType', 'romajiPick', 'kanaSpell', 'meaningMc', 'wordMc'].indexOf(e.form) < 0) assert.ok(false, tag + ': unexpected form');
           if (hasKanji(e.question || '') || (e.options || []).some(hasKanji)) assert.ok(false, tag + ': kanji shown');
           if (e.question && /[ぁ-ヺ]/.test(e.question) && !kanaReadable(e.question, learned)) assert.ok(false, tag + ': question uses unlearned kana');
           if (answerLeaks(e)) assert.ok(false, tag + ': leaks ' + answerLeaks(e));
           if (e.form === 'romajiType') assert.ok(answerIsRight(e, kanaToRomaji(e.item.word)) && !answerIsRight(e, e.item.word + 'x'), tag);
+          if (e.form === 'kanaSpell') {
+            var typeKana = function (s) { return kanaBox(e, kanaBox(e, s).replace(/n$/, 'ん')); }; // as the answer box + Check do
+            if (!answerIsRight(e, typeKana(e.question)) || answerIsRight(e, typeKana(e.question + 'a'))) assert.ok(false, tag + ': typing the shown romaji must spell the word, nothing else');
+            if (!kanaReadable(e.answers[0], learned)) assert.ok(false, tag + ': answer uses unlearned kana');
+          }
           if (e.form === 'romajiPick' || e.form === 'wordMc') {
             e.options.forEach(function (o) { if (!kanaReadable(o, learned)) assert.ok(false, tag + ': option ' + o + ' uses unlearned kana'); });
           }
@@ -126,56 +111,61 @@ QUnit.module('kana unit words (ticket 42)', function () {
         });
       });
     });
-    assert.deepEqual(Object.keys(forms).sort(), ['meaningMc', 'romajiPick', 'romajiType', 'wordMc']);
+    assert.deepEqual(Object.keys(forms).sort(), ['kanaSpell', 'meaningMc', 'romajiPick', 'romajiType', 'wordMc']);
   });
 
-  QUnit.test('split pass mark: ≥90% on characters AND ≥80% on words', function (assert) {
-    var exs = function (nc, nw) {
+  QUnit.test('split pass mark (ticket 44): ≥85% on reading AND ≥80% on meanings', function (assert) {
+    var exs = function (nr, nm) {
       var out = [];
-      for (var i = 0; i < nc; i++) out.push({ itemId: 'c:' + i });
-      for (var j = 0; j < nw; j++) out.push({ itemId: 'v:' + j });
+      for (var i = 0; i < nr; i++) out.push({ itemId: 'c:' + i, part: 'read' });
+      for (var j = 0; j < nm; j++) out.push({ itemId: 'v:' + j, part: 'meaning' });
       return out;
     };
-    var res = function (rc, nc, rw, nw) {
+    var res = function (rr, nr, rm, nm) {
       var out = [];
-      for (var i = 0; i < nc; i++) out.push(i < rc);
-      for (var j = 0; j < nw; j++) out.push(j < rw);
+      for (var i = 0; i < nr; i++) out.push(i < rr);
+      for (var j = 0; j < nm; j++) out.push(j < rm);
       return out;
     };
-    var s = scoreQuiz('kana', exs(10, 5), res(9, 10, 4, 5));
-    assert.ok(s.passed, '9/10 + 4/5 passes');
-    assert.deepEqual([s.split.chars.right, s.split.chars.total, s.split.chars.need], [9, 10, 0.9]);
-    assert.deepEqual([s.split.words.right, s.split.words.total, s.split.words.need], [4, 5, 0.8]);
-    assert.notOk(scoreQuiz('kana', exs(10, 5), res(10, 10, 3, 5)).passed, 'words 60% fail, though 87% overall');
-    assert.notOk(scoreQuiz('kana', exs(10, 5), res(8, 10, 5, 5)).passed, 'chars 80% fail, though 87% overall');
-    assert.notOk(scoreQuiz('review', exs(12, 8), res(10, 12, 8, 8)).passed, 'a kana review splits too (chars 83%)');
-    assert.ok(scoreQuiz('review', exs(12, 8), res(11, 12, 7, 8)).passed, 'kana review 92% / 88%');
-    var lesson = scoreQuiz('lesson', exs(0, 10), res(0, 0, 8, 10));
-    assert.ok(lesson.passed && lesson.split === null, 'no characters: one 80% mark, no split');
-    var req = exs(10, 5).concat([{ itemId: 'v:0', requeue: true }]);
-    s = scoreQuiz('kana', req, res(9, 10, 4, 5).concat([false]));
-    assert.strictEqual(s.split.words.total, 5, 're-asked questions are not scored');
+    var s = scoreQuiz('kana', exs(20, 5), res(17, 20, 4, 5));
+    assert.ok(s.passed, '17/20 (85%) + 4/5 passes');
+    assert.deepEqual([s.split.read.right, s.split.read.total, s.split.read.need], [17, 20, 0.85]);
+    assert.deepEqual([s.split.meaning.right, s.split.meaning.total, s.split.meaning.need], [4, 5, 0.8]);
+    assert.notOk(scoreQuiz('kana', exs(20, 5), res(20, 20, 3, 5)).passed, 'meanings 60% fail, though 92% overall');
+    assert.notOk(scoreQuiz('kana', exs(20, 5), res(16, 20, 5, 5)).passed, 'reading 80% fails, though 84% overall');
+    assert.notOk(scoreQuiz('review', exs(14, 6), res(11, 14, 6, 6)).passed, 'a kana review splits too (reading 79%)');
+    assert.ok(scoreQuiz('review', exs(14, 6), res(12, 14, 5, 6)).passed, 'kana review 86% / 83%');
+    assert.ok(scoreQuiz('kana', exs(10, 0), res(9, 10, 0, 0)).passed, 'no meaning questions: reading alone decides');
+    var lesson = scoreQuiz('lesson', [{ itemId: 'v:1' }, { itemId: 'v:2' }, { itemId: 'v:3' }, { itemId: 'v:4' }, { itemId: 'v:5' }], [true, true, true, true, false]);
+    assert.ok(lesson.passed && lesson.split === null, 'not a kana quiz: one 80% mark, no split');
+    var req = exs(20, 5).concat([{ itemId: 'v:0', part: 'meaning', requeue: true }]);
+    s = scoreQuiz('kana', req, res(17, 20, 4, 5).concat([false]));
+    assert.strictEqual(s.split.meaning.total, 5, 're-asked questions are not scored');
+    var word = scoreQuiz('kana', [{ part: 'read' }], [false]);
+    assert.deepEqual(word.missed, [], 'a reading word (no card) is never flagged for the SRS');
   });
 
   QUnit.test('pass mark text: kana units and kana reviews name both marks', function (assert) {
     var k = kanaUnits()[0], rev = kanaReviews()[0], lesson = units().filter(function (u) { return u.kind === 'lesson'; })[0];
-    assert.strictEqual(passMarkText(k), '90% on characters, 80% on words');
-    assert.strictEqual(passMarkText(rev), '90% on characters, 80% on words');
+    assert.strictEqual(passMarkText(k), '85% on reading, 80% on meanings');
+    assert.strictEqual(passMarkText(rev), '85% on reading, 80% on meanings');
     assert.strictEqual(passMarkText(lesson), '80%');
   });
 
-  QUnit.test('playthrough: a kana unit with words passes all right, fails on words alone', function (assert) {
+  QUnit.test('playthrough: every kana stage passes all right, fails on meanings alone and on reading alone', function (assert) {
     withSeed(11, function () {
-      kanaUnits().forEach(function (u) {
+      kanaUnits().concat(kanaReviews()).forEach(function (u) {
         var exs = buildExercises(u);
         var all = exs.map(function (e) { return answerIsRight(e, rightAnswer(e)); });
         assert.ok(all.every(Boolean), u.id + ': every right answer scores right');
         var s = scoreQuiz(u.kind, exs, all);
         assert.ok(s.passed && s.split, u.id + ': all right passes, split');
-        var noWords = exs.map(function (e) { return isChar(e) ? true : !answerIsRight(e, typeof rightAnswer(e) === 'number' ? (rightAnswer(e) + 1) % e.options.length : 'zzz'); });
-        var s2 = scoreQuiz(u.kind, exs, noWords.map(function (x, i) { return isChar(exs[i]) ? x : false; }));
-        assert.notOk(s2.passed, u.id + ': characters perfect, words all wrong → not passed');
-        noWords.forEach(function (x, i) { if (!x) assert.ok(false, u.id + ' ' + exs[i].form + ': a wrong answer scored right'); });
+        var wrong = exs.map(function (e) { return answerIsRight(e, typeof rightAnswer(e) === 'number' ? (rightAnswer(e) + 1) % e.options.length : 'zzz'); });
+        wrong.forEach(function (x, i) { if (x) assert.ok(false, u.id + ' ' + exs[i].form + ': a wrong answer scored right'); });
+        var meaningsWrong = exs.map(function (e) { return e.part === 'read'; });
+        var readingWrong = exs.map(function (e) { return e.part === 'meaning'; });
+        assert.notOk(scoreQuiz(u.kind, exs, meaningsWrong).passed, u.id + ': reading perfect, meanings all wrong → not passed');
+        assert.notOk(scoreQuiz(u.kind, exs, readingWrong).passed, u.id + ': meanings perfect, reading all wrong → not passed');
       });
     });
   });

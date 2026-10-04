@@ -52,6 +52,7 @@ function exSpeech(ex) {
   if (!it || ex.type === 'listen_dialog' || ex.type === 'listen') return '';
   if (it.kind === 'vocab') return it.reading || it.word;
   if (it.kind === 'kana') return it.char || it.kana || '';
+  if (it.kind === 'kanaword') return it.word; // a kana reading word (ticket 44)
   return '';
 }
 // Size class for the asked text: a lone kanji is huge, a word medium, a phrase small.
@@ -272,6 +273,7 @@ function Exercises(_ref9) {
   var advance = function advance(wasRight) {
     playSfx(wasRight ? 'correct' : 'wrong');
     var ex = exs[cur];
+    rememberAsked(ex); // device-local recent memory (ticket 43)
     var again = !wasRight && !ex.requeue ? requeueExercise(unit, ex) : null;
     if (again) setExs(exs.concat([Object.assign(again, { requeueOf: cur })]));
     setResults(results.concat([wasRight]));
@@ -367,7 +369,7 @@ function Exercises(_ref9) {
           h("p", null, s.right, " / ", s.total, " · ", pct, "% · pass mark ", needPct, s.passed ? "." : ". Reread the lesson, then try again. Your answers so far still count toward review."),
           s.passed && handoff && h("p", { className: "qz-today" }, handoff.line),
           // kana quizzes (ticket 42): both parts must pass
-          s.split && h("ul", { className: "qz-parts" }, [["Characters", s.split.chars], ["Words", s.split.words]].map(function (p) {
+          s.split && h("ul", { className: "qz-parts" }, [["Reading", s.split.read], ["Meanings", s.split.meaning]].filter(function (p) { return p[1].total > 0; }).map(function (p) {
             var ok = p[1].right / p[1].total >= p[1].need - 1e-9;
             return h("li", { key: p[0], className: ok ? "pass" : "fail" }, p[0], ": ", p[1].right, " / ", p[1].total,
               " · ", Math.round(p[1].need * 100), "% needed · ", ok ? "passed" : "not yet");
@@ -409,7 +411,7 @@ function Exercises(_ref9) {
   // Check: kana answers take a lone trailing n as ん (it waits for a vowel while typing)
   var check = function () {
     if (revealed || !ready) return;
-    var resp = isOpt ? pick : isReorder || isPair ? picks : (ex.kana ? answer.replace(/n$/, 'ん') : answer);
+    var resp = isOpt ? pick : isReorder || isPair ? picks : (ex.kana ? kanaBox(ex, answer.replace(/n$/, 'ん')) : answer);
     if (typeof resp === 'string') setAnswer(resp);
     var other = isType && otherReading(ex, resp);
     if (other) return setNotice(otherReadingNote(ex, other)); // not a miss: say which word, try again
@@ -603,7 +605,7 @@ function Exercises(_ref9) {
         key: "in", ref: inputRef, className: "qz-input" + tone, type: "text", value: answer, 'aria-label': ex.prompt, lang: "ja",
         placeholder: ex.placeholder || 'Type your answer...', disabled: revealed, autoFocus: true,
         autoComplete: "off", autoCapitalize: "off", spellCheck: false,
-        onChange: function (e) { setNotice(null); setAnswer(ex.kana ? romajiToKana(e.target.value) : e.target.value); },
+        onChange: function (e) { setNotice(null); setAnswer(ex.kana ? kanaBox(ex, e.target.value) : e.target.value); },
         // Enter while an IME is composing confirms the kana, not the answer
         onKeyDown: function (e) { if (e.key === 'Enter' && !(e.nativeEvent && e.nativeEvent.isComposing)) { e.stopPropagation(); check(); } }
       }),

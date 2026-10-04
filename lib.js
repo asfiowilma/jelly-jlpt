@@ -158,10 +158,12 @@ function furiganaOn(stored, level) {
 
 // ── Quiz gate (ticket 35, Q28/Q29) ──────────────────────────────────────────
 // A unit completes only by passing its quiz. Unlimited retakes, fresh questions.
-function passMark(kind) { return kind === 'kana' ? 0.9 : 0.8; }
+// Kana quizzes (ticket 44) pass on reading at 85%: passMark('kana') is the reading mark.
+function passMark(kind) { return kind === 'kana' ? KANA_READ_PASS : 0.8; }
 function quizPassed(right, total, kind) { return total > 0 && right / total >= passMark(kind) - 1e-9; }
-// quizLength: kana 10, lesson N5 12 / N4 14 / N3+ 16, review 20. Kana and lesson
-// quizzes grow to ask every item once (nItems), capped at QUIZ_MAX_QUESTIONS.
+// quizLength: the target length. Kana 10, lesson N5 12 / N4 14 / N3+ 16, review 20. Kana and
+// lesson quizzes grow to ask every item once (nItems), capped at QUIZ_MAX_QUESTIONS. It is a
+// maximum: quizSize shortens it when there are few items (ticket 43).
 // ponytail: 30 = the biggest N5 unit (21 kana) with room; units past it get
 // a random 30 of their items — split the unit if that ever happens.
 var QUIZ_MAX_QUESTIONS = 30;
@@ -170,20 +172,37 @@ function quizLength(unit, nItems) {
   var base = unit.kind === 'kana' ? 10 : [12, 14][levelRank(unit.level)] || 16;
   return Math.min(QUIZ_MAX_QUESTIONS, Math.max(base, nItems || 0));
 }
-// Kana quizzes (ticket 42, Q45): about 60% character questions, 40% word questions, and two
-// pass marks, both required: 90% on characters, 80% on words.
-var KANA_CHAR_SHARE = 0.6, KANA_WORD_PASS = 0.8;
-// quizSize(unit, items): questions in the unit's quiz. A kana unit with words is sized so its
-// kana fill the character share: every kana asked once, the rest word questions (cap 30).
+// Variety (ticket 43): an item is asked at most twice in a quiz (re-asked misses don't count), never
+// within QUIZ_SPACING questions of itself. Few items → a shorter quiz, down to QUIZ_MIN_QUESTIONS;
+// a second ask only to reach that minimum.
+var QUIZ_ITEM_MAX = 2, QUIZ_SPACING = 3, QUIZ_MIN_QUESTIONS = 8;
+function quizCapacity(n) { return Math.max(n, Math.min(QUIZ_MIN_QUESTIONS, QUIZ_ITEM_MAX * n)); }
+// Kana quizzes (ticket 44): reading is tested mostly through words written only in kana learned so
+// far (kanaReadWords); a single-kana question only for a new kana no word covers. Two marks, both
+// required: reading questions (single kana + kana words) 85%, meaning questions on taught words 80%.
+// A kana review asks KANA_REVIEW_MEANING_SHARE of its questions about taught words' meanings.
+// Single-kana questions aim at ≤ KANA_SINGLE_SHARE of the reading; stages whose new kana are in
+// hardly any N5 word (yōon, early katakana) can't get there.
+var KANA_READ_PASS = 0.85, KANA_MEANING_PASS = 0.8, KANA_REVIEW_MEANING_SHARE = 0.3, KANA_SINGLE_SHARE = 0.2;
+// quizSize(unit, items): questions in the unit's quiz: quizLength, shortened to what the items
+// can fill (quizCapacity). A kana quiz (kanaQuizSlots) can fill: each taught word's meaning, each
+// word read once (reading words + taught words) and a single-kana question for each kana no word
+// holds; its marks (っ, ー) count as items, a word covers them.
 function quizSize(unit, items) {
-  var nk = items.filter(function (it) { return it.kind === 'kana'; }).length;
-  return quizLength(unit, unit.kind === 'kana' && nk && nk < items.length ? Math.ceil(nk / KANA_CHAR_SHARE) : items.length);
+  var target = quizLength(unit, items.length + (unit.kind === 'kana' ? (unit.marks || []).length : 0));
+  if (!items.some(function (it) { return it.kind === 'kana'; })) return Math.min(target, quizCapacity(items.length));
+  var words = items.filter(function (it) { return it.kind !== 'kana'; }), reads = kanaReadWords(unit, items).concat(words), has = {};
+  reads.forEach(function (w) { kanaSyllables(w.word).forEach(function (c) { has[c] = true; }); });
+  var singles = items.filter(function (it) { return it.kind === 'kana' && !has[it.char]; }).length;
+  // room for enough words that single kana stay ≤ KANA_SINGLE_SHARE of the reading, up to the cap
+  if (unit.kind === 'kana') target = Math.min(QUIZ_MAX_QUESTIONS, Math.max(target, words.length + Math.ceil(singles / KANA_SINGLE_SHARE)));
+  return Math.min(target, Math.max(QUIZ_MIN_QUESTIONS, words.length + reads.length + singles));
 }
 // isKanaQuiz(unit): a kana unit, or a review of kana units (split pass mark).
 function isKanaQuiz(unit) { return quizItems(unit).some(function (it) { return it.kind === 'kana'; }); }
 // passMarkText(unit): the pass mark as shown on the quiz card and the stage bar.
 function passMarkText(unit) {
-  return isKanaQuiz(unit) ? Math.round(passMark('kana') * 100) + '% on characters, ' + Math.round(KANA_WORD_PASS * 100) + '% on words'
+  return isKanaQuiz(unit) ? Math.round(KANA_READ_PASS * 100) + '% on reading, ' + Math.round(KANA_MEANING_PASS * 100) + '% on meanings'
     : Math.round(passMark(unit.kind) * 100) + '%';
 }
 
@@ -319,8 +338,14 @@ function kanaChunks(word) {
   }
   return out;
 }
-// kanaToRomaji(word): modified Hepburn, long vowels doubled (コーヒー koohii, マッチ matchi).
-function kanaToRomaji(word) { return kanaChunks(word).map(function (a) { return a[0]; }).join(''); }
+// kanaToRomaji(word): modified Hepburn, long vowels doubled (コーヒー koohii, マッチ matchi);
+// ん before a vowel or y is n' (きんようび kin'youbi, never read as き + にょ).
+function kanaToRomaji(word) {
+  var ch = kanaChunks(word);
+  return ch.map(function (a, i) {
+    return a.indexOf("n'") >= 0 && ch[i + 1] && /^[aiueoy]/.test(ch[i + 1][0]) ? "n'" : a[0];
+  }).join('');
+}
 // romajiMatches(typed, word): typed romaji spells word exactly — any kana's accepted spelling
 // (shi / si), macrons (kōhī), case and spaces ignored. No typo tolerance: a wrong kana is wrong.
 function romajiMatches(typed, word) {
@@ -382,6 +407,45 @@ function kanaWordFakes(word, learned) {
   }
   return out;
 }
+
+// ── Kana reading words (ticket 44) ──────────────────────────────────────────
+// kanaReadWords(unit, items?): reading-only words for a kana quiz: verified, free (not bound, not a
+// particle) vocab of the unit's level, spelled in the stage's script with only the kana learned up
+// to this stage (plan order, not the learner's history). Hiragana stages read the hiragana reading
+// of any word (魚 → さかな); katakana stages only katakana words (never a transliterated one). Never
+// a word the quiz asks as an item, nor a single syllable (that is a single-kana question). One per
+// spelling. Item shape { kind: 'kanaword', id: 'w:<kana>', word, level }: no card, no meaning asked.
+function kanaReadWords(unit, items) {
+  items = items || quizItems(unit);
+  var ks = items.filter(function (it) { return it.kind === 'kana'; });
+  if (!ks.length) return [];
+  var kata = ks[ks.length - 1].script === 'katakana', learned = learnedKana(unit), seen = {}, out = [];
+  items.forEach(function (it) { if (it.kind === 'vocab') seen[it.word] = true; });
+  catalogOf('vocab').forEach(function (v) {
+    var s = kata ? v.word : v.reading;
+    if (!v.verified || v.level !== unit.level || isBound(v) || v.pos === 'particle' || seen[s]) return;
+    // ponytail: では / それでは read "dewa" (particle は); the only such N5 readings
+    if (!(kata ? /^[ァ-ヺー]+$/ : /^[ぁ-ゖ]+$/).test(s) || /では$/.test(s)) return;
+    if (kanaSyllables(s).length < 2 || !kanaReadable(s, learned)) return;
+    seen[s] = true;
+    out.push({ kind: 'kanaword', id: 'w:' + s, word: s, level: v.level });
+  });
+  return out;
+}
+// kanaSyllables(word): the kana a word is read with: combos whole (きゃ, ティ), っ and ー as marks.
+function kanaSyllables(word) {
+  var map = kanaAnswers(), ch = Array.from(word), out = [];
+  for (var i = 0; i < ch.length; i++) {
+    if (ch[i + 1] && map[ch[i] + ch[i + 1]]) { out.push(ch[i] + ch[i + 1]); i++; } else out.push(ch[i]);
+  }
+  return out;
+}
+// kanaSpellable(word): the word's romaji names exactly one kana spelling, so it can be typed from
+// romaji: no ぢ/づ/を (read like じ/ず/お), no small ァィゥェォ (ティ is typed ti → チ), and in
+// no ー (koohii would type コオヒイ).
+function kanaSpellable(word) { return !/[ぢづをヂヅヲァィゥェォー]/.test(word); }
+// kanaBox(ex, typed): what a kana answer box shows: romaji → hiragana, or katakana (ex.kata).
+function kanaBox(ex, typed) { var s = romajiToKana(typed); return ex.kata ? hiraToKata(s) : s; }
 
 // ── Distractor engine (ticket 09) ───────────────────────────────────────────
 // Sense words: a gloss's content words, so "blue" and "blue / green" overlap
@@ -528,7 +592,13 @@ var DISTRACTOR_RULES = {
 // opts: taught ({ id: true }, preferred: learners know them), answer (correct
 // text, default the field's text of target), level (when target has none).
 // Ranking: level distance (same, then ±1, further only if nothing else), then the
-// field's score; random within a tie.
+// field's score; random within a tie. No cap or recency penalty on how often a word is a wrong
+// option (owner, ticket 43): a good trap stays available.
+var DISTRACTOR_MIN_POOL = 15;
+function cmpTuple(a, b) {
+  for (var i = 0; i < a.length; i++) if (+a[i] !== +b[i]) return +a[i] - +b[i];
+  return 0;
+}
 function pickDistractors(target, pool, field, n, opts) {
   opts = opts || {};
   var rule = DISTRACTOR_RULES[field], taught = opts.taught || {};
@@ -540,16 +610,28 @@ function pickDistractors(target, pool, field, n, opts) {
     rule.texts(it, ans).forEach(function (text) { cands.push({ it: it, text: text, taught: !!taught[it.id] }); });
   });
   if (rule.fakes) readingFakes(kataToHira(ans)).forEach(function (text) { cands.push({ it: target, text: text, taught: true }); });
-  var scored = rndShuffle(cands).filter(function (c) {
+  var ok = rndShuffle(cands).filter(function (c) {
     return c.text && c.text !== ans && !rule.reject(c, target, ans, ctx);
-  }).map(function (c) {
+  });
+  // Few taught candidates (early units): random untaught same-level items that fit as well on the
+  // field's first rule (same pos family / script / look-alike set) join the taught tier up to
+  // DISTRACTOR_MIN_POOL, so the same few words aren't the only wrong options (ticket 43).
+  var taughtN = {}, extra = [];
+  ok.forEach(function (c) { if (c.taught && c.it !== target && !+rule.score(c, target, ans)[0]) taughtN[c.it.id] = true; }); // of the right kind
+  var room = DISTRACTOR_MIN_POOL - Object.keys(taughtN).length;
+  if (room > 0) {
+    ok.filter(function (c) { return !c.taught && levelRank(c.it.level || opts.level) === lv; }).map(function (c) {
+      return { c: c, s: [rule.score(c, target, ans)[0]] }; // ok is shuffled and sort is stable: random within a tie
+    }).sort(function (a, b) { return cmpTuple(a.s, b.s); }).forEach(function (x) {
+      if (extra.length < room && extra.indexOf(x.c.it) < 0) extra.push(x.c.it);
+    });
+    ok = ok.map(function (c) { return extra.indexOf(c.it) >= 0 ? Object.assign({}, c, { taught: true }) : c; });
+  }
+  var scored = ok.map(function (c) {
     var l = levelRank(c.it.level || opts.level);
     return { text: c.text, s: [lv < 0 || l < 0 ? 0 : Math.abs(l - lv)].concat(rule.score(c, target, ans)) };
   });
-  scored.sort(function (a, b) {
-    for (var i = 0; i < a.s.length; i++) if (+a.s[i] !== +b.s[i]) return +a.s[i] - +b.s[i];
-    return 0;
-  });
+  scored.sort(function (a, b) { return cmpTuple(a.s, b.s); });
   var out = [];
   scored.forEach(function (x) { if (out.length < n && out.indexOf(x.text) < 0) out.push(x.text); });
   return out;
@@ -841,7 +923,8 @@ function quizContext(unit) {
   // kana quizzes (ticket 42): words are asked as kana; options only use kana learned so far
   var kanaMode = own('kana').length > 0, learned = kanaMode ? learnedKana(unit) : {};
   return {
-    kanaMode: kanaMode, learned: learned,
+    kanaMode: kanaMode, learned: learned, recent: recentAsked(),
+    readWords: kanaMode ? kanaReadWords(unit, items) : [],
     kanaPool: kanaMode ? poolOf('vocab').filter(function (v) { return !v.alt && KANA_WORD_RE.test(v.word) && kanaReadable(v.word, learned); }) : [],
     unit: unit, items: items, rank: rank, taught: taught, taughtKanji: taughtKanji,
     vocab: own('vocab'), vPool: poolOf('vocab'), kPool: poolOf('kanji'), gPool: poolOf('grammar'),
@@ -1006,11 +1089,11 @@ function formsFor(item, ctx) {
 
   if (isBound(item)) return boundForms(item, ctx, f, typing);
 
-  // A word in a kana quiz (ticket 42): read it in romaji, spell it from romaji, its meaning, and
-  // the word for a meaning (only when no other taught word shares that meaning).
-  if (item.kind === 'vocab' && ctx.kanaMode) {
-    var kw = item, rom = kanaToRomaji(kw.word);
-    return [
+  // Reading a kana word (ticket 44): kana → romaji typed, romaji → kana typed (only when the romaji
+  // names one spelling) or picked among one-edit fakes in learned kana. Never its meaning.
+  if (item.kind === 'kanaword' || item.kind === 'vocab' && ctx.kanaMode) {
+    var kw = item, rom = kanaToRomaji(kw.word), kata = /[ァ-ヺ]/.test(kw.word);
+    var read = [
       f('romajiType', true, function () { return typing('Type this word in romaji:', kw.word, [rom], 'romaji…', { romaji: kw.word }); }),
       f('romajiPick', false, function () {
         var fakes = kanaWordFakes(kw.word, ctx.learned).slice(0, 3);
@@ -1018,6 +1101,15 @@ function formsFor(item, ctx) {
         var opts = rndShuffle([kw.word].concat(fakes));
         return { type: 'mc', prompt: 'Which is "' + rom + '"?', question: rom, options: opts, correct: opts.indexOf(kw.word) };
       }),
+      f('kanaSpell', true, function () {
+        return kanaSpellable(kw.word) ? typing('Type this word in ' + (kata ? 'katakana' : 'hiragana') + ':', rom, [kw.word],
+          kata ? 'katakana…' : 'hiragana…', Object.assign({}, KANA_INPUT, kata ? { kata: true } : {})) : null;
+      })
+    ];
+    if (item.kind === 'kanaword') return read;
+    // a taught word (ticket 42) is also asked for its meaning, and as the word for a meaning (only
+    // when no other taught word shares that meaning)
+    return read.concat([
       f('meaningMc', false, function () { return mc('mc', 'What does this word mean?', kw.word, 'gloss', ctx.vPool); }),
       f('wordMc', false, function () {
         var clash = Object.keys(ctx.taught).some(function (id) {
@@ -1026,7 +1118,7 @@ function formsFor(item, ctx) {
         });
         return clash ? null : mc('mc', 'Which word means "' + glossText(kw) + '"?', '', 'word', ctx.kanaPool);
       })
-    ];
+    ]);
   }
 
   if (item.kind === 'vocab') {
@@ -1207,18 +1299,57 @@ function answerLeaks(ex) {
   return null;
 }
 
-// makeQuestion(item, ctx, wantRecall, avoid): one exercise for item — a form
+// ── Recent questions (ticket 43) ────────────────────────────────────────────
+// Device-local memory of the last RECENT_Q_MAX questions asked ('<itemId>|<form>'), so the next quiz
+// prefers other forms (and, where it samples, other items). localStorage only: never synced, never
+// touches the SRS. The quiz records a question when it is answered (rememberAsked).
+var RECENT_Q_KEY = 'jlpt_recent_q', RECENT_Q_MAX = 100;
+function recentList() {
+  try { var a = JSON.parse(localStorage.getItem(RECENT_Q_KEY) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; }
+}
+function recentAsked() { // { '<itemId>|<form>': true }
+  var o = {};
+  recentList().forEach(function (k) { o[k] = true; });
+  return o;
+}
+function rememberAsked(ex) {
+  var id = ex && (ex.item && ex.item.id || ex.itemId);
+  if (!id || !ex.form) return;
+  var k = id + '|' + ex.form;
+  var a = recentList().filter(function (x) { return x !== k; }).concat([k]);
+  try { localStorage.setItem(RECENT_Q_KEY, JSON.stringify(a.slice(-RECENT_Q_MAX))); } catch (e) {}
+}
+// notRecentFirst(list, isRecent): list with the entries not asked recently first (order kept).
+function notRecentFirst(list, isRecent) {
+  return list.filter(function (x) { return !isRecent(x); }).concat(list.filter(isRecent));
+}
+// askedRecently(recent, id): any recent question about item id.
+function askedRecently(recent, id) {
+  return Object.keys(recent || {}).some(function (k) { return k.indexOf(id + '|') === 0; });
+}
+
+// Kana quiz parts (ticket 44): reading forms (single kana, kana words) vs the meaning forms of a taught word.
+var KANA_READ_FORMS = { kanaType: true, kanaRead: true, kanaPick: true, romajiType: true, romajiPick: true, kanaSpell: true };
+function formPart(name) { return KANA_READ_FORMS[name] ? 'read' : 'meaning'; }
+
+// makeQuestion(item, ctx, wantRecall, avoid, strict, part): one exercise for item — a form
 // of the wanted kind (true recall / false MC / null any) not in avoid if
-// possible, then any other fresh form, then a repeat. Tagged with itemId, form,
-// recall and the item itself (for the re-queue). null when nothing fits.
-function makeQuestion(item, ctx, wantRecall, avoid, strict) {
-  var forms = formsFor(item, ctx);
+// possible, then any other fresh form, then a repeat; forms asked recently on this device last.
+// part ('read' | 'meaning', kana quizzes) keeps to that part's forms. Tagged with itemId (not for
+// a kanaword: no card), form, recall, part (kana quizzes) and the item itself (for the re-queue).
+// null when nothing fits.
+function makeQuestion(item, ctx, wantRecall, avoid, strict, part) {
+  var forms = formsFor(item, ctx).filter(function (fm) { return !part || formPart(fm.name) === part; });
   var fresh = forms.filter(function (fm) { return avoid.indexOf(fm.name) < 0; });
   var tryAll = function (fs) {
-    var list = rndShuffle(fs);
+    var list = notRecentFirst(rndShuffle(fs), function (fm) { return !!(ctx.recent || {})[item.id + '|' + fm.name]; });
     for (var i = 0; i < list.length; i++) {
       var ex = list[i].make();
-      if (ex && !answerLeaks(Object.assign(ex, { item: item }))) return Object.assign(ex, { itemId: item.id, item: item, form: list[i].name, recall: list[i].recall });
+      if (!ex || answerLeaks(Object.assign(ex, { item: item }))) continue;
+      Object.assign(ex, { item: item, form: list[i].name, recall: list[i].recall });
+      if (item.kind !== 'kanaword') ex.itemId = item.id;
+      if (ctx.kanaMode) ex.part = formPart(list[i].name);
+      return ex;
     }
     return null;
   };
@@ -1227,10 +1358,75 @@ function makeQuestion(item, ctx, wantRecall, avoid, strict) {
   return tryAll(want(fresh)) || tryAll(fresh) || tryAll(want(forms)) || tryAll(forms);
 }
 
-// buildExercises(unit): a fresh quiz for one resolved unit (buildUnits). Every
-// item once (a review samples 20), then extra questions in other forms up to
-// quizLength; at least RECALL_SHARE typed answers. A unit with passages / listening (reviews)
-// ends with their reading then listening questions, in place of as many item questions.
+// itemSlots(ctx, n): the items a lesson / review quiz asks, in order. Grammar first, so a form
+// point (て-form…) gets its recall (conjugation) question while the recall share is still open.
+// Every item once; a review samples, items not asked recently first; a second ask (each item at
+// most QUIZ_ITEM_MAX times: quizCapacity) only when n is more than the items.
+function itemSlots(ctx, n) {
+  var fresh = function (list) { return notRecentFirst(rndShuffle(list), function (it) { return askedRecently(ctx.recent, it.id); }); };
+  var order = fresh(ctx.items.filter(function (it) { return it.kind === 'grammar'; }))
+    .concat(fresh(ctx.items.filter(function (it) { return it.kind !== 'grammar'; }))).slice(0, n);
+  order = order.concat(rndShuffle(ctx.items).slice(0, Math.max(0, n - order.length)));
+  return order.map(function (it) { return { item: it }; });
+}
+// kanaQuizSlots(unit, ctx, n): a kana quiz's questions (ticket 44) as { item, part }. Meaning: each
+// taught word once (at most half the quiz); a review samples KANA_REVIEW_MEANING_SHARE. Reading:
+// words (kanaReadWords + the taught words) chosen greedily to cover every new kana and mark of the
+// stage (a review: all its kana), then a single-kana question for each new kana no word holds,
+// then more words. Items not asked recently first; each item at most QUIZ_ITEM_MAX times.
+function kanaQuizSlots(unit, ctx, n) {
+  var fresh = function (list) { return notRecentFirst(rndShuffle(list), function (it) { return askedRecently(ctx.recent, it.id); }); };
+  var kana = ctx.items.filter(function (it) { return it.kind === 'kana'; });
+  var words = ctx.items.filter(function (it) { return it.kind !== 'kana'; });
+  var nMean = Math.min(words.length, unit.kind === 'review' ? Math.round(n * KANA_REVIEW_MEANING_SHARE) : Math.floor(n / 2));
+  var slots = fresh(words).slice(0, nMean).map(function (it) { return { item: it, part: 'meaning' }; });
+  var r = n - nMean, count = {}, readN = {}, reads = [], left = {};
+  slots.forEach(function (sl) { count[sl.item.id] = 1; }); // a taught word: its meaning + one reading
+  var add = function (it) {
+    reads.push({ item: it, part: 'read' });
+    count[it.id] = (count[it.id] || 0) + 1;
+    readN[it.id] = (readN[it.id] || 0) + 1;
+  };
+  var once = function (it) { return !readN[it.id] && (count[it.id] || 0) < QUIZ_ITEM_MAX; };
+  kana.map(function (k) { return k.char; }).concat(unit.kind === 'kana' ? unit.marks || [] : []).forEach(function (c) { left[c] = true; });
+  var pool = fresh(ctx.readWords.concat(words)).map(function (w) { return { it: w, syl: kanaSyllables(w.word) }; });
+  var gain = function (w) { return w.syl.filter(function (c, i) { return left[c] && w.syl.indexOf(c) === i; }).length; };
+  while (reads.length < r) { // greedy cover: the first word with the most kana not covered yet
+    var best = null, bestGain = 0;
+    pool.forEach(function (w) { var g = once(w.it) && gain(w); if (g > bestGain) { best = w; bestGain = g; } });
+    if (!best) break;
+    add(best.it);
+    best.syl.forEach(function (c) { left[c] = false; });
+  }
+  kana.forEach(function (k) { if (left[k.char] && reads.length < r) add(k); }); // no word holds it
+  pool.forEach(function (w) { if (once(w.it) && reads.length < r) add(w.it); });
+  fresh(kana).forEach(function (k) { if (!count[k.id] && reads.length < r) add(k); });
+  pool.forEach(function (w) { if ((count[w.it.id] || 0) < QUIZ_ITEM_MAX && reads.length < r) add(w.it); });
+  return slots.concat(reads);
+}
+// spaceOut(exs): exs in random order, no item within QUIZ_SPACING questions of itself where that
+// is possible (ticket 43).
+function spaceOut(exs) {
+  var key = function (e) { return e.item ? e.item.id : e.itemId; };
+  var best = null, bestBad = Infinity;
+  // ponytail: greedy, retried on a fresh shuffle when it gets stuck; fine at ≤ 30 questions
+  for (var t = 0; t < 10 && bestBad > 0; t++) {
+    var rest = rndShuffle(exs), out = [], bad = 0;
+    while (rest.length) {
+      var near = out.slice(-QUIZ_SPACING).map(key), i = 0;
+      while (i < rest.length && near.indexOf(key(rest[i])) >= 0) i++;
+      if (i === rest.length) { bad++; i = 0; }
+      out.push(rest.splice(i, 1)[0]);
+    }
+    if (bad < bestBad) { best = out; bestBad = bad; }
+  }
+  return best || [];
+}
+
+// buildExercises(unit): a fresh quiz for one resolved unit (buildUnits): quizSize questions, every
+// item once (a review samples 20), a second ask only to reach QUIZ_MIN_QUESTIONS; a kana quiz reads
+// mostly words (kanaQuizSlots). At least RECALL_SHARE typed answers. A unit with passages / listening
+// (reviews) ends with their reading then listening questions, in place of as many item questions.
 function buildExercises(unit) {
   if (unit.kind === 'prep') return prepDrill(unit); // ticket 18; a mock unit runs MockExam instead
   var ctx = quizContext(unit);
@@ -1239,42 +1435,24 @@ function buildExercises(unit) {
   var reading = readingExercises(unit, ctx.taughtKanji); // takes slots from the item questions
   var listening = listeningExercises(unit, ctx.taughtKanji);
   var n = total - reading.length - listening.length;
-  var rounds = function (list, len) { // len items: list shuffled, again and again
-    var out = [];
-    while (list.length && out.length < len) out = out.concat(rndShuffle(list));
-    return out.slice(0, len);
-  };
-  var order;
-  var kanaIts = ctx.items.filter(function (it) { return it.kind === 'kana'; });
-  var wordIts = ctx.items.filter(function (it) { return it.kind !== 'kana'; });
-  if (kanaIts.length && wordIts.length) {
-    // kana quiz (ticket 42): ~60% characters (a kana unit asks every one of its kana), the rest words
-    var nChars = Math.round(n * KANA_CHAR_SHARE);
-    if (unit.kind === 'kana') nChars = Math.min(n - Math.min(wordIts.length, n), Math.max(nChars, kanaIts.length));
-    order = rounds(kanaIts, nChars).concat(rounds(wordIts, n - nChars));
-  } else {
-    // grammar first in the first round, so a form point (て-form…) gets its recall
-    // (conjugation) question while the recall share is still open
-    var gram = rndShuffle(ctx.items.filter(function (it) { return it.kind === 'grammar'; }));
-    order = gram.concat(rndShuffle(ctx.items.filter(function (it) { return it.kind !== 'grammar'; })));
-    order = order.concat(rounds(ctx.items, n - order.length)).slice(0, n);
-  }
+  var slots = ctx.kanaMode ? kanaQuizSlots(unit, ctx, n) : itemSlots(ctx, n);
   var need = Math.ceil(total * RECALL_SHARE), used = {}, out = [];
   var recallCount = function () { return out.filter(function (e) { return e.recall; }).length; };
-  order.forEach(function (it) {
-    var ex = makeQuestion(it, ctx, recallCount() < need, used[it.id] || []);
+  slots.forEach(function (sl) {
+    var ex = makeQuestion(sl.item, ctx, recallCount() < need, used[sl.item.id] || [], false, sl.part);
     if (!ex) return;
     out.push(ex);
-    (used[it.id] = used[it.id] || []).push(ex.form);
+    (used[sl.item.id] = used[sl.item.id] || []).push(ex.form);
   });
   // top-up: swap MC questions for recall ones until the share is met
   for (var i = 0; i < out.length && recallCount() < need; i++) {
     if (out[i].recall) continue;
-    var r = makeQuestion(out[i].item, ctx, true, used[out[i].itemId], true) || makeQuestion(out[i].item, ctx, true, [], true);
+    var it = out[i].item, part = out[i].part;
+    var r = makeQuestion(it, ctx, true, used[it.id], true, part) || makeQuestion(it, ctx, true, [], true, part);
     if (r) out[i] = r;
   }
   // reading then listening last, as on the test
-  return rndShuffle(out).concat(reading, listening);
+  return spaceOut(out).concat(reading, listening);
 }
 
 // ── Reading passages (ticket 15) ────────────────────────────────────────────
@@ -1605,7 +1783,7 @@ function requeueExercise(unit, ex) {
   var o = ex.type === 'reading' && rndShuffle(ex.options.map(function (_, i) { return i; })); // same question, options reshuffled
   var r = o ? Object.assign({}, ex, { options: o.map(function (i) { return ex.options[i]; }), optionParts: o.map(function (i) { return ex.optionParts[i]; }), correct: o.indexOf(ex.correct) })
     : ex.type === 'listen_dialog' ? listenQuestion(CATALOG.items[ex.itemId], quizContext(unit).taughtKanji, { mock: ex.maxPlays > 0 })
-    : ex.item && makeQuestion(ex.item, quizContext(unit), null, [ex.form]);
+    : ex.item && makeQuestion(ex.item, quizContext(unit), null, [ex.form], false, ex.part);
   return r ? Object.assign(r, { requeue: true }) : null;
 }
 
@@ -1628,24 +1806,27 @@ function answerIsRight(ex, resp) {
 // scoreQuiz(kind, exs, results): results[i] = was exs[i] right. Score = first
 // attempts (re-queued questions don't count); missed = items answered wrong
 // on any attempt (flagged for SRS).
-// A quiz with both character (kana item) and word questions is split (ticket 42): split =
-// { chars, words } each { right, total, need }, and it passes only when both parts do.
+// A kana quiz (questions tagged with part, ticket 44) is split: split = { read, meaning } each
+// { right, total, need }; reading (single kana + kana words) needs 85%, meanings of taught words
+// 80%, and it passes only when both parts do (a part with no questions passes).
 function scoreQuiz(kind, exs, results) {
-  var right = 0, total = 0, missed = [];
-  var chars = { right: 0, total: 0, need: passMark('kana') }, words = { right: 0, total: 0, need: KANA_WORD_PASS };
+  var right = 0, total = 0, missed = [], parts = null;
   exs.forEach(function (e, i) {
     if (i >= results.length) return;
     if (!e.requeue) {
-      var part = /^c:/.test(e.itemId || '') ? chars : words;
-      total++; part.total++;
-      if (results[i]) { right++; part.right++; }
+      total++;
+      if (results[i]) right++;
+      if (e.part) {
+        parts = parts || { read: { right: 0, total: 0, need: KANA_READ_PASS }, meaning: { right: 0, total: 0, need: KANA_MEANING_PASS } };
+        parts[e.part].total++;
+        if (results[i]) parts[e.part].right++;
+      }
     }
     if (!results[i] && e.itemId && missed.indexOf(e.itemId) < 0) missed.push(e.itemId);
   });
-  var ok = function (p) { return p.right / p.total >= p.need - 1e-9; };
-  var split = chars.total > 0 && words.total > 0 ? { chars: chars, words: words } : null;
-  var passed = split ? ok(chars) && ok(words) : quizPassed(right, total, chars.total ? 'kana' : kind);
-  return { right: right, total: total, need: passMark(kind), passed: passed, missed: missed, split: split };
+  var ok = function (p) { return !p.total || p.right / p.total >= p.need - 1e-9; };
+  var passed = parts ? total > 0 && ok(parts.read) && ok(parts.meaning) : quizPassed(right, total, kind);
+  return { right: right, total: total, need: passMark(kind), passed: passed, missed: missed, split: parts };
 }
 // NFKC folds full-width romaji/digits/punctuation to half-width, half-width
 // katakana to full-width, and composes combining marks (か+゙ → が).

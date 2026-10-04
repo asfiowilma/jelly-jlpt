@@ -87,8 +87,13 @@ in `.scratch/content-audit/issues/`.
   spelled in its own script (moved out of their lessons, so they get cards early), plus
   read-only practice words. Every word may use only kana already taught (a test enforces
   this). Keep the こそあど series, particles, bound items and words a grammar point rests on
-  in their lessons. Kana quizzes are ~60% characters / ~40% words, passed with ≥90% on
-  characters and ≥80% on words.
+  in their lessons. Kana quizzes read mostly **words** (any verified word of the level spelled
+  with kana learned so far, read only, never asked for its meaning), single kana only for a new
+  kana no word holds; passed with ≥85% on reading and ≥80% on the taught words' meanings.
+- **Single-sound kana questions felt like flashcards** (ticket 44). Check per stage how many
+  new kana no level word holds: on N5, にゃ–りょ, katakana yōon and the first katakana rows
+  have almost no words, so those stages stay 50–70% single kana. A higher level has more
+  katakana words; rerun the per-stage word/single count after building its catalog.
 - **Load guide per lesson** (N5: about 8 vocab, about 2 kanji, 1 grammar; ±25%). Vocab-only
   lessons are fine when grammar runs out.
 - **A kanji appears only at or after the first lesson teaching a word that uses it.**
@@ -118,6 +123,8 @@ in `.scratch/content-audit/issues/`.
 | **文脈規定 with more than one fitting word** | Generated ones rely on the English shown. Mocks use authored items with exactly one fit. |
 | **Generator types with no renderer crashed the quiz** | Every type has a renderer. The full playthrough test answers every type, right and wrong. |
 | **Quiz UI redesign dropped the reading question** (passage + options shown, no question) | The playthrough test fails any question whose question line isn't rendered. After any quiz-layout change, play one question of every type in the browser. |
+| **Same question over and over** (kana items asked up to 4×, "cigarette" a wrong option 31× in 10 quizzes) | Quiz length is a maximum: few items → shorter quiz (min 8), an item ≤2× and 3+ questions apart. Fewer than 15 taught candidates → widen with untaught same-level items (no cap on a good trap). Device-local recent memory steers retakes to other forms. Measure max-per-item and quiz length over many builds after any composition change. |
+| **Romaji that names two spellings** (zu: ず/づ, o: お/を, ti: チ/ティ, koohii: コーヒー) | Typed romaji → kana only when the romaji names one spelling (`kanaSpellable`); ん before a vowel shown as n'. |
 | **Flaky tests from randomness** | Seed random in tests, and run the suite 3× before merging. |
 
 ## 7. Passages, listening, mocks

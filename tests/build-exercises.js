@@ -15,10 +15,9 @@ QUnit.module('buildExercises', {
   }
 }, function () {
 
-  QUnit.test('N5 lesson quiz length = quizLength (12, or one per item)', function (assert) {
-    var exs = buildExercises(this.unit);
-    assert.strictEqual(exs.length, quizLength(this.unit, quizItems(this.unit).length));
-    assert.ok(exs.length >= 12);
+  QUnit.test('N5 lesson quiz length: one question per item, at least 8 (ticket 43)', function (assert) {
+    var n = quizItems(this.unit).length;
+    assert.strictEqual(buildExercises(this.unit).length, Math.max(8, Math.min(n, quizLength(this.unit, n))));
   });
 
   QUnit.test('returns empty array for a unit with no items', function (assert) {
@@ -55,12 +54,12 @@ QUnit.module('buildExercises', {
     ['ひと', 'ジン', 'じん'].forEach(function (a) { assert.ok(checkTyping(a, typing.answers), a); });
   });
 
-  QUnit.test('kana unit: kana → romaji MC, romaji typing, romaji → kana MC; unambiguous same-script options', function (assert) {
+  QUnit.test('single kana: kana → romaji MC, romaji typing, romaji → kana MC; unambiguous same-script options', function (assert) {
+    // a kana quiz reads words first (ticket 44); the single-kana forms are its fallback
     var kanaUnit = buildUnits(PLAN, CATALOG).filter(function (u) { return u.kind === 'kana'; })[1]; // か/さ rows
-    var types = {};
+    var ctx = quizContext(kanaUnit), types = {};
     for (var run = 0; run < 20; run++) {
-      buildExercises(kanaUnit).forEach(function (e) {
-        if (e.item.kind === 'vocab') return; // the unit's words: tests/kana-words.js
+      kanaUnit.kana.map(function (k) { return makeQuestion(k, ctx, null, []); }).forEach(function (e) {
         var k =CATALOG.items['c:' + e.question] || catalogOf('kana').filter(function (x) { return x.script === 'hiragana' && x.romaji === e.question; })[0];
         assert.ok(k && k.kind === 'kana', 'question is a unit kana or its romaji: ' + e.question);
         if (e.type === 'typing') {
@@ -80,7 +79,6 @@ QUnit.module('buildExercises', {
       });
     }
     assert.deepEqual(Object.keys(types).sort(), ['toKana', 'toRomaji', 'typing']);
-    assert.strictEqual(buildExercises(kanaUnit).length, 17, '17 questions for a 10-kana unit with words (10 / 0.6)');
   });
 
   QUnit.test('kanaDistractors: look-alikes and dakuten siblings first, never a same-sounding kana', function (assert) {
