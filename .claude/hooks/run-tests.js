@@ -824,15 +824,23 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       click(/qz-prev/);
       click(/qz-nextq/); click(/qz-nextq/);
       click(/qz-qlist/);
-      click(/qz-sheet-end/); // early finish from the sheet
+      click(/qz-sheet-end/); // early finish from the sheet (nothing blank in part 1: no confirm)
       a.ok(find(/quiz-start-btn/).length === 1 && !find(/qz-opt( |$)/).length && find(/^ql$/).length === 1, "between parts: layer with the start button, no questions");
       click(/quiz-start-btn/);
-      // part 2 (grammar + reading): all right, finished from the dock
-      secs[1].questions.forEach(function (ex, i) {
+      // part 2 (grammar + reading): all right except the last question, left blank; finished from the dock
+      var q2 = secs[1].questions;
+      q2.forEach(function (ex, i) {
         if (i > 0) click(/qz-nextq/);
-        click(/qz-opt( |$)/, ex.correct);
+        if (i < q2.length - 1) click(/qz-opt( |$)/, ex.correct);
       });
+      a.ok(/(1 unanswered)/.test(text(find(/qz-finish/)[0])), "dock Finish shows the unanswered count");
       click(/qz-finish/);
+      a.ok(find(/qz-dlg/).length === 1 && !find(/^ql$/).length === false, "finishing with a blank asks first");
+      click(/qz-gb$/);
+      a.ok(!find(/qz-dlg/).length && find(/qz-opt( |$)/).length, "Keep answering stays in the part");
+      click(/qz-finish/);
+      click(/qz-btn bad/);
+      a.ok(/Part 2: 21 answered, 1 blank/.test(text(find(/mock-done/)[0]).replace(/false/g, "").replace(/^.*?Part 2/, "Part 2")) || /1 blank/.test(text(find(/mock-done/)[0])), "between parts: one-line summary of the part just ended");
       click(/quiz-start-btn/);
       // part 3 (listening): play twice (1 replay), then the button is spent; two answers, then time out
       var before3 = spoken;
@@ -843,13 +851,19 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       click(/qz-nextq/);
       click(/qz-opt( |$)/, secs[2].questions[1].correct);
       a.ok(!taken, "not finished before time is up");
+      var started3 = clock, timerCls = function () { return find(/qz-timer/)[0].props.className; };
+      clock = started3 + (secs[2].seconds - 299) * 1000; intervals.filter(Boolean).slice(-1)[0](); render();
+      a.ok(/warn/.test(timerCls()) && !/low/.test(timerCls()), "under 5 minutes: warning colour");
+      clock = started3 + (secs[2].seconds - 59) * 1000; intervals.filter(Boolean).slice(-1)[0](); render();
+      a.ok(/low/.test(timerCls()), "under 1 minute: red");
       clock += secs[2].seconds * 1000 + 1;
       intervals.filter(Boolean).slice(-1)[0]();
       render();
       a.ok(taken, "time-out ends the test");
-      want = { vocab: [secs[0].questions.length - 1, secs[0].questions.length], grammar: [10, 10], reading: [4, 4], listening: [2, secs[2].questions.length] };
+      a.ok(find(/mock-done timeup/).length === 1 && /Time ran out/.test(JSON.stringify(find(/mock-done timeup/)[0].children)), "time-up is announced on the result");
+      want = { vocab: [secs[0].questions.length - 1, secs[0].questions.length], grammar: [10, 10], reading: [3, 4], listening: [2, secs[2].questions.length] };
       a.deepEqual(taken.parts, want, "scored: one vocab miss, unanswered listening wrong");
-      a.deepEqual(taken.estimate, mockEstimate({ vocab: want.vocab[0] / want.vocab[1], grammar: 1, reading: 1, listening: 2 / want.listening[1] }));
+      a.deepEqual(taken.estimate, mockEstimate({ vocab: want.vocab[0] / want.vocab[1], grammar: 1, reading: 3 / 4, listening: 2 / want.listening[1] }));
       a.ok(find(/mock-estimate/).length && find(/mock-missed/).length, "results: estimate + missed list");
       a.ok(!store.jlpt_mock_run, "finishing clears the running attempt");
       a.ok(find(/mock-again/).length === 1, "results offer Take again");

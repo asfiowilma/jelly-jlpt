@@ -56,16 +56,18 @@ function MockExam(props) {
   var _sp = React.useState(false), speaking = _sp[0], setSpeaking = _sp[1];
   var _sv = React.useState(function () { return mockRunLoad(mock.id); }), saved = _sv[0], setSaved = _sv[1]; // a left attempt
   var resultRef = React.useRef(null);
+  var _fa = React.useState(false), finishAsk = _fa[0], setFinishAsk = _fa[1]; // "Finish with blanks?" open
+  var _nt = React.useState(null), done = _nt[0], setDone = _nt[1]; // the part just ended: { part, answered, blank, flagged, timeUp }
   var shell = useQuizLayer(phase === 'part' || phase === 'between', quitting);
   var latest = React.useRef(null);
-  latest.current = { sec: sec, answers: answers };
+  latest.current = { sec: sec, answers: answers, flags: flags };
   var stopRef = React.useRef(null);
   var stopAudio = function () { if (stopRef.current) stopRef.current(); stopRef.current = null; setSpeaking(false); };
   React.useEffect(function () { return stopAudio; }, [sec, cur, phase]);
   // keep the running attempt on this device; warn before a reload / tab close while a part runs
   React.useEffect(function () {
-    if (phase === 'part' || phase === 'between') mockRunSave({ mockId: mock.id, phase: phase, sec: sec, cur: cur, deadline: deadline, answers: answers, flags: flags, plays: plays, at: now() });
-  }, [phase, sec, cur, deadline, answers, flags, plays]);
+    if (phase === 'part' || phase === 'between') mockRunSave({ mockId: mock.id, phase: phase, sec: sec, cur: cur, deadline: deadline, answers: answers, flags: flags, plays: plays, done: done, at: now() });
+  }, [phase, sec, cur, deadline, answers, flags, plays, done]);
   React.useEffect(function () {
     if (phase !== 'part' || typeof window === 'undefined' || !window.addEventListener) return undefined;
     var warn = function (e) { e.preventDefault(); e.returnValue = ''; };
@@ -79,7 +81,11 @@ function MockExam(props) {
   }, [phase]);
 
   // endPart(secIdx, answers): lock the part; next part's start screen, or the results.
-  var endPart = function (si, ans) {
+  var endPart = function (si, ans, timeUp, fl) {
+    var qs = sections[si].questions, blankN = ans[sections[si].key].filter(function (a) { return a === null; }).length;
+    fl = fl || latest.current.flags || {};
+    setDone({ part: si + 1, total: qs.length, blank: blankN, flagged: qs.filter(function (_, i) { return fl[sections[si].key + ':' + i]; }).length, timeUp: !!timeUp });
+    setFinishAsk(false);
     stopAudio();
     setDeadline(null);
     setSheet(false);
@@ -98,7 +104,7 @@ function MockExam(props) {
     var id = setInterval(function () {
       if (now() < deadline) return setTick(function (n) { return n + 1; });
       clearInterval(id);
-      endPart(latest.current.sec, latest.current.answers); // time up: unanswered stay null = wrong
+      endPart(latest.current.sec, latest.current.answers, true); // time up: unanswered stay null = wrong
     }, 1000);
     return function () { clearInterval(id); };
   }, [phase, deadline]);
@@ -112,7 +118,7 @@ function MockExam(props) {
   var quit = function () {
     stopAudio();
     mockRunClear();
-    setDeadline(null); setSheet(false); setQuitting(false);
+    setDeadline(null); setSheet(false); setQuitting(false); setDone(null);
     setSec(0); setCur(0); setAnswers(blank()); setFlags({}); setPlays({});
     setPhase('intro');
   };
@@ -120,9 +126,9 @@ function MockExam(props) {
   var resume = function () {
     var s = saved;
     setSaved(null);
-    setAnswers(s.answers); setFlags(s.flags || {}); setPlays(s.plays || {}); setSec(s.sec); setCur(s.cur || 0);
+    setDone(s.done || null); setAnswers(s.answers); setFlags(s.flags || {}); setPlays(s.plays || {}); setSec(s.sec); setCur(s.cur || 0);
     if (s.phase === 'between') return setPhase('between');
-    if (now() >= s.deadline) return endPart(s.sec, s.answers);
+    if (now() >= s.deadline) return endPart(s.sec, s.answers, true, s.flags);
     setDeadline(s.deadline);
     setPhase('part');
   };
@@ -130,6 +136,7 @@ function MockExam(props) {
   // Take again: a fresh attempt straight into part 1 (later sittings of a mock are practice, ticket 49)
   var takeAgain = function () {
     mockRunClear();
+    setDone(null);
     setSaved(null); setResult(null); setSec(0); setCur(0); setAnswers(blank()); setFlags({}); setPlays({});
     setPhase('part');
     setDeadline(now() + sections[0].seconds * 1000);
@@ -187,6 +194,17 @@ function MockExam(props) {
   }
 
   var S = sections[sec];
+  // one line on the part just ended; time-up says so
+  var partNote = function () {
+    if (!done) return null;
+    var answered = done.total - done.blank;
+    return ce("div", { key: "done", className: "mock-done" + (done.timeUp ? " timeup" : ""), role: "status" },
+      done.timeUp && ce("b", null, "Time ran out. "),
+      "Part " + done.part + ": " + answered + " answered, " + done.blank + " blank" + (done.timeUp && done.blank ? " (counts as wrong)" : "") + ", " + done.flagged + " flagged.");
+  };
+  var finishDialog = finishAsk && qzLeaveDialog(ce, {
+    label: "Finish with blanks", title: "Finish with blank answers?", text: "Blank answers count as wrong, and you can't come back to this part.",
+    stay: "Keep answering", leave: "Finish", onStay: function () { setFinishAsk(false); }, onLeave: function () { endPart(sec, answers); } });
   var quitDialog = quitting && qzLeaveDialog(ce, {
     label: "Quit the test", title: "Quit the test?", text: "Nothing is saved. You will start again from the beginning.",
     stay: "Keep going", leave: "Quit", onStay: function () { setQuitting(false); }, onLeave: quit });
@@ -195,7 +213,7 @@ function MockExam(props) {
     return qzLayer(ce, shell, { label: mock.title, overlay: quitDialog,
       top: qzTop(ce, { xLabel: "Quit the test", onX: function () { setQuitting(true); }, progLabel: "Parts done", now: sec,
         segs: sections.map(function (_, i) { return i < sec ? 'ans' : i === sec ? 'now' : ''; }), meta: [] }),
-      main: stepsEl('between') });
+      main: [partNote(), stepsEl('between')] });
   }
 
   // ── results ───────────────────────────────────────────────────────────────
@@ -217,6 +235,7 @@ function MockExam(props) {
     return ce("div", { className: "mock", ref: resultRef, tabIndex: -1 },
       back,
       ce("div", { className: "section-label" }, mock.title, ": results"),
+      done && done.timeUp && partNote(),
       ce("div", { className: "mock-estimate " + tone, role: "status" },
         ce("div", { className: "qz-res" },
           ce("div", { className: "qz-ring" },
@@ -283,7 +302,8 @@ function MockExam(props) {
   var isFlagged = function (i) { return !!flags[S.key + ':' + i]; };
   var nFlag = S.questions.filter(function (_, i) { return isFlagged(i); }).length;
   var nAns = answers[S.key].filter(function (a) { return a !== null; }).length;
-  var finish = function () { endPart(sec, answers); };
+  var blankN = S.questions.length - nAns, finLabel = (lastPart ? "Finish the test" : "Finish part") + (blankN ? " (" + blankN + " unanswered)" : "");
+  var finish = function () { if (blankN) { setSheet(false); setFinishAsk(true); } else endPart(sec, answers); };
   shell.keyRef.current = function (e) {
     if (shell.trapTab(e)) return;
     if (e.key === 'Escape') { if (sheet) setSheet(false); else setQuitting(!quitting); return; }
@@ -309,20 +329,20 @@ function MockExam(props) {
           onClick: function () { go(i); } }, i + 1);
       })),
       ce("p", { className: "qz-sheet-key" }, ce("i", { className: "qz-qn ans" }), " answered ", ce("i", { className: "qz-qn flag" }), " flagged ", ce("i", { className: "qz-qn now" }), " this one"),
-      ce("button", { className: "qz-btn qz-sheet-end", onClick: finish }, nAns < S.questions.length ? "Finish " + (lastPart ? "the test" : "part") + " (" + (S.questions.length - nAns) + " unanswered)" : "Finish " + (lastPart ? "the test" : "part"))));
-  return qzLayer(ce, shell, { label: mock.title, wide: c.wide, overlay: quitDialog || sheetEl,
+      ce("button", { className: "qz-btn qz-sheet-end", onClick: finish }, finLabel)));
+  return qzLayer(ce, shell, { label: mock.title, wide: c.wide, overlay: quitDialog || finishDialog || sheetEl,
     top: qzTop(ce, { xLabel: "Quit the test", onX: function () { setQuitting(true); }, progLabel: "Questions answered", now: nAns,
       segs: S.questions.map(function (_, i) { return (i === cur ? 'now' : answers[S.key][i] !== null ? 'ans' : '') + (isFlagged(i) ? ' flag' : ''); }),
       meta: [
         ce("button", { key: "list", className: "qz-qlist", 'aria-haspopup': "dialog", onClick: function () { setSheet(true); } },
           cur + 1, " / ", S.questions.length, nFlag ? " · " + nFlag + " flagged" : ""),
-        ce("span", { key: "timer", className: "qz-timer" + (left < 60 ? " low" : ""), role: "timer", 'aria-label': "Time left in this part" }, icon('clock'), mockClock(left))] }),
+        ce("span", { key: "timer", className: "qz-timer" + (left < 60 ? " low" : left < 300 ? " warn" : ""), role: "timer", 'aria-label': "Time left in this part" }, icon('clock'), mockClock(left))] }),
     main: [ce("p", { key: "cap", className: "qz-cap" }, "Part ", sec + 1, " · ", S.en, " · ", mockLabel(ex.mondai))].concat(c.main),
     dock: ce("div", { className: "qz-dock" }, ce("div", { className: "qz-in" },
       ce("button", { className: "qz-gb qz-prev", disabled: cur === 0, onClick: function () { go(cur - 1); } }, "← Prev"),
       ce("button", { className: "qz-gb qz-flag" + (flags[key] ? " on" : ""), 'aria-pressed': !!flags[key],
         onClick: function () { var f = Object.assign({}, flags); f[key] = !f[key]; setFlags(f); } }, flags[key] ? "⚑ Flagged" : "⚑ Flag"),
       ce("span", { className: "qz-sp" }),
-      last ? ce("button", { className: "qz-btn ok qz-finish", onClick: finish }, lastPart ? "Finish the test" : "Finish part")
+      last ? ce("button", { className: "qz-btn ok qz-finish", onClick: finish }, finLabel)
         : ce("button", { className: "qz-btn qz-nextq", onClick: function () { go(cur + 1); } }, "Next →"))) });
 }
