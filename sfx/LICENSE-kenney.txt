@@ -24,7 +24,7 @@
 =====================================================================
 next.ogg / next.mp3 (the mock's question-to-question tick)
 
-	Interface Sounds (1.0), tick_004
+	Interface Sounds (1.0), switch_001
 
 	Created/distributed by Kenney (www.kenney.nl)
 
