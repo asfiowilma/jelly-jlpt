@@ -172,7 +172,7 @@ function MockExam(props) {
         ce("summary", null, "How the exam works"),
         ce("p", null, "You take the parts one at a time. Each part has its own clock. Inside a part you can answer in any order and change answers. Flag questions to come back to them."),
         ce("p", null, "When a part ends, you can't go back to it. Unanswered questions count as wrong."),
-        ce("p", null, "Listening plays each question once, with one replay."),
+        ce("p", null, "Listening plays each question once, with one replay. Each spoken reply can be played once."),
         ce("p", null, "At the end you get your answers and an estimated score.")));
   };
   var back = props.onClose && ce("button", { className: "link-btn mock-back", onClick: props.onClose }, "← Back to stages");
@@ -295,10 +295,13 @@ function MockExam(props) {
   };
   var go = function (i) { stopAudio(); playSfx('next'); setCur(i); setSheet(false); };
   var usedPlays = plays[key] || 0, playsLeft = ex.maxPlays ? ex.maxPlays - usedPlays : Infinity;
-  var play = function (lines) {
-    if (playsLeft <= 0) return;
+  // r = reply index of a spoken option: each reply has its own single listen (main Play keeps maxPlays)
+  var replyUsed = function (r) { return plays[key + ':r' + r] || 0; };
+  var play = function (lines, r) {
+    var k = r == null ? key : key + ':r' + r;
+    if (r == null ? playsLeft <= 0 : replyUsed(r) >= 1) return;
     var p = Object.assign({}, plays);
-    p[key] = usedPlays + 1;
+    p[k] = (plays[k] || 0) + 1;
     setPlays(p);
     stopAudio();
     setSpeaking(true);
@@ -322,7 +325,7 @@ function MockExam(props) {
   };
   // No feedback in a mock: an option is only picked (revealed stays false), nothing is checked.
   var kit = qzKit(ce, ex, { lv: mock.level, pick: chosen, revealed: false, selected: null, tone: '', onPick: choose,
-    plays: usedPlays, speaking: speaking, play: play, voiceStatus: 'ok', replyHint: "The reply texts show in your results.", showEarly: false, onEarly: function () {} });
+    plays: usedPlays, replyUsed: replyUsed, speaking: speaking, play: play, voiceStatus: 'ok', replyHint: "The reply texts show in your results.", showEarly: false, onEarly: function () {} });
   var c = kit.choice();
   var sheetEl = sheet && ce("div", { className: "qz-scrim qz-sheet-wrap", onClick: function (e) { if (e.target === e.currentTarget) setSheet(false); } },
     ce("div", { className: "qz-sheet", role: "dialog", 'aria-label': "Questions in this part" },

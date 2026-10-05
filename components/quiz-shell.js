@@ -139,7 +139,7 @@ function qzLayer(h, shell, o) {
 // qzKit(h, ex, st): renders one choice question (options, furigana, listen button) for any
 // caller. st = {
 //   lv, pick (chosen option, not checked), revealed, selected (checked option, -1 skipped), tone,
-//   onPick(i), plays (used), speaking, play(lines), voiceStatus, showEarly, onEarly() }
+//   onPick(i), plays (used), replyUsed(i) (mock: replies played), speaking, play(lines), voiceStatus, showEarly, onEarly() }
 // → { partsEl, promptEl, questionEl(), optClass(i), optionsList(), choice() → { main, wide } }
 // choice() covers the three choice shapes: a listening dialogue, a reading passage, plain options.
 // Typing, reorder and pair questions stay with the quiz and use partsEl / promptEl / questionEl.
@@ -193,8 +193,8 @@ function qzKit(h, ex, st) {
         ? [h("div", { key: "opts", className: "qz-opts g1" }, ex.options.map(function (opt, i) {
           return h("div", { key: i, className: "qz-srow" },
             h("button", {
-              className: "qz-rp", 'aria-label': "Play reply " + (i + 1), disabled: playsLeft <= 0,
-              onClick: function () { st.play([ex.optionSpeech[i]]); }
+              className: "qz-rp", 'aria-label': "Play reply " + (i + 1), disabled: !!(ex.maxPlays && st.replyUsed && st.replyUsed(i) >= 1),
+              onClick: function () { st.play([ex.optionSpeech[i]], i); }
             }, icon('speaker')),
             h("button", {
               className: optClass(i), lang: "ja", disabled: revealed, 'aria-pressed': !revealed && pick === i,

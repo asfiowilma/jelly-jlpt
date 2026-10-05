@@ -95,6 +95,23 @@ QUnit.module('listening', function () {
     assert.ok(buildExercises(lesson).every(function (e) { return e.type !== 'listen_dialog'; }), 'lessons have none');
   });
 
+  // Mock replay budget: each spoken reply has its own single listen, apart from the main Play.
+  QUnit.test('qzKit: a mock reply button is spent after one listen, the main Play is not', function (assert) {
+    var ex = listenQuestion(listeningFor('N5', 'quick')[0], {}, { mock: true });
+    var used = { 1: 1 }, played = [];
+    var h = function (tag, props) { return { tag: tag, props: props || {}, kids: Array.prototype.slice.call(arguments, 2) }; };
+    var walk = function (n, out) { if (Array.isArray(n)) n.forEach(function (x) { walk(x, out); }); else if (n && n.props) { out.push(n); walk(n.kids, out); } return out; };
+    var kit = qzKit(h, ex, { lv: 'N5', pick: null, revealed: false, selected: null, tone: '', onPick: function () {},
+      plays: 0, replyUsed: function (i) { return used[i] || 0; }, speaking: false, play: function (lines, r) { played.push(r); },
+      voiceStatus: 'ok', showEarly: false, onEarly: function () {} });
+    var all = walk(kit.choice().main, []);
+    var rp = all.filter(function (n) { return /qz-rp/.test(n.props.className || ''); });
+    assert.deepEqual(rp.map(function (n) { return n.props.disabled; }), [false, true, false], 'only the played reply is spent');
+    rp[0].props.onClick();
+    assert.deepEqual(played, [0], 'a reply play carries its index');
+    assert.ok(!all.filter(function (n) { return /qz-play/.test(n.props.className || ''); })[0].props.disabled, 'the main Play is untouched by reply plays');
+  });
+
   // A reply button played the dialogue: Chrome's cancel() is async, so a speak() in the same tick
   // queued behind the cancelled dialogue. speakScript now waits a beat when the engine is busy.
   QUnit.test('speakScript: starts after a beat when the engine is still speaking, at once when idle', function (assert) {
