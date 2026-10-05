@@ -62,6 +62,7 @@ var appFiles = [
   path.join("components", "vocab-section.js"),
   path.join("components", "exercises.js"),
   path.join("components", "mock-exam.js"),
+  path.join("components", "prep-guide.js"),
   path.join("components", "unit-view.js"),
   path.join("components", "review-mode.js"),
   path.join("components", "overview.js"),
@@ -209,6 +210,14 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       });
     });
     a.ok(units.some(function (u) { return u.kind === "review"; }), "a review unit is rendered");
+  });
+
+  test("React render: PrepGuide() renders every prep and mock guide", function (a) {
+    var g = units.filter(function (u) { return u.guide; });
+    a.equal(g.length, 7, "seven guided units");
+    g.forEach(function (u) {
+      try { PrepGuide({ guide: u.guide }); } catch (e) { a.ok(false, u.id + ": " + e.message); }
+    });
   });
 
   test("React render: KanjiSection() renders every kanji unit in rows and focus layouts", function (a) {

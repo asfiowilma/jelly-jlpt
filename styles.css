@@ -1133,3 +1133,38 @@ body.quiz-open .toast-stack{bottom:calc(100px + env(safe-area-inset-bottom))}
 @media (prefers-reduced-motion:reduce){.rv-layer{animation:none}.rv-track b{transition:none}}
 .rv-track{position:relative;overflow:hidden}
 .rv-track b{position:absolute;inset:0 auto 0 0;background:var(--accent);transition:width .25s}
+
+/* Exam guide (components/prep-guide.js): hairlines on the page, no cards. Gold = labels/numbers, warn = Watch out, ok = Do this, info = Time/Rules */
+.pg-facts{display:flex;flex-wrap:wrap;gap:4px 18px;margin-bottom:16px;font-size:0.84rem;color:var(--muted)}
+.pg-facts b{color:var(--accent-fg);font-variant-numeric:tabular-nums}
+.pg-list{list-style:none}
+.pg-list>li{padding:14px 0;border-top:1px solid var(--border)}
+.pg-list>li:last-child{border-bottom:1px solid var(--border)}
+.pg-rail>li{display:grid;grid-template-columns:150px 1fr;gap:20px}
+.pg-rail .pg-name{padding-right:20px;border-right:1px solid var(--border)}
+.pg-step>li{display:grid;grid-template-columns:72px 1fr;gap:14px}
+.pg-jp{display:block;font-size:1.05rem;font-weight:700}
+.pg-rail .pg-jp{color:var(--accent-fg);font-size:1.15rem}
+.pg-en{display:block;margin-top:2px;font-size:0.8rem;color:var(--muted)}
+.pg-en:only-child{margin:0;font-size:1.05rem;font-weight:700;color:var(--accent-fg)}
+.pg-min{font-size:1.6rem;font-weight:700;line-height:1;color:var(--accent-fg);font-variant-numeric:tabular-nums}
+.pg-min small{display:block;margin-top:4px;font-size:0.66rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.pg-ask{font-size:0.9rem;font-weight:600;text-wrap:pretty}
+.pg-rail .pg-ask{margin-top:0}
+.pg-step .pg-ask{margin-top:4px}
+.pg-pt{margin-top:6px;font-size:0.86rem;line-height:1.55;text-wrap:pretty}
+.pg-pt b{display:inline-block;min-width:74px;margin-right:8px;font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase}
+.pg-trap b{color:var(--warn)}
+.pg-tip b{color:var(--ok)}
+.pg-plain{margin-top:0}
+.pg-pt mark,.pg-rules mark{background:none;color:var(--accent-fg);font-weight:700;border-bottom:2px solid color-mix(in srgb,var(--accent-fg) 45%,transparent)}
+.pg-eg{display:inline-flex;align-items:baseline;gap:8px;margin-top:10px;padding:4px 12px;font-size:0.85rem;background:var(--surface2);border-radius:6px}
+.pg-eg i{font-style:normal;font-size:0.64rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted)}
+.pg-info .section-label{color:var(--info)}
+.pg-rules{list-style:none;display:grid;gap:6px;font-size:0.86rem}
+.pg-rules b{color:var(--info)}
+@media(max-width:560px){
+  .pg-rail>li{grid-template-columns:1fr;gap:6px}
+  .pg-rail .pg-name{padding:0;border:0}
+  .pg-pt b{display:block;min-width:0;margin-bottom:1px}
+}

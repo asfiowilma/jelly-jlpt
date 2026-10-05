@@ -287,44 +287,89 @@ LESSONS.forEach(function (l, n) {
 // drill = questions per mondai, or passages / listening items per format), then the two fixed full
 // mocks (data/n5/mocks.js), with a mixed drill between them. The diagnostic mock (x:n5-mock-3) is
 // not a unit: it opens from the Units tab anytime. Unit ids continue after the lessons (n5.u106…).
-const PREP = [
-  ["Exam strategy: vocabulary (文字・語彙)", { kanjiYomi: 3, hyouki: 3, bunmyaku: 3, iikae: 3 },
-    "The N5 test has three timed parts: vocabulary (文字・語彙, 20 minutes), grammar and reading (文法・読解, 40 minutes) and listening (聴解, 30 minutes). You may not go back to a part once its time is over.\n" +
-    "Vocabulary has about 21 questions in 20 minutes, so a little under a minute each. Four kinds of question (もんだい):\n" +
-    "1. 漢字読み: a word in kanji is underlined; choose its reading. The wrong choices differ by one sound: a missing ゛, a short vowel instead of a long one (きょねん / きょうねん), a missing small っ. Say each choice in your head, slowly.\n" +
-    "2. 表記: a word in hiragana is underlined; choose its kanji. Wrong choices swap one kanji for one that looks alike (休 / 体) or sounds alike. Check every kanji of the word, not just the first.\n" +
-    "3. 文脈規定: a sentence with a gap; choose the word that fits. Read the whole sentence first: the reason (〜から) or the object (まどを, でんきを) usually decides it.\n" +
-    "4. 言い換え類義: choose the sentence that means about the same as the underlined part. The right one often says it another way (たかくない = やすい); wrong ones change who, when or the opposite.\n" +
-    "Time: answer what you know at once and come back to flagged questions at the end. Never leave a question blank: a wrong answer costs nothing more than an empty one."],
-  ["Exam strategy: grammar (文法)", { gap: 5, order: 3, bunshou: 1 },
-    "Grammar has about 17 questions; give them about 1 minute each, so most of the 40 minutes are left for reading.\n" +
-    "1. 文の文法1: a gap in a sentence; choose the particle or form. Look at the words on both sides of the gap: the verb after it decides the particle (コーヒーを のむ), the form before it decides the ending (ねた ほうがいい, して から).\n" +
-    "2. 文の文法2 (★): four pieces to put in order; answer with the piece that lands on ★. Build the whole sentence first, write the order down (1-3-4-2), then read off the ★ slot. Particles stick to the word before them (かばん + を).\n" +
-    "3. 文章の文法: a short text with numbered gaps. Read the sentence before and after each gap: the right choice must fit the story (past or future, but or so).\n" +
-    "If two choices both seem fine, one of them usually breaks a rule only the full sentence shows. Read it once more with each choice in place."],
-  ["Exam strategy: reading (読解)", { short: 2, mid: 1, info: 1 },
-    "Reading has about 5 questions in the same 40 minutes as grammar: plan about 20 minutes for it. In this course the clock gives each reading question about 4½ minutes.\n" +
-    "1. 内容理解（短文）: a note, an email or a notice of a few lines, one question. Read the question first, then find the sentence that answers it; the wrong choices use words from the text in the wrong place.\n" +
-    "2. 内容理解（中文）: a longer text with two questions. The questions follow the order of the text. Watch for でも, しかし and the end of the text: the writer's real point is often there.\n" +
-    "3. 情報検索: a timetable, a price list or a flyer. Don't read it all: note the conditions in the question (day, time, price, who) and scan for the one line that meets all of them.\n" +
-    "Kanji from the N5 list show no furigana here, so read them as you would on the day."],
-  ["Exam strategy: listening (聴解)", { task: 1, point: 2, utterance: 2, quick: 2 },
-    "Listening has about 24 questions in 30 minutes and moves at the speed of the audio. On the real test you hear everything once; here you get one replay per question so the computer voice is fair.\n" +
-    "1. 課題理解: the question comes first (what will the man buy?), then the talk. People change plans: listen for でも, じゃあ and いりません. The answer is the final decision, not the first idea.\n" +
-    "2. ポイント理解: you hear what to listen for (いつ, どこ, どうして, いくつ) before the talk. Keep that one word in mind and ignore the rest.\n" +
-    "3. 発話表現: on the test you see a picture; here the narrator describes the situation. Ask yourself who speaks to whom: asking a favour (〜てください), offering (〜ましょうか) or asking permission (〜てもいいですか).\n" +
-    "4. 即時応答: one short line and three replies, nothing printed. Answer at once and move on; dwelling on one costs the next.\n" +
-    "The voices here are computer speech, slower and flatter than the real recording. Practise with the official sample audio too (link in Settings and on the mock results)."],
-  ["Full mock exam 1", null, "A full N5 test: 67 questions in three timed parts (20 / 40 / 30 minutes), scored with an estimate of the real scaled score and pass rules. Set aside about 90 minutes; you can rest between parts.", "x:n5-mock-1"],
-  ["After the mock: find and fix weak spots", { kanjiYomi: 2, hyouki: 2, bunmyaku: 2, iikae: 1, gap: 3, order: 2, short: 1, info: 1, point: 1, quick: 2 },
-    "Open your mock results: the table per もんだい shows where points were lost. Missed words go back to your reviews sooner, so do your SRS reviews first.\n" +
-    "Then sort each miss: did you not know it (study the word or grammar point again), misread it (slow down on that もんだい), or run out of time (move on sooner and come back)?\n" +
-    "The mixed drill below has every part of the test at real pacing. Take mock 2 when you can pass it with time to spare."],
-  ["Full mock exam 2", null, "The second full N5 test, with all new questions. Take it a few days before the exam, under exam conditions: one sitting, no notes.", "x:n5-mock-2"]
+// Exam guide per prep / mock unit (rendered by components/prep-guide.js; **word** = highlight, one per trap).
+// guide = { lead, facts: [[label, value]], kindsLabel, kinds: [{ jp, en, ask, trap, tip, eg?, min? }],
+//           time?, timeLabel?, rules?: [[lead-in, text]] }. kinds with `min` render as a stepper (mocks).
+const MOCK_GUIDE = {
+  facts: [["Questions", "67"], ["Total", "~90 min"], ["Sitting", "one"], ["Back", "locked"]],
+  kindsLabel: "The three parts",
+  kinds: [
+    { jp: "文字・語彙", en: "Vocabulary", min: 20, ask: "Kanji reading, writing, word in context, same meaning.", trap: "Spending **too long** on one word.", tip: "Flag it and move on." },
+    { jp: "文法・読解", en: "Grammar + reading", min: 40, ask: "Grammar gaps, ★ ordering, text gaps, then reading.", trap: "Leaving **too little** for reading.", tip: "Finish grammar in about 20 minutes." },
+    { jp: "聴解", en: "Listening", min: 30, ask: "Four listening types, one replay per question.", trap: "Missing the start of a clip.", tip: "Check your volume before you start." }
+  ],
+  timeLabel: "Rules",
+  rules: [
+    ["Own clock.", "Each part is timed separately and locks when it ends."],
+    ["Blanks count as wrong.", "Guess instead of skipping."],
+    ["Flag and return.", "Inside a part you can change answers and revisit flagged questions."],
+    ["Rest between parts.", "Set aside about 90 minutes."]
+  ]
+};
+const GUIDES = [
+  { lead: "Vocabulary is the first timed part: about 21 questions in 20 minutes, a little under a minute each.",
+    facts: [["Part", "1 of 3"], ["Time", "20 min"], ["Questions", "~21"], ["Types", "4"]],
+    kindsLabel: "Question types",
+    kinds: [
+      { jp: "漢字読み", en: "Kanji reading", ask: "A word in kanji is underlined. Pick its reading.", trap: "Wrong choices differ by **one sound**: a missing ゛, a long vowel made short, a missing small っ.", tip: "Say each choice slowly in your head.", eg: "きょねん / きょうねん" },
+      { jp: "表記", en: "Writing", ask: "A word in hiragana is underlined. Pick its kanji.", trap: "Wrong choices swap **one kanji** for one that looks or sounds alike.", tip: "Check every kanji of the word, not just the first.", eg: "休 / 体" },
+      { jp: "文脈規定", en: "Word in context", ask: "A sentence has a gap. Pick the word that fits.", trap: "Two choices fit the gap, but only **one fits the whole sentence**.", tip: "Read the whole sentence first. The reason (〜から) or the object (まどを) usually decides it.", eg: "まどを ＿＿ ください。" },
+      { jp: "言い換え類義", en: "Same meaning", ask: "Pick the sentence that means about the same as the underlined part.", trap: "Wrong choices change who, when, or the **opposite**.", tip: "The right one often says it another way.", eg: "たかくない = やすい" }
+    ],
+    time: "Answer what you know at once, flag the rest, come back. **Never leave a blank**: a wrong answer costs no more than an empty one." },
+  { lead: "Grammar is about 17 questions: give them about a minute each, so most of the 40 minutes are left for reading.",
+    facts: [["Part", "2 of 3"], ["Time", "~20 of 40 min"], ["Questions", "~17"], ["Types", "3"]],
+    kindsLabel: "Question types",
+    kinds: [
+      { jp: "文の文法1", en: "Sentence grammar", ask: "A gap in a sentence. Pick the particle or form.", trap: "Looking at one side only: the **verb after the gap** decides the particle, the form before it decides the ending.", tip: "Look at the words on both sides of the gap.", eg: "コーヒーを のむ / ねた ほうがいい" },
+      { jp: "文の文法2 (★)", en: "Sentence order", ask: "Four pieces to put in order. Answer with the piece that lands on ★.", trap: "Judging pieces one by one: particles **stick to the word before them**.", tip: "Build the whole sentence first, write the order down (1-3-4-2), then read off the ★ slot.", eg: "かばん + を" },
+      { jp: "文章の文法", en: "Text gaps", ask: "A short text with numbered gaps.", trap: "A choice that fits its own sentence but not **the story**: past or future, but or so.", tip: "Read the sentence before and after each gap." }
+    ],
+    time: "Grammar and reading share part 2 (40 minutes). If two choices both seem fine, one usually breaks a rule only the full sentence shows: **read it once more** with each choice in place." },
+  { lead: "Reading is about 5 questions in the same 40 minutes as grammar: plan about 20 minutes for it.",
+    facts: [["Part", "2 of 3"], ["Time", "~20 of 40 min"], ["Questions", "~5"], ["Types", "3"]],
+    kindsLabel: "Question types",
+    kinds: [
+      { jp: "内容理解（短文）", en: "Short text", ask: "A note, an email or a notice of a few lines, one question.", trap: "Wrong choices use words from the text in the **wrong place**.", tip: "Read the question first, then find the sentence that answers it." },
+      { jp: "内容理解（中文）", en: "Medium text", ask: "A longer text with two questions, in the order of the text.", trap: "Stopping at the first idea: the writer's real point is often **at the end**.", tip: "Watch for でも, しかし and the end of the text." },
+      { jp: "情報検索", en: "Information search", ask: "A timetable, a price list or a flyer.", trap: "Reading it all instead of **scanning**.", tip: "Note the conditions in the question (day, time, price, who) and look for the one line that meets all of them." }
+    ],
+    time: "In this course the clock gives each reading question about 4½ minutes. Kanji from the N5 list show no furigana here, so **read them as you would on the day**." },
+  { lead: "Listening is about 24 questions in 30 minutes, and it moves at the speed of the audio.",
+    facts: [["Part", "3 of 3"], ["Time", "30 min"], ["Questions", "~24"], ["Types", "4"], ["Replays here", "1"]],
+    kindsLabel: "Question types",
+    kinds: [
+      { jp: "課題理解", en: "Task", ask: "The question comes first (what will the man buy?), then the talk.", trap: "People change plans: the answer is the **final decision**, not the first idea.", tip: "Listen for でも, じゃあ and いりません." },
+      { jp: "ポイント理解", en: "Key point", ask: "You hear what to listen for (いつ, どこ, どうして, いくつ) before the talk.", trap: "Following **everything else** in the talk.", tip: "Keep that one word in mind and ignore the rest." },
+      { jp: "発話表現", en: "Right thing to say", ask: "On the test you see a picture; here the narrator describes the situation.", trap: "Mixing up **who speaks to whom**.", tip: "Decide if it is asking a favour (〜てください), offering (〜ましょうか) or asking permission (〜てもいいですか).", eg: "〜ましょうか" },
+      { jp: "即時応答", en: "Quick reply", ask: "One short line and three replies, nothing printed.", trap: "Dwelling on one costs the next: **move on**.", tip: "Answer at once." }
+    ],
+    time: "On the real test you hear everything once; here you get **one replay** per question so the computer voice is fair. The voices are slower and flatter than the real recording, so practise with the official sample audio too (link in Settings and on the mock results)." },
+  Object.assign({ lead: "A full N5 test: 67 questions in three timed parts, scored with an estimate of the real scaled score." }, MOCK_GUIDE),
+  { lead: "Open your mock results: the table per もんだい shows where points were lost. Missed words come back sooner in your reviews, so do those first.",
+    facts: [["First", "SRS reviews"], ["Then", "mixed drill below"], ["After", "mock 2"]],
+    kindsLabel: "Three kinds of miss",
+    kinds: [
+      { jp: "", en: "Didn't know it", ask: "The word or grammar point was new or forgotten.", trap: "It stays **missed** unless you go back to it.", tip: "Study the word or grammar point again." },
+      { jp: "", en: "Misread it", ask: "You knew it but picked the wrong choice.", trap: "Reading too fast on one **もんだい**.", tip: "Slow down on that もんだい." },
+      { jp: "", en: "Ran out of time", ask: "Questions left blank or guessed at the end.", trap: "Staying **too long** on one question.", tip: "Move on sooner and come back." }
+    ],
+    timeLabel: "Next",
+    time: "The mixed drill below has every part of the test at real pacing. Take **mock 2** when you can pass it with time to spare." },
+  Object.assign({ lead: "The second full test, with all new questions. Take it a few days before the exam, under exam conditions: one sitting, no notes." }, MOCK_GUIDE)
 ];
-PREP.forEach(function (p) {
-  const u = { id: uid(), level: "N5", kind: p[3] ? "mock" : "prep", title: p[0], notes: p[2] };
-  if (p[3]) u.mock = p[3]; else u.drill = p[1];
+const PREP = [
+  ["Exam strategy: vocabulary (文字・語彙)", { kanjiYomi: 3, hyouki: 3, bunmyaku: 3, iikae: 3 }],
+  ["Exam strategy: grammar (文法)", { gap: 5, order: 3, bunshou: 1 }],
+  ["Exam strategy: reading (読解)", { short: 2, mid: 1, info: 1 }],
+  ["Exam strategy: listening (聴解)", { task: 1, point: 2, utterance: 2, quick: 2 }],
+  ["Full mock exam 1", null, "x:n5-mock-1"],
+  ["After the mock: find and fix weak spots", { kanjiYomi: 2, hyouki: 2, bunmyaku: 2, iikae: 1, gap: 3, order: 2, short: 1, info: 1, point: 1, quick: 2 }],
+  ["Full mock exam 2", null, "x:n5-mock-2"]
+];
+PREP.forEach(function (p, i) {
+  const u = { id: uid(), level: "N5", kind: p[2] ? "mock" : "prep", title: p[0], guide: GUIDES[i] };
+  if (p[2]) u.mock = p[2]; else u.drill = p[1];
   units.push(u);
 });
 

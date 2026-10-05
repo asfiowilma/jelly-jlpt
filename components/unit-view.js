@@ -98,6 +98,10 @@ function UnitView(props) {
       React.createElement("div", null,
         // Lesson note: first sentence as the headline, the rest as quiet lines (prep / mock notes
         // run to several paragraphs, one per line, ticket 18)
+        unit.guide && React.createElement('aside', { className: 'unit-note', 'aria-label': t('guide_label', lv) },
+          React.createElement('div', { className: 'unit-note-label' }, icon('bulb'), t('guide_label', lv)),
+          React.createElement('h3', { className: 'unit-note-head' }, unit.guide.lead)),
+        unit.guide && React.createElement(PrepGuide, { guide: unit.guide }),
         unit.notes && (function () {
           var note = noteParts(unit.notes);
           return React.createElement("aside", { className: "unit-note", 'aria-label': t('note_label', lv) },

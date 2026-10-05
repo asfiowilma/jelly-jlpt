@@ -80,6 +80,7 @@ var UI_STRINGS = {
   kanji_info_extra:   { en: "Grey readings are extra ones that this lesson's words don't use.", ja: 'うすい読みは、このレッスンではつかわない読み。' },
   // Lesson note box
   note_label:       { en: 'Lesson note', ja: 'メモ' },
+  guide_label:      { en: 'Exam guide', ja: 'しけんガイド' },
   // Lesson Kana section
   mode_learn:       { en: 'Learn',        ja: '学ぶ' },
   mode_practice:    { en: 'Practice',     ja: 'れんしゅう' },
