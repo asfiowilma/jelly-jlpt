@@ -52,7 +52,8 @@ function charSectionHead(opts) {
 function kanjiReading(r, extra) {
   var parts = r.split('.');
   return React.createElement("span", { key: r, className: "kj-reading" + (extra ? " extra" : "") },
-    parts[0], parts[1] && React.createElement("small", null, parts[1]));
+    parts[0], parts[1] && React.createElement("small", null, parts[1]),
+    React.createElement("button", { className: "speak-btn", onClick: function () { speak(readingKana(r)); }, 'aria-label': "Listen to " + readingKana(r) }, "🔊"));
 }
 
 function KanjiSection(props) {

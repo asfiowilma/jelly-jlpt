@@ -1554,6 +1554,8 @@ function listeningFor(level, format) {
   });
 }
 // speechText: furigana markup → what the voice reads (kana readings, so no kanji is misread).
+// readingKana: a kanji reading as the voice should hear it ("た.べる" -> "たべる", "-ちゅう" -> "ちゅう").
+function readingKana(r) { return r.replace(/[.\-\s]/g, ''); }
 function speechText(s) { return furiganaParts(s).map(function (p) { return p.r || p.t; }).join(''); }
 
 // listeningScript(item, order?): the whole play sequence [{ speaker, text }], options in

@@ -167,3 +167,14 @@ QUnit.module('listening', function () {
     assert.deepEqual(listeningScript(task).map(function (l) { return l.clip; }), AUDIO_MANIFEST.tracks[task.id], 'task: identity mapping');
   });
 });
+QUnit.module('kanji reading speech', function () {
+  QUnit.test('readingKana: no markers, no kanji, for every shown reading', function (assert) {
+    assert.strictEqual(readingKana('た.べる'), 'たべる');
+    assert.strictEqual(readingKana('-ちゅう'), 'ちゅう');
+    Object.values(CATALOG.items).filter(function (i) { return i.kind === 'kanji'; }).forEach(function (k) {
+      (k.kun || []).concat(k.on || [], k.extra || []).forEach(function (r) {
+        assert.ok(/^[\u3040-\u30ff]+$/.test(readingKana(r)), k.char + ' ' + r + ' speaks kana only');
+      });
+    });
+  });
+});
