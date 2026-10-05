@@ -41,10 +41,13 @@ components/           one React component per file, React.createElement, no JSX
                       (prep-guide.js renders `unit.guide`: lead, optional `part` 0-2 + `partJp` + `glance`, kinds, time/rules; strings take `**bold**` and `[漢字|かんじ]` furigana)
 app.js                App: builds UNITS from PLAN + CATALOG, awaits Store.init(), mounts
 vendor/               React 18.2.0, ReactDOM, PouchDB 9.0.0 (minified) + LICENSE-*.txt. Upgrade = replace file, update index.html/tests.html/credits
+audio/                pre-rendered listening clips `<12 hex>.mp3` (Qwen3-TTS, Apache-2.0) + generated `manifest.js`
+                      (`AUDIO_MANIFEST = { tracks: { <listening id>: [clip per script line] } }`); clips are NOT precached
 kanji-svg/            KanjiVG stroke-order SVGs (<hex codepoint>.svg), CC BY-SA 3.0, plus strokes.js
                       (generated bundle `KANJI_SVG` for file://; rerun `node tools/build-strokes.js`)
 tools/                zero-dep Node authoring scripts + checks (dev only, outputs committed)
   ref/n5.json         reference list: which vocab/kanji/grammar belong to N5
+  audio/              listening TTS inputs: tracks.json (export-tracks.js), voice archetypes + assignments, render-notebook.ipynb (Colab); see its README
 tests/                QUnit modules, one file per area
 tests.html            browser QUnit runner
 .claude/hooks/        run-tests.js (headless runner), pre-commit.sh, session-start.sh
@@ -66,6 +69,7 @@ Adding a file means adding its `<script src>` by hand:
 | New file | index.html | tests.html | run-tests.js |
 |---|---|---|---|
 | `data/<lvl>/*.js` | add tag | add tag | automatic (reads `data/` sorted) |
+| `audio/manifest.js` (generated) | tag after the data scripts | tag | already in `appFiles` |
 | `components/*.js` | add tag | — | add to `appFiles` |
 | `tests/*.js` | — | add tag | automatic (reads `tests/` sorted) |
 
@@ -75,7 +79,9 @@ sfx, kanji-svg, index.html), rerun `node tools/build-sw.js` and commit `sw.js`.*
 regenerates in memory and fails if `sw.js` is stale, if a script `index.html` loads or a shipped js
 on disk is missing from the precache list, or if a listed file is missing. The pre-commit hook runs
 that suite, so a forgotten rerun blocks the commit. Any new top-level shipped file type needs
-adding to `listFiles` in `tools/build-sw.js`. Progress is per-origin: see README "Install and deploy".
+adding to `listFiles` in `tools/build-sw.js`. **Audio exception:** `audio/manifest.js` is precached like any script, but `audio/*.mp3` (~7 MB) is
+not (`RUNTIME_ONLY` in `build-sw.js`): sw.js caches each clip on first play, cache-first, in the stable cache `jelly-audio-v1` that
+activate never deletes. Offline and not yet played = the page falls back to the browser voice. Progress is per-origin: see README "Install and deploy".
 
 ### Catalog + plan
 
@@ -149,7 +155,7 @@ Device-only prefs (palette, theme, TTS rate, sfx mute) stay in localStorage
 | Distractors | `pickDistractors` (+ `DISTRACTOR_RULES`), `kanaDistractors`, `readingFakes`, `spellingFakes` |
 | Mocks + timing (ticket 18) | `MOCK_BLUEPRINT`, `MOCK_PACE` (real N5 pacing), `quizSeconds`, `isTimedQuiz`, `mockSections`, `mockSteps` (start + between-parts rows), `mockResult`, `mockEstimate` (linear scaled-score estimate, `JLPT_PASS`), `prepDrill` |
 | Exam formats (N5 mondai) | `MONDAI` table, `mondaiQuestions(type, item, ctx)` (for mocks); in quizzes via `formsFor`: kanjiYomi, hyouki, bunmyaku (vocab), hyouki (kanji), gap, order ★ (grammar); iikae / bunshou authored in `mondai.js` |
-| Reading / listening | `passagesFor`, `readingExercises`; `listeningFor(level, format)`, `listenQuestion(item, taughtKanji, { mock })` (mock = 1 replay), `listeningScript`, `chunkSpeech`, `assignVoices` (app-helpers.js `speakScript` plays them with Web Speech) |
+| Reading / listening | `passagesFor`, `readingExercises`; `listeningFor(level, format)`, `listenQuestion(item, taughtKanji, { mock })` (mock = 1 replay), `listeningScript`, `chunkSpeech`, `assignVoices` (app-helpers.js `speakScript` plays the pre-rendered clip of each script line when every line has `clip`, else Web Speech; a clip that fails hands the rest to Web Speech). Script lines and `optionSpeech` get `clip` from `AUDIO_MANIFEST` (`listenClips`); with a custom option `order`, narrator number clips stay in their slot and option clips follow the option |
 | Grammar | `conjugate(dict, reading, form, pos)` (rule-based, by `pos`) |
 | SRS | `srsAddCards(unit, cards)`, `srsReview(card, quality)`, `srsPreview(card)` (days per rating: Good = SM-2 pass interval, Hard = 0.8×, Easy = 1.3×, Again = 1; `srsReview` reads it, so buttons can't drift), `srsDueCards`, `srsFlagMissed`, `admitCards` (app.js: `releasePendingCards`, `markUnitsDone`) |
 | Review card back | `stageOf(id)` (unit that teaches an item), `cardExample(id)` → `{ s, at, end }`: catalog sentence for the card (fewest later-taught items, ≤ `EXAMPLE_MAX_UNTAUGHT`; none for kana) + highlight range of the word, null when ambiguous. Review UI (`components/review-mode.js`): hub, full-screen session in the `.ql` layer, day-aware summary (reads `dayPlan`) |
@@ -182,6 +188,7 @@ and the rule that prevents it.
 | Kana reading words beyond N5 | `node tools/build-read-words.js <jisho-cache dir> [--fetch]` → `data/n5/read-words.js` (Tanos N4/N3 katakana + yōon/ぱ-row words, reading checked against JMdict; read only) |
 | Plan | `node tools/author-plan.js` → `data/n5/plan.js`, from the outline inside the script |
 | Coverage report | `node tools/coverage.js` (catalog vs ref list, taught vs not, verified counts) |
+| Listening audio | `node tools/export-tracks.js` → `tools/audio/tracks.json`; render in the Colab notebook (`tools/audio/render-notebook.ipynb`); `node tools/build-audio-manifest.js <rendered dir>` → `audio/manifest.js` (checks every clip name = sha1 of its clipKey, files present); copy the mp3s into `audio/`, then `node tools/build-sw.js`. `run-tests.js` fails if a transcript changed without re-rendering |
 | Service worker | `node tools/build-sw.js` → `sw.js` (rerun after any shipped-file change) |
 | PWA icons | `node tools/build-icons.js` → `icons/icon-{192,512,maskable-512}.png` from `icons/icon.svg` via headless Edge/Chrome (one-off) |
 

@@ -25,3 +25,18 @@ so identical lines across tracks render once.
 - Man: a designed voice per archetype, from `man-archetypes.json`.
 - Loudness: TARGET_DB -20, GAIN_DB F +1, M 0, N 0.
 - Output: MP3, mono. Clips are cached by the service worker on first play.
+
+## After rendering (ship the clips)
+
+The notebook (`render-notebook.ipynb`, run on Colab) reads one input file and writes `<12 hex>.mp3` clips plus
+`manifest.json` (`{ version: 1, tracks: { <id>: [file per line] } }`, same order and length as `lines`).
+
+- Input assembly: `render-input.json` = one JSON `{ tracks, manArchetypes, womanArchetypes }` made from
+  `tracks.json` (`.tracks`), `man-archetypes.json` and `woman-archetypes.json`.
+- File name = first 12 hex of sha1 (UTF-8) of the clipKey above, plus `.mp3`.
+- Copy the mp3s into `audio/` at the repo root, then run `node tools/build-audio-manifest.js <rendered dir or manifest.json>`.
+  It verifies every name against `tracks.json` and every file on disk, then writes `audio/manifest.js`
+  (`var AUDIO_MANIFEST`, a classic script so it works from file://).
+- Run `node tools/build-sw.js` and the test suite. The suite recomputes every hash: editing a transcript or archetype
+  without re-rendering fails with a pointer here. Re-render only the missing clips (the notebook skips existing files).
+- Playback: `speakScript` plays the clips (600 ms between lines); if one cannot load it falls back to the browser voice.
