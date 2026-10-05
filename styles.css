@@ -44,8 +44,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 @media (prefers-reduced-motion:reduce){.jelly-wob{animation:none}}
 .qz-ring .qz-jelly{position:absolute;inset:0;display:grid;place-items:center}
 .qz-ring .qz-jelly svg{width:84px;height:84px}
-.mock-estimate-head{display:flex;align-items:center;gap:12px;margin-bottom:6px}
-.mock-estimate-head .mock-estimate-total{margin-bottom:0}
 .stats-empty .jelly{display:block;margin:0 auto 6px}
 .brand small{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:0.7rem;color:var(--muted);font-weight:500}
 .nav-tabs{display:flex;gap:4px;align-self:stretch}
@@ -584,6 +582,12 @@ rt{font-size:0.6em;color:var(--accent-fg);font-weight:400;letter-spacing:0.02em}
 .mock-estimate{border:2px solid var(--border);border-radius:var(--radius);padding:12px 16px;background:var(--surface)}
 .mock-estimate.pass{border-color:var(--ok)}
 .mock-estimate.fail{border-color:var(--bad)}
+.mock-estimate.warn{border-color:var(--warn)}
+.mock-estimate .qz-res{padding:6px 0 10px}
+.mock-estimate .qz-ring .v.warn{stroke:var(--warn)}
+.mock-estimate .qz-verdict.warn{color:var(--warn)}
+.mock-estimate .qz-res .mock-estimate-total{font-size:1rem;color:var(--text)}
+@media(max-width:560px){.mock-estimate .qz-res{grid-template-columns:1fr;justify-items:center;text-align:center}}
 .mock-estimate-total{font-size:1.1rem;margin-bottom:6px}
 .mock-estimate ul{margin:0 0 8px;padding-left:20px;line-height:1.7}
 .mock-note{font-size:0.8rem;color:var(--muted);margin:6px 0 0}

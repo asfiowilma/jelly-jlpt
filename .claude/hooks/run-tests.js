@@ -819,6 +819,8 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       a.deepEqual(taken.parts, want, "scored: one vocab miss, unanswered listening wrong");
       a.deepEqual(taken.estimate, mockEstimate({ vocab: want.vocab[0] / want.vocab[1], grammar: 1, reading: 1, listening: 2 / want.listening[1] }));
       a.ok(find(/mock-estimate/).length && find(/mock-missed/).length, "results: estimate + missed list");
+      a.ok(find(/qz-verdict (pass|warn|fail)/).length === 1 && find(/qz-ring/).length === 1, "results: verdict headline + score ring like the quiz pass screen");
+      a.ok(find(/qz-verdict/)[0].props.className.indexOf({ likely: "pass", borderline: "warn", unlikely: "fail" }[mockOutlook(taken.parts, mock.level).verdict]) > 0, "verdict headline follows mockOutlook");
       var saved = Store.snapshot().mocks.filter(function (m) { return m.mockId === mock.id; });
       a.equal(saved.length, 1, "one mock: doc saved");
       a.ok(STORE_ID_RE.test("mock:" + saved[0].mockId + ":" + saved[0].takenAt), "doc id shape");

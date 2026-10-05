@@ -1745,6 +1745,34 @@ function mockEstimate(p, level) {
   var lis = Math.round(60 * p.listening);
   return { lkr: lkr, listening: lis, total: lkr + lis, passed: lkr + lis >= rule.total && lkr >= rule.lkr && lis >= rule.listening };
 }
+// wilson(k, n, z): Wilson score interval [lo, hi] (0-1) for k right of n; z 1.28 = an 80% interval.
+// Sane at 0% / 100% and on a few questions. n = 0 → [0, 1] (nothing asked, anything is possible).
+function wilson(k, n, z) {
+  if (!n) return [0, 1];
+  z = z || 1.28;
+  var p = k / n, d = 1 + z * z / n, c = (p + z * z / (2 * n)) / d,
+    h = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d;
+  return [Math.max(0, c - h), Math.min(1, c + h)];
+}
+// mockOutlook(parts, level): the estimate as a range plus a verdict (ticket 48; research .scratch/roadmap/
+// research/jlpt-scoring.md §6). parts = a result's { vocab | grammar | reading | listening: [right, total] }.
+// Each part's accuracy gets a Wilson interval; both ends go through the same linear scaling as mockEstimate,
+// so { lkr, listening, total } are [low, high] pairs (sections sum, which is wider than the truth: the
+// safe direction). verdict: 'likely' when the LOW end clears the total mark and both section minimums,
+// 'unlikely' when the HIGH end misses the total mark or either minimum, else 'borderline'.
+function mockOutlook(parts, level) {
+  var rule = JLPT_PASS[level || 'N5'];
+  var band = function (k) { return wilson(parts[k][0], parts[k][1]); };
+  var scaled = function (i) {
+    var v = band('vocab')[i], g = band('grammar')[i], r = band('reading')[i];
+    return { lkr: Math.round(120 * (21 * v + 17 * g + 5 * r) / 43), listening: Math.round(60 * band('listening')[i]) };
+  };
+  var lo = scaled(0), hi = scaled(1);
+  var out = { lkr: [lo.lkr, hi.lkr], listening: [lo.listening, hi.listening], total: [lo.lkr + lo.listening, hi.lkr + hi.listening] };
+  out.verdict = out.total[0] >= rule.total && lo.lkr >= rule.lkr && lo.listening >= rule.listening ? 'likely'
+    : out.total[1] < rule.total || hi.lkr < rule.lkr || hi.listening < rule.listening ? 'unlikely' : 'borderline';
+  return out;
+}
 // mockResult(mock, sections, answers, now) → the mock:<mockId>:<takenAt> doc body.
 // answers[sectionKey][i] = chosen option index, or null (unanswered or out of time = wrong).
 // parts: { vocab | grammar | reading | listening: [right, total] }; byMondai: { key: [right, total] }.

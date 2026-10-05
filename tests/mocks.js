@@ -146,6 +146,40 @@ QUnit.module('mock exams', function () {
     assert.deepEqual([under.lkr, under.listening, under.total, under.passed], [48, 30, 78, false], 'total under 80 fails');
   });
 
+  // ── range + verdict (ticket 48, research: .scratch/roadmap/research/jlpt-scoring.md §6) ──
+  QUnit.test('wilson: 80% score interval, sane at the edges and with no data', function (assert) {
+    var r = function (a) { return a.map(function (x) { return Math.round(x * 100) / 100; }); };
+    assert.deepEqual(r(wilson(7, 10)), [0.5, 0.85], '7 of 10');
+    assert.deepEqual(r(wilson(0, 10)), [0, 0.14]);
+    assert.deepEqual(r(wilson(10, 10)), [0.86, 1]);
+    assert.deepEqual(wilson(0, 0), [0, 1], 'nothing asked: anything is possible');
+  });
+
+  QUnit.test('mockOutlook: scaled ranges around the estimate and a 3-way verdict', function (assert) {
+    var parts = function (v, g, r, l) { return { vocab: v, grammar: g, reading: r, listening: l }; };
+    var perfect = mockOutlook(parts([6, 6], [10, 10], [4, 4], [11, 11]), 'N5');
+    assert.strictEqual(perfect.verdict, 'likely', 'a perfect diagnostic clears every mark even at the low end');
+    assert.strictEqual(perfect.total[1], 180, 'upper end capped at the maximum');
+    var none = mockOutlook(parts([0, 6], [0, 10], [0, 4], [0, 11]), 'N5');
+    assert.strictEqual(none.verdict, 'unlikely');
+    assert.strictEqual(none.total[0], 0);
+    var mid = mockOutlook(parts([3, 6], [5, 10], [2, 4], [6, 11]), 'N5');
+    assert.strictEqual(mid.verdict, 'borderline', 'about half right on a short test can go either way');
+    [perfect, none, mid].forEach(function (o) {
+      assert.ok(o.lkr[0] <= o.lkr[1] && o.listening[0] <= o.listening[1] && o.total[0] <= o.total[1], 'ordered ranges');
+      assert.strictEqual(o.total[0], o.lkr[0] + o.listening[0], 'total range = sum of section ranges');
+      assert.strictEqual(o.total[1], o.lkr[1] + o.listening[1]);
+    });
+    var est = mockEstimate({ vocab: 0.5, grammar: 0.5, reading: 0.5, listening: 6 / 11 });
+    assert.ok(mid.total[0] <= est.total && est.total <= mid.total[1], 'the point estimate sits inside the range');
+    // one weak section is enough to rule a pass out: listening 0 of 11 cannot reach 19, whatever the total
+    var noListening = mockOutlook(parts([100, 100], [100, 100], [100, 100], [0, 11]), 'N5');
+    assert.strictEqual(noListening.verdict, 'unlikely', 'upper end of listening misses its minimum');
+    // not likely on the low end of a section minimum, but not out either: borderline
+    var wobble = mockOutlook(parts([100, 100], [100, 100], [100, 100], [3, 11]), 'N5');
+    assert.strictEqual(wobble.verdict, 'borderline', 'lower listening bound under 19, upper above it');
+  });
+
   QUnit.test('mockResult: right / total per part and per mondai; unanswered counts wrong', function (assert) {
     var m = CATALOG.items['x:n5-mock-3'], secs = mockSections(m), answers = {};
     secs.forEach(function (s) { answers[s.key] = s.questions.map(function (ex) { return ex.correct; }); });

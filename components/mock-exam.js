@@ -150,7 +150,9 @@ function MockExam(props) {
 
   // ── results ───────────────────────────────────────────────────────────────
   if (phase === 'results') {
-    var r = result, est = r.estimate, rule = JLPT_PASS[mock.level];
+    var r = result, est = r.estimate, rule = JLPT_PASS[mock.level], out = mockOutlook(r.parts, mock.level), ring = 2 * Math.PI * 60;
+    var tone = { likely: 'pass', borderline: 'warn', unlikely: 'fail' }[out.verdict];
+    var range = function (x) { return x[0] + '–' + x[1]; };
     var pct = function (x) { return x[1] ? Math.round(x[0] / x[1] * 100) + '%' : '–'; };
     var row = function (label, x) { return ce("tr", { key: label }, ce("td", null, label), ce("td", null, x[0], " / ", x[1]), ce("td", null, pct(x))); };
     var missed = [];
@@ -164,15 +166,24 @@ function MockExam(props) {
     return ce("div", { className: "mock" },
       back,
       ce("div", { className: "section-label" }, mock.title, ": results"),
-      ce("div", { className: "mock-estimate " + (est.passed ? 'pass' : 'fail'), role: "status" },
-        ce("div", { className: "mock-estimate-head" }, est.passed ? ce(JellyExcited, { size: 56 }) : jelly('oops', 56, true),
-          ce("div", { className: "mock-estimate-total" }, "Estimated score: ", ce("b", null, est.total), " / 180 · ",
-            est.passed ? "would pass" : "not a pass yet")),
+      ce("div", { className: "mock-estimate " + tone, role: "status" },
+        ce("div", { className: "qz-res" },
+          ce("div", { className: "qz-ring" },
+            ce("svg", { viewBox: "0 0 140 140", 'aria-hidden': "true" },
+              ce("circle", { className: "t", cx: 70, cy: 70, r: 60 }),
+              ce("circle", { className: "v " + tone, cx: 70, cy: 70, r: 60, strokeDasharray: (ring * est.total / 180) + " " + ring })),
+            ce("span", { className: "qz-jelly" }, out.verdict === 'likely' ? ce(JellyExcited, { size: 84 }) : jelly('oops', 84))),
+          ce("div", null,
+            ce("h3", { className: "qz-verdict " + tone }, out.verdict === 'likely' ? "Likely pass" : out.verdict === 'borderline' ? "Borderline" : "Unlikely to pass yet"),
+            ce("p", { className: "mock-estimate-total" }, "Estimate: ", ce("b", null, est.total), " / 180 · likely range ", range(out.total)),
+            ce("p", null, out.verdict === 'likely' ? "Even the low end of the range clears the pass mark and both section minimums."
+              : out.verdict === 'borderline' ? "The range crosses a pass mark. A longer test or another attempt would tell you more."
+              : "Even the high end of the range misses the total or a section minimum."))),
         ce("ul", null,
-          ce("li", null, ce("span", { lang: "ja" }, "言語知識・読解"), " (vocabulary, grammar, reading): ", est.lkr, " / 120, minimum ", rule.lkr, est.lkr < rule.lkr ? " ✗" : " ✓"),
-          ce("li", null, ce("span", { lang: "ja" }, "聴解"), " (listening): ", est.listening, " / 60, minimum ", rule.listening, est.listening < rule.listening ? " ✗" : " ✓"),
-          ce("li", null, "Total: ", est.total, " / 180, pass mark ", rule.total, est.total < rule.total ? " ✗" : " ✓")),
-        ce("p", { className: "mock-note" }, "This is an estimate. Each part's share of right answers is scaled straight onto the official ranges: ",
+          ce("li", null, ce("span", { lang: "ja" }, "言語知識・読解"), " (vocabulary, grammar, reading): ", est.lkr, " / 120 (", range(out.lkr), "), minimum ", rule.lkr, est.lkr < rule.lkr ? " ✗" : " ✓"),
+          ce("li", null, ce("span", { lang: "ja" }, "聴解"), " (listening): ", est.listening, " / 60 (", range(out.listening), "), minimum ", rule.listening, est.listening < rule.listening ? " ✗" : " ✓"),
+          ce("li", null, "Total: ", est.total, " / 180 (", range(out.total), "), pass mark ", rule.total, est.total < rule.total ? " ✗" : " ✓")),
+        ce("p", { className: "mock-note" }, "This is an estimate. The range is an 80% range from how many questions you answered (fewer questions, wider range). Each part's share of right answers is scaled straight onto the official ranges: ",
           "言語知識・読解 = 120 × (21 × vocabulary + 17 × grammar + 5 × reading) ÷ 43, 聴解 = 60 × listening. ",
           "The real JLPT scores answer patterns with item response theory and adjusts for each test's difficulty, so no exact conversion exists, ",
           "and these questions come from what you studied here, so the estimate probably runs high."),
