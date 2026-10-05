@@ -740,7 +740,8 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     var spoken = 0;
     window.speechSynthesis = { getVoices: function () { return []; }, cancel: function () {}, speak: function (u) { spoken++; if (u.onend) u.onend(); } };
     global.SpeechSynthesisUtterance = function (text) { this.text = text; };
-    var clock = 1000000, intervals = [];
+    var clock = 1000000, intervals = [], store = {}, origLS = global.localStorage;
+    global.localStorage = { getItem: function (k) { return k in store ? store[k] : null; }, setItem: function (k, v) { store[k] = String(v); }, removeItem: function (k) { delete store[k]; } };
     var mock = CATALOG.items["x:n5-mock-3"], taken = null;
     var state = [], refs = [], deps = [], cleanups = [], k = 0, r = 0, e = 0, els = [];
     React.useState = function (init) {
@@ -792,6 +793,20 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       a.equal(intervals.filter(Boolean).length, 0, "quit stops the part clock");
       click(/quiz-start-btn/);
       a.ok(find(/qz-opt( |$)/).every(function (o) { return o.props.className.indexOf("sel") < 0; }), "a fresh attempt starts blank");
+      // reload mid-part: the attempt is offered back (Resume keeps answers + the same deadline), Discard drops it
+      click(/qz-opt( |$)/, 2);
+      a.ok(store.jlpt_mock_run, "the running attempt is kept on this device");
+      var runDeadline = JSON.parse(store.jlpt_mock_run).deadline;
+      state = []; refs = []; deps = []; cleanups = [];
+      render();
+      a.ok(find(/mock-resume/).length === 1 && !find(/^ql$/).length, "after a reload the start screen offers Resume");
+      click(/quiz-start-btn/, 0);
+      a.ok(find(/qz-opt( |$)/)[2].props.className.indexOf("sel") >= 0 && JSON.parse(store.jlpt_mock_run).deadline === runDeadline, "resumed: answer and deadline kept");
+      state = []; refs = []; deps = []; cleanups = [];
+      render();
+      click(/link-btn/, 0); // Discard
+      a.ok(!find(/mock-resume/).length && !store.jlpt_mock_run, "discard forgets the attempt");
+      click(/quiz-start-btn/);
       // part 1 (vocab): answer every question; question 2 wrong, question 3 flagged
       secs[0].questions.forEach(function (ex, i) {
         if (i > 0) click(/qz-nextq|qz-finish/);
@@ -836,6 +851,8 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       a.deepEqual(taken.parts, want, "scored: one vocab miss, unanswered listening wrong");
       a.deepEqual(taken.estimate, mockEstimate({ vocab: want.vocab[0] / want.vocab[1], grammar: 1, reading: 1, listening: 2 / want.listening[1] }));
       a.ok(find(/mock-estimate/).length && find(/mock-missed/).length, "results: estimate + missed list");
+      a.ok(!store.jlpt_mock_run, "finishing clears the running attempt");
+      a.ok(find(/mock-again/).length === 1, "results offer Take again");
       a.ok(find(/qz-verdict (pass|warn|fail)/).length === 1 && find(/qz-ring/).length === 1, "results: verdict headline + score ring like the quiz pass screen");
       a.ok(find(/qz-verdict/)[0].props.className.indexOf({ likely: "pass", borderline: "warn", unlikely: "fail" }[mockOutlook(taken.parts, mock.level).verdict]) > 0, "verdict headline follows mockOutlook");
       var saved = Store.snapshot().mocks.filter(function (m) { return m.mockId === mock.id; });
@@ -856,7 +873,7 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       a.ok(false, err.stack);
     } finally {
       React.useState = orig.useState; React.createElement = orig.createElement; React.useRef = orig.useRef; React.useEffect = orig.useEffect;
-      global.setInterval = orig.setInterval; global.clearInterval = orig.clearInterval;
+      global.setInterval = orig.setInterval; global.clearInterval = orig.clearInterval; global.localStorage = origLS;
       window.speechSynthesis = origSpeech; global.SpeechSynthesisUtterance = origUtt;
     }
     return Store.replaceAll(before);

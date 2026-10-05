@@ -579,6 +579,12 @@ rt{font-size:0.6em;color:var(--accent-fg);font-weight:400;letter-spacing:0.02em}
 .ex-timer.low{color:var(--bad);font-weight:700}
 .mock{display:flex;flex-direction:column;gap:12px}
 .mock-back{align-self:flex-start}
+.mock-resume{border:2px solid var(--accent-fg);border-radius:var(--radius);padding:12px 16px;background:var(--surface)}
+.mock-resume p{margin:0 0 10px}
+.mock-resume .qz-row{justify-content:flex-start;align-items:center;gap:16px}
+.mock-again{align-self:flex-start;min-height:44px}
+.mock:focus{outline:none}
+.mock{scroll-margin-top:72px}
 .mock-estimate{border:2px solid var(--border);border-radius:var(--radius);padding:12px 16px;background:var(--surface)}
 .mock-estimate.pass{border-color:var(--ok)}
 .mock-estimate.fail{border-color:var(--bad)}

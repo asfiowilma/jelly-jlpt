@@ -12,6 +12,8 @@
 // sheet (the "7 / 25 · 3 flagged" button) that lists the questions, answered / flagged / current, tap
 // to jump, with an early "Finish part". ✕ asks "Quit the test?" and discards the attempt (nothing saved).
 // The start screen and the results stay in the page.
+// A running attempt is kept in localStorage (mockRun*, device-only) so a reload can Resume or Discard it;
+// quitting or finishing clears it.
 // Props: mock (catalog item), onTaken?, onClose? (shows a Back button), now? (clock, for tests),
 // showFurigana? (part names), guided? (inside a unit whose exam guide already explains the rules).
 var OFFICIAL_SAMPLES_URL = 'https://www.jlpt.jp/e/samples/sampleindex.html';
@@ -52,12 +54,29 @@ function MockExam(props) {
   var _sh = React.useState(false), sheet = _sh[0], setSheet = _sh[1]; // question list open
   var _qt = React.useState(false), quitting = _qt[0], setQuitting = _qt[1]; // "Quit the test?" open
   var _sp = React.useState(false), speaking = _sp[0], setSpeaking = _sp[1];
+  var _sv = React.useState(function () { return mockRunLoad(mock.id); }), saved = _sv[0], setSaved = _sv[1]; // a left attempt
+  var resultRef = React.useRef(null);
   var shell = useQuizLayer(phase === 'part' || phase === 'between', quitting);
   var latest = React.useRef(null);
   latest.current = { sec: sec, answers: answers };
   var stopRef = React.useRef(null);
   var stopAudio = function () { if (stopRef.current) stopRef.current(); stopRef.current = null; setSpeaking(false); };
   React.useEffect(function () { return stopAudio; }, [sec, cur, phase]);
+  // keep the running attempt on this device; warn before a reload / tab close while a part runs
+  React.useEffect(function () {
+    if (phase === 'part' || phase === 'between') mockRunSave({ mockId: mock.id, phase: phase, sec: sec, cur: cur, deadline: deadline, answers: answers, flags: flags, plays: plays, at: now() });
+  }, [phase, sec, cur, deadline, answers, flags, plays]);
+  React.useEffect(function () {
+    if (phase !== 'part' || typeof window === 'undefined' || !window.addEventListener) return undefined;
+    var warn = function (e) { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return function () { window.removeEventListener('beforeunload', warn); };
+  }, [phase]);
+  // arriving on the result: bring the card into view (the unit page is long)
+  React.useEffect(function () {
+    var el = phase === 'results' && resultRef.current;
+    if (el && el.scrollIntoView) { el.scrollIntoView({ block: 'start' }); if (el.focus) el.focus({ preventScroll: true }); }
+  }, [phase]);
 
   // endPart(secIdx, answers): lock the part; next part's start screen, or the results.
   var endPart = function (si, ans) {
@@ -65,6 +84,7 @@ function MockExam(props) {
     setDeadline(null);
     setSheet(false);
     setQuitting(false);
+    if (si + 1 >= sections.length) mockRunClear();
     if (si + 1 < sections.length) { setSec(si + 1); setCur(0); setPhase('between'); return; }
     var r = mockResult(mock, sections, ans, now());
     Store.putMock(r);
@@ -91,9 +111,28 @@ function MockExam(props) {
   // Quit: the attempt is dropped (no Store.putMock), the clock stops, back to the start screen.
   var quit = function () {
     stopAudio();
+    mockRunClear();
     setDeadline(null); setSheet(false); setQuitting(false);
     setSec(0); setCur(0); setAnswers(blank()); setFlags({}); setPlays({});
     setPhase('intro');
+  };
+  // Resume a left attempt (a part whose clock ran out meanwhile ends as time-up), or discard it.
+  var resume = function () {
+    var s = saved;
+    setSaved(null);
+    setAnswers(s.answers); setFlags(s.flags || {}); setPlays(s.plays || {}); setSec(s.sec); setCur(s.cur || 0);
+    if (s.phase === 'between') return setPhase('between');
+    if (now() >= s.deadline) return endPart(s.sec, s.answers);
+    setDeadline(s.deadline);
+    setPhase('part');
+  };
+  var discard = function () { mockRunClear(); setSaved(null); };
+  // Take again: a fresh attempt straight into part 1 (later sittings of a mock are practice, ticket 49)
+  var takeAgain = function () {
+    mockRunClear();
+    setSaved(null); setResult(null); setSec(0); setCur(0); setAnswers(blank()); setFlags({}); setPlays({});
+    setPhase('part');
+    setDeadline(now() + sections[0].seconds * 1000);
   };
   var allMocks = Store.snapshot().mocks || [];
   var history = allMocks.filter(function (m) { return m.mockId === mock.id; });
@@ -129,6 +168,13 @@ function MockExam(props) {
   if (phase === 'intro') {
     return ce("div", { className: "mock" },
       back,
+      saved && ce("div", { className: "mock-resume", role: "status" },
+        ce("p", null, ce("b", null, "You have a test in progress."), " ",
+          saved.phase === 'part' && saved.deadline ? "Part " + (saved.sec + 1) + ": " + (now() < saved.deadline ? mockClock(Math.ceil((saved.deadline - now()) / 1000)) + " left." : "its time ran out while you were away.")
+            : "Part " + (saved.sec + 1) + " is next."),
+        ce("div", { className: "qz-row" },
+          ce("button", { className: "quiz-start-btn ms-btn", onClick: resume }, "Resume"),
+          ce("button", { className: "link-btn", onClick: discard }, "Discard"))),
       stepsEl('intro'),
       history.length > 0 && ce("div", { className: "mock-history" },
         ce("div", { className: "section-label" }, "Earlier attempts"),
@@ -168,7 +214,7 @@ function MockExam(props) {
       });
     });
     var optText = function (ex, i) { return i === null || i === undefined ? '(no answer)' : (ex.spokenOptions ? (i + 1) + '. ' : '') + ex.options[i]; };
-    return ce("div", { className: "mock" },
+    return ce("div", { className: "mock", ref: resultRef, tabIndex: -1 },
       back,
       ce("div", { className: "section-label" }, mock.title, ": results"),
       ce("div", { className: "mock-estimate " + tone, role: "status" },
@@ -196,6 +242,7 @@ function MockExam(props) {
           "and these questions come from what you studied here, so the estimate probably runs high."),
         ce("p", { className: "mock-note" }, "Listening is the least certain part: it uses your browser's computer voice, not the test recording. Practise with the ",
           ce("a", { href: OFFICIAL_SAMPLES_URL, target: "_blank", rel: "noopener noreferrer" }, "official sample audio (jlpt.jp)"), " too.")),
+      ce("button", { className: "btn-outline mock-again", onClick: takeAgain }, "Take again"),
       ce("table", { className: "mock-table" },
         ce("thead", null, ce("tr", null, ce("th", null, "Part"), ce("th", null, "Right"), ce("th", null, "%"))),
         ce("tbody", null, row("Vocabulary", r.parts.vocab), row("Grammar", r.parts.grammar), row("Reading", r.parts.reading), row("Listening", r.parts.listening))),

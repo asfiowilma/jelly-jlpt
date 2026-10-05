@@ -1819,6 +1819,18 @@ function mockTrend(mocks, level) {
   }) };
 }
 
+// The running mock attempt (resume after a reload). Device-only like RECENT_Q_KEY: never synced, never exported.
+// { mockId, phase: 'part' | 'between', sec, cur, deadline, answers, flags, plays, at }
+var MOCK_RUN_KEY = 'jlpt_mock_run';
+function mockRunLoad(mockId) {
+  try {
+    var r = JSON.parse(localStorage.getItem(MOCK_RUN_KEY) || 'null');
+    return r && r.mockId === mockId && (r.phase === 'part' || r.phase === 'between') && r.answers ? r : null;
+  } catch (e) { return null; }
+}
+function mockRunSave(run) { try { localStorage.setItem(MOCK_RUN_KEY, JSON.stringify(run)); } catch (e) {} }
+function mockRunClear() { try { localStorage.removeItem(MOCK_RUN_KEY); } catch (e) {} }
+
 // prepDrill(unit): a prep unit's timed section drill (unit.drill = { blueprint key: count }):
 // `count` catalog items per mondai, random each time, in test order. Passages, listening items
 // and authored mondai that a mock uses are left out, so the mocks stay unseen.
