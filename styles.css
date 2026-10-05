@@ -1135,8 +1135,16 @@ body.quiz-open .toast-stack{bottom:calc(100px + env(safe-area-inset-bottom))}
 .rv-track b{position:absolute;inset:0 auto 0 0;background:var(--accent);transition:width .25s}
 
 /* Exam guide (components/prep-guide.js): hairlines on the page, no cards. Gold = labels/numbers, warn = Watch out, ok = Do this, info = Time/Rules */
-.pg-facts{display:flex;flex-wrap:wrap;gap:4px 18px;margin-bottom:16px;font-size:0.84rem;color:var(--muted)}
-.pg-facts b{color:var(--accent-fg);font-variant-numeric:tabular-nums}
+.pg-glance{margin:0 0 20px}
+.pg-bars{display:flex;gap:3px;height:34px}
+.pg-bars div{display:flex;align-items:center;padding:0 10px;border-radius:6px;background:var(--surface2);color:var(--muted);font-size:0.74rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.pg-bars div:nth-child(1){flex:20}.pg-bars div:nth-child(2){flex:40}.pg-bars div:nth-child(3){flex:30}
+.pg-bars .on{background:color-mix(in srgb,var(--accent-fg) 22%,var(--surface2));color:var(--text);font-weight:700;box-shadow:inset 0 0 0 1px var(--accent-fg)}
+.pg-glance p{margin-top:8px;font-size:0.84rem;line-height:1.9;color:var(--muted)}
+.pg-glance p b{color:var(--accent-fg);font-variant-numeric:tabular-nums}
+.pg-partjp{color:var(--accent-fg);font-weight:700}
+.pg .jp{line-height:1.9}
+.pg rt,.unit-note-head rt{font-size:0.5em;font-weight:400;color:var(--muted)}
 .pg-list{list-style:none}
 .pg-list>li{padding:14px 0;border-top:1px solid var(--border)}
 .pg-list>li:last-child{border-bottom:1px solid var(--border)}

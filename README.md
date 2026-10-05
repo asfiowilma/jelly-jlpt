@@ -15,7 +15,7 @@ The course is a list of 112 **units**. Every unit is open from the start, so you
 | Kana | 16 | Hiragana and katakana from scratch, with stroke order and short reading drills |
 | Lesson | 74 | About 8 words, 2 kanji and 1 grammar point each, with example sentences |
 | Review | 15 | A timed mini-mock over the units since the last review, with reading passages and listening |
-| Test prep | 5 | Exam strategy and timed drills for each section of the test |
+| Test prep | 5 | Exam prep and timed drills for each section of the test |
 | Mock exam | 2 | Full-length N5 mocks in the official format and timing |
 
 There is also a half-length **diagnostic test** you can take at any time from the Units tab.

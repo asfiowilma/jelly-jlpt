@@ -144,6 +144,22 @@ in `.scratch/content-audit/issues/`.
   estimate.
 - Never copy jlpt.jp items or audio. Link to the official samples.
 
+## 7b. Exam guide voice
+
+The guide on prep and mock units (`unit.guide`, `tools/author-plan.js`) speaks like a senpai
+coaching a kouhai the week before the exam: warm, direct, a little dry.
+
+- At most one light joke per question type, in the `trap` or `tip` line, never in `ask`, which
+  stays literal and exact. The joke is about the learner's situation (panic, rushing,
+  overthinking), never at the learner and never at Japanese. The tip must still work without it.
+  Leave about a third of the lines plain.
+- No emoji, no em dashes (use a period, comma or colon), no dated slang.
+- Facts, numbers and Japanese examples never change for the sake of a joke.
+- Sentences of about 8 to 18 words, sentence case, plain English a 7th grader follows.
+- One `**highlight**` per trap and one in `time`.
+- Every kanji in a guide string sits in a `[漢字|かんじ]` block. Check each reading against the
+  catalog or a dictionary. Titles stay plain text with no Japanese.
+
 ## 8. Process
 
 - **The owner can't check Japanese.** Every fact needs ≥2 sources plus a machine check, and

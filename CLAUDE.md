@@ -38,6 +38,7 @@ sfx.js                quiz/achievement sounds from sfx/ (Kenney, CC0)
 components/           one React component per file, React.createElement, no JSX
   kanji-section.js kana-section.js exercises.js unit-view.js prep-guide.js review-mode.js today-view.js
   overview.js stats-view.js settings-view.js mock-exam.js toast-stack.js stamp.js achievements-view.js
+                      (prep-guide.js renders `unit.guide`: lead, optional `part` 0-2 + `partJp` + `glance`, kinds, time/rules; strings take `**bold**` and `[漢字|かんじ]` furigana)
 app.js                App: builds UNITS from PLAN + CATALOG, awaits Store.init(), mounts
 vendor/               React 18.2.0, ReactDOM, PouchDB 9.0.0 (minified) + LICENSE-*.txt. Upgrade = replace file, update index.html/tests.html/credits
 kanji-svg/            KanjiVG stroke-order SVGs (<hex codepoint>.svg), CC BY-SA 3.0, plus strokes.js

@@ -100,8 +100,8 @@ function UnitView(props) {
         // run to several paragraphs, one per line, ticket 18)
         unit.guide && React.createElement('aside', { className: 'unit-note', 'aria-label': t('guide_label', lv) },
           React.createElement('div', { className: 'unit-note-label' }, icon('bulb'), t('guide_label', lv)),
-          React.createElement('h3', { className: 'unit-note-head' }, unit.guide.lead)),
-        unit.guide && React.createElement(PrepGuide, { guide: unit.guide }),
+          React.createElement('h3', { className: 'unit-note-head' }, pgText(unit.guide.lead, showFurigana))),
+        unit.guide && React.createElement(PrepGuide, { guide: unit.guide, showFurigana: showFurigana }),
         unit.notes && (function () {
           var note = noteParts(unit.notes);
           return React.createElement("aside", { className: "unit-note", 'aria-label': t('note_label', lv) },
@@ -149,7 +149,7 @@ function UnitView(props) {
                 React.createElement("div", { className: "grammar-examples" }, grammarExamples(g).map(function (s) { return sentence(s, toks); }))))));
         }),
         examples.length > 0 && section(t('section_examples', lv), React.createElement("div", { className: "example-list" }, examples.map(exampleCard))),
-        (examples.length > 0 || unit.grammar.length > 0) && React.createElement("button", {
+        (examples.length > 0 || unit.grammar.length > 0 || unit.guide) && React.createElement("button", {
           className: "furi", 'aria-pressed': showFurigana, onClick: toggleFurigana
         }, React.createElement("i", { 'aria-hidden': true }), t('furigana_label', lv))),
       // a mock unit is taken as a whole test (MockExam); taking it completes the unit, pass or not
