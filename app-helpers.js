@@ -629,11 +629,13 @@ function speak(text) {
 // is an audible gap), a short pause after each line (opts.pause ms, default 150). opts.onEnd fires after the last line. Returns stop().
 // A newer speakScript or speak() call stops this one (the run counter), so cancel()'s error
 // event on the old utterance can't start its next line.
-var _scriptRun = 0, _scriptUtterances = [];
+var _scriptRun = 0, _scriptUtterances = [], SPEECH_CANCEL_GAP = 120, _scriptBusy = false;
 function speakScript(lines, opts) {
   opts = opts || {};
   var ss = window.speechSynthesis, run = ++_scriptRun, timer = null;
   if (!ss || typeof SpeechSynthesisUtterance === 'undefined') return function () {};
+  var busy = ss.speaking || ss.pending || _scriptBusy; // _scriptBusy: stop() just cancelled a script, whatever `speaking` says by now
+  _scriptBusy = true;
   ss.cancel();
   var cast = assignVoices(ss.getVoices ? ss.getVoices() : []);
   var pause = opts.pause == null ? 150 : opts.pause;
@@ -645,7 +647,7 @@ function speakScript(lines, opts) {
   var i = 0;
   var next = function () {
     if (run !== _scriptRun) return;
-    if (i >= queue.length) { _scriptUtterances = []; if (opts.onEnd) opts.onEnd(); return; }
+    if (i >= queue.length) { _scriptUtterances = []; _scriptBusy = false; if (opts.onEnd) opts.onEnd(); return; }
     var q = queue[i++], who = cast[q.speaker] || cast.N, u = new SpeechSynthesisUtterance(q.text);
     u.lang = 'ja-JP';
     u.rate = window._ttsRate || 0.85;
@@ -655,7 +657,9 @@ function speakScript(lines, opts) {
     _scriptUtterances.push(u); // Chrome drops onend for utterances it has garbage-collected
     ss.speak(u);
   };
-  next();
+  // cancel() is async in Chrome: an utterance spoken in the same tick can still queue behind the
+  // cancelled dialogue (a reply button then plays the dialogue). Give the engine a beat to flush.
+  if (busy) timer = setTimeout(next, SPEECH_CANCEL_GAP); else next();
   return function stop() {
     clearTimeout(timer);
     if (run === _scriptRun) { _scriptRun++; ss.cancel(); }

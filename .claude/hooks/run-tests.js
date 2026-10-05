@@ -750,6 +750,7 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       setInterval: global.setInterval, clearInterval: global.clearInterval };
     var origSpeech = window.speechSynthesis, origUtt = global.SpeechSynthesisUtterance;
     var spoken = 0;
+    _scriptBusy = false; // speakScript defers while a script is mid-play (see app-helpers.js); start clean
     window.speechSynthesis = { getVoices: function () { return []; }, cancel: function () {}, speak: function (u) { spoken++; if (u.onend) u.onend(); } };
     global.SpeechSynthesisUtterance = function (text) { this.text = text; };
     var clock = 1000000, intervals = [], store = {}, origLS = global.localStorage;

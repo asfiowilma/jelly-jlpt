@@ -94,4 +94,33 @@ QUnit.module('listening', function () {
     var lesson = allUnits().filter(function (u) { return u.kind === 'lesson'; })[5];
     assert.ok(buildExercises(lesson).every(function (e) { return e.type !== 'listen_dialog'; }), 'lessons have none');
   });
+
+  // A reply button played the dialogue: Chrome's cancel() is async, so a speak() in the same tick
+  // queued behind the cancelled dialogue. speakScript now waits a beat when the engine is busy.
+  QUnit.test('speakScript: starts after a beat when the engine is still speaking, at once when idle', function (assert) {
+    var origSS = window.speechSynthesis, origU = typeof SpeechSynthesisUtterance === 'undefined' ? undefined : SpeechSynthesisUtterance, G = typeof global !== 'undefined' ? global : window;
+    var heard = [], fake = { speaking: true, getVoices: function () { return []; }, cancel: function () {}, speak: function (u) { heard.push(u.text); } };
+    window.speechSynthesis = fake;
+    if (!origU) G.SpeechSynthesisUtterance = function (t) { this.text = t; };
+    var line = function (t) { return [{ speaker: 'M', text: t }]; };
+    speakScript(line('あ'));
+    assert.deepEqual(heard, [], 'busy engine: nothing spoken in the same tick as cancel()');
+    var stop = speakScript(line('い'));
+    stop();
+    fake.speaking = false;
+    _scriptBusy = false;
+    speakScript(line('う'));
+    assert.deepEqual(heard, ['う'], 'idle engine: spoken at once');
+    return new Promise(function (resolve) { setTimeout(resolve, SPEECH_CANCEL_GAP + 80); }).then(function () {
+      assert.deepEqual(heard, ['う'], 'a superseded or stopped script never speaks after the beat');
+      fake.speaking = true;
+      speakScript(line('え'));
+      return new Promise(function (resolve) { setTimeout(resolve, SPEECH_CANCEL_GAP + 80); });
+    }).then(function () {
+      assert.deepEqual(heard, ['う', 'え'], 'busy engine: spoken after the beat');
+    }).then(function () {
+      window.speechSynthesis = origSS;
+      if (!origU) delete G.SpeechSynthesisUtterance;
+    });
+  });
 });
