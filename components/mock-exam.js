@@ -329,7 +329,7 @@ function MockExam(props) {
         return ce("details", { key: m.s.key + m.i, className: "mr-q", open: n === 0 ? true : undefined },
           ce("summary", null,
             ce("span", { className: "mr-tag" }, m.s.en + " " + (m.i + 1)),
-            ce("span", { className: "mr-tag", lang: "ja" }, nm ? jp(nm[0]) : mockLabel(m.ex.mondai)),
+            ce("span", { className: "mr-tag", lang: "ja" }, nm ? mockPartsEl(furiganaParts(nm[0]), false) : mockLabel(m.ex.mondai)),
             ce("span", { className: "mr-sq", lang: "ja" }, qEl(m.ex))),
           ce("div", { className: "mr-qbody" },
             ce("p", { className: "mr-qtext", lang: "ja" }, qEl(m.ex)),
