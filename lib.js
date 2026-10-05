@@ -1777,7 +1777,8 @@ function prepDrill(unit) {
 // chunkSpeech(text, max): split a line for speech synthesis at sentence ends, then commas /
 // spaces, so no utterance runs long (Chrome's network voices stop after ~15 s). Pieces are
 // merged back up to max characters; a piece with no break point is cut hard.
-var SPEECH_CHUNK = 40; // ~10 s of Japanese at 0.5× rate
+var SPEECH_CHUNK = 40; // ~10 s of Japanese at 0.5× rate; network voices only (local ones have no limit)
+var SPEECH_CHUNK_LOCAL = 400;
 function chunkSpeech(text, max) {
   max = max || SPEECH_CHUNK;
   var pieces = (text.match(/[^。！？!?]+[。！？!?]*/g) || []).reduce(function (acc, s) {
@@ -1801,11 +1802,12 @@ function chunkSpeech(text, max) {
 // Two different ja voices when there are (by name: a male-named voice for M, a female-named one
 // for F), else the same voice with pitch 0.8 (M) / 1.25 (F); a voice already of that gender keeps
 // pitch 1. Local voices first: network ones (Chrome's Google voice) cut out on long lines.
-// Narrator: a third ja voice if any, else F's voice, pitch 1. No ja voice: voice null, pitches
-// only (the browser picks a voice from lang).
-// ponytail: gender by voice name; an unknown name just gets the pitch split.
-var JA_MALE_VOICE = /ichiro|keita|otoya|hattori|daichi|naoki|male|男性/i;
-var JA_FEMALE_VOICE = /haruka|ayumi|nanami|kyoko|sayaka|o-ren|mizuki|aoi|google|female|女性/i;
+// Narrator (the exam's instruction voice, never an actor): a third ja voice (female-named first),
+// else F's voice at pitch 0.85 so it still sounds like someone else. No ja voice: voice null,
+// pitches only (the browser picks a voice from lang).
+// ponytail: gender by voice name (Edge names its Natural voices in kanji: 七海 = Nanami, 圭太 = Keita); an unknown name just gets the pitch split.
+var JA_MALE_VOICE = /ichiro|keita|otoya|hattori|daichi|naoki|takumi|masaru|圭太|一郎|直樹|大智|拓海|male|男性/i;
+var JA_FEMALE_VOICE = /haruka|ayumi|nanami|kyoko|sayaka|o-ren|mizuki|aoi|shiori|mayu|七海|晴香|美月|葵|google|female|女性/i;
 function assignVoices(voices) {
   var ja = (voices || []).filter(function (v) { return /^ja/i.test(v.lang || ''); })
     .sort(function (a, b) { return (b.localService ? 1 : 0) - (a.localService ? 1 : 0); });
@@ -1814,11 +1816,12 @@ function assignVoices(voices) {
   var m = ja.filter(isMale)[0], f = ja.filter(function (v) { return v !== m && isFemale(v); })[0];
   var other = function (not) { return ja.filter(function (v) { return v !== not; })[0] || not; };
   if (!m && !f) { m = ja[0]; f = ja[1] || ja[0]; } else if (!f) f = other(m); else if (!m) m = other(f);
-  var n = ja.filter(function (v) { return v !== m && v !== f; })[0] || f;
+  var rest = ja.filter(function (v) { return v !== m && v !== f; });
+  var n = rest.filter(isFemale)[0] || rest.filter(function (v) { return !isMale(v); })[0] || rest[0];
   return {
     M: { voice: m || null, pitch: isMale(m) ? 1 : 0.8 },
     F: { voice: f || null, pitch: isFemale(f) && f !== m ? 1 : 1.25 },
-    N: { voice: n || null, pitch: 1 }
+    N: n ? { voice: n, pitch: 1 } : { voice: f || null, pitch: f ? 0.85 : 1 }
   };
 }
 

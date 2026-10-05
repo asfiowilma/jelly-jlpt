@@ -596,8 +596,8 @@ function speak(text) {
 }
 
 // speakScript(lines, opts): speak [{ speaker: 'M' | 'F' | 'N', text }] in order, one voice /
-// pitch per speaker (assignVoices), long lines cut by chunkSpeech, a short pause after each
-// line (opts.pause ms, default 600). opts.onEnd fires after the last line. Returns stop().
+// pitch per speaker (assignVoices), long lines cut by chunkSpeech (network voices only: every cut
+// is an audible gap), a short pause after each line (opts.pause ms, default 150). opts.onEnd fires after the last line. Returns stop().
 // A newer speakScript or speak() call stops this one (the run counter), so cancel()'s error
 // event on the old utterance can't start its next line.
 var _scriptRun = 0, _scriptUtterances = [];
@@ -607,10 +607,11 @@ function speakScript(lines, opts) {
   if (!ss || typeof SpeechSynthesisUtterance === 'undefined') return function () {};
   ss.cancel();
   var cast = assignVoices(ss.getVoices ? ss.getVoices() : []);
-  var pause = opts.pause == null ? 600 : opts.pause;
+  var pause = opts.pause == null ? 150 : opts.pause;
   var queue = [];
   lines.forEach(function (l) {
-    chunkSpeech(l.text).forEach(function (c, i, all) { queue.push({ speaker: l.speaker, text: c, pause: i === all.length - 1 ? pause : 0 }); });
+    var v = (cast[l.speaker] || cast.N).voice;
+    chunkSpeech(l.text, v && v.localService ? SPEECH_CHUNK_LOCAL : SPEECH_CHUNK).forEach(function (c, i, all) { queue.push({ speaker: l.speaker, text: c, pause: i === all.length - 1 ? pause : 0 }); });
   });
   var i = 0;
   var next = function () {

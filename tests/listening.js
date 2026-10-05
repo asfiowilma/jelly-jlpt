@@ -36,6 +36,15 @@ QUnit.module('listening', function () {
     assert.strictEqual(assignVoices([]).N.pitch, 1, 'narrator neutral');
     c = assignVoices([haruka, ichiro, ayumi]);
     assert.ok(c.N.voice === ayumi, 'narrator gets a third voice when there is one');
+    var keita = { name: 'Microsoft Keita Online (Natural)', lang: 'ja-JP', localService: false };
+    c = assignVoices([keita, ichiro, haruka, ayumi]);
+    assert.ok(c.M.voice === ichiro && c.F.voice === haruka && c.N.voice === ayumi, 'narrator is a female voice, never M or F');
+    var nanami = { name: 'Microsoft 七海 Online (Natural) - Japanese (Japan)', lang: 'ja-JP', localService: false };
+    var keitaJa = { name: 'Microsoft 圭太 Online (Natural) - Japanese (Japan)', lang: 'ja-JP', localService: false };
+    c = assignVoices([nanami, keitaJa]);
+    assert.ok(c.M.voice === keitaJa && c.F.voice === nanami && c.M.pitch === 1 && c.F.pitch === 1, 'kanji-named Edge voices: 圭太 is M, 七海 is F (listed in that order)');
+    c = assignVoices([haruka, ichiro]);
+    assert.ok(c.N.voice === haruka && c.N.pitch < c.F.pitch, 'only two voices: narrator still sounds different from F');
   });
 
   QUnit.test('listeningScript: frame and question order per format; speech is kana', function (assert) {
