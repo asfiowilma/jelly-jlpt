@@ -108,4 +108,27 @@ QUnit.module('day-plan', function () {
     assert.equal(done.primary.label, 'Back to Today');
     assert.equal(done.line, "Today: 1 / 1 stages ✓. That's today done.");
   });
+
+  QUnit.test('foldDoneStages: merges done stages into one step above the limit, keeps order', function (assert) {
+    var d = [u(1), u(2), u(3), u(4)];
+    var p = plan({ pace: 2, doneToday: d, ahead: [u(5)], cards: cards(5, 1000) });
+    assert.equal(foldDoneStages(p.steps, 4), p.steps, 'at the limit: untouched');
+    var f = foldDoneStages(p.steps, 3);
+    assert.deepEqual(f.map(function (s) { return s.kind; }), ['fold', 'review', 'complete']);
+    assert.equal(f[0].status, 'done');
+    assert.equal(f[0].units.length, 4);
+    assert.equal(p.steps.length, 6, 'input not mutated');
+    var b = plan({ doneToday: d, ahead: [u(5)], cards: cards(30, 3 * DAY) });
+    assert.ok(b.backlog);
+    assert.deepEqual(foldDoneStages(b.steps, 3).map(function (s) { return s.kind; }), ['review', 'fold', 'complete']);
+  });
+
+  QUnit.test('quizHandoff: a grind day reads capped, never "21 / 2"', function (assert) {
+    var many = [];
+    for (var i = 1; i <= 21; i++) many.push(u(i));
+    var units = [u(1), u(2)].map(function (x) { return Object.assign({ level: 'N5' }, x); });
+    var h = { nextStage: function () {}, openStage: function () {}, review: function () {}, today: function () {} };
+    var r = quizHandoff(plan({ pace: 2, doneToday: many, ahead: [u(22)], reviewedToday: 3 }), units[0], units, h);
+    assert.equal(r.line, "Today: 2 / 2 stages ✓. That's today done.");
+  });
 });

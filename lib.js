@@ -2730,6 +2730,19 @@ function dayPlan(o) {
   };
 }
 
+// foldDoneStages(steps, after): when more than `after` stage steps are done, merge them into ONE
+// { kind: 'fold', status: 'done', units } step at the first one's place (Today tab, grind days).
+function foldDoneStages(steps, after) {
+  var done = steps.filter(function (s) { return s.kind === 'stage' && s.status === 'done'; });
+  if (done.length <= after) return steps;
+  var fold = { kind: 'fold', status: 'done', units: done.map(function (s) { return s.unit; }) };
+  return steps.reduce(function (out, s) {
+    if (s === done[0]) out.push(fold);
+    else if (done.indexOf(s) < 0) out.push(s);
+    return out;
+  }, []);
+}
+
 // dayPlural(n, one, other): '{n}' in the chosen form becomes the count.
 function dayPlural(n, one, other) { return (n === 1 ? one : other).replace('{n}', n); }
 // quizHandoff: what the passed-quiz screen offers next, from the day plan after the pass.
