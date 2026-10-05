@@ -1607,9 +1607,9 @@ function listeningExercises(unit, taughtKanji) {
 // ponytail: N5 pacing at every level; add per-level paces when N4 gets mocks.
 var MOCK_PACE = { vocab: 1200 / 21, grammar: 60, reading: 1380 / 5, listening: 1800 / 24 };
 var MOCK_SECTIONS = [
-  { key: 'vocab', name: '文字・語彙', en: 'Vocabulary' },
-  { key: 'grammar', name: '文法・読解', en: 'Grammar · Reading' },
-  { key: 'listening', name: '聴解', en: 'Listening' }
+  { key: 'vocab', name: '文字・語彙', nameF: '[文字|もじ]・[語彙|ごい]', en: 'Vocabulary' },
+  { key: 'grammar', name: '文法・読解', nameF: '[文法|ぶんぽう]・[読解|どっかい]', en: 'Grammar · Reading' },
+  { key: 'listening', name: '聴解', nameF: '[聴解|ちょうかい]', en: 'Listening' }
 ];
 // Questions per mondai (jlpt-scoring.md §3, N5). Reading and listening count by item format.
 // diagnostic: about half a full mock, every mondai kept.
@@ -1713,6 +1713,23 @@ function mockSections(mock) {
     var qs = mock.sections[s.key].map(function (q) { return mockQuestion(q, tk); });
     return Object.assign({}, s, { questions: qs, seconds: quizSeconds(qs) });
   });
+}
+
+// mockSteps(sections, phase, sec) → { label, note, steps: [{ state: done|live|later, n, key, side }] } for the
+// start ('intro', part 1 live) and between-parts ('between', `sec` = 0-based next part) screens.
+function mockSteps(sections, phase, sec) {
+  var live = phase === 'intro' ? 0 : sec;
+  return {
+    label: phase === 'intro' ? 'Three parts, one at a time' : 'Part ' + sec + ' done',
+    note: phase === 'intro'
+      ? 'Each part has its own clock, and it can’t be paused. Rest between parts if you like. The next clock starts only when you press Start.'
+      : 'Rest if you need to. The clock for part ' + (sec + 1) + ' starts when you press Start.',
+    steps: sections.map(function (s, i) {
+      var state = i < live ? 'done' : i === live ? 'live' : 'later';
+      return { state: state, n: i + 1, key: s.key,
+        side: state === 'live' ? 'Start part ' + (i + 1) : state === 'done' ? 'Done' : 'Starts after part ' + i };
+    })
+  };
 }
 
 // mockEstimate(p, level): estimated scaled scores from raw accuracy (0-1) per part

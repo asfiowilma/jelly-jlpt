@@ -667,6 +667,7 @@ function App() {
     onDiagnostic: function () { setView('diagnostic'); }
   }) : view === 'diagnostic' ? React.createElement(MockExam, {
     mock: CATALOG.items[DIAGNOSTIC_MOCK],
+    showFurigana: showFurigana,
     onClose: function () { setView('units'); }
   }) : React.createElement(React.Fragment, null, React.createElement("button", {
     className: "unit-back",

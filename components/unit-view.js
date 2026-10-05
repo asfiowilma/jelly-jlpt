@@ -156,6 +156,8 @@ function UnitView(props) {
       React.createElement("div", { id: "unit-quiz" }, unit.kind === 'mock' ? React.createElement(MockExam, {
         key: unit.id,
         mock: CATALOG.items[unit.mock],
+        guided: !!unit.guide,
+        showFurigana: showFurigana,
         onTaken: function () { props.onQuizResult({ passed: true, missed: [] }); }
       }) : React.createElement(Exercises, {
         key: unit.id,

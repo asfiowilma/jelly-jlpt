@@ -220,6 +220,14 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     });
   });
 
+  test("React render: MockExam() renders the start screen, guided and not, furigana on and off", function (a) {
+    var mock = CATALOG.items["x:n5-mock-1"];
+    [[true, true], [false, false], [false, true]].forEach(function (c) {
+      try { MockExam({ mock: mock, guided: c[0], showFurigana: c[1], onClose: noop }); } catch (e) { a.ok(false, e.message); }
+    });
+    a.ok(true);
+  });
+
   test("React render: KanjiSection() renders every kanji unit in rows and focus layouts", function (a) {
     var withKanji = units.filter(function (u) { return u.kanji.length > 0; });
     a.ok(withKanji.length > 0, "units with kanji exist");

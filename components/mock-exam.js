@@ -7,7 +7,8 @@
 // only for utterance / quick. No feedback until the end; then an estimated scaled score with the
 // real pass rules (mockEstimate), a table per mondai and every missed question explained.
 // The result is saved as a mock:<id>:<takenAt> doc (Store.putMock); onTaken(result) after that.
-// Props: mock (catalog item), onTaken?, onClose? (shows a Back button), now? (clock, for tests).
+// Props: mock (catalog item), onTaken?, onClose? (shows a Back button), now? (clock, for tests),
+// showFurigana? (part names), guided? (inside a unit whose exam guide already explains the rules).
 var OFFICIAL_SAMPLES_URL = 'https://www.jlpt.jp/e/samples/sampleindex.html';
 
 function mockPartsEl(parts) {
@@ -78,39 +79,48 @@ function MockExam(props) {
   };
   var history = (Store.snapshot().mocks || []).filter(function (m) { return m.mockId === mock.id; });
   var minutes = function (s) { return Math.round(s.seconds / 60); };
+  // mockSteps rows for the start + between screens; the "How the exam works" details only outside a guided unit
+  var stepsEl = function (ph) {
+    var m = mockSteps(sections, ph, sec);
+    return ce(React.Fragment, null,
+      ce("div", { className: "ms" },
+        ce("div", { className: "section-label" }, m.label),
+        m.steps.map(function (st) {
+          var s = sections[st.n - 1];
+          return ce("div", { key: st.key, className: "ms-row " + st.state },
+            ce("span", { className: "ms-n" }, st.state === 'done' ? "✓" : st.n),
+            ce("span", { className: "ms-name" },
+              ce("span", { className: "jp", lang: "ja" }, pgText(s.nameF, props.showFurigana)), ce("span", { className: "ms-en" }, s.en), ce("br"),
+              ce("span", { className: "ms-meta" }, s.questions.length, " questions · ", minutes(s), " min")),
+            st.state === 'live' ? ce("button", { className: "quiz-start-btn ms-btn", onClick: startPart }, st.side) : ce("span", { className: "ms-side" }, st.side));
+        }),
+        ce("p", { className: "ms-note" }, ce("b", null, "Timing"), m.note)),
+      !props.guided && ph === 'intro' && ce("details", { className: "ms-how" },
+        ce("summary", null, "How the exam works"),
+        ce("p", null, "You take the parts one at a time. Each part has its own clock. Inside a part you can answer in any order and change answers. Flag questions to come back to them."),
+        ce("p", null, "When a part ends, you can't go back to it. Unanswered questions count as wrong."),
+        ce("p", null, "Listening plays each question once, with one replay."),
+        ce("p", null, "At the end you get your answers and an estimated score.")));
+  };
   var back = props.onClose && ce("button", { className: "link-btn mock-back", onClick: props.onClose }, "← Back to stages");
 
   // ── start screen + history ────────────────────────────────────────────────
   if (phase === 'intro') {
     return ce("div", { className: "mock" },
       back,
-      ce("div", { className: "quiz-start-box mock-intro" },
-        ce("div", { className: "quiz-start-title" }, mock.title),
-        ce("ul", { className: "mock-parts" }, sections.map(function (s) {
-          return ce("li", { key: s.key }, ce("b", { lang: "ja" }, s.name), " ", s.en, ": ", s.questions.length, " questions, ", minutes(s), " min");
-        })),
-        ce("p", { className: "quiz-start-hint" },
-          "One part at a time, each with its own clock. Inside a part you can answer in any order, change answers and flag questions to come back to. ",
-          "When a part ends (you finish it or time runs out) you can't go back to it; unanswered questions count as wrong. ",
-          "Listening: each question plays once, with one replay. You get your answers and an estimated score at the end."),
-        ce("button", { className: "quiz-start-btn", onClick: startPart }, "Start part 1: " + sections[0].en)),
+      stepsEl('intro'),
       history.length > 0 && ce("div", { className: "mock-history" },
         ce("div", { className: "section-label" }, "Earlier attempts"),
         ce("ul", null, history.map(function (h) {
           return ce("li", { key: h.takenAt },
             ce("button", { className: "link-btn", onClick: function () { setResult(h); setAnswers(h.answers); setPhase('results'); } },
-              new Date(h.takenAt).toLocaleString()), " · estimate ", h.estimate.total, " / 180 · ", h.estimate.passed ? "pass" : "not yet");
+              new Date(h.takenAt).toLocaleString()), ce("span", { className: "ms-res" }, "estimate ", ce("b", null, h.estimate.total), " / 180 · ", h.estimate.passed ? "pass" : "not yet"));
         }))));
   }
 
   var S = sections[sec];
   if (phase === 'between') {
-    return ce("div", { className: "mock" },
-      ce("div", { className: "quiz-start-box" },
-        ce("div", { className: "quiz-start-title" }, "Part " + sec + " done"),
-        ce("p", { className: "quiz-start-hint" }, "Next: ", ce("b", { lang: "ja" }, S.name), " ", S.en, ", ", S.questions.length,
-          " questions in ", minutes(S), " minutes. Take a break if you need one; the clock starts when you press Start."),
-        ce("button", { className: "quiz-start-btn", onClick: startPart }, "Start part " + (sec + 1) + ": " + S.en)));
+    return ce("div", { className: "mock" }, stepsEl('between'));
   }
 
   // ── results ───────────────────────────────────────────────────────────────
@@ -181,7 +191,7 @@ function MockExam(props) {
   var unanswered = answers[S.key].filter(function (a) { return a === null; }).length;
   return ce("div", { className: "mock" },
     ce("div", { className: "mock-bar" },
-      ce("span", { className: "section-label" }, ce("span", { lang: "ja" }, S.name), " ", S.en, ce("span", { className: "ex-count" }, cur + 1, " / ", S.questions.length)),
+      ce("span", { className: "section-label" }, ce("span", { lang: "ja" }, pgText(S.nameF, props.showFurigana)), " ", S.en, ce("span", { className: "ex-count" }, cur + 1, " / ", S.questions.length)),
       ce("span", { className: "ex-timer" + (left < 60 ? " low" : ""), role: "timer", 'aria-label': "Time left in this part" }, "⏱ ", mockClock(left))),
     ce("div", { className: "mock-nav", role: "navigation", 'aria-label': "Questions in this part" }, S.questions.map(function (_, i) {
       var st = (answers[S.key][i] !== null ? " answered" : "") + (flags[S.key + ':' + i] ? " flagged" : "") + (i === cur ? " now" : "");

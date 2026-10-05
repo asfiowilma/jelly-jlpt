@@ -204,4 +204,27 @@ QUnit.module('mock exams', function () {
     var mocksUnits = allUnits().filter(function (u) { return u.kind === 'mock'; });
     assert.deepEqual(mocksUnits.map(function (u) { return u.mock; }), ['x:n5-mock-1', 'x:n5-mock-2'], 'the two full mocks are plan units');
   });
+
+  QUnit.test('mockSteps: start and between screens show three steps with the right state and copy', function (assert) {
+    var secs = mockSections(CATALOG.items['x:n5-mock-1']);
+    var states = function (m) { return m.steps.map(function (s) { return s.state; }).join(); };
+    var intro = mockSteps(secs, 'intro', 0);
+    assert.equal(states(intro), 'live,later,later');
+    assert.equal(intro.label, 'Three parts, one at a time');
+    assert.deepEqual(intro.steps.map(function (s) { return s.side; }), ['Start part 1', 'Starts after part 1', 'Starts after part 2']);
+    var b1 = mockSteps(secs, 'between', 1);
+    assert.equal(states(b1), 'done,live,later');
+    assert.equal(b1.label, 'Part 1 done');
+    assert.deepEqual(b1.steps.map(function (s) { return s.side; }), ['Done', 'Start part 2', 'Starts after part 2']);
+    assert.equal(b1.note, 'Rest if you need to. The clock for part 2 starts when you press Start.');
+    var b2 = mockSteps(secs, 'between', 2);
+    assert.equal(states(b2), 'done,done,live');
+    assert.equal(b2.steps[2].side, 'Start part 3');
+  });
+
+  QUnit.test('mock sections carry furigana markup next to the plain name', function (assert) {
+    mockSections(CATALOG.items['x:n5-mock-1']).forEach(function (s) {
+      assert.equal(stripRuby(s.nameF), s.name, s.key);
+    });
+  });
 });
