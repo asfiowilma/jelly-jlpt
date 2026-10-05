@@ -240,7 +240,7 @@ function ReviewMode(_ref1) {
     h('div', { className: 'rv-kind' }, kindLabel),
     h('div', { className: 'rv-front' }, card.front, h('button', {
       className: 'rv-spk', 'aria-label': 'Listen to ' + card.front,
-      onClick: function (e) { e.stopPropagation(); speak(card.front); }
+      onClick: function (e) { e.stopPropagation(); speak(cardSpeech(card)); }
     }, icon('speaker'))),
     flipped ? h('div', { className: 'rv-back' },
       card.reading && card.reading !== card.front && h('div', { className: 'rv-rd' }, card.reading),

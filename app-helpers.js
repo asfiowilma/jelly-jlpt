@@ -597,8 +597,15 @@ function JellyExcited(props) {
 
 // ── TTS ──────────────────────────────────────────────────────────────────────
 window._ttsRate = 0.85;
+// Kana for a main reading like た.べる / -ジン (okurigana markers stripped); first of a ・ list.
+function readingSpeech(r) { return String(r || '').split('・')[0].replace(/[.\-]/g, ''); }
+// What a review card says: the reading for vocab/kanji (kana cards and grammar speak the front).
+function cardSpeech(card) {
+  return (card.type === 'vocab' || card.type === 'kanji') && card.reading ? readingSpeech(card.reading) : card.front;
+}
 function speak(text) {
   if (!window.speechSynthesis) return;
+  if (/[㐀-鿿]/.test(text) && typeof console !== 'undefined') console.warn('speak(): kanji in speech text, pass kana:', text);
   _scriptRun++; // stops a playing script (speakScript)
   window.speechSynthesis.cancel();
   var doSpeak = function() {

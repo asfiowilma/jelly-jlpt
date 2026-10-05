@@ -68,7 +68,7 @@ function VocabSection(props) {
       React.createElement("div", { className: "vocab-col-reading" }, readingCell),
       React.createElement("div", { className: "vocab-col-meaning" }, meaningCell),
       React.createElement("button", {
-        className: "speak-btn speak-btn-row", onClick: function () { speak(v.word); },
+        className: "speak-btn speak-btn-row", onClick: function () { speak(v.reading); },
         title: "Listen to pronunciation", 'aria-label': "Listen to " + v.word
       }, "🔊"));
   };
@@ -107,7 +107,7 @@ function VocabSection(props) {
         }
       }, opened === cells.length ? t('mode_hide_all', lv) : t('mode_reveal_all', lv))),
     React.createElement("button", {
-      className: "vocab-btn", onClick: function () { speak(vocab.map(function (v) { return v.word; }).join('、')); }
+      className: "vocab-btn", onClick: function () { speak(vocab.map(function (v) { return v.reading; }).join('、')); }
     }, "🔊 ", t('vocab_listen_all', lv)),
     seg);
   return React.createElement("div", { className: "section" },

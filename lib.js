@@ -1211,7 +1211,7 @@ function formsFor(item, ctx) {
     ];
     if (ctx.conjForm && isVerbItem(v)) forms.push(f('conj', true, function () { return conjEx(v, ctx.conjForm); }));
     if (typeof window !== 'undefined' && window.speechSynthesis) {
-      forms.push(f('listen', false, function () { return mc('listen', 'Listen and choose the meaning:', v.word, 'gloss', ctx.vPool, null, { audio: v.word }); }));
+      forms.push(f('listen', false, function () { return mc('listen', 'Listen and choose the meaning:', v.word, 'gloss', ctx.vPool, null, { audio: v.reading || v.word }); }));
     }
     var free = ctx.vocab.filter(function (x) { return x !== v && !isBound(x); });
     if (rank >= 2 && free.length >= 3) forms.push(f('pairMatch', false, function () {

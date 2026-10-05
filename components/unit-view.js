@@ -35,7 +35,7 @@ function UnitView(props) {
     }) : mark(s.jp, toks);
     return React.createElement("div", { key: s.id, className: "grammar-example" },
       React.createElement("div", { className: "jp" }, jp, React.createElement("button", {
-        className: "speak-btn", onClick: function () { speak(s.jp); }, title: "Listen", 'aria-label': "Listen to " + s.jp
+        className: "speak-btn", onClick: function () { speak(speechText(s.furigana || s.jp)); }, title: "Listen", 'aria-label': "Listen to " + s.jp
       }, "🔊")),
       React.createElement("div", { className: "en" }, s.en));
   };
@@ -49,7 +49,7 @@ function UnitView(props) {
         React.createElement("div", { className: "jp", lang: "ja" }, jp),
         React.createElement("div", { className: "en" }, s.en)),
       React.createElement("button", {
-        className: "example-speak", onClick: function () { speak(s.jp); }, title: "Listen", 'aria-label': "Listen to " + s.jp
+        className: "example-speak", onClick: function () { speak(speechText(s.furigana || s.jp)); }, title: "Listen", 'aria-label': "Listen to " + s.jp
       }, icon('speaker')));
   };
   var grammarExamples = function (g) {

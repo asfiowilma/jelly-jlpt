@@ -119,7 +119,7 @@ function KanjiSection(props) {
       return React.createElement("div", { key: k.id, className: "kj-row" },
         React.createElement("div", { className: "kj-side" },
           React.createElement("div", { className: "kj-big" }, k.char,
-            React.createElement("button", { className: "speak-btn speak-btn-char", onClick: function () { speak(k.char); }, 'aria-label': "Listen to " + k.char }, "🔊")),
+            React.createElement("button", { className: "speak-btn speak-btn-char", onClick: function () { speak(readingSpeech((k.kun && k.kun[0]) || (k.on && k.on[0]) || k.char)); }, 'aria-label': "Listen to " + k.char }, "🔊")),
           React.createElement("div", { className: "kj-count" }, strokes(k))),
         React.createElement("div", null, meaning(k), readings(k), words(k),
           React.createElement("button", {
