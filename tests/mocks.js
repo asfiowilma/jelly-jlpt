@@ -180,6 +180,22 @@ QUnit.module('mock exams', function () {
     assert.strictEqual(wobble.verdict, 'borderline', 'lower listening bound under 19, upper above it');
   });
 
+  // ── attempts + trend (ticket 49): mock docs are write-once, so "practice" is derived from takenAt order ──
+  QUnit.test('mock attempts: the first sitting of a mock counts, later ones of the same mock are practice', function (assert) {
+    var doc = function (id, at, total) { return { mockId: id, takenAt: at, estimate: { total: total, passed: total >= 80 } }; };
+    var snapshotOrder = [doc('x:n5-mock-1', 50, 120), doc('x:n5-mock-3', 40, 90), doc('x:n5-mock-1', 30, 100), doc('x:n5-mock-1', 10, 60)]; // newest first
+    var at = mockAttempts(snapshotOrder);
+    assert.deepEqual(at.map(function (a) { return a.doc.takenAt + ':' + a.n + (a.practice ? 'p' : ''); }), ['10:1', '30:2p', '40:1', '50:3p'], 'oldest first, numbered per mock');
+    assert.strictEqual(mockHeadline(snapshotOrder, 'x:n5-mock-1').estimate.total, 60, 'headline = the first attempt, not the latest or the best');
+    assert.strictEqual(mockHeadline(snapshotOrder, 'x:n5-mock-2'), null);
+    assert.ok(mockIsPractice(snapshotOrder, snapshotOrder[0]) && mockIsPractice(snapshotOrder, snapshotOrder[2]) && !mockIsPractice(snapshotOrder, snapshotOrder[3]) && !mockIsPractice(snapshotOrder, snapshotOrder[1]));
+    // a result not saved yet (just finished) is judged against the saved ones
+    assert.ok(mockIsPractice(snapshotOrder, doc('x:n5-mock-3', 99, 50)) && !mockIsPractice(snapshotOrder, doc('x:n5-mock-2', 99, 50)));
+    assert.deepEqual(mockTrend(snapshotOrder, 'N5').points.map(function (p) { return [p.total, p.practice]; }), [[60, false], [100, true], [90, false], [120, true]], 'one point per attempt');
+    assert.strictEqual(mockTrend(snapshotOrder, 'N5').pass, 80, 'the pass line');
+    assert.deepEqual(mockTrend([], 'N5').points, []);
+  });
+
   QUnit.test('mockResult: right / total per part and per mondai; unanswered counts wrong', function (assert) {
     var m = CATALOG.items['x:n5-mock-3'], secs = mockSections(m), answers = {};
     secs.forEach(function (s) { answers[s.key] = s.questions.map(function (ex) { return ex.correct; }); });

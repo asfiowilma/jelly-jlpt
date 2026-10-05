@@ -1792,6 +1792,33 @@ function mockResult(mock, sections, answers, now) {
   return { mockId: mock.id, takenAt: now, parts: parts, byMondai: byMondai, answers: answers, estimate: mockEstimate(acc, mock.level) };
 }
 
+// Attempts (ticket 49). A mock doc is write-once, so "practice" is derived: the first sitting of a mock
+// (by takenAt) is the real attempt, every later sitting of the same mock is practice (the questions are
+// known by then). Practice never becomes the headline estimate; the trend chart still plots it, hollow.
+// mockAttempts(mocks) → [{ doc, n (1-based per mockId), practice }], oldest first.
+function mockAttempts(mocks) {
+  var seen = {};
+  return (mocks || []).slice().sort(function (a, b) { return a.takenAt - b.takenAt; }).map(function (d) {
+    var n = seen[d.mockId] = (seen[d.mockId] || 0) + 1;
+    return { doc: d, n: n, practice: n > 1 };
+  });
+}
+// mockIsPractice(mocks, doc): doc (saved or just finished) is not the first sitting of its mock.
+function mockIsPractice(mocks, doc) {
+  return (mocks || []).some(function (m) { return m.mockId === doc.mockId && m.takenAt < doc.takenAt; });
+}
+// mockHeadline(mocks, mockId): the first attempt's doc, or null.
+function mockHeadline(mocks, mockId) {
+  var first = mockAttempts((mocks || []).filter(function (m) { return m.mockId === mockId; }))[0];
+  return first ? first.doc : null;
+}
+// mockTrend(mocks, level) → { pass, points: [{ takenAt, mockId, total, passed, practice }] } oldest first.
+function mockTrend(mocks, level) {
+  return { pass: JLPT_PASS[level || 'N5'].total, points: mockAttempts(mocks).map(function (a) {
+    return { takenAt: a.doc.takenAt, mockId: a.doc.mockId, total: a.doc.estimate.total, passed: a.doc.estimate.passed, practice: a.practice };
+  }) };
+}
+
 // prepDrill(unit): a prep unit's timed section drill (unit.drill = { blueprint key: count }):
 // `count` catalog items per mondai, random each time, in test order. Passages, listening items
 // and authored mondai that a mock uses are left out, so the mocks stay unseen.

@@ -314,6 +314,23 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     finally { Store.logs = origLogs; }
   });
 
+  test("React render: MockTrend() draws a dot per attempt (hollow = practice) and the pass line; StatsView shows it only with attempts", function (a) {
+    var orig = { ce: React.createElement, snap: Store.snapshot }, els = [];
+    React.createElement = function (type, props) { var el = { type: type, props: props || {}, children: [].slice.call(arguments, 2) }; els.push(el); return el; };
+    try {
+      var d = function (at, total) { return { mockId: "x:n5-mock-1", takenAt: at, estimate: { total: total, passed: total >= 80 } }; };
+      MockTrend({ trend: mockTrend([d(3, 120), d(1, 60), d(2, 90)], "N5") });
+      var dots = els.filter(function (el) { return el.type === "circle"; });
+      a.equal(dots.length, 3, "one dot per attempt");
+      a.deepEqual(dots.map(function (el) { return /practice/.test(el.props.className); }), [false, true, true], "oldest is the real attempt, later ones hollow");
+      a.ok(els.some(function (el) { return el.type === "line" && /pass-line/.test(el.props.className); }), "pass line");
+      var mocksOf = function (list) { Store.snapshot = function () { return Object.assign({}, orig.snap(), { mocks: list }); }; els = []; StatsView({ cards: {}, onReview: noop }); return els; };
+      a.ok(!mocksOf([]).some(function (el) { return el.type === MockTrend; }), "no attempts, no chart");
+      a.ok(mocksOf([d(1, 60)]).some(function (el) { return el.type === MockTrend; }), "an attempt adds the chart");
+    } catch (e) { a.ok(false, e.stack); }
+    finally { React.createElement = orig.ce; Store.snapshot = orig.snap; }
+  });
+
   test("React render: AchievementsView() renders empty and with the fixture list", function (a) {
     try {
       AchievementsView({ level: "N5" });
@@ -828,6 +845,13 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       state = []; refs = []; deps = []; cleanups = [];
       render();
       a.ok(find(/link-btn/).length === 1, "history lists the attempt");
+      a.ok(find(/ms-res/).some(function (el) { return el.children[0] === "First attempt"; }), "history: the only sitting is the first attempt");
+      // ticket 49: an earlier sitting makes this one practice, in the history and on its result
+      Store.putMock(Object.assign({}, taken, { takenAt: taken.takenAt - 5000 }));
+      render();
+      a.ok(find(/ms-res/).some(function (el) { return el.children[0] === "Practice 2"; }), "history: the later sitting is marked practice");
+      click(/link-btn/, 0);
+      a.ok(find(/mock-practice/).length === 1, "result of a practice attempt says so");
     } catch (err) {
       a.ok(false, err.stack);
     } finally {

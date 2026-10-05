@@ -32,6 +32,25 @@ function RetentionSpark(props) {
     }));
 }
 
+// MockTrend (ticket 49): estimated total per mock attempt, oldest left, with the pass line.
+// A solid dot is the first sitting of a mock; a hollow one is practice (the same mock again).
+function MockTrend(props) {
+  var ce = React.createElement, pts = props.trend.points, pass = props.trend.pass, W = 300, H = 120, PAD = 14;
+  var x = function (i) { return pts.length === 1 ? W / 2 : PAD + i * (W - 2 * PAD) / (pts.length - 1); };
+  var y = function (v) { return H - PAD - v / 180 * (H - 2 * PAD); };
+  var label = function (p, i) { return "Attempt " + (i + 1) + ", " + statsDateLabel(new Date(p.takenAt), { month: 'short', day: 'numeric' }) + ": estimated " + p.total + " / 180" + (p.practice ? " (practice)" : ""); };
+  return ce("div", { className: "mock-trend" },
+    ce("svg", { viewBox: "0 0 " + W + " " + H, role: "img", 'aria-label': "Estimated score per mock attempt, pass mark " + pass + ": " + pts.map(function (p) { return p.total; }).join(", ") },
+      ce("line", { x1: 0, x2: W, y1: y(pass), y2: y(pass), className: "pass-line" }),
+      ce("text", { x: W - 2, y: y(pass) - 4, textAnchor: "end", className: "pass-lbl" }, "Pass " + pass),
+      pts.length > 1 && ce("polyline", { className: "trend-line", fill: "none", points: pts.map(function (p, i) { return x(i) + "," + y(p.total); }).join(" ") }),
+      pts.map(function (p, i) {
+        return ce("circle", { key: i, cx: x(i), cy: y(p.total), r: 5, className: "trend-dot" + (p.practice ? " practice" : "") + (p.passed ? " passed" : ""),
+          'data-tip': label(p, i), tabIndex: 0, 'aria-label': label(p, i) });
+      })),
+    ce("p", { className: "mock-note" }, "Each dot is one mock attempt (estimated total out of 180). Solid = first sitting of that mock, hollow = practice."));
+}
+
 function StatsView(props) {
   var cards = props.cards || {};
   var tipRef = React.useRef(null);
@@ -52,6 +71,7 @@ function StatsView(props) {
   var streak = computeStreak(studyDates(logs), today);
   var cells = studyHeatmap(logs, today, 52);
   var ce = React.createElement;
+  var mocksTaken = Store.snapshot().mocks || [];
   var dayOf = function (i) { var d = new Date(now); return new Date(d.getFullYear(), d.getMonth(), d.getDate() + i); };
 
   // Shared tooltip: follows the pointer over any [data-tip]; on keyboard focus
@@ -205,6 +225,7 @@ function StatsView(props) {
   return ce("div", { className: "stats", onPointerMove: onMove, onPointerLeave: hideTip, onFocus: onFocus, onBlur: hideTip },
     kpis,
     ce("div", { className: "two" }, forecast, maturity),
+    mocksTaken.length > 0 && card("Mock exams", mocksTaken.length + (mocksTaken.length === 1 ? " attempt" : " attempts"), ce(MockTrend, { trend: mockTrend(mocksTaken, 'N5') })),
     heat,
     ce("div", { ref: tipRef, className: "chart-tip", role: "tooltip", 'aria-hidden': "true" }));
 }

@@ -142,11 +142,11 @@ var DIAGNOSTIC_MOCK = 'x:n5-mock-3';
 function DiagnosticPanel(props) {
   var ce = React.createElement, m = CATALOG.items[DIAGNOSTIC_MOCK];
   if (!m) return null;
-  var last = (Store.snapshot().mocks || []).filter(function (x) { return x.mockId === m.id; })[0];
+  var last = mockHeadline(Store.snapshot().mocks, m.id); // the first attempt: retakes are practice and never replace it
   var mins = mockSections(m).reduce(function (n, s) { return n + Math.round(s.seconds / 60); }, 0);
   return ce("section", { className: "panel diagnostic", 'aria-label': "N5 diagnostic test" },
     ce("h2", { className: "panel-h" }, "N5 diagnostic test", ce("span", { className: "r" }, "About " + mins + " min · take it anytime")),
     ce("p", null, "A timed, half-length N5 test in the exam format. You get an estimated score and every missed question explained.",
-      last ? " Last score: " + last.estimate.total + " / 180, " + (last.estimate.passed ? "a pass." : "below the pass mark.") : ""),
+      last ? " First score: " + last.estimate.total + " / 180, " + (last.estimate.passed ? "a pass." : "below the pass mark.") + " Retakes are practice and don't change it." : ""),
     ce("button", { className: "btn-outline", onClick: props.onStart }, last ? "Retake diagnostic" : "Start diagnostic"));
 }

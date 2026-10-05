@@ -95,7 +95,10 @@ function MockExam(props) {
     setSec(0); setCur(0); setAnswers(blank()); setFlags({}); setPlays({});
     setPhase('intro');
   };
-  var history = (Store.snapshot().mocks || []).filter(function (m) { return m.mockId === mock.id; });
+  var allMocks = Store.snapshot().mocks || [];
+  var history = allMocks.filter(function (m) { return m.mockId === mock.id; });
+  var attemptN = {}; // takenAt → attempt number of this mock (ticket 49: later ones are practice)
+  mockAttempts(history).forEach(function (a) { attemptN[a.doc.takenAt] = a.n; });
   var minutes = function (s) { return Math.round(s.seconds / 60); };
   // mockSteps rows for the start + between screens; the "How the exam works" details only outside a guided unit
   var stepsEl = function (ph) {
@@ -131,6 +134,7 @@ function MockExam(props) {
         ce("div", { className: "section-label" }, "Earlier attempts"),
         ce("ul", null, history.map(function (h) {
           return ce("li", { key: h.takenAt },
+            ce("span", { className: "ms-res" }, attemptN[h.takenAt] > 1 ? "Practice " + attemptN[h.takenAt] : "First attempt"),
             ce("button", { className: "link-btn", onClick: function () { setResult(h); setAnswers(h.answers); setPhase('results'); } },
               new Date(h.takenAt).toLocaleString()), ce("span", { className: "ms-res" }, "estimate ", ce("b", null, h.estimate.total), " / 180 · ", h.estimate.passed ? "pass" : "not yet"));
         }))));
@@ -150,6 +154,7 @@ function MockExam(props) {
 
   // ── results ───────────────────────────────────────────────────────────────
   if (phase === 'results') {
+    var practice = mockIsPractice(allMocks, result);
     var r = result, est = r.estimate, rule = JLPT_PASS[mock.level], out = mockOutlook(r.parts, mock.level), ring = 2 * Math.PI * 60;
     var tone = { likely: 'pass', borderline: 'warn', unlikely: 'fail' }[out.verdict];
     var range = function (x) { return x[0] + '–' + x[1]; };
@@ -174,8 +179,10 @@ function MockExam(props) {
               ce("circle", { className: "v " + tone, cx: 70, cy: 70, r: 60, strokeDasharray: (ring * est.total / 180) + " " + ring })),
             ce("span", { className: "qz-jelly" }, out.verdict === 'likely' ? ce(JellyExcited, { size: 84 }) : jelly('oops', 84))),
           ce("div", null,
+            practice && ce("span", { className: "mock-practice" }, "Practice attempt"),
             ce("h3", { className: "qz-verdict " + tone }, out.verdict === 'likely' ? "Likely pass" : out.verdict === 'borderline' ? "Borderline" : "Unlikely to pass yet"),
             ce("p", { className: "mock-estimate-total" }, "Estimate: ", ce("b", null, est.total), " / 180 · likely range ", range(out.total)),
+            practice && ce("p", null, "You have sat this mock before, so the questions are known. This attempt is practice and does not change your headline estimate", (function () { var f = mockHeadline(allMocks, mock.id); return f ? " (first attempt: " + f.estimate.total + " / 180)." : "."; })()),
             ce("p", null, out.verdict === 'likely' ? "Even the low end of the range clears the pass mark and both section minimums."
               : out.verdict === 'borderline' ? "The range crosses a pass mark. A longer test or another attempt would tell you more."
               : "Even the high end of the range misses the total or a section minimum."))),
