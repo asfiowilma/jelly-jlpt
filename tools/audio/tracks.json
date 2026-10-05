@@ -5,6 +5,7 @@
    "id": "l:n5-who-is-that",
    "format": "quick",
    "man": "worker",
+   "woman": "lively",
    "lines": [
     {
      "role": "F",
@@ -47,6 +48,7 @@
    "id": "l:n5-whose-umbrella",
    "format": "quick",
    "man": "worker",
+   "woman": "lively",
    "lines": [
     {
      "role": "M",
@@ -89,6 +91,7 @@
    "id": "l:n5-nationality",
    "format": "quick",
    "man": "worker",
+   "woman": "lively",
    "lines": [
     {
      "role": "M",
@@ -131,6 +134,7 @@
    "id": "l:n5-sister-student",
    "format": "quick",
    "man": "student",
+   "woman": "lively",
    "lines": [
     {
      "role": "M",
@@ -173,6 +177,7 @@
    "id": "l:n5-get-up-time",
    "format": "quick",
    "man": "student",
+   "woman": "lively",
    "lines": [
     {
      "role": "M",
@@ -215,6 +220,7 @@
    "id": "l:n5-where-tomorrow",
    "format": "quick",
    "man": "worker",
+   "woman": "lively",
    "lines": [
     {
      "role": "F",
@@ -257,6 +263,7 @@
    "id": "l:n5-how-much",
    "format": "quick",
    "man": "worker",
+   "woman": "professional",
    "lines": [
     {
      "role": "M",
@@ -299,6 +306,7 @@
    "id": "l:n5-lunch-together",
    "format": "quick",
    "man": "worker",
+   "woman": "lively",
    "lines": [
     {
      "role": "F",
@@ -341,6 +349,7 @@
    "id": "l:n5-been-to-kyoto",
    "format": "quick",
    "man": "worker",
+   "woman": "lively",
    "lines": [
     {
      "role": "M",
@@ -383,6 +392,7 @@
    "id": "l:n5-may-i-sit",
    "format": "quick",
    "man": "worker",
+   "woman": "lively",
    "lines": [
     {
      "role": "M",
@@ -425,6 +435,7 @@
    "id": "l:n5-why-absent",
    "format": "quick",
    "man": "student",
+   "woman": "lively",
    "lines": [
     {
      "role": "F",
@@ -467,6 +478,7 @@
    "id": "l:n5-weather-tomorrow",
    "format": "quick",
    "man": "worker",
+   "woman": "lively",
    "lines": [
     {
      "role": "M",
@@ -509,6 +521,7 @@
    "id": "l:n5-borrow-pen",
    "format": "utterance",
    "man": "student",
+   "woman": null,
    "lines": [
     {
      "role": "N",
@@ -556,6 +569,7 @@
    "id": "l:n5-open-window",
    "format": "utterance",
    "man": null,
+   "woman": "lively",
    "lines": [
     {
      "role": "N",
@@ -603,6 +617,7 @@
    "id": "l:n5-offer-carry",
    "format": "utterance",
    "man": "student",
+   "woman": null,
    "lines": [
     {
      "role": "N",
@@ -650,6 +665,7 @@
    "id": "l:n5-say-again",
    "format": "utterance",
    "man": null,
+   "woman": "lively",
    "lines": [
     {
      "role": "N",
@@ -697,6 +713,7 @@
    "id": "l:n5-no-smoking",
    "format": "utterance",
    "man": null,
+   "woman": "lively",
    "lines": [
     {
      "role": "N",
@@ -744,6 +761,7 @@
    "id": "l:n5-ask-the-way",
    "format": "utterance",
    "man": "worker",
+   "woman": null,
    "lines": [
     {
      "role": "N",
@@ -791,6 +809,7 @@
    "id": "l:n5-dog-photo",
    "format": "utterance",
    "man": "worker",
+   "woman": null,
    "lines": [
     {
      "role": "N",
@@ -838,6 +857,7 @@
    "id": "l:n5-show-me-bag",
    "format": "utterance",
    "man": null,
+   "woman": "lively",
    "lines": [
     {
      "role": "N",
@@ -885,6 +905,7 @@
    "id": "l:n5-party-drinks",
    "format": "task",
    "man": "family_friend",
+   "woman": "adult",
    "lines": [
     {
      "role": "N",
@@ -937,6 +958,7 @@
    "id": "l:n5-which-bus",
    "format": "task",
    "man": "clerk",
+   "woman": "adult",
    "lines": [
     {
      "role": "N",
@@ -984,6 +1006,7 @@
    "id": "l:n5-homework-pages",
    "format": "task",
    "man": "student",
+   "woman": "professional",
    "lines": [
     {
      "role": "N",
@@ -1021,6 +1044,7 @@
    "id": "l:n5-where-to-meet",
    "format": "task",
    "man": "family_friend",
+   "woman": "lively",
    "lines": [
     {
      "role": "N",
@@ -1063,6 +1087,7 @@
    "id": "l:n5-what-to-bring",
    "format": "task",
    "man": null,
+   "woman": "professional",
    "lines": [
     {
      "role": "N",
@@ -1090,6 +1115,7 @@
    "id": "l:n5-first-after-school",
    "format": "task",
    "man": "student",
+   "woman": "lively",
    "lines": [
     {
      "role": "N",
@@ -1132,6 +1158,7 @@
    "id": "l:n5-hotel-floor",
    "format": "task",
    "man": "clerk",
+   "woman": "adult",
    "lines": [
     {
      "role": "N",
@@ -1179,6 +1206,7 @@
    "id": "l:n5-sunday-plans",
    "format": "task",
    "man": "family_friend",
+   "woman": "lively",
    "lines": [
     {
      "role": "N",
@@ -1221,6 +1249,7 @@
    "id": "l:n5-restaurant-order",
    "format": "task",
    "man": "worker",
+   "woman": "adult",
    "lines": [
     {
      "role": "N",
@@ -1273,6 +1302,7 @@
    "id": "l:n5-doctor-advice",
    "format": "task",
    "man": "worker",
+   "woman": "professional",
    "lines": [
     {
      "role": "N",
@@ -1320,6 +1350,7 @@
    "id": "l:n5-which-shirt",
    "format": "task",
    "man": "worker",
+   "woman": "adult",
    "lines": [
     {
      "role": "N",
@@ -1367,6 +1398,7 @@
    "id": "l:n5-clean-room-first",
    "format": "task",
    "man": "student",
+   "woman": "mother",
    "lines": [
     {
      "role": "N",
@@ -1414,6 +1446,7 @@
    "id": "l:n5-birthday",
    "format": "point",
    "man": "worker",
+   "woman": "lively",
    "lines": [
     {
      "role": "N",
@@ -1461,6 +1494,7 @@
    "id": "l:n5-why-late",
    "format": "point",
    "man": "worker",
+   "woman": "adult",
    "lines": [
     {
      "role": "N",
@@ -1493,6 +1527,7 @@
    "id": "l:n5-how-many-plates",
    "format": "point",
    "man": "family_friend",
+   "woman": "adult",
    "lines": [
     {
      "role": "N",
@@ -1530,6 +1565,7 @@
    "id": "l:n5-where-key",
    "format": "point",
    "man": "family_friend",
+   "woman": "adult",
    "lines": [
     {
      "role": "N",
@@ -1572,6 +1608,7 @@
    "id": "l:n5-how-to-school",
    "format": "point",
    "man": "student",
+   "woman": "lively",
    "lines": [
     {
      "role": "N",
@@ -1614,6 +1651,7 @@
    "id": "l:n5-library-closed",
    "format": "point",
    "man": "student",
+   "woman": "lively",
    "lines": [
     {
      "role": "N",
@@ -1656,6 +1694,7 @@
    "id": "l:n5-sister-in-photo",
    "format": "point",
    "man": "family_friend",
+   "woman": "lively",
    "lines": [
     {
      "role": "N",
@@ -1708,6 +1747,7 @@
    "id": "l:n5-movie-time",
    "format": "point",
    "man": "worker",
+   "woman": "lively",
    "lines": [
     {
      "role": "N",
@@ -1750,6 +1790,7 @@
    "id": "l:n5-sunday-where",
    "format": "point",
    "man": "worker",
+   "woman": "lively",
    "lines": [
     {
      "role": "N",
@@ -1792,6 +1833,7 @@
    "id": "l:n5-camera-price",
    "format": "point",
    "man": "worker",
+   "woman": "professional",
    "lines": [
     {
      "role": "N",
@@ -1849,6 +1891,7 @@
    "id": "l:n5-where-she-lives",
    "format": "point",
    "man": "worker",
+   "woman": "adult",
    "lines": [
     {
      "role": "N",
@@ -1891,6 +1934,7 @@
    "id": "l:n5-study-hours",
    "format": "point",
    "man": "student",
+   "woman": "lively",
    "lines": [
     {
      "role": "N",
@@ -1933,6 +1977,7 @@
    "id": "l:n5-what-time-now",
    "format": "quick",
    "man": "worker",
+   "woman": "lively",
    "lines": [
     {
      "role": "F",
@@ -1975,6 +2020,7 @@
    "id": "l:n5-how-many-family",
    "format": "quick",
    "man": "worker",
+   "woman": "lively",
    "lines": [
     {
      "role": "M",
@@ -2017,6 +2063,7 @@
    "id": "l:n5-where-toilet",
    "format": "quick",
    "man": "worker",
+   "woman": "lively",
    "lines": [
     {
      "role": "M",
@@ -2059,6 +2106,7 @@
    "id": "l:n5-how-was-test",
    "format": "quick",
    "man": "student",
+   "woman": "lively",
    "lines": [
     {
      "role": "F",
@@ -2101,6 +2149,7 @@
    "id": "l:n5-coffee-or-tea",
    "format": "quick",
    "man": "worker",
+   "woman": "lively",
    "lines": [
     {
      "role": "M",
@@ -2143,6 +2192,7 @@
    "id": "l:n5-how-long-japan",
    "format": "quick",
    "man": "worker",
+   "woman": "lively",
    "lines": [
     {
      "role": "F",
@@ -2185,6 +2235,7 @@
    "id": "l:n5-saturday",
    "format": "quick",
    "man": "family_friend",
+   "woman": "lively",
    "lines": [
     {
      "role": "M",
@@ -2227,6 +2278,7 @@
    "id": "l:n5-lunch-yet",
    "format": "quick",
    "man": "worker",
+   "woman": "lively",
    "lines": [
     {
      "role": "F",
@@ -2269,6 +2321,7 @@
    "id": "l:n5-which-notebook",
    "format": "quick",
    "man": "student",
+   "woman": "lively",
    "lines": [
     {
      "role": "M",
@@ -2311,6 +2364,7 @@
    "id": "l:n5-favorite-drink",
    "format": "quick",
    "man": "worker",
+   "woman": "lively",
    "lines": [
     {
      "role": "F",
@@ -2353,6 +2407,7 @@
    "id": "l:n5-close-door",
    "format": "quick",
    "man": "worker",
+   "woman": "lively",
    "lines": [
     {
      "role": "M",
@@ -2395,6 +2450,7 @@
    "id": "l:n5-where-live",
    "format": "quick",
    "man": "worker",
+   "woman": "lively",
    "lines": [
     {
      "role": "F",
@@ -2437,6 +2493,7 @@
    "id": "l:n5-invite-movie",
    "format": "utterance",
    "man": "student",
+   "woman": null,
    "lines": [
     {
      "role": "N",
@@ -2484,6 +2541,7 @@
    "id": "l:n5-ask-photo",
    "format": "utterance",
    "man": null,
+   "woman": "lively",
    "lines": [
     {
      "role": "N",
@@ -2531,6 +2589,7 @@
    "id": "l:n5-ask-time",
    "format": "utterance",
    "man": "worker",
+   "woman": null,
    "lines": [
     {
      "role": "N",
@@ -2578,6 +2637,7 @@
    "id": "l:n5-ask-water",
    "format": "utterance",
    "man": null,
+   "woman": "lively",
    "lines": [
     {
      "role": "N",
@@ -2625,6 +2685,7 @@
    "id": "l:n5-give-sweets",
    "format": "utterance",
    "man": "family_friend",
+   "woman": null,
    "lines": [
     {
      "role": "N",
@@ -2672,6 +2733,7 @@
    "id": "l:n5-turn-off-tv",
    "format": "utterance",
    "man": null,
+   "woman": "lively",
    "lines": [
     {
      "role": "N",
@@ -2719,6 +2781,7 @@
    "id": "l:n5-buy-hat",
    "format": "utterance",
    "man": "worker",
+   "woman": null,
    "lines": [
     {
      "role": "N",
@@ -2766,6 +2829,7 @@
    "id": "l:n5-dinner-shopping",
    "format": "task",
    "man": "family_friend",
+   "woman": "adult",
    "lines": [
     {
      "role": "N",
@@ -2808,6 +2872,7 @@
    "id": "l:n5-test-classroom",
    "format": "task",
    "man": "student",
+   "woman": "professional",
    "lines": [
     {
      "role": "N",
@@ -2845,6 +2910,7 @@
    "id": "l:n5-before-the-train",
    "format": "task",
    "man": "worker",
+   "woman": "adult",
    "lines": [
     {
      "role": "N",
@@ -2887,6 +2953,7 @@
    "id": "l:n5-teacher-present",
    "format": "task",
    "man": "student",
+   "woman": "lively",
    "lines": [
     {
      "role": "N",
@@ -2934,6 +3001,7 @@
    "id": "l:n5-where-box",
    "format": "task",
    "man": "worker",
+   "woman": "adult",
    "lines": [
     {
      "role": "N",
@@ -2971,6 +3039,7 @@
    "id": "l:n5-walk-to-hospital",
    "format": "task",
    "man": "worker",
+   "woman": "adult",
    "lines": [
     {
      "role": "N",
@@ -3013,6 +3082,7 @@
    "id": "l:n5-test-desk",
    "format": "task",
    "man": null,
+   "woman": "professional",
    "lines": [
     {
      "role": "N",
@@ -3040,6 +3110,7 @@
    "id": "l:n5-why-no-party",
    "format": "point",
    "man": "student",
+   "woman": "lively",
    "lines": [
     {
      "role": "N",
@@ -3082,6 +3153,7 @@
    "id": "l:n5-when-sea",
    "format": "point",
    "man": "worker",
+   "woman": "lively",
    "lines": [
     {
      "role": "N",
@@ -3124,6 +3196,7 @@
    "id": "l:n5-which-car",
    "format": "point",
    "man": "worker",
+   "woman": "adult",
    "lines": [
     {
      "role": "N",
@@ -3166,6 +3239,7 @@
    "id": "l:n5-how-many-tickets",
    "format": "point",
    "man": "worker",
+   "woman": "professional",
    "lines": [
     {
      "role": "N",
@@ -3213,6 +3287,7 @@
    "id": "l:n5-shop-sunday",
    "format": "point",
    "man": "worker",
+   "woman": "professional",
    "lines": [
     {
      "role": "N",

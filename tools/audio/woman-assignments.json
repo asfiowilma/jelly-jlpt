@@ -1,0 +1,270 @@
+{
+  "l:n5-who-is-that": {
+    "woman": "lively",
+    "why": "no clear identity"
+  },
+  "l:n5-whose-umbrella": {
+    "woman": "lively",
+    "why": "no clear identity"
+  },
+  "l:n5-nationality": {
+    "woman": "lively",
+    "why": "no clear identity"
+  },
+  "l:n5-sister-student": {
+    "woman": "lively",
+    "why": "no clear identity"
+  },
+  "l:n5-get-up-time": {
+    "woman": "lively",
+    "why": "no clear identity"
+  },
+  "l:n5-where-tomorrow": {
+    "woman": "lively",
+    "why": "friend asking about tomorrow"
+  },
+  "l:n5-how-much": {
+    "woman": "professional",
+    "why": "answers the price of an umbrella, reads as shop staff"
+  },
+  "l:n5-lunch-together": {
+    "woman": "lively",
+    "why": "friend inviting to lunch"
+  },
+  "l:n5-been-to-kyoto": {
+    "woman": "lively",
+    "why": "no clear identity"
+  },
+  "l:n5-may-i-sit": {
+    "woman": "lively",
+    "why": "no clear identity"
+  },
+  "l:n5-why-absent": {
+    "woman": "lively",
+    "why": "asks a classmate why he was absent"
+  },
+  "l:n5-weather-tomorrow": {
+    "woman": "lively",
+    "why": "no clear identity"
+  },
+  "l:n5-open-window": {
+    "woman": "lively",
+    "why": "no clear identity"
+  },
+  "l:n5-say-again": {
+    "woman": "lively",
+    "why": "no clear identity"
+  },
+  "l:n5-no-smoking": {
+    "woman": "lively",
+    "why": "no clear identity"
+  },
+  "l:n5-show-me-bag": {
+    "woman": "lively",
+    "why": "customer asking a shop for a bag"
+  },
+  "l:n5-party-drinks": {
+    "woman": "adult",
+    "why": "adult shopping for a party with her partner"
+  },
+  "l:n5-which-bus": {
+    "woman": "adult",
+    "why": "adult passenger at the station"
+  },
+  "l:n5-homework-pages": {
+    "woman": "professional",
+    "why": "teacher giving homework to a student"
+  },
+  "l:n5-where-to-meet": {
+    "woman": "lively",
+    "why": "friend arranging a movie date"
+  },
+  "l:n5-what-to-bring": {
+    "woman": "professional",
+    "why": "teacher announcing what to bring on the outing"
+  },
+  "l:n5-first-after-school": {
+    "woman": "lively",
+    "why": "female student"
+  },
+  "l:n5-hotel-floor": {
+    "woman": "adult",
+    "why": "hotel guest asking staff"
+  },
+  "l:n5-sunday-plans": {
+    "woman": "lively",
+    "why": "friend asking about weekend plans"
+  },
+  "l:n5-restaurant-order": {
+    "woman": "adult",
+    "why": "adult dining out, careful about what she eats"
+  },
+  "l:n5-doctor-advice": {
+    "woman": "professional",
+    "why": "doctor advising a patient"
+  },
+  "l:n5-which-shirt": {
+    "woman": "adult",
+    "why": "adult advising on a shirt"
+  },
+  "l:n5-clean-room-first": {
+    "woman": "mother",
+    "why": "mother telling her son to clean his room before TV"
+  },
+  "l:n5-birthday": {
+    "woman": "lively",
+    "why": "friend chatting about birthdays"
+  },
+  "l:n5-why-late": {
+    "woman": "adult",
+    "why": "colleague at the company"
+  },
+  "l:n5-how-many-plates": {
+    "woman": "adult",
+    "why": "adult hosting friends at home"
+  },
+  "l:n5-where-key": {
+    "woman": "adult",
+    "why": "adult at home helping find the key"
+  },
+  "l:n5-how-to-school": {
+    "woman": "lively",
+    "why": "student asking how he gets to school"
+  },
+  "l:n5-library-closed": {
+    "woman": "lively",
+    "why": "female student"
+  },
+  "l:n5-sister-in-photo": {
+    "woman": "lively",
+    "why": "young woman showing a family photo"
+  },
+  "l:n5-movie-time": {
+    "woman": "lively",
+    "why": "young woman going to a movie"
+  },
+  "l:n5-sunday-where": {
+    "woman": "lively",
+    "why": "young woman chatting about the weekend"
+  },
+  "l:n5-camera-price": {
+    "woman": "professional",
+    "why": "shop staff selling cameras"
+  },
+  "l:n5-where-she-lives": {
+    "woman": "adult",
+    "why": "adult talking about where she lives and moved from"
+  },
+  "l:n5-study-hours": {
+    "woman": "lively",
+    "why": "friend asking about study habits"
+  },
+  "l:n5-what-time-now": {
+    "woman": "lively",
+    "why": "no clear identity"
+  },
+  "l:n5-how-many-family": {
+    "woman": "lively",
+    "why": "no clear identity"
+  },
+  "l:n5-where-toilet": {
+    "woman": "lively",
+    "why": "no clear identity"
+  },
+  "l:n5-how-was-test": {
+    "woman": "lively",
+    "why": "no clear identity"
+  },
+  "l:n5-coffee-or-tea": {
+    "woman": "lively",
+    "why": "no clear identity"
+  },
+  "l:n5-how-long-japan": {
+    "woman": "lively",
+    "why": "no clear identity"
+  },
+  "l:n5-saturday": {
+    "woman": "lively",
+    "why": "no clear identity"
+  },
+  "l:n5-lunch-yet": {
+    "woman": "lively",
+    "why": "no clear identity"
+  },
+  "l:n5-which-notebook": {
+    "woman": "lively",
+    "why": "no clear identity"
+  },
+  "l:n5-favorite-drink": {
+    "woman": "lively",
+    "why": "no clear identity"
+  },
+  "l:n5-close-door": {
+    "woman": "lively",
+    "why": "no clear identity"
+  },
+  "l:n5-where-live": {
+    "woman": "lively",
+    "why": "no clear identity"
+  },
+  "l:n5-ask-photo": {
+    "woman": "lively",
+    "why": "no clear identity"
+  },
+  "l:n5-ask-water": {
+    "woman": "lively",
+    "why": "customer asking a restaurant for water"
+  },
+  "l:n5-turn-off-tv": {
+    "woman": "lively",
+    "why": "talking to her younger brother"
+  },
+  "l:n5-dinner-shopping": {
+    "woman": "adult",
+    "why": "adult planning dinner at home with her partner"
+  },
+  "l:n5-test-classroom": {
+    "woman": "professional",
+    "why": "teacher telling the student which classroom"
+  },
+  "l:n5-before-the-train": {
+    "woman": "adult",
+    "why": "adult travelling, bought the tickets"
+  },
+  "l:n5-teacher-present": {
+    "woman": "lively",
+    "why": "student choosing a teacher gift"
+  },
+  "l:n5-where-box": {
+    "woman": "adult",
+    "why": "adult directing where to put a box at home"
+  },
+  "l:n5-walk-to-hospital": {
+    "woman": "adult",
+    "why": "adult travelling to the hospital"
+  },
+  "l:n5-test-desk": {
+    "woman": "professional",
+    "why": "teacher giving test instructions"
+  },
+  "l:n5-why-no-party": {
+    "woman": "lively",
+    "why": "female student, school party"
+  },
+  "l:n5-when-sea": {
+    "woman": "lively",
+    "why": "friend asking about summer plans"
+  },
+  "l:n5-which-car": {
+    "woman": "adult",
+    "why": "adult with her own car"
+  },
+  "l:n5-how-many-tickets": {
+    "woman": "professional",
+    "why": "cinema ticket-counter staff"
+  },
+  "l:n5-shop-sunday": {
+    "woman": "professional",
+    "why": "shop staff giving opening hours"
+  }
+}

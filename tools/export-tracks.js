@@ -3,8 +3,9 @@
 // Run: node tools/export-tracks.js  ->  tools/audio/tracks.json
 //
 // clipKey rule (the notebook hashes it so identical lines across tracks render once):
-//   clipKey = role + '|' + (role === 'M' ? archetype : '') + '|' + text
-// where role is N / M / F, archetype is the track's man key (tracks.json `man`),
+//   clipKey = role + '|' + (role === 'N' ? '' : archetype) + '|' + text
+// where role is N / M / F, archetype is the track's man / woman key (tracks.json `man` / `woman`;
+// the narrator is one fixed voice, no archetype),
 // and text is the natural text (kanji kept, U+3000 spaces removed).
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const root = path.join(__dirname, '..');
@@ -15,7 +16,8 @@ vm.createContext(ctx);
   vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
 });
 const read = f => JSON.parse(fs.readFileSync(path.join(__dirname, 'audio', f), 'utf8'));
-const archetypes = read('man-archetypes.json'), assign = read('man-assignments.json');
+const A = { M: { arch: read('man-archetypes.json'), assign: read('man-assignments.json') },
+  F: { arch: read('woman-archetypes.json'), assign: read('woman-assignments.json') } };
 const natural = s => ctx.furiganaParts(s).map(p => p.t).join('').replace(/　/g, '');
 
 // natural-text twin of lib.js listeningScript (same order, same speakers)
@@ -35,27 +37,29 @@ ctx.listeningFor('N5').forEach(function (it) {
   const kana = ctx.listeningScript(it), nat = naturalScript(it);
   if (kana.length !== nat.length || kana.some((l, i) => l.speaker !== nat[i].speaker))
     throw new Error(it.id + ': natural sequence does not match listeningScript');
-  const hasM = nat.some(l => l.speaker === 'M');
-  let man = null;
-  if (hasM) {
-    man = assign[it.id] && assign[it.id].man;
-    if (!man) errors.push(it.id + ': M track has no assignment');
-    else if (!archetypes[man]) errors.push(it.id + ': unknown archetype ' + man);
-  }
-  tracks.push({ id: it.id, format: it.format, man: man || null,
+  const pick = {};
+  ['M', 'F'].forEach(function (r) {
+    if (!nat.some(l => l.speaker === r)) return;
+    const e = A[r].assign[it.id], k = e && e[r === 'M' ? 'man' : 'woman'];
+    if (!k) errors.push(it.id + ': ' + r + ' track has no assignment');
+    else if (!A[r].arch[k]) errors.push(it.id + ': unknown ' + r + ' archetype ' + k);
+    else pick[r] = k;
+  });
+  const man = pick.M || null, woman = pick.F || null;
+  tracks.push({ id: it.id, format: it.format, man, woman,
     lines: nat.map((l, i) => ({ role: l.speaker, text: l.text, kana: kana[i].text })) });
   nat.forEach(function (l) {
     total++; allChars += l.text.length;
-    const key = l.speaker + '|' + (l.speaker === 'M' ? man : '') + '|' + l.text;
+    const key = l.speaker + '|' + (l.speaker === 'M' ? man : l.speaker === 'F' ? woman : '') + '|' + l.text;
     if (!clips.has(key)) { clips.add(key); chars += l.text.length; }
   });
 });
-Object.keys(assign).forEach(id => { if (!tracks.some(t => t.id === id)) errors.push(id + ': assignment for unknown track'); });
+['M', 'F'].forEach(r => Object.keys(A[r].assign).forEach(id => { if (!tracks.some(t => t.id === id)) errors.push(id + ': ' + r + ' assignment for unknown track'); }));
 if (errors.length) { console.error(errors.join('\n')); process.exit(1); }
 
 fs.writeFileSync(path.join(__dirname, 'audio', 'tracks.json'),
   JSON.stringify({ generatedFrom: 'catalog', tracks }, null, 1) + '\n');
-const dist = {};
-tracks.forEach(t => { if (t.man) dist[t.man] = (dist[t.man] || 0) + 1; });
+const dist = {}, wdist = {};
+tracks.forEach(t => { if (t.man) dist[t.man] = (dist[t.man] || 0) + 1; if (t.woman) wdist[t.woman] = (wdist[t.woman] || 0) + 1; });
 console.log('tracks ' + tracks.length + ', lines ' + total + ', unique clips ' + clips.size + ', total chars ' + allChars + ', unique chars ' + chars);
-console.log('man archetypes ' + JSON.stringify(dist));
+console.log('man archetypes ' + JSON.stringify(dist) + ', woman archetypes ' + JSON.stringify(wdist));
