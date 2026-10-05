@@ -717,6 +717,8 @@ function speakClips(lines, opts) {
         if (ok) timer = setTimeout(function () { play(j + 1); }, gap); else fail(j);
       };
       cur = a;
+      a.playbackRate = window._ttsRate || 0.85; // 1:1 with the setting; clips are rendered at natural speed (1×)
+      a.preservesPitch = true;
       a.onended = function () { end(true); };
       a.onerror = function () { end(false); };
       var p = a.play();
