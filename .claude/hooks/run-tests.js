@@ -53,6 +53,7 @@ for (const lv of fs.readdirSync(dataDir).filter(function (f) { return fs.statSyn
 }
 // Mirrors the <script src> order in index.html after data/
 var appFiles = [
+  path.join("audio", "manifest.js"),
   "lib.js",
   "store.js",
   "app-helpers.js",
@@ -1243,6 +1244,103 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
   });
 }());
 
+// ── Listening audio: clips (audio/manifest.js) and speakScript playback ──────
+(function () {
+  var audioTool = require(path.join(projectDir, "tools", "build-audio-manifest.js"));
+
+  test("audio: every tracks.json line maps (sha1 of clipKey) to its manifest clip and the mp3 exists", function (a) {
+    // On failure: a transcript or archetype changed without re-rendering. See tools/audio/README.md.
+    var errs = audioTool.check(projectDir, AUDIO_MANIFEST);
+    a.deepEqual(errs, [], "audio out of date, re-render and rerun tools/build-audio-manifest.js (tools/audio/README.md)");
+  });
+
+  test("sw.js: audio mp3s are runtime-cached, never precached; no mp3 is missed by RUNTIME_ONLY", function (a) {
+    var sw = require(path.join(projectDir, "tools", "build-sw.js"));
+    var built = sw.build(projectDir);
+    var mp3 = fs.readdirSync(path.join(projectDir, "audio")).filter(function (f) { return /\.mp3$/.test(f); }).map(function (f) { return "audio/" + f; });
+    a.ok(mp3.length > 0, "clips on disk");
+    a.deepEqual(mp3.filter(function (u) { return !sw.RUNTIME_ONLY.test(u); }), [], "every clip matches RUNTIME_ONLY");
+    a.deepEqual(built.files.filter(function (u) { return sw.RUNTIME_ONLY.test(u); }), [], "no clip precached");
+    a.ok(built.files.indexOf("audio/manifest.js") >= 0, "audio/manifest.js precached");
+    a.ok(/AUDIO_CACHE/.test(built.source) && /k !== CACHE && k !== AUDIO_CACHE/.test(built.source), "activate keeps the audio cache");
+  });
+
+  function clipEnv() {
+    var env = { played: [], spoken: [], ended: 0 };
+    env.orig = { Audio: global.Audio, location: global.location, ss: window.speechSynthesis, utt: global.SpeechSynthesisUtterance };
+    global.location = { protocol: "file:" };
+    global.Audio = function (url) {
+      var self = this;
+      this.url = url;
+      this.pause = function () { this.paused = true; };
+      this.play = function () {
+        env.played.push(url);
+        setTimeout(function () {
+          if (self.paused) return;
+          if (env.failOn && env.failOn(url)) { if (self.onerror) self.onerror(); } else if (self.onended) self.onended();
+        }, 0);
+        return Promise.resolve();
+      };
+    };
+    window.speechSynthesis = { getVoices: function () { return []; }, cancel: function () {}, speak: function (u) { env.spoken.push(u.text); setTimeout(function () { if (u.onend) u.onend(); }, 0); } };
+    global.SpeechSynthesisUtterance = function (text) { this.text = text; };
+    env.restore = function () { global.Audio = env.orig.Audio; global.location = env.orig.location; window.speechSynthesis = env.orig.ss; global.SpeechSynthesisUtterance = env.orig.utt; };
+    return env;
+  }
+  var CLIP_LINES = [{ speaker: "N", text: "あ", clip: "a.mp3" }, { speaker: "M", text: "い", clip: "b.mp3" }, { speaker: "F", text: "う", clip: "c.mp3" }];
+  // poll (a busy event loop makes fixed sleeps race the 0 ms timer chain)
+  var until = function (cond) {
+    return new Promise(function (r) { var n = 0; (function tick() { if (cond() || ++n > 400) r(); else setTimeout(tick, 5); }());});
+  };
+  var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+
+  testAsync("speakScript: lines with clips play the mp3s in order, then onEnd", function (a) {
+    var env = clipEnv();
+    speakScript(CLIP_LINES, { pause: 0, onEnd: function () { env.ended++; } });
+    return until(function () { return env.ended; }).then(function () {
+      a.deepEqual(env.played, ["audio/a.mp3", "audio/b.mp3", "audio/c.mp3"], "clips in order");
+      a.equal(env.ended, 1, "onEnd once");
+      a.deepEqual(env.spoken, [], "browser voice unused");
+    }).then(env.restore, function (e) { env.restore(); throw e; });
+  });
+
+  testAsync("speakScript: a failing clip hands the rest (from that line) to the browser voice", function (a) {
+    var env = clipEnv();
+    env.failOn = function (u) { return u === "audio/b.mp3"; };
+    speakScript(CLIP_LINES, { pause: 0, onEnd: function () { env.ended++; } });
+    return until(function () { return env.ended; }).then(function () {
+      a.deepEqual(env.played, ["audio/a.mp3", "audio/b.mp3"], "stopped at the failed clip");
+      a.deepEqual(env.spoken, ["い", "う"], "remaining lines spoken");
+      a.equal(env.ended, 1, "onEnd once, after the voice");
+    }).then(env.restore, function (e) { env.restore(); throw e; });
+  });
+
+  testAsync("speakScript: first clip failing falls back for the whole script; stop() ends it silently", function (a) {
+    var env = clipEnv();
+    env.failOn = function () { return true; };
+    speakScript(CLIP_LINES, { pause: 0, onEnd: function () { env.ended++; } });
+    return until(function () { return env.spoken.length === 3; }).then(function () {
+      a.deepEqual(env.spoken, ["あ", "い", "う"], "whole script by voice");
+      env.failOn = null; env.spoken = []; env.played = []; env.ended = 0;
+      var stop = speakScript(CLIP_LINES, { pause: 5, onEnd: function () { env.ended++; } });
+      return until(function () { return env.played.length; }).then(function () { stop(); return wait(40); });
+    }).then(function () {
+      a.equal(env.ended, 0, "no onEnd after stop()");
+      a.ok(env.played.length < 3, "stopped before the last clip");
+    }).then(env.restore, function (e) { env.restore(); throw e; });
+  });
+
+  testAsync("speakScript: lines without clips keep the browser voice path", function (a) {
+    var env = clipEnv();
+    speakScript([{ speaker: "N", text: "あ" }, { speaker: "M", text: "い", clip: "b.mp3" }], { pause: 0, onEnd: function () { env.ended++; } });
+    return until(function () { return env.ended; }).then(function () {
+      a.deepEqual(env.played, [], "no clip played");
+      a.deepEqual(env.spoken, ["あ", "い"], "voice speaks both");
+      a.equal(env.ended, 1);
+    }).then(env.restore, function (e) { env.restore(); throw e; });
+  });
+}());
+
 // ── PWA: sw.js precache list (tools/build-sw.js) ──────────────────────────────
 (function () {
   var sw = require(path.join(projectDir, "tools", "build-sw.js"));
@@ -1258,7 +1356,7 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     var loaded = [];
     html.replace(/<(?:script[^>]*\ssrc|link[^>]*\shref)="([^"]+)"/g, function (_, u) { loaded.push(u); });
     a.deepEqual(loaded.filter(function (u) { return built.files.indexOf(u) < 0; }), [], "loaded by index.html but not precached");
-    var shipped = ["data", "components", "vendor"].reduce(function (acc, d) { return acc.concat(walkJs(d)); }, [])
+    var shipped = ["data", "components", "vendor", "audio"].reduce(function (acc, d) { return acc.concat(walkJs(d)); }, [])
       .concat(["lib.js", "store.js", "app-helpers.js", "sfx.js", "app.js", "sw-register.js", "styles.css"]);
     a.deepEqual(shipped.filter(function (u) { return built.files.indexOf(u) < 0; }), [], "on disk but not in the list (add a <script> tag to index.html)");
     ["index.html", "manifest.webmanifest", "kanji-svg/strokes.js", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png"].forEach(function (u) {

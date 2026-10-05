@@ -24,6 +24,7 @@
   Load order matters — no bundler resolves this automatically:
   1. data/catalog.js (declares CATALOG { items, add } + PLAN = [])
   2. data/<level>/*.js (CATALOG.add([...]) item files + plan.js PLAN.push(...); any order)
+     audio/manifest.js (AUDIO_MANIFEST: pre-rendered listening clips; read by lib.js listeningScript at call time)
   3. lib.js (pure helpers + Babel runtime helpers; reads CATALOG/PLAN when called, and once at load for ACHIEVEMENTS)
   4. store.js (Store: PouchDB-backed persistence for synced learning data; uses lib.js)
   5. app-helpers.js (t/tRuby/speak/icons/stroke-order fetch; uses lib.js levelRank)
@@ -45,6 +46,7 @@
 <script src="data/n5/read-words.js"></script>
 <script src="data/n5/sentences.js"></script>
 <script src="data/n5/vocab.js"></script>
+<script src="audio/manifest.js"></script>
 <script src="lib.js"></script>
 <script src="store.js"></script>
 <script src="app-helpers.js"></script>

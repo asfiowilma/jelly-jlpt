@@ -140,4 +140,30 @@ QUnit.module('listening', function () {
       if (!origU) delete G.SpeechSynthesisUtterance;
     });
   });
+
+  QUnit.test('clips: every script line and spoken option carries its pre-rendered clip', function (assert) {
+    if (typeof AUDIO_MANIFEST === 'undefined') { assert.ok(true, 'no manifest loaded: speech only'); return; }
+    var bad = [];
+    listeningFor('N5').forEach(function (it) {
+      var files = AUDIO_MANIFEST.tracks[it.id], q = listenQuestion(it, {});
+      if (!files) { bad.push(it.id + ': no track'); return; }
+      if (q.script.length !== files.length) bad.push(it.id + ': ' + q.script.length + ' lines, ' + files.length + ' clips');
+      if (!q.script.every(function (l, j) { return l.clip === files[j]; })) bad.push(it.id + ': script clips differ from manifest order');
+      if (q.spokenOptions && !q.optionSpeech.every(function (o, i) { return o.clip === q.script[q.script.length - 2 * (q.optionSpeech.length - i) + 1].clip; })) bad.push(it.id + ': optionSpeech clip');
+    });
+    assert.deepEqual(bad, [], 'all tracks covered');
+  });
+
+  QUnit.test('clips: a custom option order moves option clips, number clips stay in their slot', function (assert) {
+    if (typeof AUDIO_MANIFEST === 'undefined') { assert.ok(true, 'no manifest loaded'); return; }
+    var quick = listeningFor('N5', 'quick')[0], files = AUDIO_MANIFEST.tracks[quick.id];
+    var base = quick.lines.length + (quick.question ? 1 : 0);
+    var s = listeningScript(quick, [2, 0, 1]);
+    assert.deepEqual(s.slice(0, base).map(function (l) { return l.clip; }), files.slice(0, base), 'frame unchanged');
+    assert.deepEqual([s[base].clip, s[base + 2].clip, s[base + 4].clip], [files[base], files[base + 2], files[base + 4]], 'number clips stay at their slot');
+    assert.deepEqual([s[base + 1].clip, s[base + 3].clip, s[base + 5].clip], [files[base + 5], files[base + 1], files[base + 3]], 'option clips follow the option');
+    assert.strictEqual(s[base + 1].text, speechText(quick.options[2]), 'and the text agrees');
+    var task = listeningFor('N5', 'task')[0];
+    assert.deepEqual(listeningScript(task).map(function (l) { return l.clip; }), AUDIO_MANIFEST.tracks[task.id], 'task: identity mapping');
+  });
 });

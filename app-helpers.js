@@ -246,6 +246,7 @@ var UI_STRINGS = {
   cred_tatoeba:      { en: 'example sentences', ja: '例文' },
   cred_wordlist:     { en: 'JLPT word list',    ja: 'JLPT単語リスト' },
   cred_kenney:       { en: 'sound effects',     ja: '効果音' },
+  cred_qwen3tts:     { en: 'listening audio (Qwen3-TTS-12Hz-1.7B CustomVoice, VoiceDesign, Base)', ja: '聴解の音声' },
   cred_dicebear:     { en: 'achievement stamp icons (identicon)', ja: '実績スタンプのアイコン' },
   cred_react:        { en: 'UI library',        ja: 'UIライブラリ' },
   cred_pouchdb:      { en: 'local storage and sync', ja: 'ローカル保存と同期' },
@@ -607,6 +608,7 @@ function speak(text) {
   if (!window.speechSynthesis) return;
   if (/[㐀-鿿]/.test(text) && typeof console !== 'undefined') console.warn('speak(): kanji in speech text, pass kana:', text);
   _scriptRun++; // stops a playing script (speakScript)
+  if (_clipStop) _clipStop();
   window.speechSynthesis.cancel();
   var doSpeak = function() {
     var u = new SpeechSynthesisUtterance(text);
@@ -629,9 +631,14 @@ function speak(text) {
 // is an audible gap), a short pause after each line (opts.pause ms, default 150). opts.onEnd fires after the last line. Returns stop().
 // A newer speakScript or speak() call stops this one (the run counter), so cancel()'s error
 // event on the old utterance can't start its next line.
-var _scriptRun = 0, _scriptUtterances = [], SPEECH_CANCEL_GAP = 120, _scriptBusy = false;
+var _scriptRun = 0, _scriptUtterances = [], SPEECH_CANCEL_GAP = 120, _scriptBusy = false, _clipStop = null;
 function speakScript(lines, opts) {
+  if (_clipStop) _clipStop();
   opts = opts || {};
+  var clipped = lines.length && typeof Audio !== 'undefined' && lines.every(function (l) { return l.clip; });
+  return clipped ? speakClips(lines, opts) : speakTTS(lines, opts);
+}
+function speakTTS(lines, opts) {
   var ss = window.speechSynthesis, run = ++_scriptRun, timer = null;
   if (!ss || typeof SpeechSynthesisUtterance === 'undefined') return function () {};
   var busy = ss.speaking || ss.pending || _scriptBusy; // _scriptBusy: stop() just cancelled a script, whatever `speaking` says by now
@@ -663,6 +670,66 @@ function speakScript(lines, opts) {
   return function stop() {
     clearTimeout(timer);
     if (run === _scriptRun) { _scriptRun++; ss.cancel(); }
+  };
+}
+// Pre-rendered clips (audio/<file>.mp3, listed by audio/manifest.js; lines carry .clip). Played in
+// order with LISTEN_GAP_MS between lines (opts.pause overrides); the next clip is fetched while one
+// plays. file:// plays the URL directly; http(s) fetches the whole file to a blob (the service
+// worker caches whole files, Safari never sends range requests). A clip that cannot load or play
+// hands the rest of the script (that line on) to speakTTS, so the learner still hears something.
+var LISTEN_GAP_MS = 600;
+function loadClip(name) {
+  var url = 'audio/' + name;
+  if (typeof location !== 'undefined' && location.protocol === 'file:') return Promise.resolve({ audio: new Audio(url) });
+  return fetch(url).then(function (r) { if (!r.ok) throw new Error(r.status); return r.blob(); }).then(function (b) {
+    var o = URL.createObjectURL(b);
+    return { audio: new Audio(o), revoke: function () { URL.revokeObjectURL(o); } };
+  });
+}
+function speakClips(lines, opts) {
+  var run = ++_scriptRun, gap = opts.pause == null ? LISTEN_GAP_MS : opts.pause, timer = null, cur = null, fb = null, loads = [];
+  var alive = function () { return run === _scriptRun; };
+  var load = function (j) { if (j < lines.length && !loads[j]) loads[j] = loadClip(lines[j].clip); return loads[j]; };
+  var halt = function () {
+    clearTimeout(timer);
+    if (cur) { cur.onended = cur.onerror = null; cur.pause(); cur = null; }
+    loads.forEach(function (p) { if (p) p.then(function (c) { if (c.revoke) c.revoke(); }, function () {}); });
+    loads = [];
+    if (_clipStop === halt) _clipStop = null;
+  };
+  var fail = function (j) {
+    halt();
+    if (window.speechSynthesis && typeof SpeechSynthesisUtterance !== 'undefined') fb = speakTTS(lines.slice(j), opts);
+    else if (opts.onEnd) opts.onEnd();
+  };
+  var play = function (j) {
+    if (!alive()) return;
+    if (j >= lines.length) { halt(); if (opts.onEnd) opts.onEnd(); return; }
+    load(j).then(function (c) {
+      if (!alive()) return;
+      load(j + 1);
+      var a = c.audio, done = false;
+      var end = function (ok) {
+        if (done || !alive()) return;
+        done = true; cur = null;
+        if (c.revoke) c.revoke();
+        loads[j] = null;
+        if (ok) timer = setTimeout(function () { play(j + 1); }, gap); else fail(j);
+      };
+      cur = a;
+      a.onended = function () { end(true); };
+      a.onerror = function () { end(false); };
+      var p = a.play();
+      if (p && p.catch) p.catch(function () { end(false); });
+    }, function () { if (alive()) fail(j); });
+  };
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  _clipStop = halt;
+  play(0);
+  return function stop() {
+    halt();
+    if (alive()) _scriptRun++;
+    if (fb) fb();
   };
 }
 // jaVoiceStatus(settled): 'ok' (a Japanese voice), 'none', or 'pending' while the voice list is

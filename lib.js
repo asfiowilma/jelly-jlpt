@@ -1535,7 +1535,7 @@ function readingQuestion(p, qi, taughtKanji, order) {
 
 // ── Listening (ticket 17) ───────────────────────────────────────────────────
 // Items: data/<lvl>/listening.js (format task | point | utterance | quick). Audio is the
-// browser's speech synthesis (app-helpers.js speakScript); the pure parts live here.
+// pre-rendered clips of audio/manifest.js when present, else the browser's speech synthesis (app-helpers.js speakScript); the pure parts live here.
 var LISTEN_PROMPTS = {
   task: 'Listen, then answer the question.',
   point: 'Listen, then answer the question.',
@@ -1565,11 +1565,28 @@ function listeningScript(it, order) {
   var say = function (speaker, s) { return { speaker: speaker, text: speechText(s) }; };
   var lines = it.lines.map(function (l) { return say(l.speaker, l.furigana); });
   var q = it.question && say('N', it.question);
-  if (!LISTEN_SPOKEN_OPTIONS[it.format]) return [lines[0], q].concat(lines.slice(1), [q]);
-  var opts = [].concat.apply([], order.map(function (i, n) {
+  var seq;
+  if (!LISTEN_SPOKEN_OPTIONS[it.format]) seq = [lines[0], q].concat(lines.slice(1), [q]);
+  else seq = lines.concat(q ? [q] : [], [].concat.apply([], order.map(function (i, n) {
     return [{ speaker: 'N', text: LISTEN_NUMBERS[n] }, say(it.optionSpeaker, it.options[i])];
-  }));
-  return lines.concat(q ? [q] : [], opts);
+  })));
+  // Pre-rendered audio (audio/manifest.js, authored order): clips[j] is the clip of authored slot j.
+  // A spoken option's clip follows the option (authored index), its number clip stays at its slot.
+  var clips = listenClips(it);
+  if (clips) {
+    var base = lines.length + (q ? 1 : 0);
+    seq = seq.map(function (l, j) { // copies: the question object appears twice
+      var k = j - base, c = { speaker: l.speaker, text: l.text };
+      c.clip = clips[k >= 0 && k % 2 === 1 ? base + 2 * order[(k - 1) / 2] + 1 : j];
+      return c;
+    });
+  }
+  return seq;
+}
+// listenClips(item): the track's clip file names in authored order, or null (no manifest / track).
+function listenClips(it) {
+  var c = typeof AUDIO_MANIFEST !== 'undefined' && AUDIO_MANIFEST.tracks[it.id];
+  return c || null;
 }
 
 // listenQuestion(item, taughtKanji, opts): one MC 'listen_dialog' question. lines / questionParts /
@@ -1587,7 +1604,11 @@ function listenQuestion(it, taughtKanji, opts) {
     questionParts: it.question ? ruby(it.question) : null,
     options: order.map(function (i) { return text(it.options[i]); }),
     optionParts: order.map(function (i) { return ruby(it.options[i]); }),
-    optionSpeech: order.map(function (i) { return { speaker: it.optionSpeaker, text: speechText(it.options[i]) }; }),
+    optionSpeech: order.map(function (i, n) {
+      var l = { speaker: it.optionSpeaker, text: speechText(it.options[i]) }, c = listenClips(it);
+      if (c && LISTEN_SPOKEN_OPTIONS[it.format]) l.clip = c[it.lines.length + (it.question ? 1 : 0) + 2 * i + 1];
+      return l;
+    }),
     correct: order.indexOf(it.answer), en: it.en, explain: it.explain,
     maxPlays: opts && opts.mock ? LISTEN_MOCK_PLAYS : 0,
     itemId: it.id, form: 'listening', recall: false };
