@@ -43,7 +43,7 @@ function exPartsEl(ex, parts, st) {
     }
     if (ex.type === 'order' && /＿/.test(p.t)) {
       return h("span", { key: i, className: "qz-slots" }, p.t.trim().split(' ').map(function (slot, k) {
-        if (slot.indexOf('★') < 0) return h("span", { key: k, className: "qz-slot" }, k + 1);
+        if (slot.indexOf('★') < 0) return h("span", { key: k, className: "qz-slot" }, "＿");
         return h("span", { key: k, className: "qz-slot star" + (chosen !== null ? ' f' : '') + tone },
           chosen === null ? '★' : ex.optionParts ? exPartsEl(ex, ex.optionParts[chosen], st) : ex.options[chosen]);
       }));
@@ -112,9 +112,10 @@ function qzTop(h, o) {
   return h("div", { className: "qz-top" },
     h("button", { className: "qz-x", 'aria-label': o.xLabel, onClick: o.onX }, icon('x')),
     h("div", {
-      className: "qz-prog", role: "progressbar", 'aria-label': o.progLabel,
+      className: "qz-prog" + (o.fill != null ? " dual" : ""), role: "progressbar", 'aria-label': o.progLabel,
       'aria-valuemin': 0, 'aria-valuemax': o.segs.length, 'aria-valuenow': o.now
     }, o.segs.map(function (s, i) { return h("i", { key: i, className: "qz-seg" + (s ? ' ' + s : '') }); })),
+    o.fill != null && h("div", { className: "qz-bar", 'aria-hidden': "true" }, h("i", { style: { width: o.fill + '%' } })),
     h("div", { className: "qz-meta" }, o.meta));
 }
 
@@ -199,7 +200,7 @@ function qzKit(h, ex, st) {
               className: optClass(i), lang: "ja", disabled: revealed, 'aria-pressed': !revealed && pick === i,
               'aria-label': !revealed ? "Choose reply " + (i + 1) : undefined, onClick: function () { st.stop(); st.onPick(i); }
             }, h("kbd", null, i + 1), h("span", null, revealed ? partsEl(ex.optionParts[i]) : "Reply " + (i + 1))));
-        })), !revealed && h("p", { key: "hint", className: "qz-hint", lang: "en" }, "The replies show after you answer.")]
+        })), !revealed && (pick === null || pick === undefined) && h("p", { key: "hint", className: "qz-hint", lang: "en" }, st.replyHint || "The replies show after you answer.")]
         : optionsList();
       return { wide: false, main: [promptEl,
         h("div", { key: "player", className: "qz-player" },

@@ -672,7 +672,12 @@ body.quiz-open{overflow:hidden}
 .qz-timer svg{width:16px;height:16px}
 .qz-again{font-size:0.72rem;font-weight:600;border:1px solid var(--border);border-radius:99px;padding:1px 8px}
 /* mock exam on the quiz layer: no right / wrong colours, answered = accent, flagged = warn */
-.qz-seg.ans{background:var(--accent)}
+.qz-seg.ans{background:var(--accent-fg)}
+.qz-prog.dual .qz-seg{box-shadow:inset 0 0 0 1px var(--border)}
+.qz-prog.dual .qz-seg.now{background:color-mix(in srgb,var(--accent-fg) 45%,var(--surface2))}
+.qz-bar{display:none}
+.ql:focus{outline:none}
+@media(max-width:600px){.qz-prog.dual{display:none}.qz-bar{display:block;flex:1;height:6px;border-radius:99px;background:var(--surface2);box-shadow:inset 0 0 0 1px var(--border);overflow:hidden}.qz-bar i{display:block;height:100%;background:var(--accent-fg);transition:width .25s}}
 .qz-seg.flag{box-shadow:0 -3px 0 var(--warn)}
 .qz-qlist{border:1px solid var(--border);border-radius:99px;background:transparent;color:var(--text);min-height:36px;padding:0 12px;font-size:0.85rem;font-variant-numeric:tabular-nums}
 .qz-qlist:hover{border-color:var(--muted)}
@@ -774,6 +779,7 @@ button.qz-qn{font-size:0.95rem}
 .qz-passage{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin:14px 0;font-size:1.2rem;line-height:2.1;white-space:pre-line}
 .qz-passage rt{font-size:0.55em;color:var(--accent-fg)}
 .qz-split .qz-passage{margin-top:8px}
+@media(max-width:760px){.qz-split .qz-passage{max-height:36vh;overflow:auto}.qz-split>div:first-child::after{content:"Question below ↓";display:block;text-align:center;font-size:0.75rem;color:var(--muted)}}
 .qz-split .qz-readq{font-size:1.15rem;line-height:1.9;text-align:left;padding:0 0 12px}
 
 /* the dock: Skip + Check, then feedback + Continue */

@@ -213,6 +213,18 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     a.ok(units.some(function (u) { return u.kind === "review"; }), "a review unit is rendered");
   });
 
+  // Ticket 50: Today / Settings showed raw keys (pace_standard_n, set_grp_study ...) because t() had no entry.
+  test("UI strings: every literal L('key') / t('key') in the app has an entry, and so do the dynamic pace / hint keys", function (a) {
+    var missing = {};
+    ["app.js"].concat(fs.readdirSync(path.join(projectDir, "components")).map(function (f) { return "components/" + f; })).forEach(function (f) {
+      var src = fs.readFileSync(path.join(projectDir, f), "utf8");
+      src.replace(/\b(?:L|t)\(\s*["'](\w+)["']/g, function (_, k) { if (!/_$/.test(k) && !UI_STRINGS[k]) missing[k] = f; return _; });
+    });
+    PACE_MODES.forEach(function (m) { ["_n", "_h"].forEach(function (s) { if (!UI_STRINGS[m.key + s]) missing[m.key + s] = "pace"; }); });
+    ["set_lang_h_auto", "set_lang_h_en", "set_lang_h_ja", "set_furi_h_auto", "set_furi_h_true", "set_furi_h_false", "set_grp_study", "set_grp_look", "set_grp_data", "set_grp_about"].forEach(function (k) { if (!UI_STRINGS[k]) missing[k] = "settings"; });
+    a.deepEqual(Object.keys(missing), [], "missing UI strings");
+  });
+
   test("React render: PrepGuide() renders every prep and mock guide", function (a) {
     var g = units.filter(function (u) { return u.guide; });
     a.equal(g.length, 7, "seven guided units");

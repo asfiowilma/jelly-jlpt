@@ -315,7 +315,7 @@ function MockExam(props) {
   };
   // No feedback in a mock: an option is only picked (revealed stays false), nothing is checked.
   var kit = qzKit(ce, ex, { lv: mock.level, pick: chosen, revealed: false, selected: null, tone: '', onPick: choose, stop: stopAudio,
-    plays: usedPlays, speaking: speaking, play: play, voiceStatus: 'ok', showEarly: false, onEarly: function () {} });
+    plays: usedPlays, speaking: speaking, play: play, voiceStatus: 'ok', replyHint: "The reply texts show in your results.", showEarly: false, onEarly: function () {} });
   var c = kit.choice();
   var sheetEl = sheet && ce("div", { className: "qz-scrim qz-sheet-wrap", onClick: function (e) { if (e.target === e.currentTarget) setSheet(false); } },
     ce("div", { className: "qz-sheet", role: "dialog", 'aria-label': "Questions in this part" },
@@ -331,7 +331,7 @@ function MockExam(props) {
       ce("p", { className: "qz-sheet-key" }, ce("i", { className: "qz-qn ans" }), " answered ", ce("i", { className: "qz-qn flag" }), " flagged ", ce("i", { className: "qz-qn now" }), " this one"),
       ce("button", { className: "qz-btn qz-sheet-end", onClick: finish }, finLabel)));
   return qzLayer(ce, shell, { label: mock.title, wide: c.wide, overlay: quitDialog || finishDialog || sheetEl,
-    top: qzTop(ce, { xLabel: "Quit the test", onX: function () { setQuitting(true); }, progLabel: "Questions answered", now: nAns,
+    top: qzTop(ce, { xLabel: "Quit the test", onX: function () { setQuitting(true); }, progLabel: "Questions answered", now: nAns, fill: Math.round(nAns / S.questions.length * 100),
       segs: S.questions.map(function (_, i) { return (i === cur ? 'now' : answers[S.key][i] !== null ? 'ans' : '') + (isFlagged(i) ? ' flag' : ''); }),
       meta: [
         ce("button", { key: "list", className: "qz-qlist", 'aria-haspopup': "dialog", onClick: function () { setSheet(true); } },
