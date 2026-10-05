@@ -321,7 +321,7 @@ function MockExam(props) {
     else if (e.key === 'Enter' && !last && !e.isComposing && !(e.target && e.target.tagName === 'BUTTON' && !e.target.classList.contains('qz-opt'))) { e.preventDefault(); go(cur + 1); } // never finishes the part
   };
   // No feedback in a mock: an option is only picked (revealed stays false), nothing is checked.
-  var kit = qzKit(ce, ex, { lv: mock.level, pick: chosen, revealed: false, selected: null, tone: '', onPick: choose, stop: stopAudio,
+  var kit = qzKit(ce, ex, { lv: mock.level, pick: chosen, revealed: false, selected: null, tone: '', onPick: choose,
     plays: usedPlays, speaking: speaking, play: play, voiceStatus: 'ok', replyHint: "The reply texts show in your results.", showEarly: false, onEarly: function () {} });
   var c = kit.choice();
   var sheetEl = sheet && ce("div", { className: "qz-scrim qz-sheet-wrap", onClick: function (e) { if (e.target === e.currentTarget) setSheet(false); } },

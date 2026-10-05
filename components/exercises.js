@@ -313,8 +313,7 @@ function Exercises(_ref9) {
     var other = isType && otherReading(ex, resp);
     if (other) return setNotice(otherReadingNote(ex, other)); // not a miss: say which word, try again
     setNotice(null);
-    if (isOpt) setSelected(pick);
-    stopAudio();
+    if (isOpt) setSelected(pick); // the track keeps playing; leaving the question stops it
     setRevealed(true);
     advance(answerIsRight(ex, resp));
   };
@@ -349,7 +348,7 @@ function Exercises(_ref9) {
     }
     if (tag === 'INPUT' || tag === 'SELECT') return;
     var n = /^[1-9]$/.test(e.key) ? Number(e.key) - 1 : -1;
-    if (isOpt && !revealed && n >= 0 && n < ex.options.length) { stopAudio(); setPick(n); }
+    if (isOpt && !revealed && n >= 0 && n < ex.options.length) setPick(n); // picking never cuts a playing listening track
   };
 
   // Choices, furigana and the listen button render in quiz-shell.js (qzKit), shared with the mock.
@@ -362,7 +361,7 @@ function Exercises(_ref9) {
     stopRef.current = speakScript(lines, { onEnd: function () { setSpeaking(false); } });
   };
   var kit = qzKit(h, ex, {
-    lv: lv, pick: pick, revealed: revealed, selected: selected, tone: tone, onPick: setPick, stop: stopAudio,
+    lv: lv, pick: pick, revealed: revealed, selected: selected, tone: tone, onPick: setPick,
     plays: plays, speaking: speaking, play: play, voiceStatus: voiceStatus, showEarly: showEarly, onEarly: function () { setShowEarly(true); } });
   var promptEl = kit.promptEl, questionEl = kit.questionEl;
   var main, wide = false, extra = null;

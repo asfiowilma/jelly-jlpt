@@ -139,7 +139,7 @@ function qzLayer(h, shell, o) {
 // qzKit(h, ex, st): renders one choice question (options, furigana, listen button) for any
 // caller. st = {
 //   lv, pick (chosen option, not checked), revealed, selected (checked option, -1 skipped), tone,
-//   onPick(i), plays (used), speaking, play(lines), voiceStatus, showEarly, onEarly(), stop() }
+//   onPick(i), plays (used), speaking, play(lines), voiceStatus, showEarly, onEarly() }
 // → { partsEl, promptEl, questionEl(), optClass(i), optionsList(), choice() → { main, wide } }
 // choice() covers the three choice shapes: a listening dialogue, a reading passage, plain options.
 // Typing, reorder and pair questions stay with the quiz and use partsEl / promptEl / questionEl.
@@ -173,7 +173,7 @@ function qzKit(h, ex, st) {
     return h("div", { key: "opts", className: "qz-opts " + (long ? 'g1' : 'g2') }, ex.options.map(function (opt, i) {
       return h("button", {
         key: i, className: optClass(i), disabled: revealed, 'aria-pressed': !revealed && pick === i,
-        lang: QZ_JA.test(opt) ? "ja" : "en", onClick: function () { st.stop(); st.onPick(i); }
+        lang: QZ_JA.test(opt) ? "ja" : "en", onClick: function () { st.onPick(i); }
       }, h("kbd", null, i + 1), h("span", null, ex.optionParts ? partsEl(ex.optionParts[i]) : opt));
     }));
   };
@@ -198,7 +198,7 @@ function qzKit(h, ex, st) {
             }, icon('speaker')),
             h("button", {
               className: optClass(i), lang: "ja", disabled: revealed, 'aria-pressed': !revealed && pick === i,
-              'aria-label': !revealed ? "Choose reply " + (i + 1) : undefined, onClick: function () { st.stop(); st.onPick(i); }
+              'aria-label': !revealed ? "Choose reply " + (i + 1) : undefined, onClick: function () { st.onPick(i); }
             }, h("kbd", null, i + 1), h("span", null, revealed ? partsEl(ex.optionParts[i]) : "Reply " + (i + 1))));
         })), !revealed && (pick === null || pick === undefined) && h("p", { key: "hint", className: "qz-hint", lang: "en" }, st.replyHint || "The replies show after you answer.")]
         : optionsList();
