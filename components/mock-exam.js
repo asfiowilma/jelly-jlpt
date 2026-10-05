@@ -7,6 +7,11 @@
 // only for utterance / quick. No feedback until the end; then an estimated scaled score with the
 // real pass rules (mockEstimate), a table per mondai and every missed question explained.
 // The result is saved as a mock:<id>:<takenAt> doc (Store.putMock); onTaken(result) after that.
+// Parts and the between-parts screen take over the screen like the unit quiz (.ql layer, quiz-shell.js):
+// top bar, one question, a dock with Prev / Flag / Next (Finish on the last question), and a bottom
+// sheet (the "7 / 25 · 3 flagged" button) that lists the questions, answered / flagged / current, tap
+// to jump, with an early "Finish part". ✕ asks "Quit the test?" and discards the attempt (nothing saved).
+// The start screen and the results stay in the page.
 // Props: mock (catalog item), onTaken?, onClose? (shows a Back button), now? (clock, for tests),
 // showFurigana? (part names), guided? (inside a unit whose exam guide already explains the rules).
 var OFFICIAL_SAMPLES_URL = 'https://www.jlpt.jp/e/samples/sampleindex.html';
@@ -44,16 +49,22 @@ function MockExam(props) {
   var _dl = React.useState(null), deadline = _dl[0], setDeadline = _dl[1];
   var _res = React.useState(null), result = _res[0], setResult = _res[1];
   var _tick = React.useState(0), setTick = _tick[1];
+  var _sh = React.useState(false), sheet = _sh[0], setSheet = _sh[1]; // question list open
+  var _qt = React.useState(false), quitting = _qt[0], setQuitting = _qt[1]; // "Quit the test?" open
+  var _sp = React.useState(false), speaking = _sp[0], setSpeaking = _sp[1];
+  var shell = useQuizLayer(phase === 'part' || phase === 'between', quitting);
   var latest = React.useRef(null);
   latest.current = { sec: sec, answers: answers };
   var stopRef = React.useRef(null);
-  var stopAudio = function () { if (stopRef.current) stopRef.current(); stopRef.current = null; };
+  var stopAudio = function () { if (stopRef.current) stopRef.current(); stopRef.current = null; setSpeaking(false); };
   React.useEffect(function () { return stopAudio; }, [sec, cur, phase]);
 
   // endPart(secIdx, answers): lock the part; next part's start screen, or the results.
   var endPart = function (si, ans) {
     stopAudio();
     setDeadline(null);
+    setSheet(false);
+    setQuitting(false);
     if (si + 1 < sections.length) { setSec(si + 1); setCur(0); setPhase('between'); return; }
     var r = mockResult(mock, sections, ans, now());
     Store.putMock(r);
@@ -76,6 +87,13 @@ function MockExam(props) {
     setPhase('part');
     setCur(0);
     setDeadline(now() + sections[sec].seconds * 1000);
+  };
+  // Quit: the attempt is dropped (no Store.putMock), the clock stops, back to the start screen.
+  var quit = function () {
+    stopAudio();
+    setDeadline(null); setSheet(false); setQuitting(false);
+    setSec(0); setCur(0); setAnswers(blank()); setFlags({}); setPlays({});
+    setPhase('intro');
   };
   var history = (Store.snapshot().mocks || []).filter(function (m) { return m.mockId === mock.id; });
   var minutes = function (s) { return Math.round(s.seconds / 60); };
@@ -119,8 +137,15 @@ function MockExam(props) {
   }
 
   var S = sections[sec];
+  var quitDialog = quitting && qzLeaveDialog(ce, {
+    label: "Quit the test", title: "Quit the test?", text: "Nothing is saved. You will start again from the beginning.",
+    stay: "Keep going", leave: "Quit", onStay: function () { setQuitting(false); }, onLeave: quit });
   if (phase === 'between') {
-    return ce("div", { className: "mock" }, stepsEl('between'));
+    shell.keyRef.current = function (e) { if (shell.trapTab(e)) return; if (e.key === 'Escape') setQuitting(!quitting); };
+    return qzLayer(ce, shell, { label: mock.title, overlay: quitDialog,
+      top: qzTop(ce, { xLabel: "Quit the test", onX: function () { setQuitting(true); }, progLabel: "Parts done", now: sec,
+        segs: sections.map(function (_, i) { return i < sec ? 'ans' : i === sec ? 'now' : ''; }), meta: [] }),
+      main: stepsEl('between') });
   }
 
   // ── results ───────────────────────────────────────────────────────────────
@@ -178,7 +203,7 @@ function MockExam(props) {
     a[S.key][cur] = i;
     setAnswers(a);
   };
-  var go = function (i) { stopAudio(); setCur(i); };
+  var go = function (i) { stopAudio(); setCur(i); setSheet(false); };
   var usedPlays = plays[key] || 0, playsLeft = ex.maxPlays ? ex.maxPlays - usedPlays : Infinity;
   var play = function (lines) {
     if (playsLeft <= 0) return;
@@ -186,39 +211,53 @@ function MockExam(props) {
     p[key] = usedPlays + 1;
     setPlays(p);
     stopAudio();
-    stopRef.current = speakScript(lines);
+    setSpeaking(true);
+    stopRef.current = speakScript(lines, { onEnd: function () { setSpeaking(false); } });
   };
-  var unanswered = answers[S.key].filter(function (a) { return a === null; }).length;
-  return ce("div", { className: "mock" },
-    ce("div", { className: "mock-bar" },
-      ce("span", { className: "section-label" }, ce("span", { lang: "ja" }, pgText(S.nameF, props.showFurigana)), " ", S.en, ce("span", { className: "ex-count" }, cur + 1, " / ", S.questions.length)),
-      ce("span", { className: "ex-timer" + (left < 60 ? " low" : ""), role: "timer", 'aria-label': "Time left in this part" }, "⏱ ", mockClock(left))),
-    ce("div", { className: "mock-nav", role: "navigation", 'aria-label': "Questions in this part" }, S.questions.map(function (_, i) {
-      var st = (answers[S.key][i] !== null ? " answered" : "") + (flags[S.key + ':' + i] ? " flagged" : "") + (i === cur ? " now" : "");
-      return ce("button", { key: i, className: "mock-nav-btn" + st, 'aria-current': i === cur ? 'true' : undefined, onClick: function () { go(i); } }, i + 1);
-    })),
-    ce("div", { className: "exercise-box" },
-      ce("div", { className: "ex-prompt" }, ce("span", { className: "ex-count" }, mockLabel(ex.mondai)), " ", ex.prompt),
-      ex.type === 'reading' && ce("div", { className: "passage-box", lang: "ja" }, mockPartsEl(ex.passage)),
-      ex.passageParts && ce("div", { className: "passage-box", lang: "ja" }, mockPartsEl(ex.passageParts)),
-      ex.type === 'listen_dialog' ? ce("div", { className: "ex-question" },
-        ce("button", { className: "ex-listen-btn", disabled: playsLeft <= 0, onClick: function () { play(ex.script); } }, usedPlays ? "🔊 Play again" : "🔊 Play"),
-        ce("div", { className: "ex-hint" }, playsLeft > 0 ? playsLeft + (playsLeft === 1 ? " play" : " plays") + " left" : "No replays left"),
-        !ex.spokenOptions && ex.questionParts && ce("div", { className: "ex-question sentence", lang: "ja" }, mockPartsEl(ex.questionParts)))
-        : !ex.passageParts && ce("div", { className: "ex-question sentence", lang: "ja" }, ex.parts ? mockPartsEl(ex.parts) : ex.question),
-      ce("div", { className: "ex-options" }, ex.options.map(function (o, i) {
-        return ce("button", { key: i, className: "ex-option mock-option" + (chosen === i ? " selected" : ""), lang: "ja", 'aria-pressed': chosen === i,
-          onClick: function () { choose(i); } },
-          ce("span", { className: "mock-opt-n" }, i + 1), " ", ex.spokenOptions ? "" : ex.optionParts ? mockPartsEl(ex.optionParts[i]) : o);
+  var last = cur + 1 >= S.questions.length, lastPart = sec + 1 >= sections.length;
+  var isFlagged = function (i) { return !!flags[S.key + ':' + i]; };
+  var nFlag = S.questions.filter(function (_, i) { return isFlagged(i); }).length;
+  var nAns = answers[S.key].filter(function (a) { return a !== null; }).length;
+  var finish = function () { endPart(sec, answers); };
+  shell.keyRef.current = function (e) {
+    if (shell.trapTab(e)) return;
+    if (e.key === 'Escape') { if (sheet) setSheet(false); else setQuitting(!quitting); return; }
+    if (quitting || sheet) return;
+    var n = /^[1-9]$/.test(e.key) ? Number(e.key) - 1 : -1;
+    if (n >= 0 && n < ex.options.length) choose(n);
+    else if (e.key === 'ArrowLeft' && cur > 0) go(cur - 1);
+    else if (e.key === 'ArrowRight' && !last) go(cur + 1);
+  };
+  // No feedback in a mock: an option is only picked (revealed stays false), nothing is checked.
+  var kit = qzKit(ce, ex, { lv: mock.level, pick: chosen, revealed: false, selected: null, tone: '', onPick: choose, stop: stopAudio,
+    plays: usedPlays, speaking: speaking, play: play, voiceStatus: 'ok', showEarly: false, onEarly: function () {} });
+  var c = kit.choice();
+  var sheetEl = sheet && ce("div", { className: "qz-scrim qz-sheet-wrap", onClick: function (e) { if (e.target === e.currentTarget) setSheet(false); } },
+    ce("div", { className: "qz-sheet", role: "dialog", 'aria-label': "Questions in this part" },
+      ce("div", { className: "qz-sheet-h" },
+        ce("b", null, S.en, ": ", nAns, " / ", S.questions.length, " answered", nFlag ? " · " + nFlag + " flagged" : ""),
+        ce("button", { className: "qz-gb qz-sheet-x", 'aria-label': "Close the list", onClick: function () { setSheet(false); } }, icon('x'))),
+      ce("div", { className: "qz-sheet-grid" }, S.questions.map(function (_, i) {
+        var st = (answers[S.key][i] !== null ? " ans" : "") + (isFlagged(i) ? " flag" : "") + (i === cur ? " now" : "");
+        return ce("button", { key: i, className: "qz-qn" + st, 'aria-current': i === cur ? 'true' : undefined,
+          'aria-label': "Question " + (i + 1) + (answers[S.key][i] !== null ? ", answered" : "") + (isFlagged(i) ? ", flagged" : ""),
+          onClick: function () { go(i); } }, i + 1);
       })),
-      ce("div", { className: "ex-typing-row mock-actions" },
-        ce("button", { className: "ex-check-btn", disabled: cur === 0, onClick: function () { go(cur - 1); } }, "← Previous"),
-        ce("button", { className: "ex-check-btn mock-flag" + (flags[key] ? " on" : ""), 'aria-pressed': !!flags[key],
-          onClick: function () { var f = Object.assign({}, flags); f[key] = !f[key]; setFlags(f); } }, flags[key] ? "⚑ Flagged" : "⚐ Flag"),
-        cur + 1 < S.questions.length && ce("button", { className: "ex-check-btn", onClick: function () { go(cur + 1); } }, "Next →"))),
-    ce("div", { className: "mock-submit" },
-      ce("span", { className: "ex-hint" }, unanswered ? unanswered + " unanswered" : "All answered",
-        Object.keys(flags).filter(function (k) { return flags[k] && k.indexOf(S.key + ':') === 0; }).length ? " · flagged questions are marked in the list above" : ""),
-      ce("button", { className: "quiz-start-btn mock-end", onClick: function () { endPart(sec, answers); } },
-        sec + 1 < sections.length ? "Finish this part" : "Finish the test")));
+      ce("p", { className: "qz-sheet-key" }, ce("i", { className: "qz-qn ans" }), " answered ", ce("i", { className: "qz-qn flag" }), " flagged ", ce("i", { className: "qz-qn now" }), " this one"),
+      ce("button", { className: "qz-btn qz-sheet-end", onClick: finish }, nAns < S.questions.length ? "Finish " + (lastPart ? "the test" : "part") + " (" + (S.questions.length - nAns) + " unanswered)" : "Finish " + (lastPart ? "the test" : "part"))));
+  return qzLayer(ce, shell, { label: mock.title, wide: c.wide, overlay: quitDialog || sheetEl,
+    top: qzTop(ce, { xLabel: "Quit the test", onX: function () { setQuitting(true); }, progLabel: "Questions answered", now: nAns,
+      segs: S.questions.map(function (_, i) { return (i === cur ? 'now' : answers[S.key][i] !== null ? 'ans' : '') + (isFlagged(i) ? ' flag' : ''); }),
+      meta: [
+        ce("button", { key: "list", className: "qz-qlist", 'aria-haspopup': "dialog", onClick: function () { setSheet(true); } },
+          cur + 1, " / ", S.questions.length, nFlag ? " · " + nFlag + " flagged" : ""),
+        ce("span", { key: "timer", className: "qz-timer" + (left < 60 ? " low" : ""), role: "timer", 'aria-label': "Time left in this part" }, icon('clock'), mockClock(left))] }),
+    main: [ce("p", { key: "cap", className: "qz-cap" }, "Part ", sec + 1, " · ", S.en, " · ", mockLabel(ex.mondai))].concat(c.main),
+    dock: ce("div", { className: "qz-dock" }, ce("div", { className: "qz-in" },
+      ce("button", { className: "qz-gb qz-prev", disabled: cur === 0, onClick: function () { go(cur - 1); } }, "← Prev"),
+      ce("button", { className: "qz-gb qz-flag" + (flags[key] ? " on" : ""), 'aria-pressed': !!flags[key],
+        onClick: function () { var f = Object.assign({}, flags); f[key] = !f[key]; setFlags(f); } }, flags[key] ? "⚑ Flagged" : "⚑ Flag"),
+      ce("span", { className: "qz-sp" }),
+      last ? ce("button", { className: "qz-btn ok qz-finish", onClick: finish }, lastPart ? "Finish the test" : "Finish part")
+        : ce("button", { className: "qz-btn qz-nextq", onClick: function () { go(cur + 1); } }, "Next →"))) });
 }

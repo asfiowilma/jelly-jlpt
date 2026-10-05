@@ -757,31 +757,59 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     try {
       var secs = mockSections(mock), want = {};
       render();
+      var text = function (el) { return [].concat(el.children).join(""); };
+      var docs0 = Store.snapshot().mocks.length;
+      // quit: the layer opens, ✕ asks first, "Keep going" closes the dialog, "Quit" discards the attempt
       click(/quiz-start-btn/);
+      a.ok(find(/^ql$/).length === 1 && find(/qz-dock/).length === 1, "a part runs on the quiz layer with a dock");
+      click(/qz-opt( |$)/, 0);
+      click(/qz-x/);
+      a.ok(find(/qz-dlg/).length === 1, "✕ asks before quitting");
+      click(/qz-gb$/);
+      a.ok(!find(/qz-dlg/).length && find(/qz-opt( |$)/).length, "Keep going closes the dialog");
+      click(/qz-x/);
+      click(/qz-btn bad/);
+      a.ok(find(/quiz-start-btn/).length === 1 && !find(/qz-opt( |$)/).length && !find(/^ql$/).length, "quit: back on the start screen");
+      a.equal(Store.snapshot().mocks.length, docs0, "quit saves nothing");
+      a.ok(!taken, "quit is not a taken test");
+      a.equal(intervals.filter(Boolean).length, 0, "quit stops the part clock");
+      click(/quiz-start-btn/);
+      a.ok(find(/qz-opt( |$)/).every(function (o) { return o.props.className.indexOf("sel") < 0; }), "a fresh attempt starts blank");
       // part 1 (vocab): answer every question; question 2 wrong, question 3 flagged
       secs[0].questions.forEach(function (ex, i) {
-        click(/mock-nav-btn/, i);
-        click(/mock-option/, i === 1 ? (ex.correct + 1) % ex.options.length : ex.correct);
-        if (i === 2) click(/mock-flag/);
+        if (i > 0) click(/qz-nextq|qz-finish/);
+        click(/qz-opt( |$)/, i === 1 ? (ex.correct + 1) % ex.options.length : ex.correct);
+        if (i === 2) click(/qz-flag/);
       });
-      a.ok(find(/mock-nav-btn/)[2].props.className.indexOf("flagged") >= 0, "flag shows in the question list");
-      click(/mock-nav-btn/, 1);
-      a.ok(find(/mock-option/)[(secs[0].questions[1].correct + 1) % 4].props.className.indexOf("selected") >= 0, "answer kept when coming back");
-      click(/mock-end/);
-      a.ok(find(/quiz-start-btn/).length === 1 && !find(/mock-option/).length, "between parts: start screen, no questions");
+      a.ok(find(/qz-finish/).length === 1 && !find(/qz-nextq/).length, "the last question offers Finish, not Next");
+      a.ok(/ \/ .* · 1 flagged/.test(text(find(/qz-qlist/)[0])), "question list button counts flagged questions");
+      click(/qz-qlist/);
+      a.ok(find(/qz-sheet/).length && find(/qz-qn/)[2].props.className.indexOf("flag") >= 0, "flag shows in the question sheet");
+      a.ok(find(/qz-qn/)[0].props.className.indexOf("ans") >= 0 && find(/qz-qn/)[secs[0].questions.length - 1].props.className.indexOf("now") >= 0, "sheet: answered and current");
+      click(/qz-qn/, 1);
+      a.ok(!find(/qz-sheet/).length, "jumping closes the sheet");
+      a.ok(find(/qz-opt( |$)/)[(secs[0].questions[1].correct + 1) % 4].props.className.indexOf("sel") >= 0, "jump lands on the question, answer kept");
+      click(/qz-prev/);
+      click(/qz-nextq/); click(/qz-nextq/);
+      click(/qz-qlist/);
+      click(/qz-sheet-end/); // early finish from the sheet
+      a.ok(find(/quiz-start-btn/).length === 1 && !find(/qz-opt( |$)/).length && find(/^ql$/).length === 1, "between parts: layer with the start button, no questions");
       click(/quiz-start-btn/);
-      // part 2 (grammar + reading): all right
-      secs[1].questions.forEach(function (ex, i) { click(/mock-nav-btn/, i); click(/mock-option/, ex.correct); });
-      click(/mock-end/);
+      // part 2 (grammar + reading): all right, finished from the dock
+      secs[1].questions.forEach(function (ex, i) {
+        if (i > 0) click(/qz-nextq/);
+        click(/qz-opt( |$)/, ex.correct);
+      });
+      click(/qz-finish/);
       click(/quiz-start-btn/);
       // part 3 (listening): play twice (1 replay), then the button is spent; two answers, then time out
       var before3 = spoken;
-      click(/ex-listen-btn/); click(/ex-listen-btn/);
+      click(/qz-play( |$)/); click(/qz-play( |$)/);
       a.ok(spoken > before3, "the dialogue is spoken");
-      a.ok(find(/ex-listen-btn/)[0].props.disabled, "no third play");
-      click(/mock-option/, secs[2].questions[0].correct);
-      click(/mock-nav-btn/, 1);
-      click(/mock-option/, secs[2].questions[1].correct);
+      a.ok(find(/qz-play( |$)/)[0].props.disabled, "no third play");
+      click(/qz-opt( |$)/, secs[2].questions[0].correct);
+      click(/qz-nextq/);
+      click(/qz-opt( |$)/, secs[2].questions[1].correct);
       a.ok(!taken, "not finished before time is up");
       clock += secs[2].seconds * 1000 + 1;
       intervals.filter(Boolean).slice(-1)[0]();

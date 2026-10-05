@@ -581,18 +581,6 @@ rt{font-size:0.6em;color:var(--accent-fg);font-weight:400;letter-spacing:0.02em}
 .ex-timer.low{color:var(--bad);font-weight:700}
 .mock{display:flex;flex-direction:column;gap:12px}
 .mock-back{align-self:flex-start}
-.mock-bar{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.mock-bar .ex-timer{float:none;font-size:1rem}
-.mock-nav{display:flex;flex-wrap:wrap;gap:6px}
-.mock-nav-btn{min-width:34px;height:34px;border:2px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);cursor:pointer;font:inherit;font-size:0.85rem;position:relative}
-.mock-nav-btn.answered{background:color-mix(in srgb,var(--accent) 22%,var(--surface))}
-.mock-nav-btn.flagged::after{content:"⚑";position:absolute;top:-8px;right:-5px;font-size:0.7rem;color:var(--warn)}
-.mock-nav-btn.now{border-color:var(--accent)}
-.mock-option.selected{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 18%,var(--surface))}
-.mock-opt-n{display:inline-block;min-width:1.4em;font-weight:700;color:var(--muted)}
-.mock-actions{justify-content:space-between;flex-wrap:wrap}
-.mock-flag.on{border-color:var(--warn);color:var(--warn)}
-.mock-submit{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .mock-estimate{border:2px solid var(--border);border-radius:var(--radius);padding:12px 16px;background:var(--surface)}
 .mock-estimate.pass{border-color:var(--ok)}
 .mock-estimate.fail{border-color:var(--bad)}
@@ -661,6 +649,25 @@ body.quiz-open{overflow:hidden}
 .qz-timer.low{color:var(--bad)}
 .qz-timer svg{width:16px;height:16px}
 .qz-again{font-size:0.72rem;font-weight:600;border:1px solid var(--border);border-radius:99px;padding:1px 8px}
+/* mock exam on the quiz layer: no right / wrong colours, answered = accent, flagged = warn */
+.qz-seg.ans{background:var(--accent)}
+.qz-seg.flag{box-shadow:0 -3px 0 var(--warn)}
+.qz-qlist{border:1px solid var(--border);border-radius:99px;background:transparent;color:var(--text);min-height:36px;padding:0 12px;font-size:0.85rem;font-variant-numeric:tabular-nums}
+.qz-qlist:hover{border-color:var(--muted)}
+.qz-cap{font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:6px 0 10px}
+.qz-gb.on{border-color:var(--warn);color:var(--warn)}
+.qz-sheet-wrap{display:flex;align-items:flex-end;justify-content:center;padding:0}
+.qz-sheet{width:100%;max-width:640px;max-height:80%;overflow:auto;background:var(--surface);border:1px solid var(--border);border-bottom:0;border-radius:16px 16px 0 0;box-shadow:var(--shadow);padding:16px 20px calc(16px + env(safe-area-inset-bottom))}
+.qz-sheet-h{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.qz-sheet-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(48px,1fr));gap:8px}
+.qz-qn{min-height:48px;border:2px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);font-variant-numeric:tabular-nums;position:relative;display:block}
+button.qz-qn{font-size:0.95rem}
+.qz-qn.ans{background:color-mix(in srgb,var(--accent) 22%,var(--surface))}
+.qz-qn.now{border-color:var(--accent)}
+.qz-qn.flag::after{content:"⚑";position:absolute;top:-8px;right:-4px;font-size:0.75rem;color:var(--warn)}
+.qz-sheet-key{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:0.78rem;color:var(--muted);margin:12px 0}
+.qz-sheet-key .qz-qn{display:inline-block;width:18px;min-height:18px;height:18px;border-width:2px;border-radius:5px}
+.qz-sheet-end{width:100%}
 .qz-main{flex:1;overflow:auto;padding:8px 20px 28px;display:flex;flex-direction:column}
 .qz-col{flex:1 0 auto;width:100%;max-width:640px;margin:0 auto}
 .qz-col.wide{max-width:960px}
