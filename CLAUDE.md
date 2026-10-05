@@ -250,8 +250,8 @@ explicitly: `CLAUDE_PROJECT_DIR=$(pwd) node .claude/hooks/run-tests.js`.
 
 ## Commit convention
 
-[gitmoji](https://gitmoji.dev/): `<emoji> [scope?]: <imperative message>`, body only when the
-why isn't obvious. One emoji per commit. Common: ✨ feature, 🐛 fix, ♻️ refactor, 📝 docs,
+[gitmoji](https://gitmoji.dev/): `<emoji> <Imperative message>`, body only when the
+why isn't obvious. No scopes, brackets or colons in the subject. One emoji per commit. Common: ✨ feature, 🐛 fix, ♻️ refactor, 📝 docs,
 ✅ tests, 🔧 config, 🍱 assets/data, 🚑️ hotfix, 💥 breaking change.
 
 ## Agent skills
