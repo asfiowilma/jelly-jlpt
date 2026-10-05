@@ -5,7 +5,8 @@
 // mock); a finished or timed-out part can't be reopened. Inside a part: answer in any order,
 // change answers, flag questions to come back to. Listening: play + one replay, options heard
 // only for utterance / quick. No feedback until the end; then an estimated scaled score with the
-// real pass rules (mockEstimate), a table per mondai and every missed question explained.
+// real pass rules (mockEstimate) as a score slip (jelly ring, one section table), a heat grid of the
+// 14 question types, and every missed question as a collapsible row. Furigana follows the pref.
 // The result is saved as a mock:<id>:<takenAt> doc (Store.putMock); onTaken(result) after that.
 // Parts and the between-parts screen take over the screen like the unit quiz (.ql layer, quiz-shell.js):
 // top bar, one question, a dock with Prev / Flag / Next (Finish on the last question), and a bottom
@@ -18,9 +19,22 @@
 // showFurigana? (part names), guided? (inside a unit whose exam guide already explains the rules).
 var OFFICIAL_SAMPLES_URL = 'https://www.jlpt.jp/e/samples/sampleindex.html';
 
-function mockPartsEl(parts) {
+// Question type (mondai) → [name with furigana markup, English helper], in test order (results grid).
+var MONDAI_ORDER = ['kanjiYomi', 'hyouki', 'bunmyaku', 'iikae', 'gap', 'order', 'bunshou', 'short', 'mid', 'info', 'task', 'point', 'utterance', 'quick'];
+var MONDAI_NAMES = {
+  kanjiYomi: ['[漢字|かんじ][読|よ]み', 'Kanji reading'], hyouki: ['[表記|ひょうき]', 'Writing the word'],
+  bunmyaku: ['[文脈規定|ぶんみゃくきてい]', 'Word in context'], iikae: ['[言|い]い[換|か]え[類義|るいぎ]', 'Same meaning'],
+  gap: ['[文|ぶん]の[文法|ぶんぽう]1', 'Grammar: fill the blank'], order: ['[文|ぶん]の[文法|ぶんぽう]2', 'Grammar: order ★'],
+  bunshou: ['[文章|ぶんしょう]の[文法|ぶんぽう]', 'Grammar in a text'],
+  short: ['[内容理解|ないようりかい]（[短文|たんぶん]）', 'Short passages'], mid: ['[内容理解|ないようりかい]（[中文|ちゅうぶん]）', 'Medium passages'],
+  info: ['[情報検索|じょうほうけんさく]', 'Find the info'], task: ['[課題理解|かだいりかい]', 'Task listening'],
+  point: ['ポイント[理解|りかい]', 'Key-point listening'], utterance: ['[発話表現|はつわひょうげん]', 'What do you say?'],
+  quick: ['[即時応答|そくじおうとう]', 'Quick replies']
+};
+// mockPartsEl(parts, furi?): furigana parts → text / <ruby>; furi === false drops the readings.
+function mockPartsEl(parts, furi) {
   return (parts || []).map(function (p, i) {
-    var el = p.r ? React.createElement("ruby", { key: i }, p.t, React.createElement("rt", null, p.r)) : p.t;
+    var el = p.r && furi !== false ? React.createElement("ruby", { key: i }, p.t, React.createElement("rt", null, p.r)) : p.t;
     return p.u ? React.createElement("u", { key: i, className: "ex-u" }, el) : React.createElement(React.Fragment, { key: i }, el);
   });
 }
@@ -225,11 +239,23 @@ function MockExam(props) {
   // ── results ───────────────────────────────────────────────────────────────
   if (phase === 'results') {
     var practice = mockIsPractice(allMocks, result);
-    var r = result, est = r.estimate, rule = JLPT_PASS[mock.level], out = mockOutlook(r.parts, mock.level), ring = 2 * Math.PI * 60;
+    var r = result, est = r.estimate, rule = JLPT_PASS[mock.level], out = mockOutlook(r.parts, mock.level), ringLen = 2 * Math.PI * 46;
     var tone = { likely: 'pass', borderline: 'warn', unlikely: 'fail' }[out.verdict];
+    var vcls = { likely: 'ok', borderline: 'warn', unlikely: 'bad' }[out.verdict];
+    var furi = furiganaOn(Store.snapshot().furiganaPref, mock.level);
+    var jp = function (markup) { return mockPartsEl(furiganaParts(markup), furi); };
     var range = function (x) { return x[0] + '–' + x[1]; };
-    var pct = function (x) { return x[1] ? Math.round(x[0] / x[1] * 100) + '%' : '–'; };
-    var row = function (label, x) { return ce("tr", { key: label }, ce("td", null, label), ce("td", null, x[0], " / ", x[1]), ce("td", null, pct(x))); };
+    var pctN = function (x) { return x[1] ? Math.round(x[0] / x[1] * 100) : 0; };
+    var heat = function (p) { return p < 70 ? 'bad' : p < 90 ? 'warn' : 'ok'; };
+    var mark = function (okay) { return ce("span", { className: okay ? 'ok' : 'bad', 'aria-label': okay ? 'met' : 'not met' }, okay ? " ✓" : " ✗"); };
+    var subRow = function (label, x) {
+      var p = pctN(x);
+      return ce("tr", { key: label, className: "mr-sub" },
+        ce("th", { scope: "row" }, label),
+        ce("td", { className: "mr-bar-cell" }, ce("span", { className: "mr-bar", 'aria-hidden': "true" }, ce("i", { className: "t-" + heat(p), style: { width: p + '%' } }))),
+        ce("td", { className: "mr-n" }, x[0], "/", x[1]),
+        ce("td", { className: "mr-n mr-hide-s" }, x[1] ? p + '%' : '–'));
+    };
     var missed = [];
     sections.forEach(function (s) {
       s.questions.forEach(function (ex, i) {
@@ -237,51 +263,90 @@ function MockExam(props) {
         if (a !== ex.correct) missed.push({ s: s, ex: ex, i: i, a: a });
       });
     });
-    var optText = function (ex, i) { return i === null || i === undefined ? '(no answer)' : (ex.spokenOptions ? (i + 1) + '. ' : '') + ex.options[i]; };
-    return ce("div", { className: "mock", ref: resultRef, tabIndex: -1 },
+    var optText = function (ex, i) {
+      if (i === null || i === undefined) return '(no answer)';
+      var n = ex.spokenOptions ? (i + 1) + '. ' : '';
+      return ex.optionParts ? [n, mockPartsEl(ex.optionParts[i], furi)] : n + ex.options[i];
+    };
+    var qEl = function (ex) {
+      var ps = ex.parts || ex.questionParts;
+      return ps ? mockPartsEl(ps, furi) : mockQuestionText(ex);
+    };
+    var types = MONDAI_ORDER.filter(function (k) { return r.byMondai[k]; });
+    return ce("div", { className: "mock mock-results", ref: resultRef, tabIndex: -1 },
       back,
       ce("div", { className: "section-label" }, mock.title, ": results"),
       done && done.timeUp && partNote(),
-      ce("div", { className: "mock-estimate " + tone, role: "status" },
-        ce("div", { className: "qz-res" },
-          ce("div", { className: "qz-ring" },
-            ce("svg", { viewBox: "0 0 140 140", 'aria-hidden': "true" },
-              ce("circle", { className: "t", cx: 70, cy: 70, r: 60 }),
-              ce("circle", { className: "v " + tone, cx: 70, cy: 70, r: 60, strokeDasharray: (ring * est.total / 180) + " " + ring })),
-            ce("span", { className: "qz-jelly" }, out.verdict === 'likely' ? ce(JellyExcited, { size: 84 }) : jelly('oops', 84))),
-          ce("div", null,
+      ce("div", { className: "mr-card " + tone },
+        ce("div", { className: "mr-head", role: "status" },
+          ce("div", { className: "mr-ring" },
+            ce("svg", { viewBox: "0 0 104 104", 'aria-hidden': "true" },
+              ce("circle", { cx: 52, cy: 52, r: 46, fill: "none", stroke: "var(--surface2)", strokeWidth: 7 }),
+              ce("circle", { cx: 52, cy: 52, r: 46, fill: "none", stroke: "var(--" + vcls + ")", strokeWidth: 7, strokeLinecap: "round",
+                strokeDasharray: (ringLen * est.total / 180) + " " + ringLen, transform: "rotate(-90 52 52)" })),
+            ce("div", { className: "mr-jelly" }, out.verdict === 'likely' ? ce(JellyExcited, { size: 64 }) : jelly('oops', 64, true))),
+          ce("div", { className: "mr-verdict" },
             practice && ce("span", { className: "mock-practice" }, "Practice attempt"),
-            ce("h3", { className: "qz-verdict " + tone }, out.verdict === 'likely' ? "Likely pass" : out.verdict === 'borderline' ? "Borderline" : "Unlikely to pass yet"),
-            ce("p", { className: "mock-estimate-total" }, "Estimate: ", ce("b", null, est.total), " / 180 · likely range ", range(out.total)),
-            practice && ce("p", null, "You have sat this mock before, so the questions are known. This attempt is practice and does not change your headline estimate", (function () { var f = mockHeadline(allMocks, mock.id); return f ? " (first attempt: " + f.estimate.total + " / 180)." : "."; })()),
-            ce("p", null, out.verdict === 'likely' ? "Even the low end of the range clears the pass mark and both section minimums."
-              : out.verdict === 'borderline' ? "The range crosses a pass mark. A longer test or another attempt would tell you more."
-              : "Even the high end of the range misses the total or a section minimum."))),
-        ce("ul", null,
-          ce("li", null, ce("span", { lang: "ja" }, "言語知識・読解"), " (vocabulary, grammar, reading): ", est.lkr, " / 120 (", range(out.lkr), "), minimum ", rule.lkr, est.lkr < rule.lkr ? " ✗" : " ✓"),
-          ce("li", null, ce("span", { lang: "ja" }, "聴解"), " (listening): ", est.listening, " / 60 (", range(out.listening), "), minimum ", rule.listening, est.listening < rule.listening ? " ✗" : " ✓"),
-          ce("li", null, "Total: ", est.total, " / 180 (", range(out.total), "), pass mark ", rule.total, est.total < rule.total ? " ✗" : " ✓")),
+            ce("h2", { className: vcls }, out.verdict === 'likely' ? "Likely pass" : out.verdict === 'borderline' ? "Borderline" : "Unlikely to pass yet"),
+            ce("div", null, ce("span", { className: "mr-total" }, est.total), " ", ce("span", { className: "mr-muted" }, "/ 180")),
+            ce("p", { className: "mr-small mr-muted" }, "Likely range " + range(out.total) + ". ",
+              out.verdict === 'likely' ? "Even the low end clears the pass mark and both section minimums."
+                : out.verdict === 'borderline' ? "The range crosses a pass mark. A longer test or another attempt would tell you more."
+                : "Even the high end misses the total or a section minimum."))),
+        practice && ce("p", { className: "mr-small mr-muted" }, "You have sat this mock before, so the questions are known. This attempt is practice and does not change your headline estimate", (function () { var f = mockHeadline(allMocks, mock.id); return f ? " (first attempt: " + f.estimate.total + " / 180)." : "."; })()),
+        ce("table", { className: "mr-slip" },
+          ce("caption", { className: "mr-sr" }, "Estimated scores by section"),
+          ce("tbody", null,
+            ce("tr", { className: "mr-sec" },
+              ce("th", { scope: "row", colSpan: 2, lang: "ja" }, jp("[言語知識|げんごちしき]・[読解|どっかい]"), ce("span", { className: "mr-en" }, "Vocabulary, grammar, reading")),
+              ce("td", { className: "mr-n" }, ce("b", null, est.lkr, " / 120")),
+              ce("td", { className: "mr-n mr-small mr-muted mr-hide-s" }, range(out.lkr) + " · min " + rule.lkr, mark(est.lkr >= rule.lkr))),
+            subRow("Vocabulary", r.parts.vocab), subRow("Grammar", r.parts.grammar), subRow("Reading", r.parts.reading),
+            ce("tr", { className: "mr-sec" },
+              ce("th", { scope: "row", colSpan: 2, lang: "ja" }, jp("[聴解|ちょうかい]"), ce("span", { className: "mr-en" }, "Listening")),
+              ce("td", { className: "mr-n" }, ce("b", null, est.listening, " / 60")),
+              ce("td", { className: "mr-n mr-small mr-muted mr-hide-s" }, range(out.listening) + " · min " + rule.listening, mark(est.listening >= rule.listening))),
+            subRow("Listening", r.parts.listening),
+            ce("tr", { className: "mr-tot" },
+              ce("th", { scope: "row", colSpan: 2 }, "Total · pass mark " + rule.total, mark(est.total >= rule.total)),
+              ce("td", { className: "mr-n" }, est.total),
+              ce("td", { className: "mr-n mr-small mr-muted mr-hide-s" }, range(out.total))))),
+        ce("div", { className: "mr-actions" },
+          ce("button", { className: "quiz-start-btn mr-again", onClick: takeAgain }, "Take again"),
+          ce("span", { className: "mr-small mr-muted" }, "80% range estimate; the real test adjusts per sitting."))),
+      ce("div", { className: "section-label mr-gap" }, "All " + types.length + " question types"),
+      ce("div", { className: "mr-grid" }, types.map(function (k) {
+        var x = r.byMondai[k], p = pctN(x), nm = MONDAI_NAMES[k] || [mockLabel(k), k];
+        return ce("div", { key: k, className: "mr-tile t-" + heat(p) },
+          ce("b", { lang: "ja" }, jp(nm[0])), ce("span", { className: "mr-en" }, nm[1]),
+          ce("span", { className: "mr-sc" }, x[0] + " / " + x[1] + " · " + p + "%", x[1] === 1 && ce("span", { className: "mr-muted" }, " (1 question)")));
+      })),
+      ce("div", { className: "mr-legend" },
+        ce("span", null, ce("i", { className: "t-bad" }), "under 70%"), ce("span", null, ce("i", { className: "t-warn" }), "70–89%"), ce("span", null, ce("i", { className: "t-ok" }), "90%+")),
+      ce("div", { className: "section-label mr-gap" }, missed.length ? "Missed questions (" + missed.length + ")" : "No questions missed"),
+      missed.map(function (m, n) {
+        var nm = MONDAI_NAMES[m.ex.mondai];
+        return ce("details", { key: m.s.key + m.i, className: "mr-q", open: n === 0 ? true : undefined },
+          ce("summary", null,
+            ce("span", { className: "mr-tag" }, m.s.en + " " + (m.i + 1)),
+            ce("span", { className: "mr-tag", lang: "ja" }, nm ? jp(nm[0]) : mockLabel(m.ex.mondai)),
+            ce("span", { className: "mr-sq", lang: "ja" }, qEl(m.ex))),
+          ce("div", { className: "mr-qbody" },
+            ce("p", { className: "mr-qtext", lang: "ja" }, qEl(m.ex)),
+            ce("div", { className: "mr-ans", lang: "ja" },
+              ce("div", { className: "you" }, ce("small", null, "You"), optText(m.ex, m.a)),
+              ce("div", { className: "right" }, ce("small", null, "Answer"), optText(m.ex, m.ex.correct))),
+            m.ex.type === 'listen_dialog' && m.ex.en && ce("p", { className: "mr-why" }, m.ex.en),
+            m.ex.explain && ce("p", { className: "mr-why", lang: "ja" }, m.ex.explain)));
+      }),
+      ce("details", { className: "mr-how" },
+        ce("summary", null, "How this estimate works"),
         ce("p", { className: "mock-note" }, "This is an estimate. The range is an 80% range from how many questions you answered (fewer questions, wider range). Each part's share of right answers is scaled straight onto the official ranges: ",
           "言語知識・読解 = 120 × (21 × vocabulary + 17 × grammar + 5 × reading) ÷ 43, 聴解 = 60 × listening. ",
           "The real JLPT scores answer patterns with item response theory and adjusts for each test's difficulty, so no exact conversion exists, ",
           "and these questions come from what you studied here, so the estimate probably runs high."),
         ce("p", { className: "mock-note" }, "Listening is the least certain part: it uses your browser's computer voice, not the test recording. Practise with the ",
-          ce("a", { href: OFFICIAL_SAMPLES_URL, target: "_blank", rel: "noopener noreferrer" }, "official sample audio (jlpt.jp)"), " too.")),
-      ce("button", { className: "btn-outline mock-again", onClick: takeAgain }, "Take again"),
-      ce("table", { className: "mock-table" },
-        ce("thead", null, ce("tr", null, ce("th", null, "Part"), ce("th", null, "Right"), ce("th", null, "%"))),
-        ce("tbody", null, row("Vocabulary", r.parts.vocab), row("Grammar", r.parts.grammar), row("Reading", r.parts.reading), row("Listening", r.parts.listening))),
-      ce("table", { className: "mock-table" },
-        ce("thead", null, ce("tr", null, ce("th", null, "もんだい"), ce("th", null, "Right"), ce("th", null, "%"))),
-        ce("tbody", null, Object.keys(r.byMondai).map(function (k) { return row(mockLabel(k), r.byMondai[k]); }))),
-      ce("div", { className: "section-label" }, missed.length ? "Missed questions (" + missed.length + ")" : "No questions missed"),
-      ce("ol", { className: "mock-missed" }, missed.map(function (m) {
-        return ce("li", { key: m.s.key + m.i },
-          ce("div", { className: "mock-missed-q", lang: "ja" }, ce("span", { className: "ex-count" }, m.s.en, " ", m.i + 1, " · ", mockLabel(m.ex.mondai)), " ", mockQuestionText(m.ex)),
-          ce("div", null, "Your answer: ", ce("span", { lang: "ja" }, optText(m.ex, m.a)), " · Right answer: ", ce("b", { lang: "ja" }, optText(m.ex, m.ex.correct))),
-          m.ex.type === 'listen_dialog' && m.ex.en && ce("div", { className: "ex-note" }, m.ex.en),
-          m.ex.explain && ce("div", { className: "ex-note" }, m.ex.explain));
-      })));
+          ce("a", { href: OFFICIAL_SAMPLES_URL, target: "_blank", rel: "noopener noreferrer" }, "official sample audio (jlpt.jp)"), " too.")));
   }
 
   // ── a part in progress ────────────────────────────────────────────────────
