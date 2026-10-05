@@ -5,7 +5,7 @@
 // batch = achievementBatch(...) result: { summary, toasts: [ids], more }. A summary batch is one toast
 // ("You've earned N achievements"). Click a toast → onOpen(id); the summary or "+N more" → onMore().
 // aria-live="polite" so screen readers announce without stealing focus.
-var TOAST_MS = 4000, TOAST_OUT_MS = 300; // TOAST_OUT_MS = the .toast-out animation in styles.css
+var TOAST_MS = 7000, TOAST_OUT_MS = 300; // TOAST_OUT_MS = the .toast-out animation in styles.css
 
 // toastStamp(def): the real earned stamp (components/stamp.js), the same one the Achievements screen shows.
 // The rarity chip sits at the top right of the toast, on the "Achievement unlocked" row; common has none.
