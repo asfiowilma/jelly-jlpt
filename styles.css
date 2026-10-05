@@ -1022,6 +1022,15 @@ body.quiz-open .toast-stack{bottom:calc(100px + env(safe-area-inset-bottom))}
 .td-step.next .td-t,.td-step.rest .td-t{color:var(--muted)}
 .td-step.done .td-t{text-decoration:line-through;text-decoration-color:var(--muted)}
 .td-link{background:none;border:0;color:var(--accent-fg);cursor:pointer;font:inherit;font-size:.85rem;font-weight:600;min-height:44px;padding:0 4px}
+.td-link:hover{text-decoration:underline}
+.td-step.td-fold .td-t{text-decoration:none}
+.td-fold-list{grid-column:1/-1;max-height:220px;overflow:auto;border:1px solid var(--border);border-radius:10px;background:var(--surface2);padding:2px 12px;margin-top:2px}
+.td-fold-list>div{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--border);font-size:.85rem}
+.td-fold-list>div:first-child{border-top:0}
+.td-fold-list span{color:var(--muted);text-align:right}
+.td-fold-list b{font-weight:600;white-space:nowrap}
+.td-chev{display:inline-block;transition:transform .15s}
+[aria-expanded=true] .td-chev{transform:rotate(90deg)}
 .td-note{font-size:.85rem;color:var(--muted)}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block}
 .unit-back{background:none;border:0;color:var(--muted);cursor:pointer;font:inherit;font-size:.85rem;min-height:44px;padding:0 4px;margin-bottom:2px}

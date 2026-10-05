@@ -26,6 +26,7 @@ function tdStageTodo(u) {
   if (u.kind === 'mock') return 'Take the mock to finish';
   return (u.kind === 'lesson' || u.kind === 'kana' ? 'Read the lesson, then pass' : 'Pass') + ' the quiz (' + passMarkText(u) + ')';
 }
+var TD_FOLD_AFTER = 3; // more passed stages than this fold into one row
 function tdPaceChip(pace) {
   var m = paceMode(pace), k = m.key.replace('pace_', '');
   var name = k === 'super' ? 'Super' : t('pace_' + k + '_n', 'N5');
@@ -55,8 +56,10 @@ function currentDayPlan(units, completed, pace, cards) {
 
 function TodayView(props) {
   var h = React.createElement, plan = props.plan, units = props.units, cards = props.cards, streak = props.streak;
-  var counted = plan.steps.filter(function (s) { return s.status !== 'rest'; });
-  var nowStep = plan.steps.filter(function (s) { return s.status === 'now'; })[0];
+  var foldOpen = React.useState(false), open = foldOpen[0], setOpen = foldOpen[1];
+  var steps = foldDoneStages(plan.steps, TD_FOLD_AFTER); // many passed stages count as one step
+  var counted = steps.filter(function (s) { return s.status !== 'rest'; });
+  var nowStep = steps.filter(function (s) { return s.status === 'now'; })[0];
   var nowIdx = counted.indexOf(nowStep) + 1, total = counted.length;
   var now = Date.now();
   var nextStage = units.filter(function (u) { return !props.completed.has(u.id); })[0];
@@ -86,7 +89,7 @@ function TodayView(props) {
   if (plan.done) {
     var doneStages = plan.steps.filter(function (s) { return s.kind === 'stage' && s.status === 'done'; });
     hero = { cls: ' td-done', done: true, eyebrow: 'Day complete', title: "That's today done.",
-      chips: doneStages.map(function (s) { return 'Stage ' + (s.unit.index + 1) + ' done'; })
+      chips: (doneStages.length > TD_FOLD_AFTER ? [doneStages.length + ' stages done'] : doneStages.map(function (s) { return 'Stage ' + (s.unit.index + 1) + ' done'; }))
         .concat(props.reviewedToday ? [tdPlural(props.reviewedToday, '{n} card reviewed', '{n} cards reviewed')] : [])
         .concat(streak ? ['🔥 ' + tdPlural(streak, '{n} day', '{n} days')] : []) };
   } else if (plan.levelEnd) {
@@ -119,6 +122,21 @@ function TodayView(props) {
 
   var stepRow = function (s, i) {
     var title, meta, link = null;
+    if (s.kind === 'fold') {
+      var n = s.units.length, extra = n - plan.stageTarget;
+      title = n + ' stages passed';
+      meta = plan.stageTarget ? 'Goal ' + plan.stageTarget + ' met' + (extra > 0 ? ' · ' + extra + ' extra' : '') : '';
+      return h('div', { key: i, className: 'td-step done td-fold' },
+        h('span', { className: 'td-ic', 'aria-hidden': 'true' }, '✓'),
+        h('div', null, h('div', { className: 'td-t' }, title), meta && h('div', { className: 'td-m' }, meta)),
+        h('button', { className: 'td-link', 'aria-expanded': open, 'aria-controls': 'td-fold-list', onClick: function () { setOpen(!open); } },
+          h('span', { className: 'td-chev', 'aria-hidden': 'true' }, '›'), ' ' + (open ? 'Hide' : 'Show')),
+        open && h('div', { id: 'td-fold-list', className: 'td-fold-list', role: 'list' }, s.units.map(function (x) {
+          return h('div', { key: x.id, role: 'listitem' },
+            h('b', null, 'Stage ' + (x.index + 1)),
+            h('span', null, x.title + (passPct(x) ? ' · ' + passPct(x) + '%' : '')));
+        })));
+    }
     if (s.kind === 'stage') {
       title = 'Stage ' + (s.unit.index + 1);
       if (s.status === 'done') meta = passPct(s.unit) ? 'Passed · ' + passPct(s.unit) + '%' : 'Passed';
@@ -160,7 +178,7 @@ function TodayView(props) {
       hero.cta && h('button', { className: 'quiz-start-btn', onClick: hero.onCta }, hero.cta)),
     h('section', { className: 'td-plan', 'aria-label': "Today's plan" },
       h('h2', null, "Today's plan", h('span', { 'aria-label': doneCount + ' of ' + total + ' steps done' }, doneCount + ' / ' + total)),
-      plan.steps.map(stepRow)),
+      steps.map(stepRow)),
     tomorrow && h('p', { className: 'td-note' }, tomorrow),
     plan.done && nextStage && h('p', { className: 'td-note' }, 'Want more? Any stage is open.'),
     plan.done && nextStage && h('div', null, h('button', { className: 'btn-outline', onClick: function () { props.onOpenStage(nextStage.index); } }, 'Learn a stage anyway')),
