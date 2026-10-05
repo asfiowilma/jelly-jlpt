@@ -62,13 +62,13 @@ CATALOG.add([
     verified: true }),
 
   L({ id: 'l:n5-nationality', format: 'quick',
-    lines: [{ speaker: 'M', furigana: 'マリアさんは　[何|なに][人|じん]ですか。' }],
+    lines: [{ speaker: 'M', furigana: 'マリアさんは　どこの　[国|くに]の　[人|ひと]ですか。' }],
     optionSpeaker: 'F',
     options: ['ブラジル[人|じん]です。', '[学生|がくせい]です。', 'えいごです。'], answer: 0,
     names: ['マリア', 'ブラジル'],
-    en: 'Man: Maria, what nationality are you? — 1. I am Brazilian. 2. I am a student. 3. It is English.',
-    explain: '何人 (なにじん) asks for a nationality: country + 人, ブラジル人. 学生 is an occupation and えいご a language, not a nationality.',
-    uses: ['g:wa-desu', 'g:ka', 'v:さん|さん', 'v:何|なに', 'v:人|じん', 'v:学生|がくせい', 'v:英語|えいご', 'k:何', 'k:人', 'k:学', 'k:生'],
+    en: 'Man: Maria, which country are you from? — 1. I am Brazilian. 2. I am a student. 3. It is English.',
+    explain: 'どこの国の人 asks which country someone is from, so the reply names a country + 人: ブラジル人. 学生 is an occupation and えいご a language, not a country or nationality.',
+    uses: ['g:wa-desu', 'g:ka', 'g:no', 'v:さん|さん', 'v:どこ|どこ', 'v:国|くに', 'v:人|ひと', 'v:人|じん', 'v:学生|がくせい', 'v:英語|えいご', 'k:国', 'k:人', 'k:学', 'k:生'],
     verified: true }),
 
   L({ id: 'l:n5-sister-student', format: 'quick',
