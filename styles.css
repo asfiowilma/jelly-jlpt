@@ -601,7 +601,15 @@ rt{font-size:0.6em;color:var(--accent-fg);font-weight:400;letter-spacing:0.02em}
 .mock-estimate ul{margin:0 0 8px;padding-left:20px;line-height:1.7}
 .mock-note{font-size:0.8rem;color:var(--muted);margin:6px 0 0}
 .mock-practice{display:inline-block;font-size:0.72rem;font-weight:600;border:1px solid var(--border);border-radius:99px;padding:1px 10px;color:var(--muted);margin-bottom:4px}
-.mock-trend svg{width:100%;max-width:420px;height:auto;display:block;overflow:visible}
+.mock-trend svg{width:100%;height:150px;display:block;overflow:visible}
+.mock-trend .grid-line{stroke:var(--border);stroke-width:1}
+.mock-trend .axis-lbl{fill:var(--muted);font-size:9px}
+.mock-trend .dot-lbl{fill:var(--text);font-size:10px;font-weight:600}
+.mock-legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:0.78rem;color:var(--muted);margin:8px 0 0}
+.mock-legend span{display:inline-flex;align-items:center;gap:6px}
+.mock-legend .lg{display:inline-block;width:10px;height:10px;border-radius:50%;border:2px solid var(--accent-fg);background:var(--accent-fg)}
+.mock-legend .lg.practice{background:transparent}
+.mock-legend .lg.pass{width:16px;height:0;border:0;border-top:2px dashed var(--ok);border-radius:0;background:none}
 .mock-trend .pass-line{stroke:var(--ok);stroke-width:1;stroke-dasharray:4 3}
 .mock-trend .pass-lbl{fill:var(--ok);font-size:9px}
 .mock-trend .trend-line{stroke:var(--accent-fg);stroke-width:2;stroke-linejoin:round}

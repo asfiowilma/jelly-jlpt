@@ -35,20 +35,39 @@ function RetentionSpark(props) {
 // MockTrend (ticket 49): estimated total per mock attempt, oldest left, with the pass line.
 // A solid dot is the first sitting of a mock; a hollow one is practice (the same mock again).
 function MockTrend(props) {
-  var ce = React.createElement, pts = props.trend.points, pass = props.trend.pass, W = 300, H = 120, PAD = 14;
-  var x = function (i) { return pts.length === 1 ? W / 2 : PAD + i * (W - 2 * PAD) / (pts.length - 1); };
-  var y = function (v) { return H - PAD - v / 180 * (H - 2 * PAD); };
+  // drawn 1:1 at the card's width (re-measured on resize) so the text never scales
+  var boxRef = React.useRef(null), _w = React.useState(360), W = _w[0], setW = _w[1];
+  React.useEffect(function () {
+    var measure = function () { if (boxRef.current && boxRef.current.clientWidth) setW(Math.max(260, boxRef.current.clientWidth)); };
+    measure();
+    window.addEventListener('resize', measure);
+    return function () { window.removeEventListener('resize', measure); };
+  }, []);
+  var ce = React.createElement, pts = props.trend.points, pass = props.trend.pass, H = 150, L = 30, R = 14, T = 16, B = 10;
+  var x = function (i) { return pts.length === 1 ? (L + W - R) / 2 : L + i * (W - L - R) / (pts.length - 1); };
+  var y = function (v) { return H - B - v / 180 * (H - T - B); };
   var label = function (p, i) { return "Attempt " + (i + 1) + ", " + statsDateLabel(new Date(p.takenAt), { month: 'short', day: 'numeric' }) + ": estimated " + p.total + " / 180" + (p.practice ? " (practice)" : ""); };
-  return ce("div", { className: "mock-trend" },
-    ce("svg", { viewBox: "0 0 " + W + " " + H, role: "img", 'aria-label': "Estimated score per mock attempt, pass mark " + pass + ": " + pts.map(function (p) { return p.total; }).join(", ") },
-      ce("line", { x1: 0, x2: W, y1: y(pass), y2: y(pass), className: "pass-line" }),
-      ce("text", { x: W - 2, y: y(pass) - 4, textAnchor: "end", className: "pass-lbl" }, "Pass " + pass),
+  return ce("div", { className: "mock-trend", ref: boxRef },
+    ce("svg", { viewBox: "0 0 " + W + " " + H, height: H, role: "img", 'aria-label': "Estimated score per mock attempt, pass mark " + pass + ": " + pts.map(function (p) { return p.total; }).join(", ") },
+      [0, 180].map(function (v) {
+        return ce("g", { key: v },
+          ce("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), className: "grid-line" }),
+          ce("text", { x: L - 5, y: y(v) + 3, textAnchor: "end", className: "axis-lbl" }, v));
+      }),
+      ce("line", { x1: L, x2: W - R, y1: y(pass), y2: y(pass), className: "pass-line" }),
+      ce("text", { x: L - 5, y: y(pass) + 3, textAnchor: "end", className: "pass-lbl" }, pass),
+      ce("text", { x: W - R, y: y(pass) - 4, textAnchor: "end", className: "pass-lbl" }, "Pass mark"),
       pts.length > 1 && ce("polyline", { className: "trend-line", fill: "none", points: pts.map(function (p, i) { return x(i) + "," + y(p.total); }).join(" ") }),
       pts.map(function (p, i) {
-        return ce("circle", { key: i, cx: x(i), cy: y(p.total), r: 5, className: "trend-dot" + (p.practice ? " practice" : "") + (p.passed ? " passed" : ""),
-          'data-tip': label(p, i), tabIndex: 0, 'aria-label': label(p, i) });
+        return ce("g", { key: i },
+          ce("circle", { cx: x(i), cy: y(p.total), r: 5, className: "trend-dot" + (p.practice ? " practice" : "") + (p.passed ? " passed" : ""),
+            'data-tip': label(p, i), tabIndex: 0, 'aria-label': label(p, i) }),
+          ce("text", { x: x(i), y: y(p.total) - 9, textAnchor: "middle", className: "dot-lbl" }, p.total));
       })),
-    ce("p", { className: "mock-note" }, "Each dot is one mock attempt (estimated total out of 180). Solid = first sitting of that mock, hollow = practice."));
+    ce("p", { className: "mock-legend" },
+      ce("span", null, ce("i", { className: "lg first" }), "First attempt"),
+      ce("span", null, ce("i", { className: "lg practice" }), "Practice (same mock again)"),
+      ce("span", null, ce("i", { className: "lg pass" }), "Pass mark")));
 }
 
 function StatsView(props) {

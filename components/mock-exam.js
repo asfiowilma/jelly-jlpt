@@ -24,6 +24,11 @@ function mockPartsEl(parts) {
     return p.u ? React.createElement("u", { key: i, className: "ex-u" }, el) : React.createElement(React.Fragment, { key: i }, el);
   });
 }
+// "Oct 5, 5:33 PM"
+function mockWhen(ts) {
+  var d = new Date(ts);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
 function mockClock(s) { return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
 function mockLabel(k) { return MONDAI[k] ? MONDAI[k].name : MOCK_LABELS[k] || k; }
 // mockQuestionText(ex): the question as one line of text (results list).
@@ -189,7 +194,7 @@ function MockExam(props) {
           return ce("li", { key: h.takenAt },
             ce("span", { className: "ms-res" }, attemptN[h.takenAt] > 1 ? "Practice " + attemptN[h.takenAt] : "First attempt"),
             ce("button", { className: "link-btn", onClick: function () { setResult(h); setAnswers(h.answers); setPhase('results'); } },
-              new Date(h.takenAt).toLocaleString()), ce("span", { className: "ms-res" }, "estimate ", ce("b", null, h.estimate.total), " / 180 · ", h.estimate.passed ? "pass" : "not yet"));
+              mockWhen(h.takenAt)), ce("span", { className: "ms-res" }, "estimate ", ce("b", null, h.estimate.total), " / 180 · ", h.estimate.passed ? "pass" : "not yet"));
         }))));
   }
 
