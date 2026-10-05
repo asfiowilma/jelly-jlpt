@@ -160,8 +160,10 @@ Device-only prefs (palette, theme, TTS rate, sfx mute) stay in localStorage
 | Achievements (ticket 08) | `ACHIEVEMENTS` (defs: id, name, desc, category, rarity, hidden, revealed, level), `achievementDefs`, `evaluateAchievements(docs, unlocked, ctx)`, `achievementList`, `achievementBatch` (retro = 1 summary, live = stack + 1 jingle), `unseenUnlocks`; store.js `achievementUnlocks()`, `Store.putUnlocks` |
 | Display | `furiganaHTML`, `furiganaOn(stored, level)` |
 
-UI strings (`t(key, level)` in `app-helpers.js`) switch from English to Japanese
-progressively by level; the `uiLang` pref overrides.
+UI strings (`t(key, level)` in `app-helpers.js`) are English at N5. From N4 a `ja` string shows when it
+has no kanji, or when every kanji in it is learned (kanji of completed or placement-skipped stages:
+`learnedKanji`/`uiJaShown` in lib.js, `window._learnedKanji` set by App each render). Kanji not in the
+catalog never count as learned, so those strings stay English. The `uiLang` pref overrides.
 
 ## Content pipeline
 

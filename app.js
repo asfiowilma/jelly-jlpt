@@ -384,6 +384,8 @@ function App() {
   }
   var unit = UNITS[Math.min(unitIdx, UNITS.length - 1)];
   var level = unit.level;
+  // Learned kanji (completed + skipped stages) drive which Japanese UI strings show; set during render.
+  window._learnedKanji = learnedKanji(UNITS, completed);
   var dueCount = srsDueCards(srsCards).length;
   // Today's plan (read → quiz → review): drives the Today tab, the tab dot and the quiz-result hand-off.
   var dayCtx = currentDayPlan(UNITS, completed, pace, srsCards);

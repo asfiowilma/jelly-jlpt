@@ -678,6 +678,23 @@ function taughtIds(unit) {
   return ids;
 }
 
+// learnedKanji(units, completed): { char: true } for the kanji taught by completed units
+// (a stage skipped through placement is completed, so it counts).
+function learnedKanji(units, completed) {
+  var out = {};
+  unitItems(units.filter(function (u) { return completed.has(u.id); })).forEach(function (it) {
+    if (it.kind === 'kanji') out[it.char || it.id.slice(2)] = true;
+  });
+  return out;
+}
+
+// uiJaShown(ja, level, learned): may this Japanese UI string show? N5: never. N4+: only when
+// every kanji in it is learned (no kanji = always). Kanji outside the catalog are never learned.
+function uiJaShown(ja, level, learned) {
+  if (levelRank(level) < 1) return false;
+  return Array.from(ja).every(function (ch) { return !hasKanji(ch) || learned[ch]; });
+}
+
 // unitItems(units): the taught items (kana, vocab, kanji, grammar) of some units, deduped.
 function unitItems(units) {
   var seen = {}, out = [];
