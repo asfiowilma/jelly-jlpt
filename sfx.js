@@ -1,7 +1,7 @@
 "use strict";
 
 // UI sound effects: Kenney CC0 jingles in sfx/ (correct, wrong, complete,
-// achievement), .ogg with an .mp3 copy for browsers without Ogg Vorbis.
+// achievement; next = the mock's question tick, from Interface Sounds), .ogg with an .mp3 copy for browsers without Ogg Vorbis.
 // Mute is a device-only pref (jlpt_sfx_mute), like TTS rate.
 var SFX_EXT = (function () {
   try {

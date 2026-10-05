@@ -115,6 +115,7 @@ function MockExam(props) {
   }, [phase, deadline]);
 
   var startPart = function () {
+    playSfx('next');
     setPhase('part');
     setCur(0);
     setDeadline(now() + sections[sec].seconds * 1000);
@@ -292,7 +293,7 @@ function MockExam(props) {
     a[S.key][cur] = i;
     setAnswers(a);
   };
-  var go = function (i) { stopAudio(); setCur(i); setSheet(false); };
+  var go = function (i) { stopAudio(); playSfx('next'); setCur(i); setSheet(false); };
   var usedPlays = plays[key] || 0, playsLeft = ex.maxPlays ? ex.maxPlays - usedPlays : Infinity;
   var play = function (lines) {
     if (playsLeft <= 0) return;

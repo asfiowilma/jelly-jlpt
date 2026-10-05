@@ -166,7 +166,7 @@ Icons are rendered once from `icons/icon.svg` with `node tools/build-icons.js` (
 | [elzup/jlpt-word-list](https://github.com/elzup/jlpt-word-list) | CSV copy of the word lists | MIT |
 | [Tatoeba](https://tatoeba.org) | example sentences and translations (each keeps its sentence id and author) | CC BY 2.0 FR |
 | [KanjiVG](https://kanjivg.tagaini.net/) | stroke-order diagrams in `kanji-svg/` | CC BY-SA 3.0 |
-| [Kenney](https://kenney.nl/assets/music-jingles) Music Jingles | sound effects in `sfx/` (see `sfx/LICENSE-kenney.txt`) | CC0 |
+| [Kenney](https://kenney.nl/assets/music-jingles) Music Jingles and [Interface Sounds](https://kenney.nl/assets/interface-sounds) | sound effects in `sfx/` (see `sfx/LICENSE-kenney.txt`) | CC0 |
 
 The same credits are listed in the app under Settings. Readings and meanings were checked against JMdict (via Jisho) and KANJIDIC while writing the course, but no data from them ships with the app. Glosses, notes and grammar explanations are written for this project.
 
