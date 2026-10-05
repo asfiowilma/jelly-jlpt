@@ -1,31 +1,6 @@
 "use strict";
 
-// Maps exercise prompt strings to UI_STRINGS keys for translation
-var PROMPT_KEYS = {
-  'Listen and choose the meaning:': 'prompt_listen',
-  'What is the reading for this character?': 'prompt_mc_char',
-  'What does this word mean?': 'prompt_mc_word',
-  'Type the reading for this character:': 'prompt_type_char',
-  'What does this word mean? (type in English)': 'prompt_type_word',
-};
-function translatePrompt(prompt, level) {
-  var key = PROMPT_KEYS[prompt];
-  if (!key) return prompt;
-  return t(key, level);
-}
-
-// Furigana parts ({ t, r? }, lib.js furiganaParts) → text and <ruby> elements (reading passages)
-function rubyEls(parts) {
-  return parts.map(function (p, i) {
-    return p.r ? React.createElement("ruby", { key: i }, p.t, React.createElement("rt", null, p.r)) : p.t;
-  });
-}
-
 // ── Quiz helpers (pure) ─────────────────────────────────────────────────────
-var QZ_SENTENCE = ['gap', 'kanji_yomi', 'hyouki', 'bunmyaku', 'order', 'iikae', 'bunshou'];
-var QZ_SPEAKER = { M: 'Man', F: 'Woman', N: 'Narrator' };
-var QZ_JA = /[぀-ヿ一-鿿]/;
-var QZ_RING = 2 * Math.PI * 60;
 
 // The right answer as text, for the feedback dock and the missed list.
 function exAnswer(ex) {
@@ -54,32 +29,6 @@ function exSpeech(ex) {
   if (it.kind === 'kana') return it.char || it.kana || '';
   if (it.kind === 'kanaword') return it.word; // a kana reading word (ticket 44)
   return '';
-}
-// Size class for the asked text: a lone kanji is huge, a word medium, a phrase small.
-function exBigClass(text) {
-  var n = Array.from(String(text)).length;
-  return n <= 2 ? '' : n <= 6 ? ' md' : ' sm';
-}
-
-// Furigana parts (quiz rules, Q33) → ruby; u = the underlined / asked part (mondai). The （　）
-// of a gap question shows the chosen option; the ★ slot of an order question does too.
-// st = { chosen, revealed, selected, tone }: shared by the quiz layer and the placement test.
-function exPartsEl(ex, parts, st) {
-  var h = React.createElement, chosen = st.chosen, tone = st.tone;
-  return parts.map(function (p, i) {
-    if (ex.type === 'gap' && p.t === GAP_BLANK) {
-      return h("span", { key: i, className: "qz-blank" + (st.revealed && st.selected === -1 ? ' ok' : tone) }, chosen !== null && ex.optionParts ? exPartsEl(ex, ex.optionParts[chosen], st) : chosen === null ?" " : ex.options[chosen]);
-    }
-    if (ex.type === 'order' && /＿/.test(p.t)) {
-      return h("span", { key: i, className: "qz-slots" }, p.t.trim().split(' ').map(function (slot, k) {
-        if (slot.indexOf('★') < 0) return h("span", { key: k, className: "qz-slot" }, k + 1);
-        return h("span", { key: k, className: "qz-slot star" + (chosen !== null ? ' f' : '') + tone },
-          chosen === null ? '★' : ex.optionParts ? exPartsEl(ex, ex.optionParts[chosen], st) : ex.options[chosen]);
-      }));
-    }
-    var el = p.r ? h("ruby", { key: i }, p.t, h("rt", null, p.r)) : p.t;
-    return p.u ? h("u", { key: i, className: "ex-u" }, el) : el;
-  });
 }
 
 // ── Exercises: the unit quiz (ticket 35) ────────────────────────────────────
@@ -160,34 +109,10 @@ function Exercises(_ref9) {
     }, 1000);
     return function () { clearInterval(id); };
   }, [deadline, done]);
-  // The layer covers the page and locks its scroll while the quiz is open.
-  React.useEffect(function () {
-    var b = typeof document !== 'undefined' && document.body;
-    if (!started || !b || !b.classList) return undefined;
-    b.classList.add('quiz-open');
-    return function () { b.classList.remove('quiz-open'); };
-  }, [started]);
-  // Keyboard: Esc leaves, Enter checks / continues, 1-9 pick an option. The handler is replaced
-  // every render (keyRef) so it sees the current question.
-  var keyRef = React.useRef(null);
-  var layerRef = React.useRef(null);
-  React.useEffect(function () {
-    if (!started || typeof document === 'undefined' || !document.addEventListener) return undefined;
-    var on = function (e) { if (keyRef.current) keyRef.current(e); };
-    document.addEventListener('keydown', on);
-    return function () { document.removeEventListener('keydown', on); };
-  }, [started]);
-  // Focus: into the layer on open, into the dialog when "Leave?" opens; back on the Start button on close.
-  React.useEffect(function () {
-    if (!started || typeof document === 'undefined' || !document.querySelector) return undefined;
-    var l = layerRef.current;
-    if (l && l.focus && !(l.contains && l.contains(document.activeElement))) l.focus();
-    return function () { setTimeout(function () { var b = document.querySelector('#unit-quiz .quiz-start-btn'); if (b && b.focus) b.focus({ preventScroll: true }); }, 0); };
-  }, [started]);
-  React.useEffect(function () {
-    var d = leaving && typeof document !== 'undefined' && document.querySelector && document.querySelector('.qz-dlg button');
-    if (d) d.focus();
-  }, [leaving]);
+  // The .ql layer (scroll lock, keyboard, focus, Tab trap): quiz-shell.js. keyRef.current is replaced
+  // every render so the handler sees the current question.
+  var shell = useQuizLayer(started, leaving);
+  var keyRef = shell.keyRef, trapTab = shell.trapTab;
   if (exs.length === 0) return null;
   var needPct = passMarkText(unit);
   var clock = function (s) { return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
@@ -299,53 +224,25 @@ function Exercises(_ref9) {
   var clockLeft = deadline ? Math.max(0, Math.ceil((deadline - Date.now()) / 1000)) : 0;
   // One segment per question: answered → ok/bad, current → now; re-asked ones are longer than the quiz
   var topBar = function (label, ex) {
-    return h("div", { className: "qz-top" },
-      h("button", {
-        className: "qz-x", 'aria-label': "Leave quiz",
-        onClick: function () { if (done) leaveQuiz(); else setLeaving(true); }
-      }, icon('x')),
-      h("div", {
-        className: "qz-prog", role: "progressbar", 'aria-label': "Quiz progress",
-        'aria-valuemin': 0, 'aria-valuemax': exs.length, 'aria-valuenow': results.length
-      }, exs.map(function (_, i) {
-        var state = i < results.length ? results[i] ? ' ok' : ' bad' : !done && i === cur ? ' now' : '';
-        return h("i", { key: i, className: "qz-seg" + state });
-      })),
-      h("div", { className: "qz-meta" },
-        ex && ex.requeue && h("span", { className: "qz-again" }, "Again · not scored"),
-        h("span", null, label),
+    return qzTop(h, {
+      xLabel: "Leave quiz", onX: function () { if (done) leaveQuiz(); else setLeaving(true); },
+      progLabel: "Quiz progress", now: results.length,
+      segs: exs.map(function (_, i) { return i < results.length ? results[i] ? 'ok' : 'bad' : !done && i === cur ? 'now' : ''; }),
+      meta: [
+        ex && ex.requeue && h("span", { key: "again", className: "qz-again" }, "Again · not scored"),
+        h("span", { key: "label" }, label),
         setSfxOn && h("button", {
-          className: "qz-snd", 'aria-pressed': !sfxOn, 'aria-label': sfxOn ? "Mute sounds" : "Unmute sounds",
+          key: "snd", className: "qz-snd", 'aria-pressed': !sfxOn, 'aria-label': sfxOn ? "Mute sounds" : "Unmute sounds",
           onClick: function () { setSfxOn(!sfxOn); if (!sfxOn) playSfx('correct'); }
         }, icon(sfxOn ? 'speaker' : 'speakerOff')),
-        deadline && !done && h("span", { className: "qz-timer" + (clockLeft < 60 ? " low" : ""), role: "timer", 'aria-label': "Time left" }, icon('clock'), clock(clockLeft))));
+        deadline && !done && h("span", { key: "timer", className: "qz-timer" + (clockLeft < 60 ? " low" : ""), role: "timer", 'aria-label': "Time left" }, icon('clock'), clock(clockLeft))]
+    });
   };
-  var leaveDialog = leaving && h("div", { className: "qz-scrim" },
-    h("div", { className: "qz-dlg", role: "alertdialog", 'aria-label': "Leave the quiz" },
-      h("b", null, "Leave the quiz?"),
-      h("p", null, "Your answers so far won’t be saved. You can retake it with new questions."),
-      h("div", { className: "qz-row" },
-        h("button", { className: "qz-gb", onClick: function () { setLeaving(false); } }, "Keep going"),
-        h("button", { className: "qz-btn bad", onClick: leaveQuiz }, "Leave"))));
-  // Tab stays inside the layer (inside the dialog while it is open): wraps at both ends, and pulls
-  // focus back in when it was lost (a clicked button that left the page).
-  var trapTab = function (e) {
-    var root = layerRef.current;
-    if (e.key !== 'Tab' || !root) return false;
-    var scope = root.querySelector('.qz-dlg') || root;
-    var f = [].slice.call(scope.querySelectorAll('button,input,[tabindex="0"]')).filter(function (el) { return !el.disabled && el.getClientRects().length; });
-    var a = document.activeElement;
-    e.preventDefault();
-    if (!f.length) return true;
-    if (!scope.contains(a)) f[e.shiftKey ? f.length - 1 : 0].focus();
-    else if (e.shiftKey && a === f[0]) f[f.length - 1].focus();
-    else if (!e.shiftKey && a === f[f.length - 1]) f[0].focus();
-    else f[f.indexOf(a) + (e.shiftKey ? -1 : 1)].focus();
-    return true;
-  };
+  var leaveDialog = leaving && qzLeaveDialog(h, {
+    label: "Leave the quiz", title: "Leave the quiz?", text: "Your answers so far won’t be saved. You can retake it with new questions.",
+    stay: "Keep going", leave: "Leave", onStay: function () { setLeaving(false); }, onLeave: leaveQuiz });
   var layer = function (top, main, dock, wide) {
-    return h("div", { className: "ql", ref: layerRef, tabIndex: -1, role: "dialog", 'aria-modal': "true", 'aria-label': t('section_exercises', lv) },
-      top, h("div", { className: "qz-main" }, h("div", { className: "qz-col" + (wide ? " wide" : "") }, main)), dock, leaveDialog);
+    return qzLayer(h, shell, { label: t('section_exercises', lv), top: top, main: main, dock: dock, wide: wide, overlay: leaveDialog });
   };
 
   // ── Result ────────────────────────────────────────────────────────────────
@@ -453,86 +350,25 @@ function Exercises(_ref9) {
     if (isOpt && !revealed && n >= 0 && n < ex.options.length) { stopAudio(); setPick(n); }
   };
 
-  // Furigana parts (quiz rules, Q33) → ruby; u = the underlined / asked part (mondai). The （　）
-  // of a gap question shows the chosen option; the ★ slot of an order question does too.
-  var chosen = revealed ? (selected !== null && selected >= 0 ? selected : ex.correct) : pick;
-  var partsEl = function partsEl(parts) {
-    return exPartsEl(ex, parts, { chosen: chosen, revealed: revealed, selected: selected, tone: tone });
+  // Choices, furigana and the listen button render in quiz-shell.js (qzKit), shared with the mock.
+  var playsLeft = ex.maxPlays ? ex.maxPlays - plays : Infinity;
+  var play = function (lines) {
+    if (playsLeft <= 0) return;
+    setPlays(plays + 1);
+    stopAudio();
+    setSpeaking(true);
+    stopRef.current = speakScript(lines, { onEnd: function () { setSpeaking(false); } });
   };
-  var promptEl = h("p", { key: "pr", className: "qz-prompt" }, translatePrompt(ex.prompt, lv));
-  // The question line, the passage of a text-with-blanks, and the English of a gap sentence.
-  var questionEl = function () {
-    var q = ex.parts ? ex.parts.map(function (p) { return p.t; }).join('') : ex.question;
-    var sentence = QZ_SENTENCE.indexOf(ex.type) >= 0;
-    return [
-      ex.passageParts && h("div", { key: "ps", className: "qz-passage", lang: "ja" }, partsEl(ex.passageParts)),
-      !ex.passageParts && (ex.question || ex.parts) && h("div", {
-        key: "q", className: sentence ? "qz-sent" : "qz-big" + exBigClass(q), lang: "ja"
-      }, ex.parts ? partsEl(ex.parts) : ex.question),
-      ex.note && h("p", { key: "n", className: "qz-gloss" }, ex.note),
-      ex.type === 'order' && revealed && ex.sentence && CATALOG.items[ex.sentence] &&
-        h("p", { key: "solved", className: "qz-solved", lang: "ja" }, CATALOG.items[ex.sentence].jp)];
-  };
-  var optClass = function (i) {
-    var c = 'qz-opt';
-    if (!revealed) { if (pick === i) c += ' sel'; } else if (i === ex.correct) c += ' ok'; else if (i === selected) c += ' bad'; else c += ' dim';
-    return c;
-  };
-  var optionsList = function () {
-    var long = ex.options.length % 2 === 1 || ex.options.some(function (o) { return String(o).length > 8; });
-    return h("div", { key: "opts", className: "qz-opts " + (long ? 'g1' : 'g2') }, ex.options.map(function (opt, i) {
-      return h("button", {
-        key: i, className: optClass(i), disabled: revealed, 'aria-pressed': !revealed && pick === i,
-        lang: QZ_JA.test(opt) ? "ja" : "en", onClick: function () { stopAudio(); setPick(i); }
-      }, h("kbd", null, i + 1), h("span", null, ex.optionParts ? partsEl(ex.optionParts[i]) : opt));
-    }));
-  };
+  var kit = qzKit(h, ex, {
+    lv: lv, pick: pick, revealed: revealed, selected: selected, tone: tone, onPick: setPick, stop: stopAudio,
+    plays: plays, speaking: speaking, play: play, voiceStatus: voiceStatus, showEarly: showEarly, onEarly: function () { setShowEarly(true); } });
+  var promptEl = kit.promptEl, questionEl = kit.questionEl;
   var main, wide = false, extra = null;
 
-  if (isListen) {
-    // Listening (ticket 17): Play speaks the script (speakScript); the transcript, English and
-    // explanation show after checking. Spoken options (utterance / quick) are numbered rows with
-    // their own play button; their text shows only after checking.
-    var playsLeft = ex.maxPlays ? ex.maxPlays - plays : Infinity;
-    var play = function (lines) {
-      if (playsLeft <= 0) return;
-      setPlays(plays + 1);
-      stopAudio();
-      setSpeaking(true);
-      stopRef.current = speakScript(lines, { onEnd: function () { setSpeaking(false); } });
-    };
-    var transcript = function () { return h("div", { key: "script", className: "qz-script", lang: "ja" },
-      ex.lines.map(function (l, i) {
-        return h("div", { key: i }, h("span", { className: "who", lang: "en" }, QZ_SPEAKER[l.speaker]), partsEl(l.parts));
-      }),
-      ex.questionParts && h("div", null, h("span", { className: "who", lang: "en" }, QZ_SPEAKER.N), partsEl(ex.questionParts)),
-      revealed && h("span", { className: "en", lang: "en" }, ex.en)); };
-    var list = ex.spokenOptions
-      ? [h("div", { key: "opts", className: "qz-opts g1" }, ex.options.map(function (opt, i) {
-        return h("div", { key: i, className: "qz-srow" },
-          h("button", {
-            className: "qz-rp", 'aria-label': "Play reply " + (i + 1), disabled: playsLeft <= 0,
-            onClick: function () { play([ex.optionSpeech[i]]); }
-          }, icon('speaker')),
-          h("button", {
-            className: optClass(i), lang: "ja", disabled: revealed, 'aria-pressed': !revealed && pick === i,
-            'aria-label': !revealed ? "Choose reply " + (i + 1) : undefined, onClick: function () { stopAudio(); setPick(i); }
-          }, h("kbd", null, i + 1), h("span", null, revealed ? partsEl(ex.optionParts[i]) : "Reply " + (i + 1))));
-      })), !revealed && h("p", { key: "hint", className: "qz-hint", lang: "en" }, "The replies show after you answer.")]
-      : optionsList();
-    main = [promptEl,
-      h("div", { key: "player", className: "qz-player" },
-        h("button", {
-          className: "qz-play" + (speaking ? " on" : ""), disabled: playsLeft <= 0, 'aria-label': "Play audio",
-          onClick: function () { play(ex.script); }
-        }, icon('speaker')),
-        ex.maxPlays ? h("div", { className: "qz-pips" },
-          Array.from({ length: ex.maxPlays }, function (_, i) { return h("i", { key: i, className: "qz-pip" + (i >= playsLeft ? " off" : "") }); }),
-          h("span", null, playsLeft > 0 ? playsLeft + (playsLeft === 1 ? " play" : " plays") + " left" : "No replays left")) : null),
-      voiceStatus === 'none' && !revealed && h("div", { key: "warn", className: "qz-warn", role: "status" },
-        "This browser has no Japanese voice, so the audio may be silent or wrong. ",
-        showEarly ? "The transcript is below." : h("button", { className: "link-btn", onClick: function () { setShowEarly(true); } }, "Read the transcript instead")),
-      (revealed || showEarly) && transcript(), list];
+  if (isListen || isOpt) {
+    var c = kit.choice();
+    main = c.main;
+    wide = c.wide;
   } else if (isReorder) {
     // Reorder: tap tiles to build the sentence, tap a placed tile to remove it
     main = [promptEl, questionEl(),
@@ -583,19 +419,6 @@ function Exercises(_ref9) {
           }, h("span", null, opt), o !== undefined && h("span", { className: "pn" }, o + 1));
         }))),
       h("p", { key: "hint", className: "qz-hint" }, "Tap a word, then its meaning. Tap a linked word to undo.")];
-  } else if (isOpt) {
-    // Choice (mc, gap, ★ order, iikae …), a single audio clip (listen), or a reading passage
-    var isReading = ex.type === 'reading';
-    var sound = ex.type === 'listen' && h("div", { key: "player", className: "qz-player" },
-      h("button", { className: "qz-play", 'aria-label': "Listen to audio", onClick: function () { speak(ex.audio); } }, icon('speaker')));
-    if (isReading) {
-      wide = true;
-      main = h("div", { className: "qz-split" },
-        h("div", null, promptEl, h("div", { className: "qz-passage", lang: "ja" }, rubyEls(ex.passage))),
-        h("div", null,
-          ex.parts && h("div", { className: "qz-sent qz-readq", lang: "ja" }, partsEl(ex.parts)),
-          optionsList()));
-    } else main = [promptEl, sound || questionEl(), optionsList()];
   } else {
     // Typing exercise (typing, conjugation)
     main = [promptEl,

@@ -60,6 +60,7 @@ var appFiles = [
   path.join("components", "kanji-section.js"),
   path.join("components", "kana-section.js"),
   path.join("components", "vocab-section.js"),
+  path.join("components", "quiz-shell.js"),
   path.join("components", "exercises.js"),
   path.join("components", "mock-exam.js"),
   path.join("components", "prep-guide.js"),

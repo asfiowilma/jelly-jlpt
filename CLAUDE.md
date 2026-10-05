@@ -36,7 +36,7 @@ store.js              Store: PouchDB persistence + optional CouchDB sync
 app-helpers.js        t() progressive UI strings, TTS, icons, stroke-order SVG fetch
 sfx.js                quiz/achievement sounds from sfx/ (Kenney, CC0)
 components/           one React component per file, React.createElement, no JSX
-  kanji-section.js kana-section.js exercises.js unit-view.js prep-guide.js review-mode.js today-view.js
+  kanji-section.js kana-section.js quiz-shell.js (shared .ql layer + question renderer) exercises.js unit-view.js prep-guide.js review-mode.js today-view.js
   overview.js stats-view.js settings-view.js mock-exam.js toast-stack.js stamp.js achievements-view.js
                       (prep-guide.js renders `unit.guide`: lead, optional `part` 0-2 + `partJp` + `glance`, kinds, time/rules; strings take `**bold**` and `[漢字|かんじ]` furigana)
 app.js                App: builds UNITS from PLAN + CATALOG, awaits Store.init(), mounts
