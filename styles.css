@@ -596,7 +596,7 @@ rt{font-size:0.6em;color:var(--accent-fg);font-weight:400;letter-spacing:0.02em}
 .mr-card.fail{border-color:var(--bad)}
 .mr-head{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
 .mr-ring{position:relative;width:104px;height:104px;flex:none}
-.mr-ring svg{position:absolute;inset:0;width:100%;height:100%}
+.mr-ring>svg{position:absolute;inset:0;width:100%;height:100%}
 .mr-jelly{position:absolute;inset:0;display:grid;place-items:center}
 .mr-jelly .jelly{width:64px;height:64px}
 .mr-verdict{flex:1;min-width:180px}
