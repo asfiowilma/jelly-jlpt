@@ -312,11 +312,12 @@ function MockExam(props) {
   shell.keyRef.current = function (e) {
     if (shell.trapTab(e)) return;
     if (e.key === 'Escape') { if (sheet) setSheet(false); else setQuitting(!quitting); return; }
-    if (quitting || sheet) return;
+    if (quitting || sheet || finishAsk) return;
     var n = /^[1-9]$/.test(e.key) ? Number(e.key) - 1 : -1;
     if (n >= 0 && n < ex.options.length) choose(n);
     else if (e.key === 'ArrowLeft' && cur > 0) go(cur - 1);
     else if (e.key === 'ArrowRight' && !last) go(cur + 1);
+    else if (e.key === 'Enter' && !last && !e.isComposing && !(e.target && e.target.tagName === 'BUTTON' && !e.target.classList.contains('qz-opt'))) { e.preventDefault(); go(cur + 1); } // never finishes the part
   };
   // No feedback in a mock: an option is only picked (revealed stays false), nothing is checked.
   var kit = qzKit(ce, ex, { lv: mock.level, pick: chosen, revealed: false, selected: null, tone: '', onPick: choose, stop: stopAudio,
@@ -347,7 +348,7 @@ function MockExam(props) {
       ce("button", { className: "qz-gb qz-prev", disabled: cur === 0, onClick: function () { go(cur - 1); } }, "← Prev"),
       ce("button", { className: "qz-gb qz-flag" + (flags[key] ? " on" : ""), 'aria-pressed': !!flags[key],
         onClick: function () { var f = Object.assign({}, flags); f[key] = !f[key]; setFlags(f); } }, flags[key] ? "⚑ Flagged" : "⚑ Flag"),
-      ce("span", { className: "qz-sp" }),
+      ce("span", { className: "qz-sp" }, ce("span", { className: "qz-keys" }, ce("kbd", null, "1–" + ex.options.length), " choose ", last ? null : [ce("kbd", { key: "k" }, "Enter"), " next"])),
       last ? ce("button", { className: "qz-btn ok qz-finish", onClick: finish }, finLabel)
         : ce("button", { className: "qz-btn qz-nextq", onClick: function () { go(cur + 1); } }, "Next →"))) });
 }

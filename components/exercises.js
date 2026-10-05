@@ -341,7 +341,9 @@ function Exercises(_ref9) {
     if (leaving) return;
     var tag = e.target && e.target.tagName;
     if (e.key === 'Enter') {
-      if (tag === 'BUTTON' || (tag === 'INPUT' && !revealed) || (e.nativeEvent || e).isComposing) return;
+      // A clicked option keeps focus: Enter then checks the picked answer (a not-yet-picked focused option keeps its native Enter = pick).
+      var onOpt = tag === 'BUTTON' && e.target.classList.contains('qz-opt') && (revealed || ready);
+      if ((tag === 'BUTTON' && !onOpt) || (tag === 'INPUT' && !revealed) || (e.nativeEvent || e).isComposing) return;
       e.preventDefault();
       return revealed ? next() : check();
     }
