@@ -109,6 +109,9 @@ in `.scratch/content-audit/issues/`.
 - **Load guide per lesson** (N5: about 8 vocab, about 2 kanji, 1 grammar; ±25%). Vocab-only
   lessons are fine when grammar runs out.
 - **A kanji appears only at or after the first lesson teaching a word that uses it.**
+  The same holds for vocab: a word with a kanji not taught yet (隣, 家, 犬: Tanos lists the word, the
+  kanji is above level) shows its kana only (`displayWord`), in lessons, review cards and quiz
+  prompts, and gets no kanji→reading question. It keeps meaning and type-the-Japanese questions.
 - **Write own `s:own:` sentences for the early grammar units from the start.** Tatoeba has
   almost nothing that uses only the first few dozen words; use kana while a kanji is untaught
   (がっこう before 校). Don't reorder the plan to fit Tatoeba (ADR 0002).
@@ -177,6 +180,12 @@ in `.scratch/content-audit/issues/`.
   - CSP needs `media-src 'self' blob:`. Without it no clip played over http(s), and the Web
     Speech fallback hid it. Verify playback over http(s) in a real browser, not file://.
   - The fallback must be visible in mocks (a notice), never silent.
+  - Particle は/へ in `say` can be spoken ha/he (母は先生です came out ははは): write `[は|わ]` ruby for the
+    clip; the shown text stays は. The catalog check allows only that pair. Check particle lines when
+    listening to a render.
+  - Short narrator clips (いち, に, さん) are shared by every track, so one off-voice take is
+    everywhere. To re-render them, drop their names from `have` and clear the old files from the
+    notebook's output folder.
 
 ## 7b. Exam guide voice
 
