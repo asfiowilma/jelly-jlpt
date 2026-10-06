@@ -741,6 +741,14 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       pool.forEach(function (unit, qi) {
         try { play(unit, qi); } catch (e) { errors.push(unit.id + "@" + unit.level + ": " + e.message); }
       });
+      // a guaranteed homograph retry (人: じん for ひと): the random sample may hold none
+      var hu = playable.filter(function (u) { return u.kind === "lesson"; })[0], hctx = quizContext(hu), hex = null;
+      catalogOf("vocab").some(function (v) {
+        var fm = formsFor(v, hctx).filter(function (x) { return x.name === "enToJp"; })[0], e = fm && fm.make();
+        return e && e.others && e.others.length && (hex = e);
+      });
+      a.ok(hex, "a homograph typed exercise exists");
+      if (hex) try { play(hu, 1, function () { return [hex]; }); } catch (e) { errors.push("homograph: " + e.message); }
       // authored mondai (iikae, bunshou) as a mock would feed them (ticket 11 → 18)
       var mock = { id: "n5.mock", kind: "mock", level: "N5", index: units.length - 1 };
       var mondai = function (type) {
