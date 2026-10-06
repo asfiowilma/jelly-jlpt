@@ -634,7 +634,7 @@ function speak(text) {
   }
 }
 
-// speakScript(lines, opts): speak [{ speaker: 'M' | 'F' | 'N', text }] in order, one voice /
+// speakScript(lines, opts): speak [{ speaker: 'M' | 'F' | 'N', slot?: 'M2' | 'F2', text }] in order, one voice /
 // pitch per speaker (assignVoices), long lines cut by chunkSpeech (network voices only: every cut
 // is an audible gap), a short pause after each line (opts.pause ms, default 150). opts.onEnd fires after the last line. Returns stop().
 // opts.rate overrides the learner's speech rate (mocks: 1, natural speed); opts.onFallback fires when
@@ -659,8 +659,8 @@ function speakTTS(lines, opts) {
   var pause = opts.pause == null ? 150 : opts.pause;
   var queue = [];
   lines.forEach(function (l) {
-    var v = (cast[l.speaker] || cast.N).voice;
-    chunkSpeech(l.text, v && v.localService ? SPEECH_CHUNK_LOCAL : SPEECH_CHUNK).forEach(function (c, i, all) { queue.push({ speaker: l.speaker, text: c, pause: i === all.length - 1 ? pause : 0 }); });
+    var slot = l.slot || l.speaker, v = (cast[slot] || cast.N).voice; // slot: dialogue lines with two voices of one gender (M2, F2)
+    chunkSpeech(l.text, v && v.localService ? SPEECH_CHUNK_LOCAL : SPEECH_CHUNK).forEach(function (c, i, all) { queue.push({ speaker: slot, text: c, pause: i === all.length - 1 ? pause : 0 }); });
   });
   var i = 0;
   var next = function () {

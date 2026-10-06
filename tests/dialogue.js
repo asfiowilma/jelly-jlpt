@@ -9,7 +9,7 @@ QUnit.module('dialogue', function () {
 
   QUnit.test('plan: unit.dialogue resolves to a dialogue item, lesson units only, each dialogue used once', function (assert) {
     var us = withDialogue();
-    assert.deepEqual(us.map(function (u) { return u.id; }), ['n5.u019', 'n5.u028'], 'the two pilot lessons');
+    assert.deepEqual(us.map(function (u) { return u.id; }), ['n5.u019', 'n5.u028'], 'the two lessons that carry a dialogue so far');
     assert.ok(us.every(function (u) { return u.kind === 'lesson' && CATALOG.items[u.dialogue].format === 'dialogue'; }));
     assert.deepEqual(us.map(function (u) { return u.dialogue; }).sort(), dialogues().map(function (d) { return d.id; }).sort(), 'every dialogue is in a unit');
     var bad = function (id, set) {
@@ -18,7 +18,7 @@ QUnit.module('dialogue', function () {
       return validatePlan(plan, CATALOG);
     };
     assert.ok(validatePlan(PLAN, CATALOG).valid, 'shipped plan is valid');
-    assert.ok(/not a lesson/.test(bad('n5.u001', { dialogue: 'l:n5-dlg-team-seven' }).error), 'a kana unit cannot carry one');
+    assert.ok(/not a lesson/.test(bad('n5.u001', { dialogue: 'l:n5-dlg-first-class' }).error), 'a kana unit cannot carry one');
     assert.ok(/missing dialogue/.test(bad('n5.u019', { dialogue: 'l:n5-nope' }).error), 'unknown id');
     assert.ok(/missing dialogue/.test(bad('n5.u019', { dialogue: 'l:n5-who-is-that' }).error), 'a test item is not a dialogue');
   });
@@ -48,14 +48,18 @@ QUnit.module('dialogue', function () {
     var kinds = function (l) { return l.segs.filter(function (s) { return s.kind; }).map(function (s) { return s.kind + ':' + s.t; }).join(' '); };
     assert.strictEqual(kinds(v.lines[0]), 'nw:わたし g:は g:です nw:せんせい g:です', 'new words dotted, grammar tokens, leading はじめまして not marked');
     assert.strictEqual(kinds(v.lines[1]), 'br:お nw:なまえ g:は', 'bridge お only inside おなまえ');
-    assert.strictEqual(kinds(v.lines[3]), 'br:くん g:は nw:学生 g:です br:ね', 'ruby block marked whole, ね is a bridge here');
+    assert.strictEqual(kinds(v.lines[3]), 'nw:さん g:は nw:学生 g:です br:ね', 'ruby block marked whole, ね is a bridge here');
     assert.strictEqual(v.lines[3].segs.filter(function (s) { return s.t === '学生'; })[0].r, 'がくせい');
-    assert.deepEqual(v.cast.map(function (c) { return c.initial; }), ['カ', 'サ'], 'initial chips');
+    assert.ok(/br:しずかな/.test(kinds(v.lines[5])), 'multi-character bridge word');
+    assert.deepEqual(v.cast.map(function (c) { return c.initial; }), ['カ', 'サ'], 'initial chips: first character of the jp name');
+    assert.deepEqual(v.cast.map(function (c) { return c.side; }), ['a', 'b'], 'first cast key is side a');
+    assert.deepEqual(v.lines.map(function (l) { return l.side; }), ['a', 'a', 'b', 'a', 'b', 'a', 'b', 'a'], 'bubble sides follow the speaker');
     assert.ok(v.pills.indexOf('私') >= 0 && v.pills.indexOf('X は Y です') >= 0, 'pills: new words + the pattern');
     assert.ok(v.seconds >= 10 && v.seconds <= 60, 'about ' + v.seconds + ' s');
     var u2 = withDialogue()[1], v2 = dialogueView(CATALOG.items[u2.dialogue], u2);
-    assert.ok(/nw:たべもの/.test(kinds(v2.lines[3])) && !/nw:たべ /.test(kinds(v2.lines[3])), 'たべもの is one word, not the たべ of 食べる');
+    assert.ok(/nw:ぎゅうにゅう/.test(kinds(v2.lines[1])) && /nw:のみ/.test(kinds(v2.lines[1])), 'new words in the milk line');
     assert.ok(/br:を/.test(kinds(v2.lines[0])), 'を is a bridge in lesson ' + u2.id);
+    assert.deepEqual(v2.cast.map(function (c) { return c.initial + c.side; }), ['ヨa', 'アb'], 'two women: still a and b');
   });
 
   QUnit.test('dialogueView: set phrases carry no grammar mark, real grammar still does', function (assert) {
@@ -72,22 +76,26 @@ QUnit.module('dialogue', function () {
         });
       });
     });
-    assert.ok(seen >= 3 && real > 0, 'set phrases present (' + seen + '), grammar marks kept (' + real + ')');
+    assert.ok(seen >= 2 && real > 0, 'set phrases present (' + seen + '), grammar marks kept (' + real + ')');
     var u2 = withDialogue()[1], v2 = dialogueView(CATALOG.items[u2.dialogue], u2);
     assert.ok(v2.lines.some(function (l) { return l.segs.some(function (s) { return s.kind === 'g' && /たべ?ます|ます/.test(s.t) && l.en; }); }), 'ます still marked outside set phrases');
   });
 
-  QUnit.test('listeningScript: lines only, no narrator, speaker M / M2, no pause marks; clips only when rendered', function (assert) {
+  QUnit.test('listeningScript: lines only, no narrator, speaker = the character gender, who / slot / tone, no pause marks; clips only when rendered', function (assert) {
     dialogues().forEach(function (it) {
       var s = listeningScript(it);
       assert.strictEqual(s.length, it.lines.length, it.id + ': one entry per line');
-      assert.ok(s.every(function (l, i) { return l.speaker === it.lines[i].speaker && l.speaker !== 'N' && !/…/.test(l.text) && !/[一-鿿\[|]/.test(l.text); }), 'kana speech text');
+      assert.ok(s.every(function (l, i) { return l.who === it.lines[i].speaker && l.speaker === it.cast[l.who].gender && !/…/.test(l.text) && !/[一-鿿\[|]/.test(l.text) && l.tone === it.lines[i].tone; }), 'kana speech text, gender role, character id, tone');
+      var slots = {};
+      s.forEach(function (l) { slots[l.who] = l.slot; });
+      var want = Object.keys(it.cast).map(function (k) { return it.cast[k].gender; }).map(function (g, i, a) { return a.indexOf(g) === i ? g : g + '2'; });
+      assert.deepEqual(Object.keys(it.cast).map(function (k) { return slots[k]; }), want, 'second character of a gender gets slot M2 / F2');
       var track = typeof AUDIO_MANIFEST !== 'undefined' && AUDIO_MANIFEST.tracks[it.id];
       assert.ok(track ? s.every(function (l, i) { return l.clip === track[i]; }) : s.every(function (l) { return !l.clip; }), 'clips from the manifest, none = Web Speech fallback');
     });
   });
 
-  QUnit.test('assignVoices: the second man gets another voice or a different pitch', function (assert) {
+  QUnit.test('assignVoices: the second man / woman gets another voice or a different pitch', function (assert) {
     var ichiro = { name: 'Microsoft Ichiro - Japanese', lang: 'ja-JP', localService: true };
     var keita = { name: 'Microsoft Keita - Japanese', lang: 'ja-JP', localService: true };
     var haruka = { name: 'Microsoft Haruka - Japanese', lang: 'ja-JP', localService: true };
@@ -98,6 +106,12 @@ QUnit.module('dialogue', function () {
     c = assignVoices([haruka]);
     assert.ok(c.M2.pitch !== c.M.pitch, 'no male voice: pitches differ');
     assert.ok(assignVoices([]).M2.pitch !== assignVoices([]).M.pitch, 'no voice at all');
+    var ayumi = { name: 'Microsoft Ayumi - Japanese', lang: 'ja-JP', localService: true };
+    c = assignVoices([ichiro, haruka, ayumi]);
+    assert.ok(c.F2.voice && c.F2.voice !== c.F.voice, 'two female voices: one each');
+    c = assignVoices([ichiro, haruka]);
+    assert.ok(c.F2.voice === c.F.voice && c.F2.pitch !== c.F.pitch, 'one female voice: pitch tells them apart');
+    assert.ok(assignVoices([]).F2.pitch !== assignVoices([]).F.pitch, 'no voice at all, women');
   });
 
   QUnit.test('Quiz has no Remix question; Practice swaps (dialogueSwaps) build the target and leave the distractor out', function (assert) {

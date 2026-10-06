@@ -1712,9 +1712,14 @@ function speechText(s) { return furiganaParts(s).map(function (p) { return p.r |
 // then each reply.
 function listeningScript(it, order) {
   if (it.format === 'dialogue') { // lines only, no narrator; the voice skips the "……" pause marks
-    var dc = listenClips(it);
+    // speaker = the character's gender (M / F: the clipKey role), who = the character id (the clip's voice),
+    // slot = the browser-voice slot (M, M2, F, F2: the second character of a gender gets the 2), tone = the line's delivery hint
+    var dc = listenClips(it), keys = Object.keys(it.cast);
     return it.lines.map(function (l, j) {
-      var o = { speaker: l.speaker, text: speechText(l.furigana).replace(/…+/g, '') };
+      var g = it.cast[l.speaker].gender;
+      var rank = keys.filter(function (k) { return it.cast[k].gender === g; }).indexOf(l.speaker);
+      var o = { speaker: g, who: l.speaker, slot: rank > 0 ? g + '2' : g, text: speechText(l.furigana).replace(/…+/g, '') };
+      if (l.tone) o.tone = l.tone;
       if (dc) o.clip = dc[j];
       return o;
     });
@@ -1779,9 +1784,9 @@ function listeningExercises(unit, taughtKanji) {
 }
 
 // ── Lesson dialogues (pilot) ────────────────────────────────────────────────
-// A lesson unit may carry `dialogue: 'l:n5-dlg-…'` (a listening item of format dialogue). Speakers
-// are M (first, left) and M2 (second, right). dialogueView builds what the card shows; the audio is
-// listeningScript(item).
+// A lesson unit may carry `dialogue: 'l:n5-dlg-…'` (a listening item of format dialogue). Its `cast`
+// is keyed by character id (tools/audio/cast.json); the first key is the left speaker, the second the
+// right one. dialogueView builds what the card shows; the audio is listeningScript(item).
 var VERB_I_ROW = { 'う': 'い', 'く': 'き', 'ぐ': 'ぎ', 'す': 'し', 'つ': 'ち', 'ぬ': 'に', 'ぶ': 'び', 'む': 'み', 'る': 'り' };
 // dialogState(unitId) / saveDialogState(unitId, st): whether a unit's dialogue card is open and heard,
 // { open, heard, practiced } (practiced = the Practice card was finished). One localStorage key (a map by unit id): device-only, never synced or exported.
@@ -1810,7 +1815,7 @@ function verbStem(word, reading, pos) {
 // Marks are found in the text (bridge first, then vocab, then grammar) and never overlap; a ruby
 // block is marked whole.
 // Fixed expressions, not catalog items: never an application of the lesson's grammar, so no 'g' mark inside them.
-var SET_PHRASES = ['はじめまして', 'よろしく', 'おねがいします', 'いただきます', 'ごちそうさま', 'ありがとうございます', 'ありがとう', 'すみません'];
+var SET_PHRASES = ['はい', 'はじめまして', 'よろしく', 'おねがいします', 'いただきます', 'ごちそうさま', 'ありがとうございます', 'ありがとう', 'すみません'];
 function dialogueView(it, unit) {
   var vocab = (unit.vocab || []).map(function (v) {
     var n = [v.word, v.reading];
@@ -1826,6 +1831,7 @@ function dialogueView(it, unit) {
   var needles = [].concat.apply([], vocab.map(function (x) { return x.needles.map(function (n) { return { n: n, v: x.v, gloss: x.gloss }; }); }))
     .sort(function (a, b) { return b.n.length - a.n.length; });
   var usedWords = {};
+  var sideOf = function (id) { return Object.keys(it.cast).indexOf(id) === 0 ? 'a' : 'b'; }; // chip colour and bubble side, whoever the characters are
   var lines = it.lines.map(function (l, i) {
     var parts = furiganaParts(l.furigana), plain = parts.map(function (p) { return p.t; }).join('');
     // one cell per ruby block, one per plain character
@@ -1868,12 +1874,12 @@ function dialogueView(it, unit) {
       else segs.push({ t: c.t, r: c.r, kind: c.kind, gloss: c.gloss });
     });
     var who = it.cast[l.speaker];
-    return { i: i, speaker: l.speaker, name: who.name, initial: Array.from(who.jp)[0], en: l.en, segs: segs };
+    return { i: i, speaker: l.speaker, side: sideOf(l.speaker), name: who.name, initial: Array.from(who.jp)[0], en: l.en, segs: segs };
   });
   var chars = it.lines.reduce(function (n, l) { return n + speechText(l.furigana).replace(/…+/g, '').length; }, 0);
   return {
     id: it.id, title: it.title, goal: it.goal, scene: it.scene, bridge: it.bridge || [],
-    cast: Object.keys(it.cast).map(function (k) { return { speaker: k, name: it.cast[k].name, role: it.cast[k].role, initial: Array.from(it.cast[k].jp)[0] }; }),
+    cast: Object.keys(it.cast).map(function (k) { return { speaker: k, side: sideOf(k), name: it.cast[k].name, role: it.cast[k].role, initial: Array.from(it.cast[k].jp)[0] }; }),
     lines: lines,
     pills: vocab.filter(function (x) { return usedWords[x.v.id]; }).map(function (x) { return x.v.word; })
       .concat(grammar.filter(function (x) { return usedWords[x.g.id]; }).map(function (x) { return x.g.pattern; })),
@@ -2181,7 +2187,8 @@ function chunkSpeech(text, max) {
   return out.map(function (s) { return s.trim(); }).filter(Boolean);
 }
 
-// assignVoices(voices): speaker → { voice, pitch } for M (man), M2 (second man), F (woman), N (narrator).
+// assignVoices(voices): slot → { voice, pitch } for M (man), M2 (second man), F (woman), F2 (second woman), N (narrator).
+// Browser-voice fallback only: the rendered clips give every character their own voice (tools/audio/cast.json).
 // Two different ja voices when there are (by name: a male-named voice for M, a female-named one
 // for F), else the same voice with pitch 0.8 (M) / 1.25 (F); a voice already of that gender keeps
 // pitch 1. Local voices first: network ones (Chrome's Google voice) cut out on long lines.
@@ -2203,10 +2210,14 @@ function assignVoices(voices) {
   var n = rest.filter(isFemale)[0] || rest.filter(function (v) { return !isMale(v); })[0] || rest[0];
   // M2 = the second man of a two-man dialogue: another male voice if there is one, else M's voice a step higher
   var m2 = ja.filter(function (v) { return v !== m && isMale(v); })[0];
+  // F2 = the second woman of a two-woman dialogue, same idea
+  var f2 = ja.filter(function (v) { return v !== f && v !== m && isFemale(v); })[0];
+  var fp = isFemale(f) && f !== m ? 1 : 1.25;
   return {
     M: { voice: m || null, pitch: isMale(m) ? 1 : 0.8 },
     M2: { voice: m2 || m || null, pitch: m2 ? 1 : isMale(m) ? 1.2 : 1.05 },
-    F: { voice: f || null, pitch: isFemale(f) && f !== m ? 1 : 1.25 },
+    F: { voice: f || null, pitch: fp },
+    F2: { voice: f2 || f || null, pitch: f2 ? 1 : fp === 1 ? 1.2 : 1.4 },
     N: n ? { voice: n, pitch: 1 } : { voice: f || null, pitch: f ? 0.85 : 1 }
   };
 }

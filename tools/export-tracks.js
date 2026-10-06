@@ -4,15 +4,17 @@
 //
 // clipKey rule (the notebook hashes it so identical lines across tracks render once):
 //   clipKey = role + '|' + (role === 'N' ? '' : archetype) + '|' + say
-// where role is N / M / M2 (the second man of a two-man dialogue, tracks.json `man2`) / F, archetype is the track's man / woman key (tracks.json `man` / `woman`;
-// the narrator is one fixed voice, no archetype),
+// where role is N / M / F, archetype is the track's man / woman key (tracks.json `man` / `woman`;
+// the narrator is one fixed voice, no archetype). A dialogue line (format dialogue) is voiced by its character:
+// role = the character's gender (M / F), archetype = the character id (tools/audio/cast.json, per-line `arch`
+// in tracks.json), and an optional per-line `tone` is appended: clipKey + '|' + tone (only when set),
 // and say is the line's kana reading (listeningScript text, U+3000 spaces removed): the TTS input,
 // so the authored readings decide how each kanji is spoken. `text` (natural, kanji kept) is kept
 // for reading the transcript only.
 // render-input.json (gitignored) is the one file the Colab notebook uploads:
-//   { tracks, manArchetypes, womanArchetypes, have: [clip names already in audio/] }
+//   { tracks, manArchetypes, womanArchetypes, characters (cast.json), have: [clip names already in audio/] }
 const fs = require('fs'), path = require('path'), vm = require('vm');
-const { clipKey, clipName, sayText } = require('./build-audio-manifest.js');
+const { archOf, clipKey, clipName, sayText } = require('./build-audio-manifest.js');
 const root = path.join(__dirname, '..');
 const ctx = { localStorage: { getItem() { return null; }, setItem() {} }, document: {} };
 ctx.window = ctx;
@@ -21,6 +23,7 @@ vm.createContext(ctx);
   vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
 });
 const read = f => JSON.parse(fs.readFileSync(path.join(__dirname, 'audio', f), 'utf8'));
+const CAST = read('cast.json');
 const A = { M: { arch: read('man-archetypes.json'), assign: read('man-assignments.json') },
   F: { arch: read('woman-archetypes.json'), assign: read('woman-assignments.json') } };
 const natural = s => ctx.furiganaParts(s).map(p => p.t).join('').replace(/　/g, '');
@@ -28,7 +31,7 @@ const natural = s => ctx.furiganaParts(s).map(p => p.t).join('').replace(/　/g,
 // natural-text twin of lib.js listeningScript (same order, same speakers)
 function naturalScript(it) {
   const say = (sp, s) => ({ speaker: sp, text: natural(s) });
-  const lines = it.lines.map(l => say(l.speaker, l.furigana));
+  const lines = it.lines.map(l => say(it.format === 'dialogue' ? it.cast[l.speaker].gender : l.speaker, l.furigana));
   const q = it.question && say('N', it.question);
   if (it.format === 'dialogue') return lines;
   if (!ctx.LISTEN_SPOKEN_OPTIONS[it.format]) return [lines[0], q].concat(lines.slice(1), [q]);
@@ -43,9 +46,14 @@ ctx.listeningFor('N5').forEach(function (it) {
   const kana = ctx.listeningScript(it), nat = naturalScript(it);
   if (kana.length !== nat.length || kana.some((l, i) => l.speaker !== nat[i].speaker))
     throw new Error(it.id + ': natural sequence does not match listeningScript');
-  const pick = {};
-  // M2 = the second man of a two-man dialogue: his own archetype (`man2` in man-assignments.json), same archetype list
-  [['M', 'M', 'man'], ['M2', 'M', 'man2'], ['F', 'F', 'woman']].forEach(function (x) {
+  const pick = {}, dlg = it.format === 'dialogue';
+  if (dlg) kana.forEach(function (l) { // per-character voices: no man / woman assignment
+    const c = CAST[l.who];
+    if (!c) errors.push(it.id + ': character ' + l.who + ' is not in cast.json');
+    else if (c.gender !== l.speaker) errors.push(it.id + ': ' + l.who + ' is ' + c.gender + ' in cast.json, ' + l.speaker + ' in the item');
+    if (l.tone && l.tone.includes("|")) errors.push(it.id + ': tone must not contain |');
+  });
+  else [['M', 'M', 'man'], ['F', 'F', 'woman']].forEach(function (x) {
     const r = x[0], a = A[x[1]];
     if (!nat.some(l => l.speaker === r)) return;
     const e = a.assign[it.id], k = e && e[x[2]];
@@ -53,23 +61,25 @@ ctx.listeningFor('N5').forEach(function (it) {
     else if (!a.arch[k]) errors.push(it.id + ': unknown ' + r + ' archetype ' + k);
     else pick[r] = k;
   });
-  const man = pick.M || null, woman = pick.F || null, man2 = pick.M2 || null;
-  tracks.push({ id: it.id, format: it.format, man, ...(man2 ? { man2 } : {}), woman,
-    lines: nat.map((l, i) => ({ role: l.speaker, text: l.text, kana: kana[i].text, say: sayText(kana[i].text) })) });
+  const man = pick.M || null, woman = pick.F || null;
+  tracks.push({ id: it.id, format: it.format, man, woman,
+    lines: nat.map((l, i) => ({ role: l.speaker, ...(kana[i].who ? { arch: kana[i].who } : {}), ...(kana[i].tone ? { tone: kana[i].tone } : {}),
+      text: l.text, kana: kana[i].text, say: sayText(kana[i].text) })) });
   tracks[tracks.length - 1].lines.forEach(function (l) {
     total++; allChars += l.say.length;
-    const key = clipKey(l.role, l.role === 'M' ? man : l.role === 'M2' ? man2 : woman, l.say);
+    const key = clipKey(l.role, archOf(tracks[tracks.length - 1], l), l.say, l.tone);
     if (!clips.has(key)) { clips.add(key); chars += l.say.length; }
   });
 });
 ['M', 'F'].forEach(r => Object.keys(A[r].assign).forEach(id => { if (!tracks.some(t => t.id === id)) errors.push(id + ': ' + r + ' assignment for unknown track'); }));
+Object.keys(CAST).forEach(id => { const c = CAST[id]; if (!c.name || !c.jp || !/^[MF]$/.test(c.gender) || !c.role || !c.personality || !c.voice) errors.push('cast.json ' + id + ': needs name, jp, gender M/F, role, personality, voice'); });
 if (errors.length) { console.error(errors.join('\n')); process.exit(1); }
 
 fs.writeFileSync(path.join(__dirname, 'audio', 'tracks.json'),
   JSON.stringify({ generatedFrom: 'catalog', tracks }, null, 1) + '\n');
 const have = fs.readdirSync(path.join(root, 'audio')).filter(f => /^[0-9a-f]{12}\.mp3$/.test(f)).sort();
 fs.writeFileSync(path.join(__dirname, 'audio', 'render-input.json'),
-  JSON.stringify({ tracks, manArchetypes: A.M.arch, womanArchetypes: A.F.arch, have }) + '\n');
+  JSON.stringify({ tracks, manArchetypes: A.M.arch, womanArchetypes: A.F.arch, characters: CAST, have }) + '\n');
 const names = new Set([...clips].map(clipName)), reused = [...names].filter(n => have.includes(n)).length;
 const dist = {}, wdist = {};
 tracks.forEach(t => { if (t.man) dist[t.man] = (dist[t.man] || 0) + 1; if (t.woman) wdist[t.woman] = (wdist[t.woman] || 0) + 1; });

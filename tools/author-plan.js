@@ -205,7 +205,7 @@ kanaUnits(KATAKANA, "katakana");
 const kanjiAll = items.filter(function (it) { return it.kind === "kanji"; }); // kanji.js order = Tanos frequency order
 // Written forms per lesson, to see where each kanji shows up.
 // Lesson dialogs (pilot): lesson title -> l:n5-dlg-… (data/n5/listening.js, format dialogue). Shown above the vocabulary.
-const DIALOGUES = { "Introducing yourself": "l:n5-dlg-team-seven", "Eating and drinking": "l:n5-dlg-gojo-lunch" };
+const DIALOGUES = { "Introducing yourself": "l:n5-dlg-first-class", "Eating and drinking": "l:n5-dlg-forger-table" };
 const lessonText = LESSONS.map(function (l) { return words(l[2]).map(function (id) { return CATALOG.items[id].word; }).join(" "); });
 const soon = function (k, n) { return lessonText.slice(n + 1, n + 7).some(function (s) { return s.indexOf(k.char) >= 0; }); };
 // Kanji placement: in the first lesson that has a word written with it, most frequent first

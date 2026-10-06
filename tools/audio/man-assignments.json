@@ -64,7 +64,5 @@
   "l:n5-when-sea": { "man": "worker", "why": "busy adult with a work schedule planning a summer trip" },
   "l:n5-which-car": { "man": "worker", "why": "adult asking whose car is whose; no clear identity" },
   "l:n5-how-many-tickets": { "man": "worker", "why": "customer buying cinema tickets for family" },
-  "l:n5-shop-sunday": { "man": "worker", "why": "customer asking a shop's opening hours" },
-  "l:n5-dlg-team-seven": { "man": "teacher_doctor", "man2": "student", "why": "Kakashi: calm, authoritative teacher; Sasuke: a young student" },
-  "l:n5-dlg-gojo-lunch": { "man": "worker", "man2": "student", "why": "Gojo: relaxed adult teacher out to lunch; Itadori: a young student" }
+  "l:n5-shop-sunday": { "man": "worker", "why": "customer asking a shop's opening hours" }
 }

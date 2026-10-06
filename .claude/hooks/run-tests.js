@@ -1420,13 +1420,29 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     var man = assign("man-assignments.json"), woman = assign("woman-assignments.json");
     // a dialogue has no clips until rendered (Web Speech fallback): skipped here while the manifest has no track for it
     var tracks = listeningFor("N5").filter(function (it) { return it.format !== "dialogue" || AUDIO_MANIFEST.tracks[it.id]; }).map(function (it) {
-      return { id: it.id, man: (man[it.id] || {}).man || null, man2: (man[it.id] || {}).man2 || null, woman: (woman[it.id] || {}).woman || null,
-        lines: listeningScript(it).map(function (l) { return { role: l.speaker, say: audioTool.sayText(l.text) }; }) };
+      // a dialogue line is voiced by its character (arch = who) with an optional tone; other tracks by the track's man / woman archetype
+      return { id: it.id, man: (man[it.id] || {}).man || null, woman: (woman[it.id] || {}).woman || null,
+        lines: listeningScript(it).map(function (l) { return { role: l.speaker, arch: l.who, tone: l.tone, say: audioTool.sayText(l.text) }; }) };
     });
     var errs = audioTool.check(projectDir, AUDIO_MANIFEST, tracks);
     a.ok(errs.length === 0, errs.length + " of " + tracks.reduce(function (n, t) { return n + t.lines.length; }, 0) +
       " clip lines stale: re-render (tools/audio/render-notebook-v2.ipynb), rerun tools/build-audio-manifest.js (tools/audio/README.md)\n    " +
       errs.slice(0, 5).join("\n    ") + (errs.length > 5 ? "\n    ..." : ""));
+  });
+
+  test("audio: every dialogue character is in tools/audio/cast.json with the same name, jp and gender; cast.json is complete", function (a) {
+    var cast = JSON.parse(fs.readFileSync(path.join(projectDir, "tools", "audio", "cast.json"), "utf8"));
+    Object.keys(cast).forEach(function (id) {
+      var c = cast[id];
+      a.ok(c.name && c.jp && /^[MF]$/.test(c.gender) && c.role && c.personality && /^Native Japanese speaker/.test(c.voice), id + ": cast.json fields");
+    });
+    a.equal(new Set(Object.keys(cast).map(function (id) { return cast[id].voice; })).size, Object.keys(cast).length, "every character has its own voice prompt");
+    listeningFor("N5").filter(function (it) { return it.format === "dialogue"; }).forEach(function (it) {
+      Object.keys(it.cast).forEach(function (id) {
+        var c = cast[id], d = it.cast[id];
+        a.ok(c && c.name === d.name && c.jp === d.jp && c.gender === d.gender, it.id + ": " + id + " matches cast.json");
+      });
+    });
   });
 
   test("sw.js: audio mp3s are runtime-cached, never precached; no mp3 is missed by RUNTIME_ONLY", function (a) {

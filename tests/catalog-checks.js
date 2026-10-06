@@ -254,8 +254,8 @@ QUnit.module('catalog checks', function () {
     task: { n: 4, question: true }, point: { n: 4, question: true },
     utterance: { n: 3, question: true, spoken: true }, quick: { n: 3, question: false, spoken: true }
   };
-  // Lesson dialogues (pilot): canon names only. Never invent a given name for the cast.
-  var DIALOGUE_NAMES = ['カカシ', 'サスケ', 'サクラ', 'ごじょう', 'いたどり'];
+  // Lesson dialogues: canon names only (the 14 recurring characters of tools/audio/cast.json, as spoken). Never invent a given name for the cast.
+  var DIALOGUE_NAMES = ['フリーレン', 'ゴジョウ', 'カカシ', 'ルルーシュ', 'ヒナタ', 'エミリア', 'サスケ', 'サクラ', 'ヨル', 'アーニャ', 'キルア', 'マオマオ', 'ナミ', 'サンジ'];
   function dialogueErrors(it, items) {
     var e = [];
     function err(msg) { e.push(it.id + ': ' + msg); }
@@ -263,10 +263,12 @@ QUnit.module('catalog checks', function () {
     ['title', 'goal', 'scene'].forEach(function (f) { if (typeof it[f] !== 'string' || !it[f]) err('missing ' + f); });
     ['question', 'options', 'answer', 'optionSpeaker'].forEach(function (f) { if (it[f] !== undefined) err('a dialogue has no ' + f); });
     var cast = it.cast || {}, lines = Array.isArray(it.lines) ? it.lines : [];
-    ['M', 'M2'].forEach(function (k) { if (!cast[k] || !cast[k].name || !cast[k].jp || !cast[k].role) err('cast ' + k + ' needs name, jp, role'); });
+    var ids = Object.keys(cast);
+    if (ids.length !== 2) err('cast has two characters, has ' + ids.length);
+    ids.forEach(function (k) { if (!cast[k].name || !cast[k].jp || !/^[MF]$/.test(cast[k].gender) || !cast[k].role) err('cast ' + k + ' needs name, jp, gender M / F, role'); });
     if (lines.length < 6 || lines.length > 10) err('6-10 lines, has ' + lines.length);
-    if (lines.some(function (l) { return ['M', 'M2'].indexOf(l.speaker) < 0 || !l.furigana || !l.en; })) err('every line needs speaker M / M2, furigana and en');
-    else if (['M', 'M2'].some(function (k) { return !lines.some(function (l) { return l.speaker === k; }); })) err('two speakers talk');
+    if (lines.some(function (l) { return ids.indexOf(l.speaker) < 0 || !l.furigana || !l.en || (l.tone !== undefined && (typeof l.tone !== 'string' || !l.tone || /\|/.test(l.tone))); })) err('every line needs a speaker from the cast, furigana, en, and a tone (when set) that is a non-empty string without |');
+    else if (ids.some(function (k) { return !lines.some(function (l) { return l.speaker === k; }); })) err('two speakers talk');
     var bridge = it.bridge || [];
     if (bridge.length > 3) err('at most 3 bridge words');
     var plain = lines.map(function (l) { return stripRuby(l.furigana || ''); }).join('\n');
@@ -277,7 +279,7 @@ QUnit.module('catalog checks', function () {
     });
     var names = it.names || [];
     names.forEach(function (n) { if (DIALOGUE_NAMES.indexOf(n) < 0) err('name ' + n + ' is not a canon cast name'); });
-    ['M', 'M2'].forEach(function (k) { if (cast[k] && names.indexOf(cast[k].jp) < 0) err('names misses ' + cast[k].jp); });
+    ids.forEach(function (k) { if (names.indexOf(cast[k].jp) < 0) err('names misses ' + cast[k].jp); });
     var swaps = it.remixes;
     if (!Array.isArray(swaps) || swaps.length < 1 || swaps.length > 3) err('remixes needs 1 to 3 swaps');
     else swaps.forEach(function (r, n) {
@@ -291,7 +293,7 @@ QUnit.module('catalog checks', function () {
         var b = bridge.filter(function (x) { return c.indexOf(x.text) >= 0 && x.text.length === 1; })[0];
         if (b && !b.gloss) err(w + 'chunk ' + c + ' holds a bridge word without a gloss');
       });
-      (r.chunks.join('').match(/[ァ-ヺ]+/g) || []).forEach(function (k) { if (names.indexOf(k) < 0) err(w + 'katakana ' + k + ' not in names'); });
+      (r.chunks.join('').match(/[ァ-ヺー]+/g) || []).forEach(function (k) { if (names.indexOf(k) < 0) err(w + 'katakana ' + k + ' not in names'); });
     });
     return e.concat(ownTextErrors(it, lines.map(function (l) { return l.furigana || ''; }).join('\n'), items));
   }

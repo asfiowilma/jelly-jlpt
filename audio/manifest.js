@@ -14,8 +14,6 @@ var AUDIO_MANIFEST = { tracks: {
   "l:n5-close-door": ["39b05f5ace14.mp3","227c08f6b14a.mp3","b32e1bae4014.mp3","85e91362d063.mp3","0986b4d32320.mp3","95461fa7746a.mp3","f496059efea5.mp3"],
   "l:n5-coffee-or-tea": ["bbe22a890cc2.mp3","227c08f6b14a.mp3","aaa17c1c7587.mp3","85e91362d063.mp3","82a726d241c8.mp3","95461fa7746a.mp3","8b4897deeab5.mp3"],
   "l:n5-dinner-shopping": ["70531b53594c.mp3","846dc349e732.mp3","174ece7eea13.mp3","bb4623e14b19.mp3","de059c2777dc.mp3","3a5e667494ea.mp3","846dc349e732.mp3"],
-  "l:n5-dlg-gojo-lunch": ["37fa7ba7ef4a.mp3","4aa6ed8dbd00.mp3","c1f6e064f414.mp3","b4da233d415e.mp3","0b7c86a08c09.mp3","fef69ac18816.mp3"],
-  "l:n5-dlg-team-seven": ["af920cdef696.mp3","781bf7f0cbe5.mp3","34f9b4c6c9b2.mp3","943781118901.mp3","86bc9091a0b1.mp3","75b18c2521df.mp3","b249a213e55f.mp3"],
   "l:n5-doctor-advice": ["6cc6ef847a6f.mp3","30f15e681091.mp3","158bacd16118.mp3","38c039dbdbac.mp3","99db6e5015d9.mp3","e4f7f9e675bb.mp3","7dfe9e80d36f.mp3","30f15e681091.mp3"],
   "l:n5-dog-photo": ["6c9853c6f49b.mp3","51ed416c6623.mp3","227c08f6b14a.mp3","3037e6eb2ca8.mp3","85e91362d063.mp3","3fbe33a1d8a8.mp3","95461fa7746a.mp3","aee8dca19412.mp3"],
   "l:n5-favorite-drink": ["3106d2edbbcf.mp3","227c08f6b14a.mp3","4236e6e2c7de.mp3","85e91362d063.mp3","a2c0dc0ed718.mp3","95461fa7746a.mp3","7c1fb7236df2.mp3"],

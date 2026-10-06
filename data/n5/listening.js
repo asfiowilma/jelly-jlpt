@@ -9,10 +9,14 @@
 //               spoken) and asks なんと いいますか; 3 options, heard only.
 //   quick     = 即時応答: one short line, then 3 replies, heard only; no question.
 //   dialogue  = not a test format: a short scene shown in a lesson unit (unit.dialogue, components/dialogue-section.js).
-//               Fields: title, goal, scene, cast { M, M2 }, lines [{ speaker M | M2, furigana, en }], bridge (max 3 words the
+//               Fields: title, goal, scene, cast { <character id>: { name, jp, gender M|F, role } } (ids from tools/audio/cast.json; the
+//               first key is the left speaker), lines [{ speaker <cast id>, furigana, en, tone? }], bridge (max 3 words the
 //               unit has not taught: { text, gloss, ctx?, id? }), remixes (1-3 swaps for the lesson's Practice card:
 //               { scene, en, chunks (answer chunks + 1 distractor), answer, explain }; ungraded, not in the quiz),
-//               names, uses. Two men, so the second speaker is M2 (own voice archetype, tools/audio/README.md).
+//               names, uses. `tone` = optional short English delivery hint ("quiet, curt, low energy"), appended to the
+//               character's voice at render time; a clip's name changes only when a tone is set. A line that starts
+//               with 「……」 is a pause marker (not spoken): carry the curt delivery in `tone`. Each character has one
+//               fixed voice (tools/audio/cast.json, tools/audio/README.md); the full guide is docs/dialogue-authoring.md.
 // Audio is pre-rendered TTS clips (audio/manifest.js, spoken from the kana readings); the browser's
 // speech synthesis is the fallback when a clip is missing or cannot load.
 //
@@ -55,7 +59,8 @@ CATALOG.add([
     en: 'Woman: Who is that person? — 1. He is my older brother. 2. It is my book. 3. I am a student too.',
     explain: 'どなた is a polite だれ, "who", so the reply names a person: わたしのあにです. The book answers "what" or "whose", and "I am a student too" says nothing about that person.',
     uses: ['g:wa-desu', 'g:ka', 'g:no', 'g:mo', 'v:あの|あの', 'v:方|かた', 'v:どなた|どなた', 'v:私|わたし', 'v:兄|あに', 'v:本|ほん', 'v:学生|がくせい', 'k:本', 'k:学', 'k:生'],
-    verified: true }),
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
 
   L({ id: 'l:n5-whose-umbrella', format: 'quick',
     lines: [{ speaker: 'M', furigana: 'これは　だれの　かさですか。' }],
@@ -65,7 +70,8 @@ CATALOG.add([
     en: 'Man: Whose umbrella is this? — 1. It is over there. 2. It is Kim\'s. 3. It is my book.',
     explain: 'だれの asks "whose", so the reply names the owner: キムさんのです "Kim\'s". あそこです "over there" answers where, not whose. The book doesn\'t fit: the question is about an umbrella.',
     uses: ['g:wa-desu', 'g:ka', 'g:no', 'v:これ|これ', 'v:誰|だれ', 'v:傘|かさ', 'v:あそこ|あそこ', 'v:さん|さん', 'v:私|わたし', 'v:本|ほん', 'k:本'],
-    verified: true }),
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
 
   L({ id: 'l:n5-nationality', format: 'quick',
     lines: [{ speaker: 'M', furigana: 'マリアさんは　どこの　[国|くに]の　[人|ひと]ですか。' }],
@@ -75,7 +81,8 @@ CATALOG.add([
     en: 'Man: Maria, which country are you from? — 1. I am a student. 2. It is English. 3. I am Brazilian.',
     explain: 'どこの国の人 asks which country someone is from, so the reply names a country + 人: ブラジル人. 学生 is an occupation and えいご a language, not a country or nationality.',
     uses: ['g:wa-desu', 'g:ka', 'g:no', 'v:さん|さん', 'v:どこ|どこ', 'v:国|くに', 'v:人|ひと', 'v:人|じん', 'v:学生|がくせい', 'v:英語|えいご', 'k:国', 'k:人', 'k:学', 'k:生'],
-    verified: true }),
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
 
   L({ id: 'l:n5-sister-student', format: 'quick',
     lines: [{ speaker: 'M', furigana: 'キムさんの　おねえさんも　[学生|がくせい]ですか。' }],
@@ -85,7 +92,8 @@ CATALOG.add([
     en: 'Man: Kim, is your older sister a student too? — 1. My sister is a teacher. 2. My mother is a teacher. 3. She is my older sister.',
     explain: 'The question is about Kim\'s sister. Speaking of her own sister, Kim says あね (おねえさん is for someone else\'s): "my sister is a teacher", so not a student. The mother is not asked about, and "she is my sister" does not answer whether she is a student.',
     uses: ['g:wa-desu', 'g:ka', 'g:no', 'g:mo', 'v:さん|さん', 'v:お姉さん|おねえさん', 'v:学生|がくせい', 'v:姉|あね', 'v:先生|せんせい', 'v:母|はは', 'v:私|わたし', 'k:学', 'k:生', 'k:先', 'k:母'],
-    verified: true }),
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
 
   L({ id: 'l:n5-get-up-time', format: 'quick',
     lines: [{ speaker: 'M', furigana: 'まいあさ　[何|なん][時|じ]に　おきますか。' }],
@@ -94,7 +102,8 @@ CATALOG.add([
     en: 'Man: What time do you get up every morning? — 1. I sleep six hours. 2. I get up at six. 3. I got up at six.',
     explain: 'まいあさ…おきますか asks about a habit, so the reply keeps the present ます form: 六時におきます. おきました is past (one morning), and 六時間ねます answers "how long do you sleep".',
     uses: ['g:ni', 'g:masu', 'g:ka', 'g:mashita', 'v:毎朝|まいあさ', 'v:何|なん', 'v:時|じ', 'v:起きる|おきる', 'v:六|ろく', 'v:時間|じかん', 'v:寝る|ねる', 'k:何', 'k:時', 'k:六', 'k:間'],
-    verified: true }),
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
 
   L({ id: 'l:n5-where-tomorrow', format: 'quick',
     lines: [{ speaker: 'F', furigana: 'あした　どこへ　[行|い]きますか。' }],
@@ -103,7 +112,8 @@ CATALOG.add([
     en: 'Woman: Where are you going tomorrow? — 1. I am going by bus. 2. I went to the department store. 3. I am going to the department store.',
     explain: 'どこへ asks for a place, so the reply has a place + へ: デパートへ行きます. バスで tells how, not where, and 行きました is past, but the question is about tomorrow.',
     uses: ['g:ni-ikimasu', 'g:de', 'g:masu', 'g:mashita', 'g:ka', 'v:明日|あした', 'v:どこ|どこ', 'v:行く|いく', 'v:バス|バス', 'v:デパート|デパート', 'k:行'],
-    verified: true }),
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
 
   L({ id: 'l:n5-how-much', format: 'quick',
     lines: [{ speaker: 'M', furigana: 'この　かさは　いくらですか。' }],
@@ -112,7 +122,8 @@ CATALOG.add([
     en: 'Man: How much is this umbrella? — 1. It is one. 2. It is that shop. 3. It is a thousand yen.',
     explain: 'いくら asks for a price: 千円です. 一つ answers "how many" (いくつ, which sounds close), and あのみせ answers "where".',
     uses: ['g:wa-desu', 'g:ka', 'v:この|この', 'v:傘|かさ', 'v:いくら|いくら', 'v:一つ|ひとつ', 'v:あの|あの', 'v:店|みせ', 'v:千|せん', 'v:円|えん', 'k:一', 'k:千', 'k:円'],
-    verified: true }),
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
 
   L({ id: 'l:n5-lunch-together', format: 'quick',
     lines: [{ speaker: 'F', furigana: 'いっしょに　ひるごはんを　[食|た]べませんか。' }],
@@ -121,7 +132,8 @@ CATALOG.add([
     en: 'Woman: Would you like to have lunch together? — 1. I didn\'t eat. 2. Sounds good. Let\'s eat. 3. Please, go ahead and eat.',
     explain: '〜ませんか is an invitation; いいですね、〜ましょう accepts it. 食べませんでした is a past answer to "did you eat?", and どうぞ食べてください offers food to someone: it doesn\'t answer "shall we eat together".',
     uses: ['g:wo', 'g:masen-ka', 'g:mashita', 'g:mashou', 'g:ne', 'g:te-kudasai', 'v:一緒|いっしょ', 'v:昼御飯|ひるごはん', 'v:食べる|たべる', 'v:いい|いい', 'v:どうぞ|どうぞ', 'k:食'],
-    verified: true }),
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
 
   L({ id: 'l:n5-been-to-kyoto', format: 'quick',
     lines: [{ speaker: 'M', furigana: 'きょうとへ　[行|い]ったことが　ありますか。' }],
@@ -131,7 +143,8 @@ CATALOG.add([
     en: 'Man: Have you ever been to Kyoto? — 1. I went last year. 2. I go last year. 3. Please go to Kyoto.',
     explain: '〜たことがありますか asks about experience; "I went last year" says yes. きょねん (last year) needs the past 行きました, so 行きます is wrong, and 行ってください asks the man to go: not an answer.',
     uses: ['g:ta-koto-ga-aru', 'g:ni-ikimasu', 'g:mashita', 'g:te-kudasai', 'g:ka', 'v:行く|いく', 'v:ある|ある', 'v:去年|きょねん', 'k:行'],
-    verified: true }),
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
 
   L({ id: 'l:n5-may-i-sit', format: 'quick',
     lines: [{ speaker: 'M', furigana: 'ここに　すわっても　いいですか。' }],
@@ -140,7 +153,8 @@ CATALOG.add([
     en: 'Man: May I sit here? — 1. I sat down. 2. I want to sit down. 3. Go ahead, please sit.',
     explain: '〜てもいいですか asks for permission; どうぞ、すわってください gives it. すわりました (I sat) and すわりたいです (I want to sit) talk about the woman herself.',
     uses: ['g:ni', 'g:te-mo-ii', 'g:ka', 'g:mashita', 'g:tai', 'g:te-kudasai', 'v:ここ|ここ', 'v:座る|すわる', 'v:いい|いい', 'v:どうぞ|どうぞ'],
-    verified: true }),
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
 
   L({ id: 'l:n5-why-absent', format: 'quick',
     lines: [{ speaker: 'F', furigana: 'きのう　どうして　[学校|がっこう]を　[休|やす]みましたか。' }],
@@ -149,7 +163,8 @@ CATALOG.add([
     en: 'Woman: Why were you absent from school yesterday? — 1. School starts at nine. 2. Because I was sick. 3. I will be absent tomorrow.',
     explain: 'どうして asks for a reason; 〜からです gives one: "because I was sick". 九時からです also ends in から, but there it means "from nine o\'clock", not "because". Tomorrow is not what was asked.',
     uses: ['g:doushite', 'g:wo', 'g:mashita', 'g:ka', 'g:wa-desu', 'g:kara', 'g:deshita', 'g:masu', 'v:昨日|きのう', 'v:どうして|どうして', 'v:学校|がっこう', 'v:休む|やすむ', 'v:九|く', 'v:時|じ', 'v:病気|びょうき', 'v:明日|あした', 'k:学', 'k:校', 'k:休', 'k:九', 'k:時'],
-    verified: true }),
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
 
   L({ id: 'l:n5-weather-tomorrow', format: 'quick',
     lines: [{ speaker: 'M', furigana: 'あしたの　[天気|てんき]は　どうでしょうか。' }],
@@ -158,7 +173,8 @@ CATALOG.add([
     en: 'Man: What will the weather be like tomorrow? — 1. It will probably rain. 2. It rained yesterday. 3. I like rain.',
     explain: 'The man asks about tomorrow; 〜でしょう guesses about the future: "it will probably rain". Yesterday\'s rain is the past, and liking rain is not a forecast.',
     uses: ['g:no', 'g:wa-desu', 'g:ka', 'g:deshou', 'g:ga', 'g:deshita', 'v:明日|あした', 'v:天気|てんき', 'v:どう|どう', 'v:昨日|きのう', 'v:雨|あめ', 'v:降る|ふる', 'v:好き|すき', 'k:天', 'k:気', 'k:雨'],
-    verified: true }),
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
 
   // ── utterance (発話表現) ───────────────────────────────────────────────────
   L({ id: 'l:n5-borrow-pen', format: 'utterance',
@@ -276,7 +292,8 @@ CATALOG.add([
     en: 'Narrator: In a classroom, a teacher and a student are talking. Which pages will the student do at home today? — F: Here is today\'s homework. Please read page 30 of the book. Then write the exercises on page 31 in your notebook. M: Teacher, do we do page 32 too? F: We\'ll do page 32 in class tomorrow. — Which pages will the student do at home today?',
     explain: 'The homework is reading page 30 and the exercises on page 31. Page 32 is done in class tomorrow, not at home.',
     uses: ['g:to', 'g:ga', 'g:te-iru', 'v:話す|はなす', 'k:話', 'g:de', 'g:wa-desu', 'g:no', 'g:wo', 'g:te-kudasai', 'g:ni', 'g:mo', 'g:ka', 'g:mashou', 'g:dake', 'g:masu', 'v:教室|きょうしつ', 'v:先生|せんせい', 'v:学生|がくせい', 'v:今日|きょう', 'v:宿題|しゅくだい', 'v:本|ほん', 'v:三|さん', 'v:十|じゅう', 'v:一|いち', 'v:二|に', 'v:ページ|ページ', 'v:読む|よむ', 'v:それから|それから', 'v:問題|もんだい', 'v:ノート|ノート', 'v:書く|かく', 'v:する|する', 'v:明日|あした', 'v:うち|うち', 'v:どの|どの', 'k:先', 'k:生', 'k:学', 'k:本', 'k:三', 'k:十', 'k:一', 'k:二', 'k:読', 'k:書'],
-    verified: true }),
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
 
   L({ id: 'l:n5-where-to-meet', format: 'task',
     lines: [
@@ -301,7 +318,8 @@ CATALOG.add([
     en: 'Narrator: A teacher is talking. What will the students bring tomorrow? — F: Tomorrow we are going to the park. Please bring a packed lunch and water. It won\'t rain, so you don\'t need an umbrella. For cameras, we\'ll use the school\'s camera. — What will the students bring tomorrow?',
     explain: 'もって来てください names the lunch and the water. No umbrella (it won\'t rain), and the class uses the school\'s camera, so nobody brings one.',
     uses: ['g:ga', 'g:te-iru', 'g:ni-ikimasu', 'g:to', 'g:wo', 'g:te-kudasai', 'g:kara', 'g:masen', 'g:no', 'g:ka', 'g:te-form', 'g:masu', 'v:先生|せんせい', 'v:話す|はなす', 'v:明日|あした', 'v:公園|こうえん', 'v:行く|いく', 'v:お弁当|おべんとう', 'v:水|みず', 'v:持つ|もつ', 'v:来る|くる', 'v:雨|あめ', 'v:降る|ふる', 'v:傘|かさ', 'v:要る|いる', 'v:カメラ|カメラ', 'v:学校|がっこう', 'v:使う|つかう', 'v:学生|がくせい', 'v:何|なに', 'k:先', 'k:生', 'k:話', 'k:行', 'k:水', 'k:来', 'k:雨', 'k:学', 'k:校', 'k:何'],
-    verified: true }),
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
 
   L({ id: 'l:n5-first-after-school', format: 'task',
     lines: [
@@ -315,7 +333,8 @@ CATALOG.add([
     en: 'Narrator: A male student and a female student are talking. What will the male student do first when he gets home? — F: What are you doing after you get home today? M: I have a lot of homework. But I\'ll do it after I take the dog for a walk. F: And dinner? M: I\'ll eat after my homework. — What will the male student do first when he gets home?',
     explain: '〜てから "after ~": he walks the dog first, then does the homework, then eats dinner. The bath is never mentioned.',
     uses: ['g:to', 'g:ga', 'g:te-iru', 'g:ni-ikimasu', 'g:te-kara', 'g:wo', 'g:ka', 'g:no', 'g:ni-iku', 'g:de', 'g:ni', 'g:te-form', 'g:masu', 'v:男|おとこ', 'v:学生|がくせい', 'v:女|おんな', 'v:話す|はなす', 'v:今日|きょう', 'v:うち|うち', 'v:帰る|かえる', 'v:何|なに', 'v:する|する', 'v:宿題|しゅくだい', 'v:たくさん|たくさん', 'v:ある|ある', 'v:でも|でも', 'v:犬|いぬ', 'v:散歩|さんぽ', 'v:行く|いく', 'v:晩御飯|ばんごはん', 'v:後|あと', 'v:食べる|たべる', 'v:初め|はじめ', 'v:お風呂|おふろ', 'v:入る|はいる', 'k:男', 'k:学', 'k:生', 'k:女', 'k:話', 'k:何', 'k:行', 'k:食', 'k:入'],
-    verified: true }),
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
 
   L({ id: 'l:n5-hotel-floor', format: 'task',
     lines: [
@@ -330,7 +349,8 @@ CATALOG.add([
     en: 'Narrator: At a hotel, a woman and a hotel employee are talking. Where will the woman go first? — F: Where is the restaurant? M: On the fifth floor. The elevator is over there. F: There are shops on the second floor, aren\'t there? M: The shops on the second floor are open until six. F: Then I\'ll go to the shops first. I\'ll go to the restaurant after that. — Where will the woman go first?',
     explain: 'The shops close at six, so she goes to the shops on the 2nd floor first (先に) and to the restaurant on the 5th floor afterwards.',
     uses: ['g:de', 'g:to', 'g:ga', 'g:te-iru', 'g:no', 'g:wa-desu', 'g:ka', 'g:ni', 'g:ga-arimasu', 'g:ne', 'g:made', 'g:ni-ikimasu', 'g:masu', 'v:ホテル|ホテル', 'v:女|おんな', 'v:人|ひと', 'v:話す|はなす', 'v:レストラン|レストラン', 'v:どこ|どこ', 'v:五|ご', 'v:階|かい', 'v:エレベーター|エレベーター', 'v:あちら|あちら', 'v:二|に', 'v:店|みせ', 'v:ある|ある', 'v:六|ろく', 'v:時|じ', 'v:じゃあ|じゃあ', 'v:先|さき', 'v:行く|いく', 'v:その|その', 'v:後|あと', 'v:初め|はじめ', 'k:女', 'k:人', 'k:話', 'k:五', 'k:二', 'k:六', 'k:時', 'k:先', 'k:行'],
-    verified: true }),
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
 
   L({ id: 'l:n5-sunday-plans', format: 'task',
     lines: [
@@ -375,7 +395,8 @@ CATALOG.add([
     en: 'Narrator: At a hospital, a doctor and a man are talking. What will the man do at home today? — F: It\'s a cold. Please take this medicine after dinner. M: May I take a bath? F: Today you\'d better not. Please go to bed early. M: May I go to work tomorrow? F: Please rest tomorrow. — What will the man do at home today?',
     explain: 'He takes the medicine after dinner and goes to bed early. 入らないほうがいい means "better not take a bath", and work is about tomorrow (and the doctor says to rest).',
     uses: ['g:de', 'g:to', 'g:ga', 'g:te-iru', 'g:wa-desu', 'g:ne', 'g:wo', 'g:no', 'g:te-kudasai', 'g:ni', 'g:te-mo-ii', 'g:ka', 'g:nai-form', 'g:hou-ga-ii', 'g:ni-iku', 'g:te-form', 'g:masu', 'v:病院|びょういん', 'v:お|お', 'v:医者|いしゃ', 'v:さん|さん', 'v:男|おとこ', 'v:人|ひと', 'v:話す|はなす', 'v:風邪|かぜ', 'v:この|この', 'v:薬|くすり', 'v:晩御飯|ばんごはん', 'v:後|あと', 'v:飲む|のむ', 'v:お風呂|おふろ', 'v:入る|はいる', 'v:いい|いい', 'v:今日|きょう', 'v:ほう|ほう', 'v:早い|はやい', 'v:寝る|ねる', 'v:明日|あした', 'v:仕事|しごと', 'v:行く|いく', 'v:休む|やすむ', 'v:うち|うち', 'v:何|なに', 'v:する|する', 'k:男', 'k:人', 'k:話', 'k:入', 'k:行', 'k:休', 'k:何'],
-    verified: true }),
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
 
   L({ id: 'l:n5-which-shirt', format: 'task',
     lines: [
@@ -405,7 +426,8 @@ CATALOG.add([
     en: 'Narrator: At home, a mother and her son are talking. What will the boy do first? — F: Have you cleaned your room yet? M: Not yet. I\'m going to watch TV now. F: Watch TV later. You have to clean your room first. M: OK. But I have homework too. F: Do your homework after the cleaning. — What will the boy do first?',
     explain: 'The mother says 先にへやをそうじしなくちゃいけません: cleaning comes first, then homework (そうじのあとで), and TV later. Reading a book is never mentioned.',
     uses: ['g:de', 'g:to', 'g:ga', 'g:te-iru', 'g:no', 'g:wa-desu', 'g:mou', 'g:mashita', 'g:ka', 'g:mada', 'g:kara', 'g:wo', 'g:te-kudasai', 'g:nakucha-ikenai', 'g:yo', 'g:mo', 'g:masu', 'v:うち|うち', 'v:お母さん|おかあさん', 'v:男の子|おとこのこ', 'v:話す|はなす', 'v:部屋|へや', 'v:掃除|そうじ', 'v:もう|もう', 'v:する|する', 'v:まだ|まだ', 'v:今|いま', 'v:テレビ|テレビ', 'v:見る|みる', 'v:後|あと', 'v:先|さき', 'v:分かる|わかる', 'v:でも|でも', 'v:宿題|しゅくだい', 'v:ある|ある', 'v:初め|はじめ', 'v:何|なに', 'v:本|ほん', 'v:読む|よむ', 'k:母', 'k:男', 'k:子', 'k:話', 'k:見', 'k:先', 'k:何', 'k:本', 'k:読'],
-    verified: true }),
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
 
   // ── point (ポイント理解) ───────────────────────────────────────────────────
   L({ id: 'l:n5-birthday', format: 'point',
@@ -489,7 +511,8 @@ CATALOG.add([
     en: 'Narrator: A male student and a female student are talking. When is the library closed? — M: Shall we study together at the library tomorrow? F: Tomorrow is Monday. The library is closed. M: Oh, that\'s right. Then how about Wednesday? F: Wednesday is fine. Last week it was closed on Wednesday too, but usually it is only Monday. — When is the library closed?',
     explain: 'Last Wednesday was a one-off; いつもはげつようびだけ: the library is normally closed only on Mondays. Tuesday is never mentioned.',
     uses: ['g:to', 'g:ga', 'g:te-iru', 'g:de', 'g:masen-ka', 'g:wa-desu', 'g:yo', 'g:ne', 'g:ka', 'g:mo', 'g:deshita', 'g:kedo', 'g:itsumo', 'g:dake', 'g:no', 'v:男|おとこ', 'v:学生|がくせい', 'v:女|おんな', 'v:話す|はなす', 'v:明日|あした', 'v:一緒|いっしょ', 'v:図書館|としょかん', 'v:勉強|べんきょう', 'v:月曜日|げつようび', 'v:休み|やすみ', 'v:そう|そう', 'v:じゃあ|じゃあ', 'v:水曜日|すいようび', 'v:どう|どう', 'v:いい|いい', 'v:先週|せんしゅう', 'v:いつも|いつも', 'v:いつ|いつ', 'v:火曜日|かようび', 'k:男', 'k:学', 'k:生', 'k:女', 'k:話', 'k:休'],
-    verified: true }),
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
 
   L({ id: 'l:n5-sister-in-photo', format: 'point',
     lines: [
@@ -505,7 +528,8 @@ CATALOG.add([
     en: 'Narrator: A woman and a man are looking at a photo. Which person is the woman\'s older sister? — M: Is this a photo of your family? F: Yes. My father, my mother, my older sister and me. M: Is this person with glasses your sister? F: That\'s my mother. My sister is the tall person next to my mother. M: The one with the hat? F: The one with the hat is me. — Which person is the woman\'s older sister?',
     explain: 'The person with glasses is the mother and the one with the hat is the speaker herself. Her sister is せが高い人, the tall one next to the mother.',
     uses: ['g:to', 'g:ga', 'g:wo', 'g:te-iru', 'g:wa-desu', 'g:no', 'g:ka', 'v:女|おんな', 'v:男|おとこ', 'v:人|ひと', 'v:写真|しゃしん', 'v:見る|みる', 'v:これ|これ', 'v:家族|かぞく', 'v:そう|そう', 'v:父|ちち', 'v:母|はは', 'v:姉|あね', 'v:私|わたし', 'v:この|この', 'v:眼鏡|めがね', 'v:お姉さん|おねえさん', 'v:それ|それ', 'v:隣|となり', 'v:背|せ', 'v:高い|たかい', 'v:帽子|ぼうし', 'v:低い|ひくい', 'v:どの|どの', 'k:女', 'k:男', 'k:人', 'k:見', 'k:父', 'k:母', 'k:高'],
-    verified: true }),
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
 
   L({ id: 'l:n5-movie-time', format: 'point',
     lines: [
@@ -550,7 +574,8 @@ CATALOG.add([
     en: 'Narrator: At a shop, a man and a shop assistant are talking. How much is the camera the man buys? — M: How much is this camera? F: 30,000 yen. M: That\'s a bit expensive. Do you have a cheaper one? F: This one is 20,000 yen. It\'s small and light. M: Nice. But is there an even cheaper one? F: This one is 15,000 yen, but it\'s a bit old. M: An old one is… no. Then I\'ll take the 20,000-yen camera. — How much is the camera the man buys?',
     explain: '30,000 is too expensive and the 15,000-yen one is old, so he takes the small, light one: 二万円のカメラをください. 10,000 yen is never offered.',
     uses: ['g:de', 'g:to', 'g:ga', 'g:te-iru', 'g:wa-desu', 'g:ka', 'g:ne', 'g:te-form', 'g:yo', 'g:kedo', 'g:no', 'g:wo', 'v:店|みせ', 'v:男|おとこ', 'v:人|ひと', 'v:話す|はなす', 'v:この|この', 'v:カメラ|カメラ', 'v:いくら|いくら', 'v:三|さん', 'v:万|まん', 'v:円|えん', 'v:ちょっと|ちょっと', 'v:高い|たかい', 'v:もっと|もっと', 'v:安い|やすい', 'v:ある|ある', 'v:こちら|こちら', 'v:二|に', 'v:小さい|ちいさい', 'v:軽い|かるい', 'v:いい|いい', 'v:でも|でも', 'v:一|いち', 'v:五|ご', 'v:千|せん', 'v:古い|ふるい', 'v:じゃあ|じゃあ', 'v:ください|ください', 'v:買う|かう', 'k:男', 'k:人', 'k:話', 'k:三', 'k:万', 'k:円', 'k:高', 'k:二', 'k:小', 'k:一', 'k:五', 'k:千'],
-    verified: true }),
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
 
   L({ id: 'l:n5-where-she-lives', format: 'point',
     lines: [
@@ -644,57 +669,58 @@ CATALOG.add([
 
   L({id: "l:n5-shop-sunday",format: "point",lines: [{speaker: "N",furigana: "みせで　[男|おとこ]の　[人|ひと]と　[女|おんな]の　[人|ひと]が　[話|はな]して　います。"},{speaker: "M",furigana: "この　みせは　[何|なん][時|じ]まで　あいて　いますか。"},{speaker: "F",furigana: "[月|げつ]ようびから　[土|ど]ようびまでは　よる　[九|く][時|じ]までです。"},{speaker: "M",furigana: "[日|にち]ようびも　[九|く][時|じ]までですか。"},{speaker: "F",furigana: "[日|にち]ようびは　[六|ろく][時|じ]までです。"}],question: "この　みせは　[日|にち]ようびは　[何|なん][時|じ]まで　あいて　いますか。",options: ["[六|ろく][時|じ]","[七|しち][時|じ]","[八|はち][時|じ]","[九|く][時|じ]"],answer: 0,en: "Narrator: In a shop, a man and a woman are talking. Until what time is this shop open on Sundays? — M: Until what time is this shop open? F: From Monday to Saturday, until nine in the evening. M: Is it until nine on Sundays too? F: On Sundays it is until six. — Until what time is this shop open on Sundays?",explain: "Nine o'clock is for Monday to Saturday; for Sunday the woman says 六時までです.",uses: ["g:to","g:ga","g:te-iru","v:男|おとこ","v:女|おんな","v:人|ひと","v:話す|はなす","g:de","g:wa-desu","g:made","g:ka","g:kara","g:mo","v:この|この","v:店|みせ","v:何|なん","v:時|じ","v:開く|あく","v:月曜日|げつようび","v:土曜日|どようび","v:夜|よる","v:九|く","v:日曜日|にちようび","v:六|ろく","v:七|しち","v:八|はち","k:男","k:人","k:女","k:話","k:何","k:時","k:月","k:土","k:九","k:日","k:六","k:七","k:八"],verified: true}),
 
-  // ── dialogue (lesson dialogs, pilot): one scene per lesson unit, shown in the lesson ─────
-  // Not a test format: no question / options / answer. See the header and components/dialogue-section.js.
-  L({ id: 'l:n5-dlg-team-seven', format: 'dialogue',
-    title: 'First day of Team 7', goal: "You can say who you are and ask someone's name.",
-    scene: 'Kakashi-sensei meets his new student.',
-    cast: { M: { name: 'Kakashi', jp: 'カカシ', role: 'Teacher' }, M2: { name: 'Sasuke', jp: 'サスケ', role: 'Student' } },
+  // ── dialogue (lesson dialogs): one scene per lesson unit, shown in the lesson ─────
+  // Not a test format: no question / options / answer. See the header, docs/dialogue-authoring.md and components/dialogue-section.js.
+  L({ id: 'l:n5-dlg-first-class', format: 'dialogue',
+    title: 'First class', goal: "You can say who you are and ask someone's name.",
+    scene: 'Kakashi-sensei meets a new student on the first day of class.',
+    cast: { kakashi: { name: 'Kakashi', jp: 'カカシ', gender: 'M', role: 'Teacher' }, sasuke: { name: 'Sasuke', jp: 'サスケ', gender: 'M', role: 'Student' } },
     lines: [
-      { speaker: 'M', furigana: 'はじめまして。わたしは　カカシです。せんせいです。', en: 'Nice to meet you. I am Kakashi. I am a teacher.' },
-      { speaker: 'M', furigana: 'おなまえは？', en: 'Your name?' },
-      { speaker: 'M2', furigana: '……サスケです。', en: '...Sasuke.' },
-      { speaker: 'M', furigana: 'サスケくんは　[学生|がくせい]ですね。', en: 'You are a student, right?' },
-      { speaker: 'M2', furigana: '……ええ。', en: '...Yeah.' },
-      { speaker: 'M', furigana: 'よろしく、サスケくん。', en: 'Looking forward to it.' },
-      { speaker: 'M2', furigana: '……よろしく　おねがいします。', en: '...Please take care of me.' }
+      { speaker: 'kakashi', furigana: 'はじめまして。わたしは　カカシです。せんせいです。', en: 'Nice to meet you. I am Kakashi. I am a teacher.' },
+      { speaker: 'kakashi', furigana: 'おなまえは？', en: 'Your name?' },
+      { speaker: 'sasuke', furigana: '……サスケです。', en: '...Sasuke.', tone: 'quiet, curt, low energy' },
+      { speaker: 'kakashi', furigana: 'サスケさんは　[学生|がくせい]ですね。', en: 'You are a student, right?' },
+      { speaker: 'sasuke', furigana: '……はい。', en: '...Yes.', tone: 'quiet, curt, low energy' },
+      { speaker: 'kakashi', furigana: 'しずかな　[人|ひと]ですね。', en: 'You are a quiet person, huh.', tone: 'dry, amused, lazy' },
+      { speaker: 'sasuke', furigana: '……よろしく　おねがいします。', en: '...Please take care of me.', tone: 'quiet, curt, low energy' },
+      { speaker: 'kakashi', furigana: 'はい、よろしく。わたしは　しずかな　せんせいです。', en: 'Sure, likewise. I am a quiet teacher, you know.', tone: 'dry, amused, lazy' }
     ],
     bridge: [
-      { text: 'お', ctx: 'おなまえ', gloss: 'お + a name: polite, for the other person\u2019s things' },
-      { text: 'くん', gloss: 'like さん; what a teacher calls a boy' },
-      { text: 'ね', ctx: 'ですね', id: 'g:ne', gloss: 'ね = right? / isn\u2019t it? (taught a few lessons later)' }
+      { text: 'お', ctx: 'おなまえ', gloss: 'お + a name: polite, for the other person’s things' },
+      { text: 'ね', ctx: 'ですね', id: 'g:ne', gloss: 'ね = right? / isn’t it? (taught a few lessons later)' },
+      { text: 'しずかな', gloss: 'しずか = quiet; しずかな ひと = a quiet person' }
     ],
-    remixes: [{ scene: 'Same scene, new student. Sakura walks in and introduces herself.', en: 'I am Sakura. I am a student.',
-      chunks: ['サクラです。', 'わたしは', 'がくせいです。', 'せんせいです。'], answer: ['サクラです。', 'わたしは', 'がくせいです。'],
-      explain: 'がくせいです means "I am a student"; せんせいです would say Sakura is a teacher.' }],
-    names: ['カカシ', 'サスケ', 'サクラ'],
-    notes: 'uses v:ええ|ええ, which is unverified, so the dialogue is too. The course teaches polite form; a real teacher and student would be more casual.',
-    uses: ['g:wa-desu', 'v:私|わたし', 'v:先生|せんせい', 'v:学生|がくせい', 'v:名前|なまえ', 'v:ええ|ええ', 'g:ne', 'k:学', 'k:生'],
+    remixes: [{ scene: 'Same classroom, new student. Emilia walks in and introduces herself.', en: 'I am Emilia. I am a student.',
+      chunks: ['エミリアです。', 'わたしは', 'がくせいです。', 'せんせいです。'], answer: ['エミリアです。', 'わたしは', 'がくせいです。'],
+      explain: 'がくせいです means "I am a student"; せんせいです would say Emilia is a teacher.' }],
+    names: ['カカシ', 'サスケ', 'エミリア'],
+    uses: ['g:wa-desu', 'g:ne', 'v:私|わたし', 'v:先生|せんせい', 'v:学生|がくせい', 'v:名前|なまえ', 'v:さん|さん', 'v:人|ひと', 'v:はい|はい', 'k:学', 'k:生', 'k:人'],
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
     verified: false }),
 
-  L({ id: 'l:n5-dlg-gojo-lunch', format: 'dialogue',
-    title: 'Lunch with Gojo-sensei', goal: 'You can say what you eat and drink, and offer things.',
-    scene: 'Lunch break. Gojo-sensei takes his student Itadori out to eat.',
-    cast: { M: { name: 'Gojo', jp: 'ごじょう', role: 'Teacher' }, M2: { name: 'Itadori', jp: 'いたどり', role: 'Student' } },
+  L({ id: 'l:n5-dlg-forger-table', format: 'dialogue',
+    title: 'At the table', goal: 'You can say what you eat and drink, and offer things.',
+    scene: 'Dinner at home. Yor is a little nervous about serving her new child.',
+    cast: { yor: { name: 'Yor', jp: 'ヨル', gender: 'F', role: 'Host' }, anya: { name: 'Anya', jp: 'アーニャ', gender: 'F', role: 'Child' } },
     lines: [
-      { speaker: 'M', furigana: 'いたどりくん、なにを　のみますか。', en: 'Itadori, what are you drinking?' },
-      { speaker: 'M2', furigana: 'ぼくは　ぎゅうにゅうを　のみます。', en: "I'll have milk." },
-      { speaker: 'M', furigana: 'ぎゅうにゅう？　わたしは　おちゃを　のみます。', en: "Milk? I'm having tea." },
-      { speaker: 'M', furigana: 'これは　たべものですよ。[食|た]べますか。', en: 'This is food. Will you eat?' },
-      { speaker: 'M2', furigana: 'ええ、[食|た]べます！いただきます。', en: "Yes, I will! Let's eat." },
-      { speaker: 'M', furigana: 'いたどりくんは　[食|た]べますね。', en: 'You really do eat, huh.' }
+      { speaker: 'yor', furigana: 'アーニャさん、[何|なに]を　のみますか。', en: 'Anya, what will you drink?' },
+      { speaker: 'anya', furigana: 'アーニャは　ぎゅうにゅうを　のみます！', en: 'Anya will drink milk!' },
+      { speaker: 'yor', furigana: 'ええと……わたしは　おちゃを　のみます。', en: "Um... I'll drink tea." },
+      { speaker: 'yor', furigana: 'これは　パンです。[食|た]べますか。', en: 'This is bread. Will you eat?' },
+      { speaker: 'anya', furigana: 'はい！　いただきます！', en: 'Yes! Let’s eat!' },
+      { speaker: 'anya', furigana: 'パン、おいしい！', en: 'Bread, yummy!' },
+      { speaker: 'yor', furigana: 'アーニャさんは　[食|た]べますね。', en: 'You really do eat, Anya.', tone: 'warm, soft, relieved' },
+      { speaker: 'anya', furigana: 'はい！　アーニャは　[食|た]べます！', en: 'Yes! Anya eats!' }
     ],
     bridge: [
-      { text: 'を', id: 'g:wo', gloss: 'を marks what you eat or drink (taught later)' },
-      { text: 'くん', gloss: 'like さん; what a teacher calls a boy' },
-      { text: 'ぼく', gloss: 'I, me: a boy\u2019s or man\u2019s casual word' }
+      { text: 'を', id: 'g:wo', gloss: 'を marks what you eat or drink (taught later)' }
     ],
-    remixes: [{ scene: 'Same lunch, new order. Now Itadori picks tea and food.', en: 'I drink tea. I eat the food.',
-      chunks: ['おちゃを', 'のみます。', 'たべものを', 'たべます。', 'のみますか。'], answer: ['おちゃを', 'のみます。', 'たべものを', 'たべます。'],
-      explain: 'Each を stays glued to its noun, and ます ends the verb. のみますか would ask a question instead of saying what you do.' }],
-    names: ['いたどり', 'ごじょう'],
-    notes: 'uses v:ええ|ええ, which is unverified, so the dialogue is too. The course teaches polite form; a real teacher and student would be more casual.',
-    uses: ['g:masu', 'g:wa-desu', 'g:ka', 'g:yo', 'g:ne', 'g:wo', 'v:何|なに', 'v:私|わたし', 'v:飲む|のむ', 'v:牛乳|ぎゅうにゅう', 'v:お茶|おちゃ', 'v:これ|これ', 'v:食べ物|たべもの', 'v:食べる|たべる', 'v:ええ|ええ', 'k:食'],
+    remixes: [{ scene: 'Same table, new order. Now Anya picks black tea and the food.', en: 'Anya drinks black tea. Anya eats the food.',
+      chunks: ['アーニャは', 'こうちゃを', 'のみます。', 'たべものを', 'たべます。', 'のみますか。'], answer: ['アーニャは', 'こうちゃを', 'のみます。', 'たべものを', 'たべます。'],
+      explain: 'Each を stays glued to its noun, and ます ends the verb. のみますか would ask a question instead of saying what Anya does.' }],
+    names: ['ヨル', 'アーニャ'],
+    uses: ['g:masu', 'g:wa-desu', 'g:ka', 'g:ne', 'g:wo', 'v:何|なに', 'v:私|わたし', 'v:さん|さん', 'v:飲む|のむ', 'v:牛乳|ぎゅうにゅう', 'v:お茶|おちゃ', 'v:これ|これ', 'v:パン|パン', 'v:食べる|たべる', 'v:おいしい|おいしい', 'v:はい|はい', 'k:何', 'k:食'],
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
     verified: false }),
 ]);
 }());
