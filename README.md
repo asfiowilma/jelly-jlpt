@@ -2,7 +2,7 @@
 
 A free Japanese course for the JLPT that runs entirely in your browser. It starts from zero with hiragana and katakana and takes you through everything on the N5 list. No install, no account, no server.
 
-**N5 is complete.** N4, N3, N2 and N1 show as "Coming soon" and will be added one level at a time. There are no dates for them yet.
+**N5 is the only level built so far.** N4, N3, N2 and N1 show as "Coming soon" and will be added one level at a time. There are no dates for them yet.
 
 Live site: [asfiowilma.github.io/jelly-jlpt](https://asfiowilma.github.io/jelly-jlpt)
 
@@ -27,7 +27,7 @@ What the units cover:
 - **Grammar**: 67 grammar points, including all 40 on the Tanos N5 list. The rest are N5 points confirmed by a second source.
 - **Example sentences**: 224 sentences. 168 come from [Tatoeba](https://tatoeba.org) with their sentence ids and authors kept; 56 were written for this project.
 - **Reading**: 36 short passages in the three N5 reading formats (short texts, mid-length texts, information search).
-- **Listening**: 75 listening questions in the four N5 formats, spoken by your browser's text-to-speech.
+- **Listening**: 75 listening questions in the four N5 formats, voiced with pre-rendered AI clips (Qwen3-TTS). If a clip can't play, your browser's own Japanese voice reads the rest.
 - **Exam-style questions**: the quizzes use the N5 question types (kanji reading, spelling, words in context, paraphrase, grammar gaps, sentence ordering, text grammar).
 
 The level lists come from Tanos (via elzup/jlpt-word-list). The JLPT has published no official vocabulary, kanji or grammar list since 2010, so treat the lists as a guide to what the test asks, not a promise.
@@ -45,7 +45,7 @@ The level lists come from Tanos (via elzup/jlpt-word-list). The JLPT has publish
 
 If you add your JLPT exam date, the app tells you whether your pace finishes at least a week before the exam and suggests a pace if it doesn't.
 
-**Pass the quiz to finish a unit.** Each unit ends with a quiz. You need 90% on kana units and 80% on everything else. Questions you miss come back later in the same quiz. Some answers are typed rather than picked, so you have to recall them. Lessons and kana units have no timer. Reviews and test-prep drills are timed at real N5 pacing.
+**Pass the quiz to finish a unit.** Each unit ends with a quiz. Kana units need 85% on reading and 80% on meanings; everything else needs 80%. Questions you miss come back later in the same quiz. Some answers are typed rather than picked, so you have to recall them. Lessons and kana units have no timer. Reviews and test-prep drills are timed at real N5 pacing.
 
 **Review with spaced repetition.** Every kana, word, kanji and grammar point you finish becomes a flashcard in the Review tab, scheduled with SM-2 (the algorithm Anki started from). New cards are capped to what your pace introduces each day, so studying ahead doesn't flood your reviews.
 
@@ -62,12 +62,12 @@ A known item skips the new-card queue and comes back once, 3 to 4 weeks later, a
 ## Limits
 
 - **The mock score is an estimate, not a prediction.** The real JLPT scores with item response theory and equates scores across test sessions, so nobody outside the JLPT can reproduce it. The app scales your share of right answers straight onto the official score ranges. Because the questions only cover what you studied here, the estimate probably runs high.
-- **Listening uses your device's voice.** Quality depends on your browser and operating system, and some devices have no Japanese voice at all (the app tells you and shows the transcript). Chrome's Japanese voice may need a network connection. Practice with the [official JLPT sample audio](https://www.jlpt.jp/e/samples/sampleindex.html) too.
+- **Listening clips are AI voices.** They were rendered with Qwen3-TTS, not recorded by people, so they are cleaner and steadier than real exam audio. Each clip downloads the first time you play it and is then kept for offline use. A clip that isn't cached yet (or fails to load) falls back to your browser's Japanese voice, whose quality depends on your device; some devices have none, and the app then shows the transcript. Practice with the [official JLPT sample audio](https://www.jlpt.jp/e/samples/sampleindex.html) too.
 - **No official JLPT material is included.** Every question was written for this project in the official formats. The JLPT site has [official sample questions and workbooks](https://www.jlpt.jp/e/samples/sampleindex.html).
-- **Your progress lives in this browser.** It is stored in IndexedDB (through PouchDB). Clearing site data deletes it. Use Settings, then Export, to save a backup file, or set up sync below.
-- **Offline loading works, with one caveat.** React and PouchDB ship in the repo (`vendor/`), so nothing loads from a CDN. There is no service worker yet, so a hosted copy still needs the network to fetch the page itself.
+- **Your progress lives in this browser, per site address.** It is stored in IndexedDB (through PouchDB). Clearing site data deletes it. The live GitHub Pages site, a Vercel copy and a local `file://` copy each count as a different site and don't see each other's progress. To move between them, use Settings, then Export, and Import the file on the other one. Or set up sync below.
+- **Works offline after one visit.** On a hosted copy, a service worker saves the app on the first load, and it then runs without a network. React and PouchDB ship in the repo (`vendor/`), so nothing loads from a CDN.
 
-## Sync between devices (optional)
+## Multi-device sync (optional)
 
 Progress always lives in your browser first. To share it between devices, point the app at a CouchDB database you control. The app syncs both ways in the background and keeps working offline. Your palette, theme, speech speed and sound setting stay per device.
 
@@ -113,7 +113,7 @@ In Fauxton that's **Configuration → CORS**; in Cloudant, **Account → CORS**.
 
 **5. Connect.** Open Settings (gear icon), then Sync. Paste the full database URL (`https://HOST/jelly`), the username and password, and press **Connect**. The app checks it can read and write the database first and tells you what's wrong if not. If both sides already had progress, they're merged: finished units and settings by latest change, flashcards by latest review. A dot on the gear shows the sync status.
 
-**Remember on this device.** Off by default, so you sign in again each browser session. Turned on, the login is saved in this browser's localStorage. Every GitHub Pages site under the same `USERNAME.github.io` shares that storage, so any other project published there could read it. That's why the user above should only be able to reach this one database.
+**Remember on this device.** Off by default, so you sign in again each browser session. Turned on, the URL, username and password are saved **in plain text** in this browser's localStorage. Anyone with access to the device or browser profile can read them, and every GitHub Pages site under the same `USERNAME.github.io` shares that storage, so any other project published there could read it. That's why the user above should only be able to reach this one database.
 
 **Disconnect** stops syncing and keeps everything on the device. It never deletes anything on the server.
 
@@ -156,21 +156,38 @@ After adding or changing any shipped file (script, style, data, icon, sound), re
 node tools/build-sw.js
 ```
 
+### Content Security Policy
+
+`index.html` sets a CSP in a `<meta>` tag. If you host a copy, keep it unless you change what the app loads:
+
+| Directive | Allows | Why |
+|---|---|---|
+| `default-src 'self'` | files from the same site only | no CDN, no third-party scripts |
+| `script-src` / `style-src 'self' 'unsafe-inline'` | local files and inline code | React's inline styles and the classic-script setup |
+| `img-src 'self' data:` | local images and `data:` URLs | icons and stroke-order SVGs |
+| `media-src 'self' blob:` | local audio and `blob:` URLs | listening clips are fetched whole and played from a blob URL, so the service worker can cache them |
+| `connect-src 'self' https: http://localhost:5984 http://127.0.0.1:5984` | any HTTPS host, plus a local CouchDB | sync talks to whatever CouchDB you enter |
+
 Icons are rendered once from `icons/icon.svg` with `node tools/build-icons.js` (needs Edge or Chrome installed).
 
 ## Credits and licenses
 
 | Source | Used for | License |
 |---|---|---|
-| [Tanos](https://www.tanos.co.uk/jlpt/) (Jonathan Waller) | N5 vocabulary, kanji and grammar lists | CC BY |
-| [elzup/jlpt-word-list](https://github.com/elzup/jlpt-word-list) | CSV copy of the word lists | MIT |
-| [Tatoeba](https://tatoeba.org) | example sentences and translations (each keeps its sentence id and author) | CC BY 2.0 FR |
-| [KanjiVG](https://kanjivg.tagaini.net/) | stroke-order diagrams in `kanji-svg/`, bundled into `kanji-svg/strokes.js` | CC BY-SA 3.0 |
-| [Kenney](https://kenney.nl/assets/music-jingles) Music Jingles and [Interface Sounds](https://kenney.nl/assets/interface-sounds) | sound effects in `sfx/` (see `sfx/LICENSE-kenney.txt`) | CC0 |
+| [Tanos](https://www.tanos.co.uk/jlpt/) (Jonathan Waller) | N5 vocabulary, kanji and grammar lists | [CC BY](https://creativecommons.org/licenses/by/) |
+| [elzup/jlpt-word-list](https://github.com/elzup/jlpt-word-list) (Jamie Sinclair and elzup) | CSV copy of the Tanos word lists | [MIT](https://github.com/elzup/jlpt-word-list/blob/master/LICENSE) |
+| [Tatoeba](https://tatoeba.org) | example sentences and translations; every sentence keeps its id and author, listed in Settings under Sentence credits | [CC BY 2.0 FR](https://creativecommons.org/licenses/by/2.0/fr/) |
 | [EDRDG](https://www.edrdg.org/) (JMdict, KANJIDIC) | checking readings, meanings and stroke counts while writing the course; no files ship | [CC BY-SA 4.0](https://www.edrdg.org/edrdg/licence.html) |
+| [KanjiVG](https://kanjivg.tagaini.net/) (Ulrich Apel) | stroke-order diagrams in `kanji-svg/`, bundled into `kanji-svg/strokes.js` | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) |
+| [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) (Alibaba Qwen team) | the model that rendered the listening clips in `audio/` | [Apache 2.0](https://github.com/QwenLM/Qwen3-TTS/blob/main/LICENSE) |
+| [Kenney](https://kenney.nl/assets) Music Jingles and Interface Sounds | sound effects in `sfx/` (see `sfx/LICENSE-kenney.txt`) | [CC0](https://creativecommons.org/publicdomain/zero/1.0/) |
+| [DiceBear](https://www.dicebear.com/) identicon | achievement stamp icons (`data/stamp-icons.js`) | [CC0](https://creativecommons.org/publicdomain/zero/1.0/) |
+| [React and ReactDOM](https://react.dev/) 18.2.0 | UI, vendored in `vendor/` | MIT (`vendor/LICENSE-react.txt`) |
+| [PouchDB](https://pouchdb.com/) 9.0.0 | local storage and sync, vendored in `vendor/` | Apache 2.0 (`vendor/LICENSE-pouchdb.txt`) |
+| [alanfwilliams/jlpt](https://github.com/alanfwilliams/jlpt) | the original project this one was forked from | MIT (stated in its README) |
 
-The same credits are listed in the app under Settings. Readings and meanings were checked against JMdict (via Jisho) and KANJIDIC while writing the course, but no data from them ships with the app. Glosses, notes and grammar explanations are written for this project.
+The same list is in the app under Settings, followed by the per-sentence Tatoeba credits. Glosses, notes, grammar explanations, reading passages, listening scripts and exam questions are written for this project. No JMdict or KANJIDIC data ships with the app.
 
-jelly-jlpt began as a fork of [alanfwilliams/jlpt](https://github.com/alanfwilliams/jlpt), whose README stated an MIT license. The course content and most of the app have since been rebuilt, and the project no longer tracks upstream.
+jelly-jlpt began as a fork of alanfwilliams/jlpt. The course content and most of the app have since been rebuilt, and the project no longer tracks upstream.
 
-The app code is under the MIT license (see [`LICENSE`](LICENSE)). The third-party files in the table above keep their own licenses and are not covered by it: `kanji-svg/` including the derived bundle `kanji-svg/strokes.js` (CC BY-SA 3.0), Tatoeba sentences in `data/` (CC BY 2.0 FR), the Tanos-derived level lists (CC BY) and `sfx/` (CC0).
+The app code is under the MIT license (see [`LICENSE`](LICENSE)). The third-party files in the table keep their own licenses and are not covered by it: `kanji-svg/` including the derived bundle `kanji-svg/strokes.js` (CC BY-SA 3.0), the Tatoeba sentences in `data/` (CC BY 2.0 FR), the Tanos-derived level lists (CC BY), `sfx/` (CC0), the DiceBear glyphs (CC0) and `vendor/` (MIT and Apache 2.0).
