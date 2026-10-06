@@ -636,6 +636,8 @@ function speak(text) {
 // speakScript(lines, opts): speak [{ speaker: 'M' | 'F' | 'N', text }] in order, one voice /
 // pitch per speaker (assignVoices), long lines cut by chunkSpeech (network voices only: every cut
 // is an audible gap), a short pause after each line (opts.pause ms, default 150). opts.onEnd fires after the last line. Returns stop().
+// opts.rate overrides the learner's speech rate (mocks: 1, natural speed); opts.onFallback fires when
+// the browser voice reads lines instead of pre-rendered clips (no clip, or one failed).
 // A newer speakScript or speak() call stops this one (the run counter), so cancel()'s error
 // event on the old utterance can't start its next line.
 var _scriptRun = 0, _scriptUtterances = [], SPEECH_CANCEL_GAP = 120, _scriptBusy = false, _clipStop = null;
@@ -643,6 +645,7 @@ function speakScript(lines, opts) {
   if (_clipStop) _clipStop();
   opts = opts || {};
   var clipped = lines.length && typeof Audio !== 'undefined' && lines.every(function (l) { return l.clip; });
+  if (!clipped && lines.length && opts.onFallback) opts.onFallback();
   return clipped ? speakClips(lines, opts) : speakTTS(lines, opts);
 }
 function speakTTS(lines, opts) {
@@ -664,7 +667,7 @@ function speakTTS(lines, opts) {
     if (i >= queue.length) { _scriptUtterances = []; _scriptBusy = false; if (opts.onEnd) opts.onEnd(); return; }
     var q = queue[i++], who = cast[q.speaker] || cast.N, u = new SpeechSynthesisUtterance(q.text);
     u.lang = 'ja-JP';
-    u.rate = window._ttsRate || 0.85;
+    u.rate = opts.rate || window._ttsRate || 0.85;
     u.pitch = who.pitch;
     if (who.voice) u.voice = who.voice;
     u.onend = u.onerror = function () { if (run === _scriptRun) timer = setTimeout(next, q.pause); };
@@ -706,6 +709,7 @@ function speakClips(lines, opts) {
   };
   var fail = function (j) {
     halt();
+    if (opts.onFallback) opts.onFallback();
     if (window.speechSynthesis && typeof SpeechSynthesisUtterance !== 'undefined') fb = speakTTS(lines.slice(j), opts);
     else if (opts.onEnd) opts.onEnd();
   };
@@ -724,7 +728,7 @@ function speakClips(lines, opts) {
         if (ok) timer = setTimeout(function () { play(j + 1); }, gap); else fail(j);
       };
       cur = a;
-      a.playbackRate = window._ttsRate || 0.85; // 1:1 with the setting; clips are rendered at natural speed (1×)
+      a.playbackRate = opts.rate || window._ttsRate || 0.85; // 1:1 with the setting; clips are rendered at natural speed (1×)
       a.preservesPitch = true;
       a.onended = function () { end(true); };
       a.onerror = function () { end(false); };

@@ -214,6 +214,8 @@ function qzKit(h, ex, st) {
         st.voiceStatus === 'none' && !revealed && h("div", { key: "warn", className: "qz-warn", role: "status" },
           "This browser has no Japanese voice, so the audio may be silent or wrong. ",
           st.showEarly ? "The transcript is below." : h("button", { className: "link-btn", onClick: st.onEarly }, "Read the transcript instead")),
+        st.voiceStatus === 'fallback' && !revealed && h("div", { key: "warn", className: "qz-warn", role: "status" },
+          "The recorded audio could not play, so your browser's voice is reading it instead. It may sound different from the real test."),
         (revealed || st.showEarly) && transcript(), list] };
     }
     // Choice (mc, gap, ★ order, iikae …), a single audio clip (listen), or a reading passage

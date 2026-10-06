@@ -77,6 +77,7 @@ function MockExam(props) {
   var resultRef = React.useRef(null);
   var _fa = React.useState(false), finishAsk = _fa[0], setFinishAsk = _fa[1]; // "Finish with blanks?" open
   var _nt = React.useState(null), done = _nt[0], setDone = _nt[1]; // the part just ended: { part, answered, blank, flagged, timeUp }
+  var _fb = React.useState(false), fallback = _fb[0], setFallback = _fb[1]; // browser voice read a script instead of the clips
   var shell = useQuizLayer(phase === 'part' || phase === 'between', quitting);
   var latest = React.useRef(null);
   latest.current = { sec: sec, answers: answers, flags: flags };
@@ -370,7 +371,8 @@ function MockExam(props) {
     setPlays(p);
     stopAudio();
     setSpeaking(true);
-    stopRef.current = speakScript(lines, { onEnd: function () { setSpeaking(false); } });
+    // natural speed like the real test; a fallback to the browser voice shows a notice (audit P1-5)
+    stopRef.current = speakScript(lines, { rate: 1, onEnd: function () { setSpeaking(false); }, onFallback: function () { setFallback(true); } });
   };
   var last = cur + 1 >= S.questions.length, lastPart = sec + 1 >= sections.length;
   var isFlagged = function (i) { return !!flags[S.key + ':' + i]; };
@@ -390,7 +392,7 @@ function MockExam(props) {
   };
   // No feedback in a mock: an option is only picked (revealed stays false), nothing is checked.
   var kit = qzKit(ce, ex, { lv: mock.level, pick: chosen, revealed: false, selected: null, tone: '', onPick: choose,
-    plays: usedPlays, replyUsed: replyUsed, speaking: speaking, play: play, voiceStatus: 'ok', replyHint: "The reply texts show in your results.", showEarly: false, onEarly: function () {} });
+    plays: usedPlays, replyUsed: replyUsed, speaking: speaking, play: play, voiceStatus: fallback ? 'fallback' : 'ok', replyHint: "The reply texts show in your results.", showEarly: false, onEarly: function () {} });
   var c = kit.choice();
   var sheetEl = sheet && ce("div", { className: "qz-scrim qz-sheet-wrap", onClick: function (e) { if (e.target === e.currentTarget) setSheet(false); } },
     ce("div", { className: "qz-sheet", role: "dialog", 'aria-label': "Questions in this part" },

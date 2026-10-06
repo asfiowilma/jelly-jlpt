@@ -141,6 +141,30 @@ QUnit.module('listening', function () {
     });
   });
 
+  QUnit.test('P1-5 mock audio: browser-voice fallback is reported and shown; rate override reaches the voice', function (assert) {
+    var origSS = window.speechSynthesis, origU = typeof SpeechSynthesisUtterance === 'undefined' ? undefined : SpeechSynthesisUtterance, G = typeof global !== 'undefined' ? global : window;
+    var heard = [], fell = 0;
+    window.speechSynthesis = { speaking: false, getVoices: function () { return []; }, cancel: function () {}, speak: function (u) { heard.push(u); } };
+    if (!origU) G.SpeechSynthesisUtterance = function (t) { this.text = t; };
+    _scriptBusy = false;
+    var stop = speakScript([{ speaker: 'M', text: 'あ' }], { rate: 1, onFallback: function () { fell++; } });
+    stop();
+    window.speechSynthesis = origSS;
+    if (!origU) delete G.SpeechSynthesisUtterance;
+    assert.strictEqual(fell, 1, 'a script without clips reports the fallback');
+    assert.strictEqual(heard[0] && heard[0].rate, 1, 'mock rate 1 overrides the learner rate');
+    var h = function (tag, props) { return { tag: tag, props: props || {}, kids: Array.prototype.slice.call(arguments, 2) }; };
+    var walk = function (n, out) { if (Array.isArray(n)) n.forEach(function (x) { walk(x, out); }); else if (n && n.props) { out.push(n); walk(n.kids, out); } return out; };
+    var ex = listenQuestion(listeningFor('N5', 'task')[0], {}, { mock: true });
+    var warn = function (status) {
+      var kit = qzKit(h, ex, { lv: 'N5', pick: null, revealed: false, selected: null, tone: '', onPick: function () {},
+        plays: 0, replyUsed: function () { return 0; }, speaking: false, play: function () {}, voiceStatus: status, showEarly: false, onEarly: function () {} });
+      return walk(kit.choice().main, []).filter(function (n) { return /qz-warn/.test(n.props.className || ''); }).length;
+    };
+    assert.strictEqual(warn('ok'), 0, 'clips playing: no notice');
+    assert.strictEqual(warn('fallback'), 1, 'fallback: notice shown');
+  });
+
   QUnit.test('clips: every script line and spoken option carries its pre-rendered clip', function (assert) {
     if (typeof AUDIO_MANIFEST === 'undefined') { assert.ok(true, 'no manifest loaded: speech only'); return; }
     var bad = [];
