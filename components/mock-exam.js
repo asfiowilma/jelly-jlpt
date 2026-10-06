@@ -18,6 +18,7 @@
 // Props: mock (catalog item), onTaken?, onClose? (shows a Back button), now? (clock, for tests),
 // showFurigana? (part names), guided? (inside a unit whose exam guide already explains the rules).
 var OFFICIAL_SAMPLES_URL = 'https://www.jlpt.jp/e/samples/sampleindex.html';
+var OFFICIAL_SCORING_URL = 'https://www.jlpt.jp/e/faq/'; // section 5: scaled scores (item response theory)
 
 // Question type (mondai) → [name with furigana markup, English helper], in test order (results grid).
 var MONDAI_ORDER = ['kanjiYomi', 'hyouki', 'bunmyaku', 'iikae', 'gap', 'order', 'bunshou', 'short', 'mid', 'info', 'task', 'point', 'utterance', 'quick'];
@@ -314,7 +315,7 @@ function MockExam(props) {
               ce("td", { className: "mr-n mr-small mr-muted mr-hide-s" }, range(out.total))))),
         ce("div", { className: "mr-actions" },
           ce("button", { className: "quiz-start-btn mr-again", onClick: takeAgain }, "Take again"),
-          ce("span", { className: "mr-small mr-muted" }, "80% range estimate; the real test adjusts per sitting."))),
+          ce("span", { className: "mr-small mr-muted" }, "80% range estimate on a straight scale; the real test scales scores per sitting, so a pass here is optimistic."))),
       ce("div", { className: "section-label mr-gap" }, "All " + types.length + " question types"),
       ce("div", { className: "mr-grid" }, types.map(function (k) {
         var x = r.byMondai[k], p = pctN(x), nm = MONDAI_NAMES[k] || [mockLabel(k), k];
@@ -346,7 +347,11 @@ function MockExam(props) {
           "言語知識・読解 = 120 × (21 × vocabulary + 17 × grammar + 5 × reading) ÷ 43, 聴解 = 60 × listening. ",
           "The real JLPT scores answer patterns with item response theory and adjusts for each test's difficulty, so no exact conversion exists, ",
           "and these questions come from what you studied here, so the estimate probably runs high."),
-        ce("p", { className: "mock-note" }, "Listening is the least certain part: it uses your browser's computer voice, not the test recording. Practise with the ",
+        ce("p", { className: "mock-note" }, "On this straight scale the " + rule.total + "-point pass mark needs only about " + Math.round(100 * rule.total / 180) +
+          "% right overall (and about " + Math.round(100 * rule.lkr / 120) + "% per section). The real test reports scaled scores (",
+          ce("a", { href: OFFICIAL_SCORING_URL, target: "_blank", rel: "noopener noreferrer" }, "jlpt.jp FAQ"),
+          "), where the same share of right answers can score lower, so treat a pass here as optimistic and aim well above it."),
+        ce("p", { className: "mock-note" }, "Listening is the least certain part: it plays clips made with a speech model (or your browser's voice when a clip cannot play), not the test recording. Practise with the ",
           ce("a", { href: OFFICIAL_SAMPLES_URL, target: "_blank", rel: "noopener noreferrer" }, "official sample audio (jlpt.jp)"), " too.")));
   }
 
