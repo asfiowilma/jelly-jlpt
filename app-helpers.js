@@ -251,6 +251,9 @@ var UI_STRINGS = {
   cred_react:        { en: 'UI library',        ja: 'UIライブラリ' },
   cred_pouchdb:      { en: 'local storage and sync', ja: 'ローカル保存と同期' },
   cred_edrdg:        { en: 'readings, meanings and stroke counts checked against JMdict and KANJIDIC while writing the course (no files shipped)', ja: '読み・意味・画数の確認（ファイルは含みません）' },
+  cred_by:           { en: 'by',                ja: '作成：' },
+  set_sent_credits:  { en: 'Sentence credits',  ja: '例文のクレジット' },
+  set_sent_credits_n: { en: '{n} Tatoeba sentences', ja: 'Tatoeba例文{n}件' },
   pace_too_late:   { en: "Even Super intensive won't finish a week before your exam", ja: '超集中でも試験の1週間前までに終わりません' },
   // Already-known import (ticket 37). 知る is N5 vocabulary, so the review
   // button and unit badge switch at N4; the Settings part switches with N1.

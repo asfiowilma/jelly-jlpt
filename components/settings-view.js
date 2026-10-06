@@ -174,6 +174,7 @@ function SettingsView(props) {
             ': ' + L(c.key) + ' (',
             ce("a", { href: c.licenseUrl, target: "_blank", rel: "noopener noreferrer" }, c.license), ')');
         }))),
+      ce(SentenceCredits, { L: L }),
       ce(ResetZone, { L: L, onExport: props.onExport, onReset: props.onReset, synced: !!(props.sync && props.sync.connected) })),
     ce("footer", { className: "settings-foot" }, made[0], icon("heart"), made[1]));
 }
@@ -243,6 +244,39 @@ var CREDITS = [
   { name: 'React', url: 'https://react.dev/', key: 'cred_react', license: 'MIT', licenseUrl: 'vendor/LICENSE-react.txt' },
   { name: 'PouchDB', url: 'https://pouchdb.com/', key: 'cred_pouchdb', license: 'Apache 2.0', licenseUrl: 'vendor/LICENSE-pouchdb.txt' }
 ];
+
+// Tatoeba sentences in the catalog, by sentence number (CC BY 2.0 FR: credit each author).
+var TATOEBA_LICENSES = { 'CC BY 2.0 FR': 'https://creativecommons.org/licenses/by/2.0/fr/' };
+function tatoebaCredits() {
+  return Object.keys(CATALOG.items).filter(function (id) { return id.indexOf('s:tatoeba:') === 0; })
+    .map(function (id) { var s = CATALOG.items[id]; return { n: Number(id.slice(10)), s: s }; })
+    .sort(function (a, b) { return a.n - b.n; });
+}
+// Settings → Sentence credits: one collapsed card, one row per sentence (JP and EN author).
+// A missing enAuthor (Tatoeba lists no owner) just drops the "by" part.
+function SentenceCredits(props) {
+  var L = props.L, ce = React.createElement;
+  var rows = tatoebaCredits();
+  var link = function (n) {
+    return ce("a", { href: "https://tatoeba.org/en/sentences/show/" + n, target: "_blank", rel: "noopener noreferrer" }, "#" + n);
+  };
+  var lic = function (name) {
+    return TATOEBA_LICENSES[name] ? ce("a", { href: TATOEBA_LICENSES[name], target: "_blank", rel: "noopener noreferrer" }, name) : name;
+  };
+  return ce("details", { className: "settings-section credits-card", id: "sentence-credits" },
+    ce("summary", null,
+      ce("span", { className: "cr-t" }, L("set_sent_credits")),
+      ce("span", { className: "cr-n" }, L("set_sent_credits_n").replace("{n}", rows.length))),
+    ce("ul", { className: "credits" }, rows.map(function (r) {
+      var s = r.s;
+      return ce("li", { key: r.n },
+        ce("span", { lang: "ja" }, s.jp), ' ',
+        link(r.n), ' ' + L("cred_by") + ' ' + s.author + ' (', lic(s.license), ') · EN ',
+        s.enId ? link(s.enId) : null,
+        s.enAuthor ? ' ' + L("cred_by") + ' ' + s.enAuthor : null,
+        s.enLicense ? ce(React.Fragment, null, ' (', lic(s.enLicense), ')') : null);
+    })));
+}
 
 // Settings → Sync: connect form when not connected, status + controls when
 // connected. sync = Store.syncInfo; savedCreds = loadSyncCreds();

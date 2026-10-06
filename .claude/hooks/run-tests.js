@@ -442,6 +442,19 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     } catch (e) { a.ok(false, e.message); }
   });
 
+  test("Sentence credits: every Tatoeba sentence listed with its JP author and licence, null enAuthor safe", function (a) {
+    var rows = tatoebaCredits();
+    var ids = Object.keys(CATALOG.items).filter(function (id) { return id.indexOf("s:tatoeba:") === 0; });
+    a.equal(rows.length, ids.length, "one row per Tatoeba sentence");
+    rows.forEach(function (r) { a.ok(r.s.author && r.s.license && r.s.enId, r.s.id + " has author, licence, enId"); });
+    var ce0 = React.createElement, made = [];
+    React.createElement = function () { made.push(JSON.stringify([].slice.call(arguments, 1))); return {}; };
+    try { SentenceCredits({ L: function (k) { return t(k, "N5"); } }); } finally { React.createElement = ce0; }
+    var out = made.join(" ");
+    a.ok(out.indexOf("tatoeba.org/en/sentences/show/123124") >= 0, "links the sentence page");
+    a.ok(out.indexOf("by null") < 0 && out.indexOf("undefined") < 0, "no null or undefined author text");
+  });
+
   test("Donation jar: links are safe external tabs, logos ship, strings resolve without em dashes", function (a) {
     DONATE_LINKS.forEach(function (l) {
       a.ok(/^https:\/\//.test(l.url), l.id + " url is https");
