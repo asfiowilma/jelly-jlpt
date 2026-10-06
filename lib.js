@@ -856,6 +856,11 @@ function quizSentences(sents, ctx) {
   sents = rndShuffle(sents);
   return ctx.leakOk ? byUntaught(sents, ctx.taught) : sents.filter(function (s) { return !untaughtCount(s, ctx.taught); });
 }
+// lessonExamples(g, unit): the grammar point's examples shown in a lesson, at most 3, cleanest first.
+function lessonExamples(g, unit) {
+  var ex = (g.examples || []).map(function (id) { return CATALOG.items[id]; }).filter(Boolean);
+  return byUntaught(ex, taughtIds(unit)).slice(0, 3);
+}
 // wordSpan(raw, word, reading): { at, end } of word in furigana parts when it occurs
 // exactly once, no furigana block is cut, and the furigana there reads `reading`
 // (so カナダ人 is not 人|ひと). Else null.

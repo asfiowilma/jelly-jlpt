@@ -21,6 +21,23 @@ QUnit.module('teaching order', function () {
     assert.deepEqual(short, [], 'points short of clean examples');
   });
 
+  QUnit.test('lessonExamples: at most 3, fewest later-taught items first, nothing dropped from the data', function (assert) {
+    var u = lessons().filter(function (x) { return x.id === 'n5.u019'; })[0], g = CATALOG.items['g:wa-desu'];
+    assert.strictEqual(g.examples[0], 's:tatoeba:218088', 'authored first example uses 本, taught later');
+    assert.deepEqual(lessonExamples(g, u).map(function (s) { return s.id; }),
+      ['s:own:n5-wa-desu', 's:own:n5-wa-desu-sensei', 's:own:n5-wa-desu-koohii'], 'clean ones shown, authored order');
+    var bad = [];
+    lessons().forEach(function (x) {
+      var known = taughtIds(x);
+      (x.grammar || []).forEach(function (p) {
+        var n = lessonExamples(p, x).map(function (s) { return later(s, known).length; });
+        var all = (p.examples || []).map(function (id) { return later(CATALOG.items[id], known).length; }).sort(function (a, b) { return a - b; });
+        if (n.length > 3 || n.join() !== all.slice(0, n.length).join()) bad.push(x.id + ' ' + p.id + ' ' + n.join());
+      });
+    });
+    assert.deepEqual(bad, [], 'shown examples not the cleanest');
+  });
+
   // Quiz questions: a sentence form never uses an item taught after the unit. makeQuestion's last
   // resort (a leaky sentence when no form fits at all, tagged `leaky`) is allowed only for the
   // '<unitId> <itemId>' pairs in LEAK_FALLBACK_OK.

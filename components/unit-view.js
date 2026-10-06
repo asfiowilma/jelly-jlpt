@@ -52,9 +52,7 @@ function UnitView(props) {
         className: "example-speak", onClick: function () { speak(speechText(s.furigana || s.jp)); }, title: "Listen", 'aria-label': "Listen to " + s.jp
       }, icon('speaker')));
   };
-  var grammarExamples = function (g) {
-    return (g.examples || []).map(function (id) { return CATALOG.items[id]; }).filter(Boolean).slice(0, 3);
-  };
+  var grammarExamples = function (g) { return lessonExamples(g, unit); };
   // ponytail: marks come from the Tanos `ref` label, so a bare particle (で) also lights up inside
   // です; a per-point `hl` field is the upgrade if that bites.
   var grammarMarks = function (g, alts) {
@@ -73,14 +71,15 @@ function UnitView(props) {
     unit.kanji.forEach(function (k) { weight[k.id] = 1; });
     catalogOf('vocab').forEach(function (v) { if (v.alt && weight[v.alt]) weight[v.id] = 2; });
     // only sentences whose grammar is taught by this unit or earlier
-    var later = {};
+    // then fewest words / kanji taught later (lessonExamples' rule), then most matches
+    var later = {}, known = taughtIds(unit);
     units.slice(unit.index + 1).forEach(function (u) { (u.grammar || []).forEach(function (g) { if (u.kind === 'lesson') later[g.id] = true; }); });
     examples = catalogOf('sentence').filter(function (s) {
       return !(s.uses || []).some(function (id) { return later[id]; });
     }).map(function (s) {
-      return { s: s, w: (s.uses || []).reduce(function (n, id) { return n + (weight[id] || 0); }, 0) };
+      return { s: s, w: (s.uses || []).reduce(function (n, id) { return n + (weight[id] || 0); }, 0), n: untaughtCount(s, known) };
     }).filter(function (x) { return x.w > 0 && !shown[x.s.id]; })
-      .sort(function (a, b) { return b.w - a.w; }).slice(0, 3).map(function (x) { return x.s; });
+      .sort(function (a, b) { return a.n - b.n || b.w - a.w; }).slice(0, 3).map(function (x) { return x.s; });
   }
   var practice = unit.practice || [];
   var knownN = knownCount(unitItems([unit]), props.cards || {}); // seeded as already known (ticket 37)
