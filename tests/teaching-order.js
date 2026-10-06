@@ -38,6 +38,27 @@ QUnit.module('teaching order', function () {
     assert.deepEqual(bad, [], 'shown examples not the cleanest');
   });
 
+  // Ratchet (audit P1-1 after-measurement: 0 of 201 shown examples and 0 of 137 sentence questions in 5
+  // builds leaked; before: 60 / 201 and 144 / 226). Raise only with a reason in docs/adr/0002.
+  var LEAK_SHARE_MAX = 0, EARLY_UNITS = ['n5.u019', 'n5.u020', 'n5.u028', 'n5.u030', 'n5.u031'];
+  QUnit.test('lessons: share of shown examples and quiz sentences with later-taught items stays at the ratchet', function (assert) {
+    var rnd = Math.random, n = 0, leaks = [];
+    Math.random = seeded(23);
+    try {
+      lessons().forEach(function (u) {
+        var known = taughtIds(u), check = function (s, what) { n++; if (later(s, known).length) leaks.push(u.id + ' ' + what + ' ' + s.id); };
+        (u.grammar || []).forEach(function (g) { lessonExamples(g, u).forEach(function (s) { check(s, 'example'); }); });
+        for (var r = 0; r < 3; r++) buildExercises(u).forEach(function (ex) {
+          var s = ex.sentence && CATALOG.items[ex.sentence];
+          if (s && s.kind === 'sentence') check(s, ex.form);
+        });
+      });
+    } finally { Math.random = rnd; }
+    assert.ok(n > 250, n + ' examples and sentence questions');
+    assert.ok(leaks.length <= LEAK_SHARE_MAX * n, leaks.length + ' leak(s): ' + leaks.slice(0, 10).join(', '));
+    assert.deepEqual(leaks.filter(function (l) { return EARLY_UNITS.indexOf(l.split(' ')[0]) >= 0; }), [], 'early grammar units: none');
+  });
+
   // Quiz questions: a sentence form never uses an item taught after the unit. makeQuestion's last
   // resort (a leaky sentence when no form fits at all, tagged `leaky`) is allowed only for the
   // '<unitId> <itemId>' pairs in LEAK_FALLBACK_OK.
