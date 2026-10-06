@@ -4,7 +4,7 @@
  * Run: node tools/build-audio-manifest.js <rendered dir or its manifest.json>
  * Verifies every file exists in audio/ and that, for every line of tools/audio/tracks.json,
  * sha1(clipKey).slice(0,12) + '.mp3' equals the manifest entry. Exits 1 otherwise.
- * clipKey = role + '|' + (role === 'N' ? '' : archetype) + '|' + say, where say = the line's kana
+ * clipKey = role + '|' + (role === 'N' ? '' : archetype) + '|' + say (role M2 = the second man of a dialogue), where say = the line's kana
  * reading (listeningScript text) with U+3000 spaces removed: the TTS input.
  * Exports check(root, manifest, tracks?) -> error strings; run-tests.js passes tracks built from the
  * live listeningScript() so a stale tracks.json cannot hide a stale clip.
@@ -18,7 +18,10 @@ const sayText = (kana) => kana.replace(/　/g, "");
 const clipKey = (role, archetype, say) => role + "|" + (role === "N" ? "" : archetype || "") + "|" + say;
 const clipName = (key) => crypto.createHash("sha1").update(key, "utf8").digest("hex").slice(0, 12) + ".mp3";
 
-// tracks: [{ id, man, woman, lines: [{ role, say }] }]; defaults to tools/audio/tracks.json
+// archetype of a line's role: M man, M2 the second man (dialogues with two men), else the woman
+const archOf = (t, role) => role === "M" ? t.man : role === "M2" ? t.man2 : t.woman;
+
+// tracks: [{ id, man, man2?, woman, lines: [{ role, say }] }]; defaults to tools/audio/tracks.json
 function check(root, manifest, tracks) {
   const errors = [], hint = " (transcript edited without re-rendering? see tools/audio/README.md)";
   tracks = tracks || JSON.parse(fs.readFileSync(path.join(root, "tools", "audio", "tracks.json"), "utf8")).tracks;
@@ -26,7 +29,7 @@ function check(root, manifest, tracks) {
     const files = manifest.tracks[t.id];
     if (!files || files.length !== t.lines.length) { errors.push(t.id + ": manifest has " + (files ? files.length : 0) + " clips, track has " + t.lines.length + hint); return; }
     t.lines.forEach(function (l, i) {
-      const want = clipName(clipKey(l.role, l.role === "M" ? t.man : t.woman, l.say));
+      const want = clipName(clipKey(l.role, archOf(t, l.role), l.say));
       if (files[i] !== want) errors.push(t.id + " line " + i + ": manifest " + files[i] + ", expected " + want + hint);
       if (!fs.existsSync(path.join(root, "audio", files[i]))) errors.push(t.id + " line " + i + ": audio/" + files[i] + " missing");
     });
@@ -35,7 +38,7 @@ function check(root, manifest, tracks) {
   return errors;
 }
 
-module.exports = { check: check, clipKey: clipKey, clipName: clipName, sayText: sayText };
+module.exports = { archOf: archOf, check: check, clipKey: clipKey, clipName: clipName, sayText: sayText };
 
 if (require.main === module) {
   const root = path.resolve(__dirname, "..");

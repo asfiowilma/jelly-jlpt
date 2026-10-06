@@ -4,7 +4,7 @@
 //
 // clipKey rule (the notebook hashes it so identical lines across tracks render once):
 //   clipKey = role + '|' + (role === 'N' ? '' : archetype) + '|' + say
-// where role is N / M / F, archetype is the track's man / woman key (tracks.json `man` / `woman`;
+// where role is N / M / M2 (the second man of a two-man dialogue, tracks.json `man2`) / F, archetype is the track's man / woman key (tracks.json `man` / `woman`;
 // the narrator is one fixed voice, no archetype),
 // and say is the line's kana reading (listeningScript text, U+3000 spaces removed): the TTS input,
 // so the authored readings decide how each kanji is spoken. `text` (natural, kanji kept) is kept
@@ -30,6 +30,7 @@ function naturalScript(it) {
   const say = (sp, s) => ({ speaker: sp, text: natural(s) });
   const lines = it.lines.map(l => say(l.speaker, l.furigana));
   const q = it.question && say('N', it.question);
+  if (it.format === 'dialogue') return lines;
   if (!ctx.LISTEN_SPOKEN_OPTIONS[it.format]) return [lines[0], q].concat(lines.slice(1), [q]);
   const opts = [].concat.apply([], it.options.map((o, i) =>
     [{ speaker: 'N', text: ctx.LISTEN_NUMBERS[i] }, say(it.optionSpeaker, o)]));
@@ -43,19 +44,21 @@ ctx.listeningFor('N5').forEach(function (it) {
   if (kana.length !== nat.length || kana.some((l, i) => l.speaker !== nat[i].speaker))
     throw new Error(it.id + ': natural sequence does not match listeningScript');
   const pick = {};
-  ['M', 'F'].forEach(function (r) {
+  // M2 = the second man of a two-man dialogue: his own archetype (`man2` in man-assignments.json), same archetype list
+  [['M', 'M', 'man'], ['M2', 'M', 'man2'], ['F', 'F', 'woman']].forEach(function (x) {
+    const r = x[0], a = A[x[1]];
     if (!nat.some(l => l.speaker === r)) return;
-    const e = A[r].assign[it.id], k = e && e[r === 'M' ? 'man' : 'woman'];
+    const e = a.assign[it.id], k = e && e[x[2]];
     if (!k) errors.push(it.id + ': ' + r + ' track has no assignment');
-    else if (!A[r].arch[k]) errors.push(it.id + ': unknown ' + r + ' archetype ' + k);
+    else if (!a.arch[k]) errors.push(it.id + ': unknown ' + r + ' archetype ' + k);
     else pick[r] = k;
   });
-  const man = pick.M || null, woman = pick.F || null;
-  tracks.push({ id: it.id, format: it.format, man, woman,
+  const man = pick.M || null, woman = pick.F || null, man2 = pick.M2 || null;
+  tracks.push({ id: it.id, format: it.format, man, ...(man2 ? { man2 } : {}), woman,
     lines: nat.map((l, i) => ({ role: l.speaker, text: l.text, kana: kana[i].text, say: sayText(kana[i].text) })) });
   tracks[tracks.length - 1].lines.forEach(function (l) {
     total++; allChars += l.say.length;
-    const key = clipKey(l.role, l.role === 'M' ? man : woman, l.say);
+    const key = clipKey(l.role, l.role === 'M' ? man : l.role === 'M2' ? man2 : woman, l.say);
     if (!clips.has(key)) { clips.add(key); chars += l.say.length; }
   });
 });

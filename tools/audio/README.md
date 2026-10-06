@@ -6,12 +6,13 @@ Japanese (kanji kept, full-width spaces removed, for reading only), `kana` the r
 fallback uses, and `say` = `kana` with full-width spaces removed: the text the clips are rendered from,
 so the authored readings (何人, 四日, 九時...) decide the pronunciation, not the TTS model.
 Role N is the narrator, M the man, F the woman. `man` and `woman` are the track's archetypes, or null when that voice is absent.
+A lesson dialogue (format `dialogue`) with two men uses role M2 for the second one; the track then also has `man2`, an archetype different from `man` (assignments: `"man2"` in `man-assignments.json`). Same Colab notebook: its `arch_of` reads `man2`.
 
 Regenerate after any change to `data/n5/listening.js` or the archetype files:
 
     node tools/export-tracks.js
 
-`man-archetypes.json` (six voice-design prompts) and `woman-archetypes.json` (four Ono_Anna
+`man-archetypes.json` (six voice-design prompts; M and M2 both draw from it) and `woman-archetypes.json` (four Ono_Anna
 instructions) define the characters. `man-assignments.json` and `woman-assignments.json` map every
 track with that voice to an archetype, with a one-line reason; written by reading each transcript.
 The tool fails if such a track has no assignment or names an unknown archetype. New listening
