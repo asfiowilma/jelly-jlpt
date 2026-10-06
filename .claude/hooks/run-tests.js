@@ -1373,7 +1373,8 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     var shipped = ["data", "components", "vendor", "audio"].reduce(function (acc, d) { return acc.concat(walkJs(d)); }, [])
       .concat(["lib.js", "store.js", "app-helpers.js", "sfx.js", "app.js", "sw-register.js", "styles.css"]);
     a.deepEqual(shipped.filter(function (u) { return built.files.indexOf(u) < 0; }), [], "on disk but not in the list (add a <script> tag to index.html)");
-    ["index.html", "manifest.webmanifest", "kanji-svg/strokes.js", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png"].forEach(function (u) {
+    ["index.html", "manifest.webmanifest", "kanji-svg/strokes.js", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png",
+      "vendor/LICENSE-react.txt", "vendor/LICENSE-pouchdb.txt", "sfx/LICENSE-kenney.txt", "kanji-svg/LICENSE.md"].forEach(function (u) {
       a.ok(built.files.indexOf(u) >= 0, u + " precached");
     });
   });

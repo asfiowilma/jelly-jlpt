@@ -20,7 +20,7 @@ const crypto = require("crypto");
 // cache AUDIO_CACHE, which activate never deletes). run-tests.js checks the list against the files on disk.
 const RUNTIME_ONLY = /^audio\/[^\/]+\.mp3$/;
 
-const TEXT = /\.(js|css|html|svg|webmanifest|json|txt)$/;
+const TEXT = /\.(js|css|html|svg|webmanifest|json|txt|md)$/;
 
 function walk(root, dir, re) {
   const abs = path.join(root, dir);
@@ -33,7 +33,9 @@ function listFiles(root) {
   const refs = [];
   html.replace(/<(?:script[^>]*\ssrc|link[^>]*\shref)="([^"]+)"/g, function (_, u) { refs.push(u); });
   const set = ["index.html", "manifest.webmanifest"].concat(refs)
-    .concat(walk(root, "icons", /\.(png|svg)$/), walk(root, "sfx", /\.(mp3|ogg)$/), walk(root, "kanji-svg", /\.svg$/));
+    .concat(walk(root, "icons", /\.(png|svg)$/), walk(root, "sfx", /\.(mp3|ogg)$/), walk(root, "kanji-svg", /\.svg$/),
+      // licence files: Settings links them, so they must open offline too
+      walk(root, "vendor", /^LICENSE/), walk(root, "sfx", /^LICENSE/), walk(root, "kanji-svg", /^LICENSE/));
   return Array.from(new Set(set)).sort();
 }
 
