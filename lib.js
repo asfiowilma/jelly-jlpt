@@ -773,11 +773,21 @@ function spliceParts(parts, at, end, insert) {
   if (cutsRuby(parts, at) || cutsRuby(parts, end)) return null;
   return sliceParts(parts, 0, at).concat(insert, sliceParts(parts, end, Infinity));
 }
-// Confusables that fit the same slot with the same meaning: never distractors
-// for each other (two right answers). ponytail: hand list from reviewing every
-// generated N5 gap; extend it when a new level's confusables land.
+// Confusables that fit the same slot (same meaning, or a meaning only the English note
+// tells apart): no two of one set in an option set (two right answers). Ichidan / する
+// stems take both て and ない patterns (見てもいい, 見なくちゃ), so the permission and
+// obligation patterns are one set. ponytail: hand list from reviewing every generated N5
+// gap (audit P0-4); extend it when a new level's confusables land.
 var GAP_INTERCHANGEABLE = [['g:kedo', 'g:keredomo', 'g:ga'], ['g:kara', 'g:node'], ['g:ni', 'g:ni-ikimasu', 'g:made'], ['g:to', 'g:ya'],
-  ['g:ne', 'g:yo'], ['g:masen-ka', 'g:mashou-ka'], ['g:nakute-wa-ikenai', 'g:nakute-wa-naranai', 'g:nakucha-ikenai']];
+  ['g:ne', 'g:yo'], ['g:mashou', 'g:masen-ka', 'g:mashou-ka'], ['g:te-mo-ii', 'g:te-wa-ikemasen', 'g:nai-de-kudasai',
+  'g:nakute-wa-ikenai', 'g:nakute-wa-naranai', 'g:nakucha-ikenai'], ['g:no-ga-suki', 'g:no-ga-jouzu', 'g:no-ga-heta'],
+  ['g:mou', 'g:mada', 'g:mada-te-imasen'], ['g:de', 'g:wo']];
+// One way only: から as "from" fits where まで does (７時から / ７時まで), まで never fits for から "because".
+var GAP_ANSWER_BLOCKS = { 'g:made': ['g:kara'] };
+// gapClash(a, b): grammar ids a and b share a GAP_INTERCHANGEABLE set.
+function gapClash(a, b) {
+  return a === b || GAP_INTERCHANGEABLE.some(function (set) { return set.indexOf(a) >= 0 && set.indexOf(b) >= 0; });
+}
 
 // ── Exam-format questions: N5 mondai (ticket 11) ───────────────────────────
 // Question types modelled on the official sections. Unit quizzes reach the item-based
@@ -1278,17 +1288,17 @@ function formsFor(item, ctx) {
             var parts = gapParts(base, surfaces[j]);
             if (!parts) continue;
             var ans = surfaces[j];
-            var friends = [].concat.apply([g.id], GAP_INTERCHANGEABLE.filter(function (set) { return set.indexOf(g.id) >= 0; }));
-            var d = [];
-            GRAMMAR_CONFUSABLES.filter(function (set) { return set.indexOf(g.id) >= 0; }).forEach(function (set) {
-              set.forEach(function (id) {
-                var c = CATALOG.items[id], txt = c && gapSurfaces(c)[0];
-                if (!txt || friends.indexOf(id) >= 0 || surfaces.indexOf(txt) >= 0 || d.indexOf(txt) >= 0 || sharesSense(c.meaning, g.meaning)) return;
-                d.push(txt);
-              });
+            // distractors: confusables, no two from one GAP_INTERCHANGEABLE set (answer included)
+            var ids = [g.id], d = [];
+            rndShuffle([].concat.apply([], GRAMMAR_CONFUSABLES.filter(function (set) { return set.indexOf(g.id) >= 0; }))).forEach(function (id) {
+              var c = CATALOG.items[id], txt = c && gapSurfaces(c)[0];
+              if (!txt || d.length >= 3 || ids.some(function (x) { return gapClash(x, id); }) || (GAP_ANSWER_BLOCKS[g.id] || []).indexOf(id) >= 0 || surfaces.indexOf(txt) >= 0 ||
+                  d.indexOf(txt) >= 0 || sharesSense(c.meaning, g.meaning)) return;
+              ids.push(id);
+              d.push(txt);
             });
             if (d.length < 2) return null;
-            var opts = rndShuffle([ans].concat(rndShuffle(d).slice(0, 3)));
+            var opts = rndShuffle([ans].concat(d));
             return { type: 'gap', prompt: 'Choose what fills the gap:', question: parts.map(function (p) { return p.t; }).join(''),
               parts: parts, note: s.en, options: opts, correct: opts.indexOf(ans) };
           }

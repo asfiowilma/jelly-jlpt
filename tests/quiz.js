@@ -158,6 +158,35 @@ QUnit.module('quiz difficulty model', {
     assert.ok(n > 10, n + ' gap questions checked');
   });
 
+  QUnit.test('P0-4 no gap option set holds two patterns that fit the same slot', function (assert) {
+    // audit groups: siblings only the English note tells apart (見てもいい / 見なくちゃ, ７時から / ７時まで)
+    var groups = [['g:mashou', 'g:masen-ka', 'g:mashou-ka'], ['g:te-mo-ii', 'g:te-wa-ikemasen', 'g:nai-de-kudasai',
+      'g:nakucha-ikenai', 'g:nakute-wa-ikenai', 'g:nakute-wa-naranai'], ['g:no-ga-suki', 'g:no-ga-jouzu', 'g:no-ga-heta'],
+      ['g:mou', 'g:mada', 'g:mada-te-imasen'], ['g:de', 'g:wo']];
+    var ids = function (txt) { return catalogOf('grammar').filter(function (g) { return gapSurfaces(g).indexOf(txt) >= 0; }).map(function (g) { return g.id; }); };
+    var n = 0, stems = {};
+    this.units.forEach(function (u) {
+      var gs = quizItems(u).filter(function (it) { return it.kind === 'grammar'; });
+      if (!gs.length) return;
+      var ctx = quizContext(u);
+      gs.forEach(function (g) {
+        var fm = formsFor(g, ctx).filter(function (x) { return x.name === 'gap'; })[0];
+        for (var r = 0; r < 6; r++) {
+          var ex = fm.make();
+          if (!ex) continue;
+          n++;
+          stems[ex.question] = true;
+          groups.forEach(function (grp) {
+            var hit = ex.options.filter(function (o) { return ids(o).some(function (i) { return grp.indexOf(i) >= 0; }); });
+            if (hit.length > 1) assert.ok(false, g.id + ' ' + ex.question + ': ' + hit.join(' / '));
+          });
+          if (g.id === 'g:made' && ex.options.indexOf('から') >= 0) assert.ok(false, ex.question + ': から (from) fits where まで does');
+        }
+      });
+    });
+    assert.ok(Object.keys(stems).length > 20, n + ' gap questions, ' + Object.keys(stems).length + ' stems checked');
+  });
+
   QUnit.test('Q31 requeueExercise: same item, a different form when one exists, marked requeue', function (assert) {
     var u = this.units.filter(function (x) { return x.kind === 'lesson'; })[0];
     buildExercises(u).forEach(function (e) {
