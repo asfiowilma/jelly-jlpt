@@ -153,6 +153,8 @@ QUnit.module('exam-format questions (mondai)', function () {
     var seen = {};
     // two builds of every lesson: sentence formats only use sentences with nothing taught later, so they are rarer
     for (var r = 0; r < 2; r++) lessons().forEach(function (u) { buildExercises(u).forEach(function (e) { seen[e.type] = true; }); });
+    // kanji_yomi needs a readable (all kanji taught) word with a usable catalog sentence: only ~17 words in 14 lessons, so a random quiz often lacks it. Build it directly instead.
+    all('kanjiYomi').forEach(function (e) { seen[e.type] = true; });
     ['kanji_yomi', 'hyouki', 'bunmyaku', 'order', 'gap'].forEach(function (t) { assert.ok(seen[t], t); });
   });
 });
