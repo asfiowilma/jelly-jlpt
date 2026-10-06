@@ -20,6 +20,29 @@ QUnit.module('pickDistractors', function () {
     });
   });
 
+  QUnit.test('P1-14 near synonyms (する / やる, コップ / カップ) are never options against each other', function (assert) {
+    var pool = catalogOf('vocab'), taught = {};
+    NEAR_SYNONYMS.forEach(function (s) { s.forEach(function (id) { taught[id] = true; }); });
+    NEAR_SYNONYMS.forEach(function (s) {
+      [[s[0], s[1]], [s[1], s[0]]].forEach(function (p) {
+        var t = I(p[0]), o = I(p[1]);
+        each(function () {
+          if (pickDistractors(t, pool, 'word', 3, { taught: taught }).indexOf(o.word) >= 0) assert.ok(false, 'word MC ' + t.word + ' offers ' + o.word);
+          if (pickDistractors(t, pool, 'gloss', 3, { taught: taught }).indexOf(glossText(o)) >= 0) assert.ok(false, 'meaning MC ' + t.word + ' offers ' + glossText(o));
+        });
+      });
+    });
+    var u = allUnits().filter(function (x) { return x.kind === 'lesson'; }).pop(), ctx = quizContext(u);
+    ['v:する|する', 'v:やる|やる', 'v:コップ|コップ', 'v:カップ|カップ'].forEach(function (id) {
+      var fm = formsFor(I(id), ctx).filter(function (f) { return f.name === 'bunmyaku'; })[0];
+      each(function () {
+        var ex = fm && fm.make();
+        (ex ? ex.optionItems : []).forEach(function (x) { if (nearSynonyms(x, I(id))) assert.ok(false, 'bunmyaku ' + id + ' offers ' + x.id); });
+      });
+    });
+    assert.ok(true);
+  });
+
   QUnit.test('gloss: no distractor shares a sense word with the answer (no second correct answer)', function (assert) {
     var pool = catalogOf('vocab');
     ['v:青|あお', 'v:大きい|おおきい', 'v:食べる|たべる', 'v:先生|せんせい'].forEach(function (id) {

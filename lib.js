@@ -485,6 +485,13 @@ function sharesSense(a, b) {
   var sa = senseWords(a);
   return senseWords(b).some(function (w) { return sa.indexOf(w) >= 0; });
 }
+// Vocab pairs that answer the same prompt though their glosses share no sense word ("do" is a
+// stopword; a glass vs a cup): never options or typed answers against each other (audit P1-14,
+// P2-4). ponytail: hand list; extend when a quiz shows another pair.
+var NEAR_SYNONYMS = [['v:する|する', 'v:やる|やる'], ['v:コップ|コップ', 'v:カップ|カップ']];
+function nearSynonyms(a, b) {
+  return !!a && !!b && a.id !== b.id && NEAR_SYNONYMS.some(function (s) { return s.indexOf(a.id) >= 0 && s.indexOf(b.id) >= 0; });
+}
 
 // Kanji learners mix up by shape, and kanji that share a category. Only pairs
 // that are both in the pool matter; add sets as levels grow.
@@ -560,7 +567,7 @@ var DISTRACTOR_RULES = {
   gloss: { // vocab meaning
     texts: function (it) { return [glossText(it)]; },
     // same word/reading = homograph or homophone: right answer too (and in listening)
-    reject: function (c, t, ans) { return c.it.word === t.word || c.it.reading === t.reading || sharesSense(c.text, ans); },
+    reject: function (c, t, ans) { return c.it.word === t.word || c.it.reading === t.reading || sharesSense(c.text, ans) || nearSynonyms(c.it, t); },
     score: function (c, t, ans) {
       var tags = t.tags || [];
       return [posFamily(c.it.pos) !== posFamily(t.pos), !c.taught, c.it.pos !== t.pos,
@@ -569,7 +576,7 @@ var DISTRACTOR_RULES = {
   },
   word: { // meaning → word
     texts: function (it) { return [it.word]; },
-    reject: function (c, t) { return sharesSense(glossText(c.it), glossText(t)); },
+    reject: function (c, t) { return sharesSense(glossText(c.it), glossText(t)) || nearSynonyms(c.it, t); },
     score: function (c, t, ans) {
       return [scriptShape(c.text) !== scriptShape(ans), !c.taught, posFamily(c.it.pos) !== posFamily(t.pos),
         lenBucket(c.text, ans, 1), Math.min(3, editDistance(kataToHira(c.it.reading), kataToHira(t.reading)))];
@@ -1172,7 +1179,7 @@ function formsFor(item, ctx) {
       f('wordMc', false, function () {
         var clash = Object.keys(ctx.taught).some(function (id) {
           var x = CATALOG.items[id];
-          return x && x.kind === 'vocab' && x !== kw && !isBound(x) && sharesSense(glossText(x), glossText(kw));
+          return x && x.kind === 'vocab' && x !== kw && !isBound(x) && (sharesSense(glossText(x), glossText(kw)) || nearSynonyms(x, kw));
         });
         return clash ? null : mc('mc', 'Which word means "' + glossText(kw) + '"?', '', 'word', ctx.kanaPool);
       })
@@ -1201,7 +1208,7 @@ function formsFor(item, ctx) {
       }),
       f('enToJp', true, function () {
         // only when no other taught word shares a sense (else two right answers)
-        var clash = ctx.vPool.some(function (x) { return x !== v && ctx.taught[x.id] && x.word !== v.word && !isBound(x) && sharesSense(glossText(x), glossText(v)); });
+        var clash = ctx.vPool.some(function (x) { return x !== v && ctx.taught[x.id] && x.word !== v.word && !isBound(x) && (sharesSense(glossText(x), glossText(v)) || nearSynonyms(x, v)); });
         var ans = [v.reading, kataToHira(v.reading), v.word].concat(alsoRight).filter(function (a, i, arr) { return arr.indexOf(a) === i; });
         return clash ? null : typing('Type the Japanese for "' + glossText(v) + '":', '', ans, 'in Japanese…', kanaIn);
       }),
@@ -1224,7 +1231,7 @@ function formsFor(item, ctx) {
         var tags = v.tags || [];
         var cands = rndShuffle(ctx.vPool.filter(function (x) {
           return x.pos === v.pos && x.id !== v.id && !x.alt && x.word !== v.word && x.reading !== v.reading &&
-            (x.level === v.level || ctx.taught[x.id]) && !sharesSense(glossText(x), glossText(v));
+            (x.level === v.level || ctx.taught[x.id]) && !sharesSense(glossText(x), glossText(v)) && !nearSynonyms(x, v);
         })).map(function (x) {
           return { it: x, s: [!ctx.taught[x.id], (x.tags || []).some(function (t) { return tags.indexOf(t) >= 0; })] };
         }).sort(function (a, b) { return a.s[0] - b.s[0] || a.s[1] - b.s[1]; });
