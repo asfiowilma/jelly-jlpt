@@ -117,6 +117,7 @@ function DialogueSection(props) {
       return h('button', { className: 'dlg-tool', 'aria-pressed': pressed, 'aria-label': aria, onClick: onClick }, label);
     };
     return h('div', { className: 'dlg-open' },
+     h('div', { className: 'dlg-panel' },
       h('div', { className: 'dlg-dh' }, h('span', { className: 'dlg-chips' }, chips), h('b', null, view.title),
         h('span', { className: 'dlg-dacts' },
           h('button', { className: 'dlg-tool strong', onClick: function () { if (playing) { halt(); setOn(-1); setPlaying(false); } else play(0); } }, playing ? 'Stop' : 'Replay'),
@@ -125,12 +126,12 @@ function DialogueSection(props) {
       h('div', { className: 'dlg-tools' },
         tool('あ', !!showFurigana, props.toggleFurigana, 'Furigana'),
         tool('EN', en, function () { setEn(!en); }, 'English'),
-        tool('Listen only', hide, function () { setHide(!hide); })),
+        tool('Listen only', hide, function () { setHide(!hide); }))),
       h('div', { className: 'dlg-chat' }, view.lines.map(bubble)),
       h('div', { className: 'dlg-gloss' + (gloss ? ' g-' + gloss.kind : ''), role: 'status' },
         gloss ? [h('small', { key: 'k' }, DLG_KIND[gloss.kind]), h('span', { key: 't' }, gloss.text)]
           : h('span', { className: 'dlg-hint' }, 'Tap a marked word for its meaning.')));
   };
 
-  return h('div', { className: 'section dlg', id: 'dlg-hero' }, h('div', { className: 'dlg-card' }, open ? opened() : hero()));
+  return h('div', { className: 'section dlg', id: 'dlg-hero' }, open ? opened() : hero());
 }
