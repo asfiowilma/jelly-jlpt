@@ -93,4 +93,23 @@ QUnit.module('typed English answers', function () {
       ['to meet', 'to see (a person)', 'to encounter']);
     assert.deepEqual(acceptedAnswers({ answers: ['にほんじん', 'にっぽんじん'] }), ['にほんじん', 'にっぽんじん']);
   });
+
+  QUnit.test('P1-12 no accept entry is the primary gloss of another taught word of the same kind', function (assert) {
+    // same pos family only: 降る "to rain" vs 雨 "rain" names the action, not the noun
+    var taught = {};
+    allUnits().forEach(function (u) { Object.assign(taught, taughtIds(u)); });
+    var vs = catalogOf('vocab').filter(function (v) { return taught[v.id] && !v.alt; }), primary = {};
+    vs.forEach(function (v) { (primary[normEn(v.gloss[0])] = primary[normEn(v.gloss[0])] || []).push(v); });
+    vs.forEach(function (v) {
+      (v.accept || []).forEach(function (a) {
+        (primary[normEn(a)] || []).forEach(function (x) {
+          if (x !== v && x.word !== v.word && posFamily(x.pos) === posFamily(v.pos)) assert.ok(false, v.id + ' accepts "' + a + '", the meaning of ' + x.id);
+        });
+      });
+    });
+    ['v:兄|あに', 'v:弟|おとうと', 'v:姉|あね', 'v:妹|いもうと'].forEach(function (id) {
+      var acc = (CATALOG.items[id].accept || []).map(normEn);
+      assert.ok(acc.indexOf('brother') < 0 && acc.indexOf('sister') < 0, id + ': bare brother / sister never tests older vs younger');
+    });
+  });
 });
