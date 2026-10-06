@@ -35,8 +35,13 @@ QUnit.module('navbar', function () {
     var prev = window._uiLang, prevK = window._learnedKanji;
     window._learnedKanji = {};
     window._uiLang = 'en'; assert.equal(t('view_review', 'N1'), 'Review');
-    window._uiLang = 'ja'; assert.equal(t('view_review', 'N5'), '復習');
     window._uiLang = 'auto'; assert.equal(t('view_review', 'N5'), 'Review');
+    var ready = UI_JA_READY;
+    UI_JA_READY = false;
+    window._uiLang = 'ja'; assert.equal(t('view_review', 'N5'), 'Review', 'ja strings unreviewed: a stored ja pref acts as auto');
+    UI_JA_READY = true;
+    assert.equal(t('view_review', 'N5'), '復習', 'once reviewed, ja wins');
+    UI_JA_READY = ready;
     window._uiLang = prev; window._learnedKanji = prevK;
   });
 

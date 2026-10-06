@@ -43,6 +43,7 @@ function SettingsView(props) {
     return ce("i", { key: v, style: { background: 'var(' + v + ')' } });
   });
   var made = L("set_made_with").split("♥");
+  var uiLang = props.uiLang === 'ja' && !UI_JA_READY ? 'auto' : props.uiLang; // see UI_JA_READY
   return ce("div", { className: "settings" },
     ce("div", { className: "settings-head" },
       ce("button", { className: "back-btn", onClick: props.onBack }, L("settings_back")),
@@ -74,17 +75,17 @@ function SettingsView(props) {
             onChange: function (e) { props.setExamDate(e.target.value || null); }
           }))),
       section("set-language", L("set_language"),
-        field("set-ui-lang", L("set_ui_lang"), L("set_lang_h_" + props.uiLang),
+        field("set-ui-lang", L("set_ui_lang"), L("set_lang_h_" + uiLang),
           ce("select", {
             id: "set-ui-lang",
             className: "theme-select",
             'aria-describedby': "set-ui-lang-hint",
-            value: props.uiLang,
+            value: uiLang,
             onChange: function (e) { props.setUiLang(e.target.value); }
           },
             ce("option", { value: "auto" }, L("set_lang_auto")),
             ce("option", { value: "en" }, "English"),
-            ce("option", { value: "ja" }, "日本語"))),
+            UI_JA_READY && ce("option", { value: "ja" }, "日本語"))),
         field("set-furigana", L("set_furigana"), L("set_furi_h_" + props.furiganaMode),
           ce("select", {
             id: "set-furigana",

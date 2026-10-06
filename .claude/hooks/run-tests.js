@@ -442,6 +442,23 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     } catch (e) { a.ok(false, e.message); }
   });
 
+  test("Settings language: no Japanese choice until the ja strings are reviewed; stored ja shows as auto", function (a) {
+    var ce0 = React.createElement, made = [];
+    React.createElement = function () { made.push(JSON.stringify([].slice.call(arguments, 1))); return {}; };
+    try {
+      SettingsView({
+        themePrefs: { palette: "ai", theme: "dark" }, setThemePrefs: noop, speechRate: 0.85, setSpeechRate: noop,
+        level: "N5", uiLang: "ja", setUiLang: noop, sfxOn: true, setSfxOn: noop, furiganaMode: "auto", setFuriganaMode: noop,
+        onExport: noop, onImport: noop, onBack: noop,
+        sync: Store.syncInfo, savedCreds: null, onConnect: noop, onDisconnect: noop, onSyncNow: noop,
+      });
+    } finally { React.createElement = ce0; }
+    var out = made.join(" ");
+    a.strictEqual(UI_JA_READY, false, "ja strings still await native review");
+    a.ok(out.indexOf("日本語") < 0, "no 日本語 option");
+    a.ok(out.indexOf('"id":"set-ui-lang","className":"theme-select","aria-describedby":"set-ui-lang-hint","value":"auto"') >= 0, "stored ja shown as auto");
+  });
+
   test("Sentence credits: every Tatoeba sentence listed with its JP author and licence, null enAuthor safe", function (a) {
     var rows = tatoebaCredits();
     var ids = Object.keys(CATALOG.items).filter(function (id) { return id.indexOf("s:tatoeba:") === 0; });

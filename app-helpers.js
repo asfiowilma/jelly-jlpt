@@ -452,11 +452,14 @@ function useQuizBusy(active) {
     return function () { window.__quizBusy -= 1; window.dispatchEvent(new Event('quiz-busy')); };
   }, [active]);
 }
+// UI_JA_READY: the ja strings are placeholder drafts awaiting a native review. Until then
+// Settings offers no Japanese choice and a stored 'ja' pref behaves like 'auto'.
+var UI_JA_READY = false;
 function t(key, level) {
   var s = UI_STRINGS[key];
   if (!s) return key;
   if (window._uiLang === 'en') return s.en;
-  if (window._uiLang === 'ja') return s.ja;
+  if (window._uiLang === 'ja' && UI_JA_READY) return s.ja;
   return uiJaShown(s.ja, level, window._learnedKanji || {}) ? s.ja : s.en;
 }
 // tRuby: t() as a React node — a JA label with an `rt` reading gets ruby
