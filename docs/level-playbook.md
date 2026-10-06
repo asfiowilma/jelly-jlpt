@@ -183,9 +183,7 @@ in `.scratch/content-audit/issues/`.
   - Particle は/へ in `say` can be spoken ha/he (母は先生です came out ははは): write `[は|わ]` ruby for the
     clip; the shown text stays は. The catalog check allows only that pair. Check particle lines when
     listening to a render.
-  - Short narrator clips (いち, に, さん) are shared by every track, so one off-voice take is
-    everywhere. To re-render them, drop their names from `have` and clear the old files from the
-    notebook's output folder.
+  - Later levels reuse the narrator いち, に, さん clips (same clipKey, already in `have`); don't re-render them.
 
 ## 7b. Exam guide voice
 
