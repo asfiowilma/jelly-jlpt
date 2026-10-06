@@ -265,7 +265,7 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
 
   test("React render: DialogueSection() renders collapsed, open and heard; Replay plays every line; open state is remembered", function (a) {
     var withD = units.filter(function (u) { return u.dialogue; });
-    a.equal(withD.length, 2, "two pilot lessons carry a dialogue");
+    a.equal(withD.length, 19, "stages 19 to 40 (pilot + batch 1) carry a dialogue");
     var orig = { useState: React.useState, useRef: React.useRef, useEffect: React.useEffect, useMemo: React.useMemo, createElement: React.createElement, setTimeout: global.setTimeout };
     var origSpeech = window.speechSynthesis, origUtt = global.SpeechSynthesisUtterance, origLs = global.localStorage, mem = {}, spoken = [];
     global.localStorage = { getItem: function (k) { return k in mem ? mem[k] : null; }, setItem: function (k, v) { mem[k] = String(v); }, removeItem: function (k) { delete mem[k]; } };

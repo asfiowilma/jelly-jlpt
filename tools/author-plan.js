@@ -205,7 +205,27 @@ kanaUnits(KATAKANA, "katakana");
 const kanjiAll = items.filter(function (it) { return it.kind === "kanji"; }); // kanji.js order = Tanos frequency order
 // Written forms per lesson, to see where each kanji shows up.
 // Lesson dialogs (pilot): lesson title -> l:n5-dlg-… (data/n5/listening.js, format dialogue). Shown above the vocabulary.
-const DIALOGUES = { "Introducing yourself": "l:n5-dlg-first-class", "Eating and drinking": "l:n5-dlg-forger-table" };
+const DIALOGUES = {
+  "Introducing yourself": "l:n5-dlg-first-class",
+  "Eating and drinking": "l:n5-dlg-forger-table",
+  "Countries and languages": "l:n5-dlg-new-face",
+  "Whose is it?": "l:n5-dlg-lost-umbrella",
+  "This one, that one": "l:n5-dlg-lost-and-found",
+  "My family": "l:n5-dlg-family-photo",
+  "Someone else's family": "l:n5-dlg-teachers-office",
+  "Where is it?": "l:n5-dlg-school-entrance",
+  "Which way? When? How many?": "l:n5-dlg-party-way",
+  "Going and coming home": "l:n5-dlg-right-bus",
+  "Numbers 0 to 6": "l:n5-dlg-ticket-counter",
+  "Numbers 7 to 10,000": "l:n5-dlg-front-desk",
+  "What time is it?": "l:n5-dlg-morning-wake",
+  "Days of the week": "l:n5-dlg-days-off",
+  "Dates: the 1st to the 10th": "l:n5-dlg-exam-date",
+  "At the library": "l:n5-dlg-library",
+  "With friends": "l:n5-dlg-going-out",
+  "Going out together": "l:n5-dlg-cafe-invite",
+  "This week, next week": "l:n5-dlg-next-month"
+};
 const lessonText = LESSONS.map(function (l) { return words(l[2]).map(function (id) { return CATALOG.items[id].word; }).join(" "); });
 const soon = function (k, n) { return lessonText.slice(n + 1, n + 7).some(function (s) { return s.indexOf(k.char) >= 0; }); };
 // Kanji placement: in the first lesson that has a word written with it, most frequent first

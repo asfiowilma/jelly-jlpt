@@ -722,5 +722,509 @@ CATALOG.add([
     uses: ['g:masu', 'g:wa-desu', 'g:ka', 'g:ne', 'g:wo', 'v:何|なに', 'v:私|わたし', 'v:さん|さん', 'v:飲む|のむ', 'v:牛乳|ぎゅうにゅう', 'v:お茶|おちゃ', 'v:これ|これ', 'v:パン|パン', 'v:食べる|たべる', 'v:おいしい|おいしい', 'v:はい|はい', 'k:何', 'k:食'],
     notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
     verified: false }),
+
+  L({ id: 'l:n5-dlg-new-face', format: 'dialogue',
+    title: 'A new face', goal: 'You can ask who someone is and ask "Are you ...?"',
+    scene: 'Emilia sees a new face in the classroom and says hello.',
+    cast: { emilia: { name: 'Emilia', jp: 'エミリア', gender: 'F', role: 'Classmate' }, sanji: { name: 'Sanji', jp: 'サンジ', gender: 'M', role: 'New student' } },
+    lines: [
+      { speaker: 'emilia', furigana: 'すみません、どなたですか？', en: 'Excuse me, who are you?' },
+      { speaker: 'sanji', furigana: 'はじめまして。わたしは　サンジです。[学生|がくせい]です。', en: 'Nice to meet you. I am Sanji. I am a student.' },
+      { speaker: 'emilia', furigana: '[学生|がくせい]ですか。わたしも　[学生|がくせい]です。エミリアです。', en: 'You are a student? I am a student too. I am Emilia.' },
+      { speaker: 'sanji', furigana: 'エミリアさんですね。よろしく　おねがいします！', en: 'You are Emilia, right? Please take care of me!' },
+      { speaker: 'emilia', furigana: 'はい、よろしく　おねがいします。サンジさんは　[外国人|がいこくじん]ですか？', en: 'Yes, please take care of me. Are you a foreigner, Sanji?' },
+      { speaker: 'sanji', furigana: 'はい。エミリアさんは？', en: 'Yes. And you, Emilia?' },
+      { speaker: 'emilia', furigana: 'わたしも　[外国人|がいこくじん]です。', en: 'I am a foreigner too.' },
+      { speaker: 'sanji', furigana: 'えいごですか？', en: 'English?' },
+      { speaker: 'emilia', furigana: 'はい、えいごです。', en: 'Yes, English.' }
+    ],
+    bridge: [
+      { text: 'も', ctx: 'わたしも', id: 'g:mo', gloss: 'も = also, too (taught a few lessons later)' },
+      { text: 'ね', ctx: 'ですね', id: 'g:ne', gloss: 'ね = right? / isn’t it? (taught a few lessons later)' }
+    ],
+    remixes: [
+      { scene: 'Same classroom. Emilia asks Sanji whether he is a teacher.', en: 'Sanji, are you a teacher?',
+        chunks: ['サンジさんは', 'せんせいですか？', 'がくせいです。'], answer: ['サンジさんは', 'せんせいですか？'],
+        explain: 'か at the end turns the sentence into a question. がくせいです would say "I am a student", not ask about a teacher.' },
+      { scene: 'Sanji tells Emilia he is a foreigner too.', en: 'I am a foreigner too.',
+        chunks: ['わたしも', 'がいこくじんです。', 'がいこくじんですか？'], answer: ['わたしも', 'がいこくじんです。'],
+        explain: 'も goes right after わたし to say "me too". ですか？ would ask a question instead of making a statement.' }
+    ],
+    names: ['エミリア', 'サンジ'],
+    uses: ['g:ka', 'g:wa-desu', 'g:mo', 'g:ne', 'v:どなた|どなた', 'v:私|わたし', 'v:学生|がくせい', 'v:さん|さん', 'v:外国人|がいこくじん', 'v:英語|えいご', 'v:はい|はい', 'k:学', 'k:生', 'k:外', 'k:国', 'k:人'],
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
+
+  L({ id: 'l:n5-dlg-lost-umbrella', format: 'dialogue',
+    title: 'Whose umbrella?', goal: 'You can say whose something is.',
+    scene: 'Gojo found an umbrella, a book and a pen in the classroom. He asks Sakura whose they are.',
+    cast: { gojo: { name: 'Gojo', jp: 'ゴジョウ', gender: 'M', role: 'Teacher' }, sakura: { name: 'Sakura', jp: 'サクラ', gender: 'F', role: 'Student' } },
+    lines: [
+      { speaker: 'gojo', furigana: 'サクラさん、これは　だれの　かさですか？', en: 'Sakura, whose umbrella is this?' },
+      { speaker: 'sakura', furigana: '[先生|せんせい]の　かさですか？', en: 'Is it yours, sensei?' },
+      { speaker: 'gojo', furigana: 'ええ、[先生|せんせい]の　かさです。', en: 'Yes, it is mine.', tone: 'teasing, playful' },
+      { speaker: 'sakura', furigana: 'いいえ！　それは　わたしの　かさです！', en: 'No! That is my umbrella!' },
+      { speaker: 'gojo', furigana: 'サクラさんの　かさですね。[本|ほん]は？', en: 'Sakura’s umbrella, right. And the book?' },
+      { speaker: 'sakura', furigana: '[本|ほん]は　サスケさんの　[本|ほん]です。', en: 'The book is Sasuke’s book.' },
+      { speaker: 'gojo', furigana: 'ボールペンは？', en: 'And the ballpoint pen?' },
+      { speaker: 'sakura', furigana: 'それは　[先生|せんせい]の　ボールペンです！', en: 'That is your ballpoint pen, sensei!' },
+      { speaker: 'gojo', furigana: '[先生|せんせい]の　ボールペンですね。ありがとう、サクラさん。', en: 'My ballpoint pen, right. Thank you, Sakura.' }
+    ],
+    bridge: [
+      { text: 'これ', id: 'v:これ|これ', gloss: 'これ = this (the thing near me)' },
+      { text: 'それ', id: 'v:それ|それ', gloss: 'それ = that (the thing near you)' },
+      { text: 'ね', ctx: 'ですね', id: 'g:ne', gloss: 'ね = right? / isn’t it? (taught a few lessons later)' }
+    ],
+    remixes: [
+      { scene: 'Sakura finds a pencil and asks whose it is.', en: 'Whose pencil is this?',
+        chunks: ['これは', 'だれの', 'えんぴつですか？', 'えんぴつです。'], answer: ['これは', 'だれの', 'えんぴつですか？'],
+        explain: 'だれの asks "whose", and か makes the sentence a question. えんぴつです would end the sentence as a statement.' },
+      { scene: 'Sakura tells Gojo whose book it is.', en: 'That is Sasuke’s book.',
+        chunks: ['それは', 'サスケさんの', 'ほんです。', 'かさです。'], answer: ['それは', 'サスケさんの', 'ほんです。'],
+        explain: 'の joins the owner to the thing: サスケさんの ほん. かさです would make it an umbrella.' }
+    ],
+    names: ['ゴジョウ', 'サクラ', 'サスケ'],
+    uses: ['g:no', 'g:ka', 'g:wa-desu', 'g:ne', 'v:これ|これ', 'v:それ|それ', 'v:誰|だれ', 'v:傘|かさ', 'v:私|わたし', 'v:先生|せんせい', 'v:本|ほん', 'v:ボールペン|ボールペン', 'v:さん|さん', 'v:ええ|ええ', 'v:いいえ|いいえ', 'k:先', 'k:生', 'k:本'],
+    notes: 'uses v:ええ|ええ, v:いいえ|いいえ, which are unverified, so the dialogue is too.',
+    verified: false }),
+
+  L({ id: 'l:n5-dlg-lost-and-found', format: 'dialogue',
+    title: 'Lost and found', goal: 'You can say "this is not ..." and "that is ...".',
+    scene: 'At the lost-property desk, Frieren shows Hinata the things nobody has claimed.',
+    cast: { frieren: { name: 'Frieren', jp: 'フリーレン', gender: 'F', role: 'Teacher' }, hinata: { name: 'Hinata', jp: 'ヒナタ', gender: 'M', role: 'Student' } },
+    lines: [
+      { speaker: 'frieren', furigana: '……この　かさは　ヒナタさんの　かさですか。', en: '...Is this umbrella yours, Hinata?', tone: 'flat, deadpan' },
+      { speaker: 'hinata', furigana: 'いいえ！　わたしの　かさじゃ　ありません！', en: 'No! It is not my umbrella!' },
+      { speaker: 'frieren', furigana: '……これは　[何|なん]ですか。', en: '...What is this?', tone: 'flat, deadpan' },
+      { speaker: 'hinata', furigana: 'それは　わたしの　ボールペンです！', en: 'That is my ballpoint pen!' },
+      { speaker: 'frieren', furigana: '……ボールペンじゃ　ありません。えんぴつです。', en: '...It is not a ballpoint pen. It is a pencil.', tone: 'flat, deadpan' },
+      { speaker: 'hinata', furigana: 'えんぴつ！　わたしの　えんぴつです！', en: 'A pencil! It is my pencil!' },
+      { speaker: 'frieren', furigana: '……あの　とけいは？', en: '...And that watch?', tone: 'flat, deadpan' },
+      { speaker: 'hinata', furigana: 'あれは　[先生|せんせい]の　とけいです！', en: 'That is your watch, sensei!' },
+      { speaker: 'frieren', furigana: '……ええ。わたしの　とけいです。', en: '...Yes. It is my watch.', tone: 'flat, deadpan' }
+    ],
+    remixes: [
+      { scene: 'Hinata holds up a pencil and says it is not his.', en: 'This is not my pencil.',
+        chunks: ['これは', 'わたしの', 'えんぴつじゃありません。', 'えんぴつです。'], answer: ['これは', 'わたしの', 'えんぴつじゃありません。'],
+        explain: 'じゃありません says "it is not". えんぴつです would say the opposite: it is a pencil.' },
+      { scene: 'Frieren holds up a ballpoint pen and corrects Hinata about the watch.', en: 'That is not a watch.',
+        chunks: ['それは', 'とけいじゃありません。', 'とけいです。'], answer: ['それは', 'とけいじゃありません。'],
+        explain: 'The negative じゃありません replaces です at the end. とけいです would claim it is a watch.' }
+    ],
+    names: ['フリーレン', 'ヒナタ'],
+    uses: ['g:ja-nai', 'g:no', 'g:ka', 'g:wa-desu', 'v:この|この', 'v:これ|これ', 'v:それ|それ', 'v:あれ|あれ', 'v:あの|あの', 'v:傘|かさ', 'v:さん|さん', 'v:私|わたし', 'v:何|なん', 'v:ボールペン|ボールペン', 'v:鉛筆|えんぴつ', 'v:時計|とけい', 'v:先生|せんせい', 'v:ええ|ええ', 'v:いいえ|いいえ', 'k:何', 'k:先', 'k:生'],
+    notes: 'uses v:ええ|ええ, v:いいえ|いいえ, which are unverified, so the dialogue is too.',
+    verified: false }),
+
+  L({ id: 'l:n5-dlg-family-photo', format: 'dialogue',
+    title: 'A family photo', goal: 'You can introduce your family and say "my ... too".',
+    scene: 'In the school cafeteria, Yor shyly shows Nami an old photo of her family.',
+    cast: { yor: { name: 'Yor', jp: 'ヨル', gender: 'F', role: 'Friend' }, nami: { name: 'Nami', jp: 'ナミ', gender: 'F', role: 'Friend' } },
+    lines: [
+      { speaker: 'yor', furigana: 'あの、ナミさん。これは　わたしの　かぞくです。', en: 'Um, Nami. This is my family.' },
+      { speaker: 'nami', furigana: 'この　[人|ひと]は　どなたですか？', en: 'Who is this person?' },
+      { speaker: 'yor', furigana: 'これは　わたしの　[父|ちち]です。これは　[母|はは]です。', en: 'This is my father. This is my mother.' },
+      { speaker: 'nami', furigana: 'りょうしんですね。この　[人|ひと]は？', en: 'Your parents, I see. And this person?' },
+      { speaker: 'yor', furigana: 'これは　おとうとです。', en: 'This is my younger brother.' },
+      { speaker: 'nami', furigana: 'おとうとさんも　[学生|がくせい]ですか？', en: 'Is your brother a student too?' },
+      { speaker: 'yor', furigana: 'いいえ、[先生|せんせい]です。ナミさんの　かぞくは？', en: 'No, he is a teacher. What about your family, Nami?' },
+      { speaker: 'nami', furigana: 'わたしの　あねも　[学生|がくせい]です。', en: 'My older sister is a student too.' }
+    ],
+    bridge: [
+      { text: 'ね', ctx: 'ですね', id: 'g:ne', gloss: 'ね = right? / isn’t it? (taught a few lessons later)' }
+    ],
+    remixes: [
+      { scene: 'Nami tells Yor about her sister.', en: 'My older sister is a student too.',
+        chunks: ['わたしの', 'あねも', 'がくせいです。', 'せんせいです。'], answer: ['わたしの', 'あねも', 'がくせいです。'],
+        explain: 'も replaces は and means "also". せんせいです would make her sister a teacher.' },
+      { scene: 'Yor points at the old photo.', en: 'This is my mother.',
+        chunks: ['これは', 'わたしの', 'ははです。', 'ちちです。'], answer: ['これは', 'わたしの', 'ははです。'],
+        explain: 'はは is my own mother, ちち my own father. ちちです would say it is her father.' }
+    ],
+    names: ['ヨル', 'ナミ'],
+    uses: ['g:mo', 'g:ne', 'g:no', 'g:ka', 'g:wa-desu', 'v:これ|これ', 'v:この|この', 'v:どなた|どなた', 'v:私|わたし', 'v:家族|かぞく', 'v:人|ひと', 'v:父|ちち', 'v:母|はは', 'v:両親|りょうしん', 'v:弟|おとうと', 'v:姉|あね', 'v:さん|さん', 'v:学生|がくせい', 'v:先生|せんせい', 'v:いいえ|いいえ', 'k:人', 'k:父', 'k:母', 'k:学', 'k:生', 'k:先'],
+    notes: 'uses v:いいえ|いいえ, which is unverified, so the dialogue is too.',
+    verified: false }),
+
+  L({ id: 'l:n5-dlg-teachers-office', format: 'dialogue',
+    title: 'In the office', goal: 'You can check what you heard with ね.',
+    scene: 'In the teacher’s office, Gojo checks Lelouch’s family and keeps guessing wrong.',
+    cast: { gojo: { name: 'Gojo', jp: 'ゴジョウ', gender: 'M', role: 'Teacher' }, lelouch: { name: 'Lelouch', jp: 'ルルーシュ', gender: 'M', role: 'Student' } },
+    lines: [
+      { speaker: 'gojo', furigana: 'ルルーシュさん、おとうさんは　せんせいですね。', en: 'Lelouch, your father is a teacher, right?' },
+      { speaker: 'lelouch', furigana: 'いいえ。[父|ちち]は　せんせいじゃ　ありません。', en: 'No. My father is not a teacher.' },
+      { speaker: 'gojo', furigana: 'じゃあ、おかあさんは　せんせいですね。', en: 'Then your mother is a teacher, right?', tone: 'teasing, playful' },
+      { speaker: 'lelouch', furigana: '[母|はは]も　せんせいじゃ　ありません。', en: 'My mother is not a teacher either.' },
+      { speaker: 'gojo', furigana: 'じゃあ、いもうとさんは　せんせいですね。', en: 'Then your younger sister is a teacher, right?', tone: 'teasing, playful' },
+      { speaker: 'lelouch', furigana: 'いいえ。いもうとは　[学生|がくせい]です。', en: 'No. My younger sister is a student.' },
+      { speaker: 'gojo', furigana: 'ええ？　じゃあ、せんせいは　だれですか？', en: 'Huh? Then who is the teacher?' },
+      { speaker: 'lelouch', furigana: 'ゴジョウせんせいです。', en: 'Gojo-sensei.' },
+      { speaker: 'gojo', furigana: 'わたしですね。ありがとうございます、ルルーシュさん。', en: 'That is me, right. Thank you, Lelouch.' }
+    ],
+    bridge: [
+      { text: 'じゃあ', id: 'v:じゃあ|じゃあ', gloss: 'じゃあ = then, in that case (taught later)' }
+    ],
+    remixes: [
+      { scene: 'Gojo checks one more fact about Lelouch’s family.', en: 'Your younger sister is a student, right?',
+        chunks: ['いもうとさんは', 'がくせいですね。', 'がくせいですか？'], answer: ['いもうとさんは', 'がくせいですね。'],
+        explain: 'ね at the end checks that you got it right: "...right?". がくせいですか？ would be a plain question.' },
+      { scene: 'Lelouch corrects Gojo again.', en: 'My mother is not a teacher either.',
+        chunks: ['ははも', 'せんせいじゃありません。', 'せんせいです。'], answer: ['ははも', 'せんせいじゃありません。'],
+        explain: 'も adds "either" to the negative じゃありません. せんせいです would say she is a teacher.' }
+    ],
+    names: ['ゴジョウ', 'ルルーシュ'],
+    uses: ['g:ne', 'g:ka', 'g:ja-nai', 'g:mo', 'g:wa-desu', 'v:お父さん|おとうさん', 'v:お母さん|おかあさん', 'v:父|ちち', 'v:母|はは', 'v:妹|いもうと', 'v:さん|さん', 'v:先生|せんせい', 'v:学生|がくせい', 'v:誰|だれ', 'v:じゃあ|じゃあ', 'v:ええ|ええ', 'v:いいえ|いいえ', 'k:父', 'k:母', 'k:学', 'k:生'],
+    notes: 'uses v:ええ|ええ, v:いいえ|いいえ, which are unverified, so the dialogue is too.',
+    verified: false }),
+
+  L({ id: 'l:n5-dlg-school-entrance', format: 'dialogue',
+    title: 'Where is it?', goal: 'You can ask where something is and answer with よ.',
+    scene: 'At the school entrance, Kakashi, a member of staff, meets a visitor, Emilia.',
+    cast: { kakashi: { name: 'Kakashi', jp: 'カカシ', gender: 'M', role: 'Staff' }, emilia: { name: 'Emilia', jp: 'エミリア', gender: 'F', role: 'Visitor' } },
+    lines: [
+      { speaker: 'kakashi', furigana: 'どなたですか？', en: 'And you are?', tone: 'dry, amused, lazy' },
+      { speaker: 'emilia', furigana: 'エミリアです。おてあらいは　どこですか？', en: 'I am Emilia. Where is the restroom?' },
+      { speaker: 'kakashi', furigana: 'おてあらいは　あちらですよ。', en: 'The restroom is over there.' },
+      { speaker: 'emilia', furigana: 'ありがとうございます。あの、カカシせんせいは　どちらですか？', en: 'Thank you. Um, where is Kakashi-sensei?' },
+      { speaker: 'kakashi', furigana: 'ここですよ。わたしです。', en: 'Right here. It is me.', tone: 'dry, amused, lazy' },
+      { speaker: 'emilia', furigana: 'カカシせんせいですか！　はじめまして。', en: 'You are Kakashi-sensei! Nice to meet you.' },
+      { speaker: 'kakashi', furigana: 'はい、はじめまして。おてあらいは　あちらですよ。', en: 'Yes, nice to meet you. The restroom is over there.', tone: 'dry, amused, lazy' },
+      { speaker: 'emilia', furigana: 'はい。ありがとうございます、せんせい。', en: 'Yes. Thank you, sensei.' }
+    ],
+    remixes: [
+      { scene: 'Emilia asks the way.', en: 'Where is the restroom?',
+        chunks: ['おてあらいは', 'どこですか？', 'あちらですよ。'], answer: ['おてあらいは', 'どこですか？'],
+        explain: 'どこ means "where" and か makes it a question. あちらですよ would be the answer, not the question.' },
+      { scene: 'Kakashi tells Emilia where the teacher is.', en: 'The teacher is right here.',
+        chunks: ['せんせいは', 'ここですよ。', 'どちらですか？'], answer: ['せんせいは', 'ここですよ。'],
+        explain: 'よ at the end says "I am telling you". どちらですか？ would ask where the teacher is.' }
+    ],
+    names: ['カカシ', 'エミリア'],
+    uses: ['g:yo', 'g:ka', 'g:wa-desu', 'v:どなた|どなた', 'v:お手洗い|おてあらい', 'v:どこ|どこ', 'v:あちら|あちら', 'v:どちら|どちら', 'v:ここ|ここ', 'v:あの|あの', 'v:先生|せんせい', 'v:私|わたし', 'v:はい|はい'],
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
+
+  L({ id: 'l:n5-dlg-party-way', format: 'dialogue',
+    title: 'Which way?', goal: 'You can ask which way and when.',
+    scene: 'In the school corridor, Hinata is looking for the party and Lelouch points the way.',
+    cast: { hinata: { name: 'Hinata', jp: 'ヒナタ', gender: 'M', role: 'Classmate' }, lelouch: { name: 'Lelouch', jp: 'ルルーシュ', gender: 'M', role: 'Classmate' } },
+    lines: [
+      { speaker: 'hinata', furigana: 'ルルーシュさん！　パーティーは　どっちですか？', en: 'Lelouch! Which way is the party?' },
+      { speaker: 'lelouch', furigana: 'パーティーですか。あっちですよ。', en: 'The party? That way.' },
+      { speaker: 'hinata', furigana: 'こっちですか？', en: 'This way?' },
+      { speaker: 'lelouch', furigana: 'いいえ、そっちは　トイレです。パーティーは　あっちです。', en: 'No, that way is the restroom. The party is that way.' },
+      { speaker: 'hinata', furigana: 'あっち！　パーティーは　いつですか？', en: 'That way! When is the party?' },
+      { speaker: 'lelouch', furigana: 'あしたです。', en: 'Tomorrow.' },
+      { speaker: 'hinata', furigana: 'きょうじゃ　ありません！', en: 'It is not today!' },
+      { speaker: 'lelouch', furigana: 'はい。きょうじゃ　ありません。', en: 'Right. It is not today.' },
+      { speaker: 'hinata', furigana: 'あした、あっちですね！', en: 'Tomorrow, that way, right!' }
+    ],
+    bridge: [
+      { text: 'あした', id: 'v:明日|あした', gloss: 'あした = tomorrow (taught later)' },
+      { text: 'きょう', id: 'v:今日|きょう', gloss: 'きょう = today (taught later)' }
+    ],
+    remixes: [
+      { scene: 'Lelouch points Hinata the right way.', en: 'It is not this way. It is that way.',
+        chunks: ['こっちじゃありません。', 'あっちです。', 'どっちですか？'], answer: ['こっちじゃありません。', 'あっちです。'],
+        explain: 'こっち is near me, あっち is far from both of us. どっちですか？ would ask which way.' },
+      { scene: 'Hinata arrives a day early.', en: 'It is not today. It is tomorrow.',
+        chunks: ['きょうじゃありません。', 'あしたです。', 'きょうです。'], answer: ['きょうじゃありません。', 'あしたです。'],
+        explain: 'じゃありません denies "today", then あしたです says what is true. きょうです would say it is today.' }
+    ],
+    names: ['ヒナタ', 'ルルーシュ'],
+    uses: ['g:ka', 'g:yo', 'g:ne', 'g:ja-nai', 'g:wa-desu', 'v:さん|さん', 'v:パーティー|パーティー', 'v:どっち|どっち', 'v:あっち|あっち', 'v:こっち|こっち', 'v:そっち|そっち', 'v:トイレ|トイレ', 'v:いつ|いつ', 'v:明日|あした', 'v:今日|きょう', 'v:はい|はい', 'v:いいえ|いいえ'],
+    notes: 'uses v:はい|はい, v:いいえ|いいえ, which are unverified, so the dialogue is too.',
+    verified: false }),
+
+  L({ id: 'l:n5-dlg-right-bus', format: 'dialogue',
+    title: 'The right bus', goal: 'You can say where you go and where you return.',
+    scene: 'At the station, Lelouch asks Maomao which bus goes to the university.',
+    cast: { lelouch: { name: 'Lelouch', jp: 'ルルーシュ', gender: 'M', role: 'Student' }, maomao: { name: 'Maomao', jp: 'マオマオ', gender: 'F', role: 'Stranger' } },
+    lines: [
+      { speaker: 'lelouch', furigana: 'すみません。この　バスは　[大学|だいがく]へ　[行|い]きますか？', en: 'Excuse me. Does this bus go to the university?' },
+      { speaker: 'maomao', furigana: 'いいえ。この　バスは　えきへ　[行|い]きます。', en: 'No. This bus goes to the station.' },
+      { speaker: 'lelouch', furigana: 'えきですか。[大学|だいがく]の　バスは　どれですか？', en: 'To the station. Which one is the university bus?' },
+      { speaker: 'maomao', furigana: 'あの　バスです。[来|き]ますよ。', en: 'That bus. It is coming.' },
+      { speaker: 'lelouch', furigana: 'ありがとうございます。あなたは　かいしゃへ　[行|い]きますか？', en: 'Thank you. Are you going to your company?' },
+      { speaker: 'maomao', furigana: 'いいえ、いえへ　かえります。', en: 'No, I am going home.', tone: 'dry, unimpressed' },
+      { speaker: 'lelouch', furigana: 'いえですか。わたしは　[大学|だいがく]へ　[行|い]きます。', en: 'Home, I see. I am going to the university.' },
+      { speaker: 'maomao', furigana: 'ええ。[大学|だいがく]の　バスは　あれです。どうぞ。', en: 'Yes. The university bus is that one. Go ahead.' }
+    ],
+    remixes: [
+      { scene: 'Maomao tells Lelouch where she is going.', en: 'I am going to the company.',
+        chunks: ['わたしは', 'かいしゃへ', 'いきます。', 'かえります。'], answer: ['わたしは', 'かいしゃへ', 'いきます。'],
+        explain: 'へ marks where you are heading, and いきます means "go". かえります means "return", which does not fit a company.' },
+      { scene: 'Maomao heads for home.', en: 'I am going home.',
+        chunks: ['わたしは', 'いえへ', 'かえります。', 'いきます。'], answer: ['わたしは', 'いえへ', 'かえります。'],
+        explain: 'You use かえります for returning to your own place. いきます is for going somewhere else.' }
+    ],
+    names: ['ルルーシュ', 'マオマオ'],
+    uses: ['g:ni-ikimasu', 'g:masu', 'g:ka', 'g:wa-desu', 'g:no', 'g:yo', 'v:バス|バス', 'v:大学|だいがく', 'v:行く|いく', 'v:来る|くる', 'v:帰る|かえる', 'v:駅|えき', 'v:会社|かいしゃ', 'v:家|いえ', 'v:この|この', 'v:あの|あの', 'v:あれ|あれ', 'v:どれ|どれ', 'v:私|わたし', 'v:ええ|ええ', 'v:いいえ|いいえ', 'v:どうぞ|どうぞ', 'k:大', 'k:学', 'k:行', 'k:来'],
+    notes: 'uses v:ええ|ええ, v:いいえ|いいえ, which are unverified, so the dialogue is too.',
+    verified: false }),
+
+  L({ id: 'l:n5-dlg-ticket-counter', format: 'dialogue',
+    title: 'At the ticket counter', goal: 'You can say small numbers and ask for tickets.',
+    scene: 'At the ticket counter, Nami helps Anya, who wants to buy a ticket by herself.',
+    cast: { nami: { name: 'Nami', jp: 'ナミ', gender: 'F', role: 'Ticket seller' }, anya: { name: 'Anya', jp: 'アーニャ', gender: 'F', role: 'Customer' } },
+    lines: [
+      { speaker: 'nami', furigana: 'どうぞ。どちらへ　[行|い]きますか？', en: 'Next, please. Where are you going?' },
+      { speaker: 'anya', furigana: 'アーニャ、がっこうへ　[行|い]く！', en: 'Anya goes to school!' },
+      { speaker: 'nami', furigana: 'がっこうですね。きっぷは　[何|なん]まいですか？', en: 'To school. How many tickets?' },
+      { speaker: 'anya', furigana: '[三|さん]まい！', en: 'Three!' },
+      { speaker: 'nami', furigana: '[三|さん]まいですか？　アーニャさんは　ひとりですよ。', en: 'Three? You are only one person, Anya.', tone: 'sly, playful' },
+      { speaker: 'anya', furigana: '[二|に]まい！　ちがう、[一|いち]まい！', en: 'Two! No, one!' },
+      { speaker: 'nami', furigana: '[一|いち]まいですね。はい、どうぞ。', en: 'One ticket. Here you go.' },
+      { speaker: 'anya', furigana: 'ありがとう、ナミ！', en: 'Thank you, Nami!' }
+    ],
+    bridge: [
+      { text: 'きっぷ', id: 'v:切符|きっぷ', gloss: 'きっぷ = ticket (taught later)' },
+      { text: 'まい', id: 'v:枚|まい', gloss: 'まい = counter for flat things like tickets (taught later)' },
+      { text: 'ひとり', id: 'v:一人|ひとり', gloss: 'ひとり = one person (taught later)' }
+    ],
+    remixes: [
+      { scene: 'Anya tells Nami where she is going.', en: 'Anya is going to school.',
+        chunks: ['アーニャ、', 'がっこうへ', 'いく！', 'いきます。'], answer: ['アーニャ、', 'がっこうへ', 'いく！'],
+        explain: 'いく is the plain form of いきます, and kids can talk like that. Both mean "go", so you pick the one that fits the speaker.' },
+      { scene: 'Anya asks for tickets.', en: 'Two tickets!',
+        chunks: ['きっぷ、', 'にまい！', 'さんまい！'], answer: ['きっぷ、', 'にまい！'],
+        explain: 'に is two and さん is three. Numbers come before まい when you count tickets.' }
+    ],
+    names: ['ナミ', 'アーニャ'],
+    uses: ['g:verb-groups-dict', 'g:ni-ikimasu', 'g:masu', 'g:ka', 'g:ne', 'g:wa-desu', 'v:どちら|どちら', 'v:行く|いく', 'v:学校|がっこう', 'v:何|なん', 'v:三|さん', 'v:二|に', 'v:一|いち', 'v:一人|ひとり', 'v:切符|きっぷ', 'v:枚|まい', 'v:さん|さん', 'v:違う|ちがう', 'v:どうぞ|どうぞ', 'k:何', 'k:三', 'k:二', 'k:一', 'k:行'],
+    verified: true }),
+
+  L({ id: 'l:n5-dlg-front-desk', format: 'dialogue',
+    title: 'At the front desk', goal: 'You can read numbers up to the hundreds and say what was.',
+    scene: 'At the hotel front desk, Sanji gives Hinata his room number and Hinata mixes it up with yesterday’s.',
+    cast: { sanji: { name: 'Sanji', jp: 'サンジ', gender: 'M', role: 'Receptionist' }, hinata: { name: 'Hinata', jp: 'ヒナタ', gender: 'M', role: 'Guest' } },
+    lines: [
+      { speaker: 'sanji', furigana: 'どうぞ。ヒナタさんですね。', en: 'Please. You are Hinata, right?' },
+      { speaker: 'hinata', furigana: 'はい！　ヒナタです！', en: 'Yes! I am Hinata!' },
+      { speaker: 'sanji', furigana: 'へやは　[七|なな]ひゃく[九|きゅう]です。', en: 'Your room is seven hundred and nine.' },
+      { speaker: 'hinata', furigana: '[七|なな]ひゃく[九|きゅう]ですか！　きのうは　[九|きゅう]ひゃく[七|なな]でした！', en: 'Seven oh nine! Yesterday it was nine oh seven!' },
+      { speaker: 'sanji', furigana: 'ええ、きのうは　[九|きゅう]ひゃく[七|なな]でした。きょうは　[七|なな]ひゃく[九|きゅう]です。', en: 'Yes, yesterday it was nine oh seven. Today it is seven oh nine.' },
+      { speaker: 'hinata', furigana: '[七|なな]ひゃく[九|きゅう]、[七|なな]ひゃく[九|きゅう]！', en: 'Seven oh nine, seven oh nine!' },
+      { speaker: 'sanji', furigana: 'ホテルの　レストランも　どうぞ。', en: 'Please try the hotel restaurant too.' },
+      { speaker: 'hinata', furigana: 'レストランも　ですか！　ありがとうございます！', en: 'The restaurant too! Thank you!' }
+    ],
+    bridge: [
+      { text: 'へや', id: 'v:部屋|へや', gloss: 'へや = room (taught later)' },
+      { text: 'きのう', id: 'v:昨日|きのう', gloss: 'きのう = yesterday (taught later)' },
+      { text: 'きょう', id: 'v:今日|きょう', gloss: 'きょう = today (taught later)' }
+    ],
+    remixes: [
+      { scene: 'Hinata remembers yesterday’s room.', en: 'Yesterday it was 907.',
+        chunks: ['きのうは', 'きゅうひゃくなな', 'でした。', 'です。'], answer: ['きのうは', 'きゅうひゃくなな', 'でした。'],
+        explain: 'でした is the past of です, so "it was". です would say it is that number now.' },
+      { scene: 'Sanji gives the room for today.', en: 'Today it is 709.',
+        chunks: ['きょうは', 'ななひゃくきゅう', 'です。', 'でした。'], answer: ['きょうは', 'ななひゃくきゅう', 'です。'],
+        explain: 'Today is now, so you use です. でした would put the number in the past.' }
+    ],
+    names: ['サンジ', 'ヒナタ'],
+    uses: ['g:deshita', 'g:wa-desu', 'g:ne', 'g:ka', 'g:no', 'g:mo', 'v:ホテル|ホテル', 'v:レストラン|レストラン', 'v:七|なな', 'v:九|きゅう', 'v:百|ひゃく', 'v:部屋|へや', 'v:昨日|きのう', 'v:今日|きょう', 'v:さん|さん', 'v:どうぞ|どうぞ', 'v:はい|はい', 'v:ええ|ええ', 'k:七', 'k:九'],
+    notes: 'uses v:はい|はい, v:ええ|ええ, which are unverified, so the dialogue is too.',
+    verified: false }),
+
+  L({ id: 'l:n5-dlg-morning-wake', format: 'dialogue',
+    title: 'Time to get up', goal: 'You can say what time you get up and go to bed.',
+    scene: 'Early morning at home. Gojo, who is looking after Killua, tries to get him out of bed.',
+    cast: { gojo: { name: 'Gojo', jp: 'ゴジョウ', gender: 'M', role: 'Guardian' }, killua: { name: 'Killua', jp: 'キルア', gender: 'M', role: 'Child' } },
+    lines: [
+      { speaker: 'gojo', furigana: 'キルア！　いま　[午前|ごぜん]　[七|しち][時|じ]ですよ。', en: 'Killua! It is seven in the morning now.' },
+      { speaker: 'killua', furigana: '[何|なん][時|じ]？　……ねる。', en: 'What time? ...I’m sleeping.', tone: 'sulky' },
+      { speaker: 'gojo', furigana: '[午前|ごぜん]　[七|しち][時|じ]ですよ。おきますか？　ごごに　おきますか？', en: 'It is seven a.m. Will you get up? Or get up in the afternoon?' },
+      { speaker: 'killua', furigana: 'ごごに　おきる。', en: 'I’ll get up in the afternoon.', tone: 'sulky' },
+      { speaker: 'gojo', furigana: 'ごごに？　[先生|せんせい]は　まいにち　[午前|ごぜん]　ろく[時|じ]に　おきますよ。', en: 'The afternoon? I get up at six every morning.', tone: 'teasing, playful' },
+      { speaker: 'killua', furigana: '[先生|せんせい]は　ごご　[三|さん][時|じ]ごろに　おきる。', en: 'You get up around three in the afternoon.', tone: 'sulky' },
+      { speaker: 'gojo', furigana: '[午前|ごぜん]　ろく[時|じ]はんに　おきますよ！', en: 'I get up at half past six!' },
+      { speaker: 'killua', furigana: '[何|なん][時|じ]に　ねる？', en: 'What time do you go to bed?' },
+      { speaker: 'gojo', furigana: '[午前|ごぜん]　[二|に][時|じ]ごろに　ねますよ。', en: 'Around two in the morning.', tone: 'teasing, playful' },
+      { speaker: 'killua', furigana: '……おきる。', en: '...Fine, I’m getting up.', tone: 'sulky' }
+    ],
+    remixes: [
+      { scene: 'Gojo says when he gets up.', en: 'I get up at seven in the morning.',
+        chunks: ['ごぜんしちじに', 'おきます。', 'ねます。'], answer: ['ごぜんしちじに', 'おきます。'],
+        explain: 'に marks the clock time you do something. ねます means "go to bed", not "get up".' },
+      { scene: 'Gojo admits when he goes to bed.', en: 'I go to bed around two in the morning.',
+        chunks: ['ごぜんにじごろに', 'ねます。', 'おきます。'], answer: ['ごぜんにじごろに', 'ねます。'],
+        explain: 'ごろ means "around" a time, and に still follows it. おきます would say he gets up then.' }
+    ],
+    names: ['ゴジョウ', 'キルア'],
+    uses: ['g:ni', 'g:masu', 'g:ka', 'g:yo', 'g:wa-desu', 'v:今|いま', 'v:午前|ごぜん', 'v:午後|ごご', 'v:時|じ', 'v:半|はん', 'v:七|しち', 'v:六|ろく', 'v:三|さん', 'v:二|に', 'v:何|なん', 'v:起きる|おきる', 'v:寝る|ねる', 'v:毎日|まいにち', 'v:ごろ|ごろ', 'v:先生|せんせい', 'k:時', 'k:午', 'k:前', 'k:七', 'k:三', 'k:二', 'k:何', 'k:先', 'k:生'],
+    verified: true }),
+
+  L({ id: 'l:n5-dlg-days-off', format: 'dialogue',
+    title: 'Days off', goal: 'You can say which days you do not work.',
+    scene: 'In the break room at work, Maomao and Nami talk about their days off.',
+    cast: { maomao: { name: 'Maomao', jp: 'マオマオ', gender: 'F', role: 'Coworker' }, nami: { name: 'Nami', jp: 'ナミ', gender: 'F', role: 'Coworker' } },
+    lines: [
+      { speaker: 'maomao', furigana: 'ナミさん、にちようびは　はたらきますか？', en: 'Nami, do you work on Sundays?' },
+      { speaker: 'nami', furigana: 'ええ、はたらきます。にちようびも　はたらきます。', en: 'Yes. I work on Sundays too.' },
+      { speaker: 'maomao', furigana: '……にちようびも　ですか。わたしは　にちようびは　はたらきません。', en: '...Sundays too? I do not work on Sundays.', tone: 'dry, unimpressed' },
+      { speaker: 'nami', furigana: 'やすみは　いつですか？', en: 'When is your day off?' },
+      { speaker: 'maomao', furigana: 'やすみは　にちようびです。ナミさんは？', en: 'My day off is Sunday. And yours, Nami?' },
+      { speaker: 'nami', furigana: 'わたしの　やすみは　すいようびです。', en: 'My day off is Wednesday.' },
+      { speaker: 'maomao', furigana: 'げつようびも　かようびも　はたらきますね。', en: 'You work on Mondays and Tuesdays too, right?' },
+      { speaker: 'nami', furigana: 'ええ。まいにち　[午前|ごぜん]　[九|く][時|じ]に　はたらきます。', en: 'Yes. I work every day from nine in the morning.' },
+      { speaker: 'maomao', furigana: 'わたしは　にちようびは　ねます。', en: 'On Sundays I sleep.', tone: 'dry, unimpressed' }
+    ],
+    remixes: [
+      { scene: 'Maomao says what she does not do on Sundays.', en: 'I do not work on Sundays.',
+        chunks: ['にちようびは', 'はたらきません。', 'はたらきます。'], answer: ['にちようびは', 'はたらきません。'],
+        explain: 'ません is the negative of ます. はたらきます would say she does work.' },
+      { scene: 'Nami adds another working day.', en: 'I work on Wednesdays too.',
+        chunks: ['すいようびも', 'はたらきます。', 'はたらきません。'], answer: ['すいようびも', 'はたらきます。'],
+        explain: 'も adds "too" to the day, and the verb stays positive. はたらきません would say she does not work.' }
+    ],
+    names: ['マオマオ', 'ナミ'],
+    uses: ['g:masen', 'g:masu', 'g:ka', 'g:mo', 'g:ne', 'g:ni', 'g:wa-desu', 'g:no', 'v:日曜日|にちようび', 'v:月曜日|げつようび', 'v:火曜日|かようび', 'v:水曜日|すいようび', 'v:働く|はたらく', 'v:休み|やすみ', 'v:いつ|いつ', 'v:毎日|まいにち', 'v:午前|ごぜん', 'v:時|じ', 'v:九|く', 'v:寝る|ねる', 'v:私|わたし', 'v:さん|さん', 'v:ええ|ええ', 'k:午', 'k:前', 'k:九', 'k:時'],
+    notes: 'uses v:ええ|ええ, which is unverified, so the dialogue is too.',
+    verified: false }),
+
+  L({ id: 'l:n5-dlg-exam-date', format: 'dialogue',
+    title: 'The test date', goal: 'You can say dates from the 1st to the 10th.',
+    scene: 'In class, Kakashi tells Emilia the date of the test and the party.',
+    cast: { kakashi: { name: 'Kakashi', jp: 'カカシ', gender: 'M', role: 'Teacher' }, emilia: { name: 'Emilia', jp: 'エミリア', gender: 'F', role: 'Student' } },
+    lines: [
+      { speaker: 'kakashi', furigana: 'エミリアさん、テストは　なのかです。', en: 'Emilia, the test is on the 7th.' },
+      { speaker: 'emilia', furigana: 'ようかですか？', en: 'The 8th?' },
+      { speaker: 'kakashi', furigana: 'いいえ、ようかじゃ　ありません。なのかです。', en: 'No, not the 8th. The 7th.', tone: 'dry, amused, lazy' },
+      { speaker: 'emilia', furigana: 'なのか、なのか。パーティーは　いつですか？', en: 'The 7th, the 7th. When is the party?' },
+      { speaker: 'kakashi', furigana: 'パーティーは　ようかです。', en: 'The party is on the 8th.' },
+      { speaker: 'emilia', furigana: 'パーティーは　ようかですね。テストは　なのかですね。', en: 'The party is on the 8th, and the test on the 7th, right.' },
+      { speaker: 'kakashi', furigana: 'ええ。パーティーは　ごご　[五|ご][時|じ]です。', en: 'Yes. The party is at five in the afternoon.' },
+      { speaker: 'emilia', furigana: '[五|ご][時|じ]ですね。[先生|せんせい]も　[来|き]ますか？', en: 'Five o’clock, right. Will you come too, sensei?' },
+      { speaker: 'kakashi', furigana: 'はい、[行|い]きますよ。', en: 'Sure, I will go.', tone: 'dry, amused, lazy' }
+    ],
+    remixes: [
+      { scene: 'Kakashi corrects the date once more.', en: 'It is not the 8th. It is the 7th.',
+        chunks: ['ようかじゃありません。', 'なのかです。', 'ようかです。'], answer: ['ようかじゃありません。', 'なのかです。'],
+        explain: 'なのか is the 7th and ようか is the 8th. じゃありません removes the wrong one first.' },
+      { scene: 'Emilia asks whether Kakashi is coming.', en: 'Will you come too, sensei?',
+        chunks: ['せんせいも', 'きますか？', 'きますよ。'], answer: ['せんせいも', 'きますか？'],
+        explain: 'も means "too" and か makes it a question. きますよ would be the answer.' }
+    ],
+    names: ['カカシ', 'エミリア'],
+    uses: ['g:ja-nai', 'g:ne', 'g:mo', 'g:ka', 'g:yo', 'g:wa-desu', 'g:masu', 'v:テスト|テスト', 'v:パーティー|パーティー', 'v:七日|なのか', 'v:八日|ようか', 'v:いつ|いつ', 'v:午後|ごご', 'v:五|ご', 'v:時|じ', 'v:先生|せんせい', 'v:来る|くる', 'v:行く|いく', 'v:さん|さん', 'v:ええ|ええ', 'v:いいえ|いいえ', 'v:はい|はい', 'k:五', 'k:時', 'k:先', 'k:生', 'k:行', 'k:来'],
+    notes: 'uses v:ええ|ええ, v:いいえ|いいえ, v:はい|はい, which are unverified, so the dialogue is too.',
+    verified: false }),
+
+  L({ id: 'l:n5-dlg-library', format: 'dialogue',
+    title: 'In the library', goal: 'You can say what you read and write.',
+    scene: 'In the library, Frieren and Lelouch talk about what they read.',
+    cast: { frieren: { name: 'Frieren', jp: 'フリーレン', gender: 'F', role: 'Teacher' }, lelouch: { name: 'Lelouch', jp: 'ルルーシュ', gender: 'M', role: 'Student' } },
+    lines: [
+      { speaker: 'frieren', furigana: '……ルルーシュさん。きょうも　としょかんですね。', en: '...Lelouch. You are in the library today too.', tone: 'flat, deadpan' },
+      { speaker: 'lelouch', furigana: 'はい、[先生|せんせい]。きょうは　[本|ほん]を　[読|よ]みます。', en: 'Yes, sensei. Today I will read a book.' },
+      { speaker: 'frieren', furigana: '……[何|なん]の　[本|ほん]ですか。', en: '...What kind of book?', tone: 'flat, deadpan' },
+      { speaker: 'lelouch', furigana: 'じびきです。べんきょうですよ。', en: 'A dictionary. It is for study.' },
+      { speaker: 'frieren', furigana: '……じびき。わたしも　まいにち　[読|よ]みます。', en: '...A dictionary. I read one every day too.', tone: 'flat, deadpan' },
+      { speaker: 'lelouch', furigana: 'じびきを　まいにち　ですか。', en: 'A dictionary every day?' },
+      { speaker: 'frieren', furigana: 'ええ。あしたも　[読|よ]みます。', en: 'Yes. I will read tomorrow too.' },
+      { speaker: 'lelouch', furigana: '[先生|せんせい]は　[本|ほん]を　[書|か]きますか。', en: 'Do you write books, sensei?' },
+      { speaker: 'frieren', furigana: '……[書|か]きません。[読|よ]みます。', en: '...I do not write. I read.', tone: 'flat, deadpan' }
+    ],
+    remixes: [
+      { scene: 'Lelouch says what he reads every day.', en: 'I read books every day.',
+        chunks: ['まいにち', 'ほんを', 'よみます。', 'かきます。'], answer: ['まいにち', 'ほんを', 'よみます。'],
+        explain: 'を marks the thing you read: ほんを よみます. かきます would mean "write".' },
+      { scene: 'Frieren answers Lelouch’s question about writing.', en: 'I do not write books.',
+        chunks: ['ほんを', 'かきません。', 'かきます。'], answer: ['ほんを', 'かきません。'],
+        explain: 'ません makes the verb negative. かきます would say she does write books.' }
+    ],
+    names: ['フリーレン', 'ルルーシュ'],
+    uses: ['g:wo', 'g:masu', 'g:masen', 'g:ka', 'g:mo', 'g:ne', 'g:no', 'g:wa-desu', 'v:図書館|としょかん', 'v:読む|よむ', 'v:書く|かく', 'v:勉強|べんきょう', 'v:字引|じびき', 'v:今日|きょう', 'v:明日|あした', 'v:毎日|まいにち', 'v:本|ほん', 'v:何|なん', 'v:先生|せんせい', 'v:さん|さん', 'v:ええ|ええ', 'v:はい|はい', 'k:本', 'k:読', 'k:書', 'k:何', 'k:先', 'k:生'],
+    notes: 'uses v:ええ|ええ, v:はい|はい, which are unverified, so the dialogue is too.',
+    verified: false }),
+
+  L({ id: 'l:n5-dlg-going-out', format: 'dialogue',
+    title: 'Going out', goal: 'You can say how you go somewhere.',
+    scene: 'Killua and Anya decide how to get to the department store.',
+    cast: { killua: { name: 'Killua', jp: 'キルア', gender: 'M', role: 'Friend' }, anya: { name: 'Anya', jp: 'アーニャ', gender: 'F', role: 'Friend' } },
+    lines: [
+      { speaker: 'killua', furigana: 'アーニャ、どこへ　[行|い]く？', en: 'Anya, where are you going?' },
+      { speaker: 'anya', furigana: 'デパート！　キルアも　いっしょ！', en: 'The department store! You come too, Killua!' },
+      { speaker: 'killua', furigana: 'いっしょか。[電車|でんしゃ]で　[行|い]く？　じてんしゃで　[行|い]く？', en: 'Together, huh. Go by train? Go by bike?' },
+      { speaker: 'anya', furigana: 'じてんしゃ！　[二人|ふたり]で　[行|い]く！', en: 'Bike! Two of us go!' },
+      { speaker: 'killua', furigana: 'じてんしゃは　[一人|ひとり]。', en: 'A bike is for one.' },
+      { speaker: 'anya', furigana: 'じゃあ、あるく！', en: 'Then, walk!' },
+      { speaker: 'killua', furigana: 'あるく？　……[電車|でんしゃ]で　[行|い]く。', en: 'Walk? ...We take the train.', tone: 'sulky' },
+      { speaker: 'anya', furigana: '[電車|でんしゃ]！　キルア、ともだち！', en: 'The train! Killua, friend!' },
+      { speaker: 'killua', furigana: '……はい、[行|い]く。', en: '...Yeah, let’s go.', tone: 'sulky' }
+    ],
+    bridge: [
+      { text: 'じゃあ', id: 'v:じゃあ|じゃあ', gloss: 'じゃあ = then, in that case (taught later)' }
+    ],
+    remixes: [
+      { scene: 'Anya tells Killua how she goes.', en: 'Anya goes to school by train.',
+        chunks: ['アーニャは', 'でんしゃで', 'がっこうへ', 'いく。', 'あるく。'], answer: ['アーニャは', 'でんしゃで', 'がっこうへ', 'いく。'],
+        explain: 'で marks how you travel: でんしゃで. あるく is a way of going on its own, so it cannot follow いく.' },
+      { scene: 'Killua says he takes his bike.', en: 'Killua goes by bike.',
+        chunks: ['キルアは', 'じてんしゃで', 'いく。', 'あるく。'], answer: ['キルアは', 'じてんしゃで', 'いく。'],
+        explain: 'で marks the vehicle. あるく means "walk", so it is not used with で and a vehicle.' }
+    ],
+    names: ['キルア', 'アーニャ'],
+    uses: ['g:de', 'g:verb-groups-dict', 'g:ni-ikimasu', 'g:mo', 'v:どこ|どこ', 'v:行く|いく', 'v:デパート|デパート', 'v:一緒|いっしょ', 'v:電車|でんしゃ', 'v:自転車|じてんしゃ', 'v:二人|ふたり', 'v:一人|ひとり', 'v:歩く|あるく', 'v:友達|ともだち', 'v:じゃあ|じゃあ', 'v:はい|はい', 'k:行', 'k:電', 'k:車', 'k:二', 'k:一', 'k:人'],
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
+
+  L({ id: 'l:n5-dlg-cafe-invite', format: 'dialogue',
+    title: 'Won’t you come?', goal: 'You can invite someone with ませんか and answer.',
+    scene: 'In a cafe, Sakura invites Maomao out. Maomao has her own ideas.',
+    cast: { sakura: { name: 'Sakura', jp: 'サクラ', gender: 'F', role: 'Friend' }, maomao: { name: 'Maomao', jp: 'マオマオ', gender: 'F', role: 'Friend' } },
+    lines: [
+      { speaker: 'sakura', furigana: 'マオマオさん、きょう、えいがを　[見|み]ませんか。', en: 'Maomao, won’t you watch a movie today?' },
+      { speaker: 'maomao', furigana: '……えいがですか。[行|い]きません。', en: '...A movie? I won’t go.', tone: 'dry, unimpressed' },
+      { speaker: 'sakura', furigana: 'ええ？　じゃあ、きっさてんへ　[行|い]きませんか。', en: 'Huh? Then won’t you go to a cafe?' },
+      { speaker: 'maomao', furigana: 'きっさてんですか。[行|い]きます。', en: 'A cafe? I will go.' },
+      { speaker: 'sakura', furigana: 'えいがは　[行|い]きません。きっさてんは　[行|い]きます。マオマオさんですね。', en: 'No movies, but a cafe, yes. That is so you, Maomao.' },
+      { speaker: 'maomao', furigana: 'ごご　[三|さん][時|じ]に　きっさてんで　あいます。', en: 'Let’s meet at the cafe at three in the afternoon.' },
+      { speaker: 'sakura', furigana: 'はい！　ごご　[三|さん][時|じ]に　きっさてんで！', en: 'Okay! At the cafe at three!' },
+      { speaker: 'maomao', furigana: 'えいがは　[行|い]きませんよ。', en: 'I still won’t go to the movies.', tone: 'dry, unimpressed' }
+    ],
+    bridge: [
+      { text: 'じゃあ', id: 'v:じゃあ|じゃあ', gloss: 'じゃあ = then, in that case (taught later)' }
+    ],
+    remixes: [
+      { scene: 'Sakura asks Maomao to a film.', en: 'Won’t you watch a movie?',
+        chunks: ['えいがを', 'みませんか。', 'みます。'], answer: ['えいがを', 'みませんか。'],
+        explain: 'ませんか is a polite invitation: "won’t you...?". みます would just say "I watch".' },
+      { scene: 'Maomao answers about the cafe.', en: 'I will go to the cafe.',
+        chunks: ['きっさてんへ', 'いきます。', 'いきません。'], answer: ['きっさてんへ', 'いきます。'],
+        explain: 'いきます means yes, I will go. いきません is the answer she gave to the movie.' }
+    ],
+    names: ['サクラ', 'マオマオ'],
+    uses: ['g:masen-ka', 'g:masen', 'g:masu', 'g:wo', 'g:ka', 'g:ne', 'g:ni', 'g:de', 'g:wa-desu', 'g:yo', 'v:さん|さん', 'v:今日|きょう', 'v:映画|えいが', 'v:見る|みる', 'v:行く|いく', 'v:喫茶店|きっさてん', 'v:会う|あう', 'v:午後|ごご', 'v:三|さん', 'v:時|じ', 'v:じゃあ|じゃあ', 'v:ええ|ええ', 'v:はい|はい', 'k:見', 'k:行', 'k:三', 'k:時'],
+    notes: 'uses v:ええ|ええ, v:はい|はい, which are unverified, so the dialogue is too.',
+    verified: false }),
+
+  L({ id: 'l:n5-dlg-next-month', format: 'dialogue',
+    title: 'Next week, next month', goal: 'You can suggest plans with ましょう.',
+    scene: 'In a cafe, Gojo takes his student Hinata out and they make plans.',
+    cast: { gojo: { name: 'Gojo', jp: 'ゴジョウ', gender: 'M', role: 'Teacher' }, hinata: { name: 'Hinata', jp: 'ヒナタ', gender: 'M', role: 'Student' } },
+    lines: [
+      { speaker: 'gojo', furigana: 'ヒナタさん、きょうの　ごご、きっさてんへ　[行|い]きましょう。', en: 'Hinata, let’s go to a cafe this afternoon.' },
+      { speaker: 'hinata', furigana: 'はい！　[先生|せんせい]、[何|なん][時|じ]に　[行|い]きますか！', en: 'Yes! Sensei, what time shall we go?' },
+      { speaker: 'gojo', furigana: '[三|さん][時|じ]ちょうどに　[行|い]きましょう。', en: 'Let’s go at three o’clock sharp.' },
+      { speaker: 'hinata', furigana: '[三|さん][時|じ]ちょうど！　らいしゅうも　[行|い]きましょう！', en: 'Three sharp! Let’s go next week too!' },
+      { speaker: 'gojo', furigana: 'らいしゅうも　ですか。まいしゅうですね。', en: 'Next week too? So every week.', tone: 'teasing, playful' },
+      { speaker: 'hinata', furigana: 'はい、まいしゅう！　らいげつは　りょこうへ　[行|い]きましょう！', en: 'Yes, every week! Next month, let’s go on a trip!' },
+      { speaker: 'gojo', furigana: 'りょこうですか。どこへ　[行|い]きますか。', en: 'A trip? Where will we go?' },
+      { speaker: 'hinata', furigana: 'がっこうへ！', en: 'To school!' },
+      { speaker: 'gojo', furigana: 'がっこうは　りょこうじゃ　ありません。', en: 'School is not a trip.', tone: 'teasing, playful' }
+    ],
+    remixes: [
+      { scene: 'Hinata wants to repeat the cafe visit.', en: 'Let’s go to a cafe next week.',
+        chunks: ['らいしゅう', 'きっさてんへ', 'いきましょう。', 'いきますか？'], answer: ['らいしゅう', 'きっさてんへ', 'いきましょう。'],
+        explain: 'ましょう means "let’s". いきますか？ would ask whether someone goes, not suggest it.' },
+      { scene: 'Hinata plans the trip.', en: 'Next month, let’s go on a trip.',
+        chunks: ['らいげつ', 'りょこうへ', 'いきましょう。', 'いきません。'], answer: ['らいげつ', 'りょこうへ', 'いきましょう。'],
+        explain: 'らいげつ is next month, and いきましょう is the invitation. いきません would refuse the trip.' }
+    ],
+    names: ['ゴジョウ', 'ヒナタ'],
+    uses: ['g:mashou', 'g:masu', 'g:ka', 'g:mo', 'g:ne', 'g:ja-nai', 'g:ni', 'g:no', 'g:wa-desu', 'v:さん|さん', 'v:今日|きょう', 'v:午後|ごご', 'v:喫茶店|きっさてん', 'v:行く|いく', 'v:先生|せんせい', 'v:何|なん', 'v:三|さん', 'v:時|じ', 'v:ちょうど|ちょうど', 'v:来週|らいしゅう', 'v:毎週|まいしゅう', 'v:来月|らいげつ', 'v:旅行|りょこう', 'v:どこ|どこ', 'v:学校|がっこう', 'v:はい|はい', 'k:先', 'k:生', 'k:何', 'k:三', 'k:時', 'k:行'],
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    verified: false }),
 ]);
 }());

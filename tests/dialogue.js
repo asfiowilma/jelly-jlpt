@@ -9,7 +9,7 @@ QUnit.module('dialogue', function () {
 
   QUnit.test('plan: unit.dialogue resolves to a dialogue item, lesson units only, each dialogue used once', function (assert) {
     var us = withDialogue();
-    assert.deepEqual(us.map(function (u) { return u.id; }), ['n5.u019', 'n5.u028'], 'the two lessons that carry a dialogue so far');
+    assert.deepEqual(us.map(function (u) { return u.id; }), ['n5.u019', 'n5.u020', 'n5.u021', 'n5.u022', 'n5.u023', 'n5.u024', 'n5.u026', 'n5.u027', 'n5.u028', 'n5.u029', 'n5.u030', 'n5.u031', 'n5.u033', 'n5.u034', 'n5.u035', 'n5.u036', 'n5.u037', 'n5.u038', 'n5.u040'], 'the lessons that carry a dialogue so far (stages 19 to 40, batch 1)');
     assert.ok(us.every(function (u) { return u.kind === 'lesson' && CATALOG.items[u.dialogue].format === 'dialogue'; }));
     assert.deepEqual(us.map(function (u) { return u.dialogue; }).sort(), dialogues().map(function (d) { return d.id; }).sort(), 'every dialogue is in a unit');
     var bad = function (id, set) {
@@ -56,7 +56,7 @@ QUnit.module('dialogue', function () {
     assert.deepEqual(v.lines.map(function (l) { return l.side; }), ['a', 'a', 'b', 'a', 'b', 'a', 'b', 'a'], 'bubble sides follow the speaker');
     assert.ok(v.pills.indexOf('私') >= 0 && v.pills.indexOf('X は Y です') >= 0, 'pills: new words + the pattern');
     assert.ok(v.seconds >= 10 && v.seconds <= 60, 'about ' + v.seconds + ' s');
-    var u2 = withDialogue()[1], v2 = dialogueView(CATALOG.items[u2.dialogue], u2);
+    var u2 = withDialogue().filter(function (x) { return x.id === 'n5.u028'; })[0], v2 = dialogueView(CATALOG.items[u2.dialogue], u2);
     assert.ok(/nw:ぎゅうにゅう/.test(kinds(v2.lines[1])) && /nw:のみ/.test(kinds(v2.lines[1])), 'new words in the milk line');
     assert.ok(/br:を/.test(kinds(v2.lines[0])), 'を is a bridge in lesson ' + u2.id);
     assert.deepEqual(v2.cast.map(function (c) { return c.initial + c.side; }), ['ヨa', 'アb'], 'two women: still a and b');
@@ -77,7 +77,7 @@ QUnit.module('dialogue', function () {
       });
     });
     assert.ok(seen >= 2 && real > 0, 'set phrases present (' + seen + '), grammar marks kept (' + real + ')');
-    var u2 = withDialogue()[1], v2 = dialogueView(CATALOG.items[u2.dialogue], u2);
+    var u2 = withDialogue().filter(function (x) { return x.id === 'n5.u028'; })[0], v2 = dialogueView(CATALOG.items[u2.dialogue], u2);
     assert.ok(v2.lines.some(function (l) { return l.segs.some(function (s) { return s.kind === 'g' && /たべ?ます|ます/.test(s.t) && l.en; }); }), 'ます still marked outside set phrases');
   });
 
