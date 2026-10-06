@@ -118,6 +118,29 @@ QUnit.module('mock exams', function () {
     assert.deepEqual(errs, []);
   });
 
+  // A later stem must not print the word an earlier 読み / 表記 question asks for.
+  // ponytail: substring match, no tokenizer; so single-kanji spellings and 1-2 kana readings are skipped
+  // (人, き, いま sit inside other words everywhere). Add a tokenizer if short answers need guarding.
+  QUnit.test('no tested word shows up in another question of the same mock', function (assert) {
+    var errs = [], shown = function (parts) { return (parts || []).map(function (p) { return p.t + (p.r || ''); }).join(''); };
+    mocks().forEach(function (m) {
+      var all = [];
+      ['vocab', 'grammar'].forEach(function (k) {
+        m.sections[k].forEach(function (q, i) { all.push({ q: q, ex: mockSections(m).filter(function (s) { return s.key === k; })[0].questions[i] }); });
+      });
+      all.forEach(function (a, ai) {
+        if (!a.q.w) return;
+        var ans = a.ex.options[a.ex.correct];
+        if (ans.length < (a.q.m === 'hyouki' ? 2 : 3)) return;
+        all.forEach(function (b, bi) {
+          var stem = shown(b.ex.parts) + shown(b.ex.passageParts) + shown(b.ex.passage);
+          if (bi !== ai && stem.indexOf(ans) >= 0) errs.push(m.id + ' Q' + (ai + 1) + ' ' + ans + ' shown in Q' + (bi + 1));
+        });
+      });
+    });
+    assert.deepEqual(errs, []);
+  });
+
   QUnit.test('every full mock has a katakana 表記 item: hiragana shown, wrong katakana as distractors', function (assert) {
     var words = {};
     catalogOf('vocab').forEach(function (v) { words[v.word] = true; });
