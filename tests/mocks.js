@@ -118,6 +118,23 @@ QUnit.module('mock exams', function () {
     assert.deepEqual(errs, []);
   });
 
+  QUnit.test('every full mock has a katakana 表記 item: hiragana shown, wrong katakana as distractors', function (assert) {
+    var words = {};
+    catalogOf('vocab').forEach(function (v) { words[v.word] = true; });
+    mocks().filter(function (m) { return m.format === 'full'; }).forEach(function (m) {
+      var qs = m.sections.vocab.filter(function (q) { return q.m === 'hyouki' && !hasKanji(CATALOG.items[q.w].word); });
+      assert.ok(qs.length >= 1, m.id + ' has a katakana hyouki');
+      qs.forEach(function (q) {
+        var ex = mockQuestion(q, levelKanji('N5')), u = ex.parts.filter(function (p) { return p.u; })[0];
+        assert.ok(/^[ぁ-ゖー]+$/.test(u.t), m.id + ' underline in hiragana: ' + u.t);
+        q.o.forEach(function (o, i) {
+          assert.ok(/^[ァ-ヶー]+$/.test(o), m.id + ' katakana option ' + o);
+          if (i !== q.a) assert.notOk(words[o], m.id + ' distractor ' + o + ' is not a real word');
+        });
+      });
+    });
+  });
+
   QUnit.test('the same mock always builds the same test', function (assert) {
     var m = CATALOG.items['x:n5-mock-2'];
     var a = JSON.stringify(mockSections(m)), b = JSON.stringify(mockSections(m));

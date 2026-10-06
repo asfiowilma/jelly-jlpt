@@ -1755,9 +1755,10 @@ function mockQuestion(q, tk) {
     var s = it(q.s), w = it(q.w), raw = furiganaParts(s.furigana || s.jp), sp = wordSpan(raw, w.word, w.reading);
     var yomi = q.m === 'kanjiYomi';
     ex = { type: yomi ? 'kanji_yomi' : 'hyouki', prompt: yomi ? 'How is the underlined word read?' : 'How is the underlined word written?',
-      question: s.jp, parts: spliceParts(quizFurigana(raw, tk, w.word), sp.at, sp.end, [{ t: yomi ? w.word : w.reading, u: true }]),
+      // 表記 of a katakana word (official もんだい2 style): shown in hiragana, options in katakana
+      question: s.jp, parts: spliceParts(quizFurigana(raw, tk, w.word), sp.at, sp.end, [{ t: yomi ? w.word : kataToHira(w.reading), u: true }]),
       options: q.o.slice(), correct: q.a, itemId: w.id,
-      explain: '「' + w.word + '」 is read ' + w.reading + ': "' + glossText(w) + '". ' + s.en };
+      explain: '「' + w.word + '」 is ' + (hasKanji(w.word) ? 'read ' + w.reading : 'written in katakana') + ': "' + glossText(w) + '". ' + s.en };
   } else if (q.m === 'bunmyaku' || q.m === 'gap') {
     ex = { type: q.m, prompt: q.m === 'gap' ? 'Choose what fills the gap:' : 'Which word fits the gap?', question: text(q.f),
       parts: ruby(q.f), options: q.o.map(text), optionParts: q.o.map(ruby), correct: q.a, explain: q.en + ' ' + q.explain };
