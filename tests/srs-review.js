@@ -115,7 +115,9 @@ QUnit.module('stageOf / cardExample', function () {
       (u.vocab || []).forEach(function (v) {
         var ex = cardExample(v.id);
         if (!ex) return;
-        var known = taughtIds(stageOf(v.id)), miss = function (s) { return s.uses.filter(function (x) { return !known[x]; }).length; };
+        var known = taughtIds(stageOf(v.id)), miss = function (s) { // another spelling counts as taught with the one the plan teaches (alt)
+          return s.uses.filter(function (x) { var it = CATALOG.items[x]; return !known[x] && !(it && it.alt && known[it.alt]); }).length;
+        };
         assert.ok(miss(ex.s) <= EXAMPLE_MAX_UNTAUGHT, v.id + ' leans on few later items');
         sentencesUsing(v.id).forEach(function (s) { assert.ok(miss(ex.s) <= miss(s), v.id + ' picks the fewest untaught'); });
       });

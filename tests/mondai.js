@@ -102,7 +102,8 @@ QUnit.module('exam-format questions (mondai)', function () {
   });
 
   QUnit.test('文の文法2 (order ★): four authored chunks, the ★ slot is one the data allows', function (assert) {
-    assert.ok(all('order').length > 20, all('order').length + ' questions in lessons');
+    // ★ sentences using items taught after the lesson are skipped there (teaching order, docs/adr/0002)
+    assert.ok(all('order').length >= 15, all('order').length + ' questions in lessons');
     var chunked = catalogOf('sentence').filter(function (s) { return s.chunks; });
     assert.ok(chunked.length >= 40, chunked.length + ' chunked sentences');
     var taught = taughtIds(buildUnits(PLAN, CATALOG).slice(-1)[0]);
@@ -150,8 +151,8 @@ QUnit.module('exam-format questions (mondai)', function () {
 
   QUnit.test('unit quizzes ask the new types', function (assert) {
     var seen = {};
-    lessons().forEach(function (u, i) { if (i % 3 === 0) buildExercises(u).forEach(function (e) { seen[e.type] = true; }); });
-    lessons().forEach(function (u, i) { if (i % 3 === 1) buildExercises(u).forEach(function (e) { seen[e.type] = true; }); });
+    // two builds of every lesson: sentence formats only use sentences with nothing taught later, so they are rarer
+    for (var r = 0; r < 2; r++) lessons().forEach(function (u) { buildExercises(u).forEach(function (e) { seen[e.type] = true; }); });
     ['kanji_yomi', 'hyouki', 'bunmyaku', 'order', 'gap'].forEach(function (t) { assert.ok(seen[t], t); });
   });
 });

@@ -839,6 +839,23 @@ var STAR_SLOTS = ['＿＿', '＿＿', '＿＿', '＿＿'];
 function sentencesUsing(id) {
   return catalogOf('sentence').filter(function (s) { return (s.uses || []).indexOf(id) >= 0; });
 }
+// Teaching order (audit P1-1, docs/adr/0002): a sentence shown or asked in a unit should only use
+// items taught by then. untaughtCount(s, known): how many of s.uses known (taughtIds) lacks; another
+// spelling (alt: 有る for ある) counts as taught with the spelling the plan teaches.
+function untaughtCount(s, known) {
+  return (s.uses || []).filter(function (u) { var it = CATALOG.items[u]; return !known[u] && !(it && it.alt && known[it.alt]); }).length;
+}
+// byUntaught(sents, known): fewest untaught uses first, authored order kept within a tie.
+function byUntaught(sents, known) {
+  return sents.map(function (s, i) { return { s: s, n: untaughtCount(s, known), i: i }; })
+    .sort(function (a, b) { return a.n - b.n || a.i - b.i; }).map(function (x) { return x.s; });
+}
+// quizSentences(sents, ctx): the sentences a quiz question may use, random order: only those using
+// nothing taught later; with ctx.leakOk (makeQuestion's last resort) all, fewest untaught first.
+function quizSentences(sents, ctx) {
+  sents = rndShuffle(sents);
+  return ctx.leakOk ? byUntaught(sents, ctx.taught) : sents.filter(function (s) { return !untaughtCount(s, ctx.taught); });
+}
 // wordSpan(raw, word, reading): { at, end } of word in furigana parts when it occurs
 // exactly once, no furigana block is cut, and the furigana there reads `reading`
 // (so カナダ人 is not 人|ひと). Else null.
@@ -1126,7 +1143,7 @@ function formsFor(item, ctx) {
   // inSentence(w, make): make(sentence, raw furigana parts, span) for a random catalog
   // sentence that uses vocab w and holds it once with its reading; first non-null result.
   var inSentence = function (w, make) {
-    var sents = rndShuffle(sentencesUsing(w.id));
+    var sents = quizSentences(sentencesUsing(w.id), ctx);
     for (var i = 0; i < sents.length; i++) {
       var raw = furiganaParts(sents[i].furigana || sents[i].jp), sp = wordSpan(raw, w.word, w.reading);
       var ex = sp && make(sents[i], raw, sp);
@@ -1318,7 +1335,7 @@ function formsFor(item, ctx) {
         return mc(rank >= 2 ? 'fill_blank' : 'mc', 'Choose the correct grammar pattern:', g.meaning, 'pattern', ctx.gPool);
       }),
       f('gap', false, function () {
-        var sents = rndShuffle((g.examples || []).map(function (id) { return CATALOG.items[id]; }).filter(Boolean));
+        var sents = quizSentences((g.examples || []).map(function (id) { return CATALOG.items[id]; }).filter(Boolean), ctx);
         var surfaces = gapSurfaces(g);
         for (var i = 0; i < sents.length; i++) {
           var s = sents[i], base = quizFurigana(furiganaParts(s.furigana || s.jp), ctx.taughtKanji, '');
@@ -1338,13 +1355,13 @@ function formsFor(item, ctx) {
             if (d.length < 2) return null;
             var opts = rndShuffle([ans].concat(d));
             return { type: 'gap', prompt: 'Choose what fills the gap:', question: parts.map(function (p) { return p.t; }).join(''),
-              parts: parts, note: s.en, options: opts, correct: opts.indexOf(ans) };
+              parts: parts, note: s.en, options: opts, correct: opts.indexOf(ans), sentence: s.id };
           }
         }
         return null;
       }),
       f('order', false, function () {
-        var s = rndShuffle(sentencesUsing(g.id).filter(function (x) { return x.chunks; }))[0];
+        var s = quizSentences(sentencesUsing(g.id).filter(function (x) { return x.chunks; }), ctx)[0];
         return s ? orderQuestion(s, ctx.taughtKanji) : null;
       })
     ];
@@ -1445,7 +1462,13 @@ function makeQuestion(item, ctx, wantRecall, avoid, strict, part) {
   };
   var want = function (fs) { return wantRecall === null ? fs : fs.filter(function (fm) { return fm.recall === wantRecall; }); };
   if (strict) return tryAll(want(fresh));
-  return tryAll(want(fresh)) || tryAll(fresh) || tryAll(want(forms)) || tryAll(forms);
+  var ex = tryAll(want(fresh)) || tryAll(fresh) || tryAll(want(forms)) || tryAll(forms);
+  if (ex || ctx.leakOk) return ex;
+  // last resort: a sentence using items taught later (quizSentences), rather than no question
+  ctx.leakOk = true;
+  ex = tryAll(forms);
+  ctx.leakOk = false;
+  return ex && Object.assign(ex, { leaky: true });
 }
 
 // itemSlots(ctx, n): the items a lesson / review quiz asks, in order. Grammar first, so a form
@@ -2351,7 +2374,7 @@ function cardExample(id, units) {
   if (!stage) return null;
   var known = taughtIds(stage), best = null, bestKey = null;
   sentencesUsing(id).forEach(function (s) {
-    var miss = (s.uses || []).filter(function (u) { return !known[u]; }).length;
+    var miss = untaughtCount(s, known);
     var key = [miss, s.jp.length, s.id];
     if (!bestKey || key[0] < bestKey[0] || (key[0] === bestKey[0] && (key[1] < bestKey[1] || (key[1] === bestKey[1] && key[2] < bestKey[2])))) { best = s; bestKey = key; }
   });
