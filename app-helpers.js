@@ -250,6 +250,7 @@ var UI_STRINGS = {
   cred_dicebear:     { en: 'achievement stamp icons (identicon)', ja: '実績スタンプのアイコン' },
   cred_react:        { en: 'UI library',        ja: 'UIライブラリ' },
   cred_pouchdb:      { en: 'local storage and sync', ja: 'ローカル保存と同期' },
+  cred_edrdg:        { en: 'readings, meanings and stroke counts checked against JMdict and KANJIDIC while writing the course (no files shipped)', ja: '読み・意味・画数の確認（ファイルは含みません）' },
   pace_too_late:   { en: "Even Super intensive won't finish a week before your exam", ja: '超集中でも試験の1週間前までに終わりません' },
   // Already-known import (ticket 37). 知る is N5 vocabulary, so the review
   // button and unit badge switch at N4; the Settings part switches with N1.

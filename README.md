@@ -165,11 +165,12 @@ Icons are rendered once from `icons/icon.svg` with `node tools/build-icons.js` (
 | [Tanos](https://www.tanos.co.uk/jlpt/) (Jonathan Waller) | N5 vocabulary, kanji and grammar lists | CC BY |
 | [elzup/jlpt-word-list](https://github.com/elzup/jlpt-word-list) | CSV copy of the word lists | MIT |
 | [Tatoeba](https://tatoeba.org) | example sentences and translations (each keeps its sentence id and author) | CC BY 2.0 FR |
-| [KanjiVG](https://kanjivg.tagaini.net/) | stroke-order diagrams in `kanji-svg/` | CC BY-SA 3.0 |
+| [KanjiVG](https://kanjivg.tagaini.net/) | stroke-order diagrams in `kanji-svg/`, bundled into `kanji-svg/strokes.js` | CC BY-SA 3.0 |
 | [Kenney](https://kenney.nl/assets/music-jingles) Music Jingles and [Interface Sounds](https://kenney.nl/assets/interface-sounds) | sound effects in `sfx/` (see `sfx/LICENSE-kenney.txt`) | CC0 |
+| [EDRDG](https://www.edrdg.org/) (JMdict, KANJIDIC) | checking readings, meanings and stroke counts while writing the course; no files ship | [CC BY-SA 4.0](https://www.edrdg.org/edrdg/licence.html) |
 
 The same credits are listed in the app under Settings. Readings and meanings were checked against JMdict (via Jisho) and KANJIDIC while writing the course, but no data from them ships with the app. Glosses, notes and grammar explanations are written for this project.
 
 jelly-jlpt began as a fork of [alanfwilliams/jlpt](https://github.com/alanfwilliams/jlpt), whose README stated an MIT license. The course content and most of the app have since been rebuilt, and the project no longer tracks upstream.
 
-The app code is under the MIT license (see [`LICENSE`](LICENSE)). The third-party files in the table above keep their own licenses and are not covered by it: `kanji-svg/` (CC BY-SA 3.0), Tatoeba sentences in `data/` (CC BY 2.0 FR), the Tanos-derived level lists (CC BY) and `sfx/` (CC0).
+The app code is under the MIT license (see [`LICENSE`](LICENSE)). The third-party files in the table above keep their own licenses and are not covered by it: `kanji-svg/` including the derived bundle `kanji-svg/strokes.js` (CC BY-SA 3.0), Tatoeba sentences in `data/` (CC BY 2.0 FR), the Tanos-derived level lists (CC BY) and `sfx/` (CC0).

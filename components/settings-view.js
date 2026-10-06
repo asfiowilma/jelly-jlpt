@@ -233,10 +233,11 @@ function ResetDialog(props) {
 var CREDITS = [
   { name: 'alanfwilliams/jlpt', url: 'https://github.com/alanfwilliams/jlpt', key: 'cred_upstream', license: 'MIT', licenseUrl: 'https://github.com/alanfwilliams/jlpt' }, // ponytail: upstream README states MIT, no LICENSE file to deep-link
   { name: 'KanjiVG', url: 'https://kanjivg.tagaini.net/', key: 'cred_kanjivg', license: 'CC BY-SA 3.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/' },
-  { name: 'Tanos', url: 'https://www.tanos.co.uk/jlpt/', key: 'cred_tanos', license: 'CC BY', licenseUrl: 'https://www.tanos.co.uk/jlpt/' }, // ponytail: site states CC BY without a version
+  { name: 'Tanos (Jonathan Waller)', url: 'https://www.tanos.co.uk/jlpt/', key: 'cred_tanos', license: 'CC BY', licenseUrl: 'https://creativecommons.org/licenses/by/' }, // ponytail: site states CC BY without a version
   { name: 'Tatoeba', url: 'https://tatoeba.org/', key: 'cred_tatoeba', license: 'CC BY 2.0 FR', licenseUrl: 'https://creativecommons.org/licenses/by/2.0/fr/' },
+  { name: 'EDRDG (JMdict, KANJIDIC)', url: 'https://www.edrdg.org/', key: 'cred_edrdg', license: 'CC BY-SA 4.0', licenseUrl: 'https://www.edrdg.org/edrdg/licence.html' },
   { name: 'elzup/jlpt-word-list', url: 'https://github.com/elzup/jlpt-word-list', key: 'cred_wordlist', license: 'MIT', licenseUrl: 'https://github.com/elzup/jlpt-word-list/blob/master/LICENSE' },
-  { name: 'Kenney', url: 'https://kenney.nl/assets/music-jingles', key: 'cred_kenney', license: 'CC0', licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/' },
+  { name: 'Kenney (Music Jingles, Interface Sounds)', url: 'https://kenney.nl/assets', key: 'cred_kenney', license: 'CC0', licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/' },
   { name: 'Qwen3-TTS (Alibaba Qwen team)', url: 'https://github.com/QwenLM/Qwen3-TTS', key: 'cred_qwen3tts', license: 'Apache 2.0', licenseUrl: 'https://github.com/QwenLM/Qwen3-TTS/blob/main/LICENSE' },
   { name: 'DiceBear', url: 'https://www.dicebear.com/', key: 'cred_dicebear', license: 'CC0', licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/' },
   { name: 'React', url: 'https://react.dev/', key: 'cred_react', license: 'MIT', licenseUrl: 'vendor/LICENSE-react.txt' },
