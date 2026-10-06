@@ -557,6 +557,21 @@ function readingFakes(s) {
   });
   return out;
 }
+// squareFakes(s, ok): three misreadings [m1, m2, m12]: two one-edit fakes at different places and
+// both edits together, all passing ok, or null. Every option is then 4 edits from the other three,
+// so the answer is no longer the "centre" of one-edit fakes (audit P1-13: it won 77-87%).
+function squareFakes(s, ok) {
+  var f1 = rndShuffle(readingFakes(s).filter(ok));
+  for (var i = 0; i < f1.length; i++) {
+    var near1 = readingFakes(f1[i]);
+    for (var j = i + 1; j < f1.length; j++) {
+      if (editDistance(f1[i], f1[j]) !== 2) continue;
+      var both = readingFakes(f1[j]).filter(function (x) { return x !== s && near1.indexOf(x) >= 0 && editDistance(x, s) === 2 && ok(x); });
+      if (both.length) return [f1[i], f1[j], rndShuffle(both)[0]];
+    }
+  }
+  return null;
+}
 
 // Per field: texts(item, answer) = the option text(s) an item offers; reject(cand,
 // target, answer, prep(target)) = would be a second right answer; score(cand, target, answer)
@@ -638,6 +653,10 @@ function pickDistractors(target, pool, field, n, opts) {
   var ans = opts.answer || rule.texts(target, '')[0];
   var lv = levelRank(target.level || opts.level);
   var ctx = rule.prep ? rule.prep(target) : null, cands = [];
+  if (rule.fakes && n === 3) { // misreadings in a square first (squareFakes), else ranked as below
+    var sq = squareFakes(kataToHira(ans), function (t) { return t !== ans && !rule.reject({ it: target, text: t, taught: true }, target, ans, ctx); });
+    if (sq) return sq;
+  }
   pool.forEach(function (it) {
     if (it.id === target.id || it.kind !== target.kind || isBound(it)) return; // a bare suffix is no option (ticket 40)
     rule.texts(it, ans).forEach(function (text) { cands.push({ it: it, text: text, taught: !!taught[it.id] }); });
@@ -1066,7 +1085,9 @@ function boundForms(v, ctx, f, typing) {
       var hostR = kataToHira(sliceParts(bc.parts, v.pos === 'prefix' ? bc.end : 0, v.pos === 'prefix' ? Infinity : bc.at).map(function (p) { return p.r || p.t; }).join(''));
       var fakes = rndShuffle(readingFakes(bc.reading).filter(function (r) { return bc.answers.indexOf(r) < 0; }));
       var mine = function (r) { return v.pos === 'prefix' ? r.slice(-hostR.length) === hostR : r.indexOf(hostR) === 0; };
-      fakes = fakes.filter(mine).concat(fakes.filter(function (r) { return !mine(r); })).slice(0, 3);
+      var wrong = function (r) { return bc.answers.indexOf(r) < 0; };
+      fakes = squareFakes(bc.reading, function (r) { return wrong(r) && mine(r); }) || squareFakes(bc.reading, wrong) ||
+        fakes.filter(mine).concat(fakes.filter(function (r) { return !mine(r); })).slice(0, 3);
       if (fakes.length < 2) return null;
       var opts = rndShuffle([bc.reading].concat(fakes));
       return { type: 'mc', prompt: 'How do you read this word?', question: bc.word, parts: shown(bc), note: bc.en, speech: bc.reading,

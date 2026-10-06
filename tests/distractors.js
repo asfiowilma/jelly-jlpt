@@ -20,6 +20,24 @@ QUnit.module('pickDistractors', function () {
     });
   });
 
+  QUnit.test('P1-13 reading MC: the answer is not the unique "centre" of its options', function (assert) {
+    var pool = catalogOf('vocab'), n = 0, centre = 0;
+    pool.filter(function (v) { return !v.alt && hasKanji(v.word); }).slice(0, 150).forEach(function (v) {
+      var d = pickDistractors(v, pool, 'reading', 3);
+      if (d.length < 3) return;
+      var o = [v.reading].concat(d).map(kataToHira);
+      var dist = o.map(function (a) { return o.reduce(function (s, b) { return s + editDistance(a, b); }, 0); });
+      var min = Math.min.apply(null, dist);
+      n++;
+      if (dist[0] === min && dist.filter(function (x) { return x === min; }).length === 1) centre++;
+    });
+    assert.ok(n > 100, n + ' reading questions');
+    assert.ok(centre / n < 0.25, 'answer is the unique centre in ' + centre + ' / ' + n);
+    var sq = squareFakes('がくせい', function () { return true; });
+    assert.ok(sq && sq.every(function (x) { return editDistance(x, 'がくせい') <= 2; }), 'がくせい square: ' + sq);
+    assert.strictEqual(sq.filter(function (x) { return editDistance(x, 'がくせい') === 2; }).length, 1, 'one option holds both edits');
+  });
+
   QUnit.test('P1-14 near synonyms (する / やる, コップ / カップ) are never options against each other', function (assert) {
     var pool = catalogOf('vocab'), taught = {};
     NEAR_SYNONYMS.forEach(function (s) { s.forEach(function (id) { taught[id] = true; }); });
