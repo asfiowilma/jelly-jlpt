@@ -47,7 +47,7 @@ kanji-svg/            KanjiVG stroke-order SVGs (<hex codepoint>.svg), CC BY-SA 
                       (generated bundle `KANJI_SVG` for file://; rerun `node tools/build-strokes.js`)
 tools/                zero-dep Node authoring scripts + checks (dev only, outputs committed)
   ref/n5.json         reference list: which vocab/kanji/grammar belong to N5
-  audio/              listening TTS inputs: tracks.json (export-tracks.js), voice archetypes + assignments, render-notebook.ipynb (Colab); see its README
+  audio/              listening TTS inputs: tracks.json (export-tracks.js), voice archetypes + assignments, render-notebook-v2.ipynb (Colab) fed by gitignored render-input.json; see its README
 tests/                QUnit modules, one file per area
 tests.html            browser QUnit runner
 .claude/hooks/        run-tests.js (headless runner), pre-commit.sh, session-start.sh
@@ -101,7 +101,8 @@ activate never deletes. Offline and not yet played = the page falls back to the 
   | listening | `l:<level>-<slug>`: own dialogue scripts (`format` task / point / utterance / quick), review units list one in `listening` |
 
   Items carry `level`, `sources`, `verified`. Vocab has `pos` (drives conjugation). Vocab and kanji
-  may carry `accept` (extra English answers for typed meaning questions). Bound vocab (pos
+  may carry `accept` (extra English answers for typed meaning questions); vocab may carry `alsoRead`
+  (extra readings accepted when typed, e.g. 明日 あす; an override field, author-vocab.js checks it against JMdict). Bound vocab (pos
   suffix / prefix / counter: 人|じん, 枚, お…) carries `contexts` (`{ f: furigana compound, en, alt? }`)
   and is only ever asked inside one (`boundForms`: fill the blank, reading of the compound).
   A duplicate spelling carries `alt: <id of the spelling the plan teaches>`.
@@ -150,9 +151,9 @@ Device-only prefs (palette, theme, TTS rate, sfx mute) stay in localStorage
 
 | Area | Functions |
 |---|---|
-| Units | `validatePlan`, `buildUnits`, `nextUnit`, `levelRamp`, `taughtIds` |
+| Units | `validatePlan`, `buildUnits`, `nextUnit`, `levelRamp`, `taughtIds`; teaching order: `untaughtCount`, `quizSentences` (quiz sentences use only items taught so far) |
 | Quiz | `buildExercises(unit)`, `quizLength`, `passMark`/`quizPassed`, `scoreQuiz`, `pickDistractors`, `checkTyping` (English: `normEn`, plural, typos, reject set `englishPool()`), `otherReading` (homograph reading = retry), `isBound`/`boundForms` |
-| Distractors | `pickDistractors` (+ `DISTRACTOR_RULES`), `kanaDistractors`, `readingFakes`, `spellingFakes` |
+| Distractors | `pickDistractors` (+ `DISTRACTOR_RULES`), `kanaDistractors`, `readingFakes`, `squareFakes` (reading fakes so the answer is not the centre), `spellingFakes`, `NEAR_SYNONYMS` (pairs never set against each other) |
 | Mocks + timing (ticket 18) | `MOCK_BLUEPRINT`, `MOCK_PACE` (real N5 pacing), `quizSeconds`, `isTimedQuiz`, `mockSections`, `mockSteps` (start + between-parts rows), `mockResult`, `mockEstimate` (linear scaled-score estimate, `JLPT_PASS`), `prepDrill` |
 | Exam formats (N5 mondai) | `MONDAI` table, `mondaiQuestions(type, item, ctx)` (for mocks); in quizzes via `formsFor`: kanjiYomi, hyouki, bunmyaku (vocab), hyouki (kanji), gap, order ★ (grammar); iikae / bunshou authored in `mondai.js` |
 | Reading / listening | `passagesFor`, `readingExercises`; `listeningFor(level, format)`, `listenQuestion(item, taughtKanji, { mock })` (mock = 1 replay), `listeningScript`, `chunkSpeech`, `assignVoices` (app-helpers.js `speakScript` plays the pre-rendered clip of each script line when every line has `clip`, else Web Speech; a clip that fails hands the rest to Web Speech). Script lines and `optionSpeech` get `clip` from `AUDIO_MANIFEST` (`listenClips`); with a custom option `order`, narrator number clips stay in their slot and option clips follow the option |
@@ -188,7 +189,7 @@ and the rule that prevents it.
 | Kana reading words beyond N5 | `node tools/build-read-words.js <jisho-cache dir> [--fetch]` → `data/n5/read-words.js` (Tanos N4/N3 katakana + yōon/ぱ-row words, reading checked against JMdict; read only) |
 | Plan | `node tools/author-plan.js` → `data/n5/plan.js`, from the outline inside the script |
 | Coverage report | `node tools/coverage.js` (catalog vs ref list, taught vs not, verified counts) |
-| Listening audio | `node tools/export-tracks.js` → `tools/audio/tracks.json`; render in the Colab notebook (`tools/audio/render-notebook.ipynb`); `node tools/build-audio-manifest.js <rendered dir>` → `audio/manifest.js` (checks every clip name = sha1 of its clipKey, files present); copy the mp3s into `audio/`, then `node tools/build-sw.js`. `run-tests.js` fails if a transcript changed without re-rendering |
+| Listening audio | `node tools/export-tracks.js` → `tools/audio/tracks.json` + gitignored `tools/audio/render-input.json` (`have` = clips already in `audio/`); render the missing clips in Colab (`tools/audio/render-notebook-v2.ipynb`); copy the mp3s into `audio/`; `node tools/build-audio-manifest.js <rendered dir>` → `audio/manifest.js` (checks every clip name = sha1 of its clipKey `role\|archetype\|say`, say = the line's kana reading without U+3000; files present); then `node tools/build-sw.js`. `run-tests.js` hashes the live `listeningScript()` output, so it fails if a transcript changed without re-rendering |
 | Service worker | `node tools/build-sw.js` → `sw.js` (rerun after any shipped-file change) |
 | PWA icons | `node tools/build-icons.js` → `icons/icon-{192,512,maskable-512}.png` from `icons/icon.svg` via headless Edge/Chrome (one-off) |
 
@@ -197,7 +198,7 @@ overrides JSON or the plan outline and rerun the script. The research inputs and
 live in `.scratch/content-audit/research/data/` (gitignored); see each script's header for
 exact inputs.
 
-Catalog checks (`tests/catalog-checks.js`, `tests/catalog-plan.js`) run with the test suite:
+Catalog checks (`tests/catalog-checks.js`, `tests/catalog-plan.js`, `tests/teaching-order.js`: lesson sentences use nothing taught later) run with the test suite:
 unique ids and id prefixes, required fields per kind, readings well-formed and consistent
 with kanji, `verified:true` needs ≥2 distinct sources (`legacy` doesn't count), sentences
 contain what they `uses`, furigana spells jp, ★ chunks spell jp (4 distinct, no cut furigana),
