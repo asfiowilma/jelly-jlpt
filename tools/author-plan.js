@@ -138,7 +138,7 @@ const LESSONS = [
   ["May I?", "g:te-mo-ii", "入る 座る 立つ 使う 撮る 吸う 灰皿 マッチ"],
   ["Rules and warnings", "g:te-wa-ikemasen", "危ない 走る 押す 引く 消す つける 開く 閉まる 止まる 電気"],
   ["Morning routine", "g:te-kara", "洗う 磨く 歯 顔 あびる 朝御飯 着る 出かける"],
-  ["Homework and classes", "g:mou", "もう 宿題 終る 始まる 授業 作文 問題 練習 文章"],
+  ["Homework and classes", "g:mou", "もう 宿題 終わる 始まる 授業 作文 問題 練習 文章"],
   ["Learning Japanese", "g:nai-form", "まだ 漢字 平仮名 片仮名 言葉 意味 覚える 忘れる 教える 習う"],
   ["Cooking dinner", "g:mada", "晩御飯 昼御飯 御飯 料理 作る お弁当 夕飯 切る 入れる"],
   ["Setting the table", "g:mada-te-imasen", "ちゃわん カップ コップ ナイフ お皿 スプーン 花瓶"],
@@ -146,7 +146,7 @@ const LESSONS = [
   ["At the doctor's", "g:nai-de-kudasai", "医者 病院 頭 目 耳 鼻 口 手 足"],
   ["The bank and the post office", "g:nakute-wa-ikenai", "銀行 郵便局 手紙 葉書 切手 封筒 出す 仕事 ポスト"],
   ["Paper, pens and pockets", "g:mashou-ka", "紙 ページ 万年筆 コピーする 貼る ハンカチ ポケット ボタン たて"],
-  ["Asking the way", "g:nakute-wa-naranai", "道 角 右 左 曲る 渡る 橋 地図 交差点"],
+  ["Asking the way", "g:nakute-wa-naranai", "道 角 右 左 曲がる 渡る 橋 地図 交差点"],
   ["North, south, east, west", "", "東 西 南 北 外 向こう 横 近く そば 辺"],
   ["Housework", "g:nakucha-ikenai", "洗濯 掃除 する やる 汚い 物 ストーブ 並べる"],
   // dictionary form (Genki 8-9, Minna 18)

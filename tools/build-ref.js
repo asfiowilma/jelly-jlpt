@@ -32,6 +32,8 @@ const VOCAB_FIXES = {
   "ラジオカセ|ラジオカセ": { word: "ラジカセ", reading: "ラジカセ" }, // elzup truncation of ラジオカセット
   "お～|お～": { word: "お", reading: "お" },                   // prefix: ～ is not part of the word
   "何～|なん～": { word: "何", reading: "なん" },
+  "終る|おわる": { word: "終わる/終る" },                     // Tanos keeps the old okurigana; 終わる is standard (Jisho lists it first)
+  "曲る|まがる": { word: "曲がる/曲る" },
 };
 function vocabEntry(e) {
   e = Object.assign({}, e, VOCAB_FIXES[e.word + "|" + e.reading]);

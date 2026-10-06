@@ -177,6 +177,22 @@ QUnit.module('quiz difficulty model', {
     });
   });
 
+  QUnit.test('P1-3 終わる / 曲がる are taught in standard spelling; conjugation accepts the old one too', function (assert) {
+    var units = this.units;
+    ['v:終わる|おわる', 'v:曲がる|まがる'].forEach(function (id) {
+      var v = CATALOG.items[id];
+      var u = units.filter(function (x) { return (x.vocab || []).indexOf(v) >= 0; })[0];
+      assert.ok(u, id + ' taught');
+      var ctx = Object.assign(quizContext(u), { conjForm: 'ない-form' });
+      var ex = formsFor(v, ctx).filter(function (f) { return f.name === 'conj'; })[0].make();
+      var old = CATALOG.items[id.replace('わる', 'る').replace('がる', 'る')];
+      assert.strictEqual(old.alt, id, old.id + ' is the alt spelling');
+      [v.word.slice(0, -1) + 'らない', old.word.slice(0, -1) + 'らない', v.reading.slice(0, -1) + 'らない'].forEach(function (a) {
+        assert.ok(answerIsRight(ex, a), id + ' accepts ' + a);
+      });
+    });
+  });
+
   QUnit.test('P0-4 no gap option set holds two patterns that fit the same slot', function (assert) {
     // audit groups: siblings only the English note tells apart (見てもいい / 見なくちゃ, ７時から / ７時まで)
     var groups = [['g:mashou', 'g:masen-ka', 'g:mashou-ka'], ['g:te-mo-ii', 'g:te-wa-ikemasen', 'g:nai-de-kudasai',

@@ -1086,8 +1086,11 @@ function formsFor(item, ctx) {
   var conjEx = function (v, form) {
     var c = v && conjugate(v.word, v.reading, form, v.pos);
     if (!c) return null;
+    // another spelling of the word (alt: 終る for 終わる) conjugates to a right answer too
+    var alts = catalogOf('vocab').filter(function (x) { return x.alt === v.id; }).map(function (x) { var a = conjugate(x.word, x.reading, form, x.pos); return a && a.kanji; });
+    var answers = [c.kanji, c.kana].concat(alts).filter(function (a, i, arr) { return a && arr.indexOf(a) === i; });
     return { type: 'conjugation', prompt: 'Conjugate to ' + form + ':', question: v.word, parts: wordParts(v),
-      answers: c.kanji === c.kana ? [c.kana] : [c.kanji, c.kana], targetForm: form, placeholder: form + '...', conjItem: v.id };
+      answers: answers, targetForm: form, placeholder: form + '...', conjItem: v.id };
   };
   var f = function (name, recall, make) { return { name: name, recall: recall, make: make }; };
   // inSentence(w, make): make(sentence, raw furigana parts, span) for a random catalog
