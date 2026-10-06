@@ -46,7 +46,7 @@ var AUDIO_MANIFEST = { tracks: {
   "l:n5-shop-sunday": ["e15b0941bc14.mp3","cab44749c83a.mp3","d9fa9d331975.mp3","3b1bb74db7eb.mp3","ace6acc45255.mp3","023b4591ccb3.mp3","cab44749c83a.mp3"],
   "l:n5-show-me-bag": ["25f9e6a85794.mp3","a2c4b8af35b1.mp3","227c08f6b14a.mp3","abfea9fb73fa.mp3","85e91362d063.mp3","c6135710b650.mp3","95461fa7746a.mp3","d57e10efb0c9.mp3"],
   "l:n5-sister-in-photo": ["cd3dd0d384a4.mp3","22a8b3d9db19.mp3","574eacac09f1.mp3","0084481c654d.mp3","3e1cdd1e55f9.mp3","2cdc24e5db2f.mp3","d17e39577cdd.mp3","1118e21c56a1.mp3","22a8b3d9db19.mp3"],
-  "l:n5-sister-student": ["8b2f3c5e3f91.mp3","227c08f6b14a.mp3","185b300592aa.mp3","85e91362d063.mp3","d45f206d4758.mp3","95461fa7746a.mp3","84ca316a7070.mp3"],
+  "l:n5-sister-student": ["8b2f3c5e3f91.mp3","227c08f6b14a.mp3","185b300592aa.mp3","85e91362d063.mp3","16124f7f0e05.mp3","95461fa7746a.mp3","84ca316a7070.mp3"],
   "l:n5-study-hours": ["4c4850d6dd12.mp3","f98b71b7221b.mp3","075f28e44aeb.mp3","57a24b1ffd75.mp3","202b89a90a17.mp3","eaec156a2bb3.mp3","f98b71b7221b.mp3"],
   "l:n5-sunday-plans": ["4c4850d6dd12.mp3","8e088271fc3b.mp3","e703f5a6daba.mp3","2ded43189eb4.mp3","c2c7fcaf3e1e.mp3","7f1d1444e1f9.mp3","8e088271fc3b.mp3"],
   "l:n5-sunday-where": ["4c4850d6dd12.mp3","18b3639fcc02.mp3","7690233bae07.mp3","f6737b190c71.mp3","c707e5765d80.mp3","b8ff1cb27aed.mp3","18b3639fcc02.mp3"],

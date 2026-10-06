@@ -231,7 +231,8 @@ QUnit.module('catalog checks', function () {
     RUBY_RE.lastIndex = 0;
     while ((m = RUBY_RE.exec(marked))) {
       var t = m[1], r = m[2];
-      var ok = names.indexOf(t + '|' + r) >= 0 ||
+      var ok = (t === 'は' && r === 'わ') || // particle は spoken wa (TTS input; the shown text stays は)
+        names.indexOf(t + '|' + r) >= 0 ||
         vocab.some(function (w) { return w.word.indexOf(t) >= 0 && hira(w.word.replace(t, r)) === hira(w.reading); }) ||
         (Array.from(t).length === 1 && items['k:' + t] && kanjiHira(items['k:' + t]).indexOf(r) >= 0);
       if (!ok) err('ruby ' + t + '|' + r + ' not backed by a used word, name or kanji reading');

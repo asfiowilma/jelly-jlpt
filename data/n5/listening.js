@@ -75,7 +75,7 @@ CATALOG.add([
   L({ id: 'l:n5-sister-student', format: 'quick',
     lines: [{ speaker: 'M', furigana: 'キムさんの　おねえさんも　[学生|がくせい]ですか。' }],
     optionSpeaker: 'F',
-    options: ['あねは　[先生|せんせい]です。', '[母|はは]は　[先生|せんせい]です。', 'わたしの　あねです。'], answer: 0,
+    options: ['あねは　[先生|せんせい]です。', '[母|はは][は|わ]　[先生|せんせい]です。', 'わたしの　あねです。'], answer: 0,
     names: ['キム'],
     en: 'Man: Kim, is your older sister a student too? — 1. My sister is a teacher. 2. My mother is a teacher. 3. She is my older sister.',
     explain: 'The question is about Kim\'s sister. Speaking of her own sister, Kim says あね (おねえさん is for someone else\'s): "my sister is a teacher", so not a student. The mother is not asked about, and "she is my sister" does not answer whether she is a student.',
