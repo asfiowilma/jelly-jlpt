@@ -185,7 +185,7 @@ CATALOG.add([
   { id: 'g:node', kind: 'grammar', level: 'N5', pattern: '〜ので', meaning: 'because ~ / since ~',
     formation: 'Plain form + ので (N / な-adj + なので)',
     notes: 'Like から (g:kara) but softer and more objective, so it suits polite explanations and excuses. After a noun or な-adjective it becomes なので.',
-    examples: ['s:tatoeba:100595', 's:tatoeba:11021424', 's:tatoeba:10986138'], ref: ['ので'],
+    examples: ['s:tatoeba:100595', 's:tatoeba:11021424', 's:tatoeba:171523'], ref: ['ので'],
     sources: ['tanos', GENKI + 'node-genki-i-chapter-12/'], verified: true },
   { id: 'g:nakucha-ikenai', kind: 'grammar', level: 'N5', pattern: '〜なくちゃ(いけない)', meaning: 'have to ~ (casual)',
     formation: 'V-ない stem + なくちゃいけない',
