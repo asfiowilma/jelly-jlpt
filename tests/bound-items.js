@@ -167,3 +167,15 @@ QUnit.module('twin words (早い / 速い)', function () {
     }
   });
 });
+
+QUnit.module('near-synonym typed meaning (コップ / カップ)', function () {
+  QUnit.test('typing the look-alike word\'s meaning is a retry, not a miss', function (assert) {
+    var item = catalogOf('vocab').filter(function (v) { return v.id === 'v:コップ|コップ'; })[0];
+    var ex = buildExercises({ id: 't', kind: 'lesson', items: [item], vocab: [item] }).filter(function (e) { return e.twinMeanings; })[0];
+    assert.ok(ex, 'typed meaning question built');
+    var t = otherMeaning(ex, 'cup');
+    assert.equal(t && t.word, 'カップ', 'cup → retry');
+    assert.ok(/カップ/.test(otherMeaningNote(ex, t)));
+    assert.equal(otherMeaning(ex, 'tumbler'), null, 'own meaning is right');
+  });
+});

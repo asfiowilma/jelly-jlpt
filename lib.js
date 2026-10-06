@@ -1260,6 +1260,10 @@ function formsFor(item, ctx) {
     var twins = catalogOf('vocab').filter(function (x) { return x.id !== v.id && !x.alt && !isBound(x) && shownWord(x) === shownWord(v); });
     var twinPool = twins.length ? ctx.vPool.filter(function (x) { return twins.indexOf(x) < 0; }) : ctx.vPool;
     var twinMeanings = twins.map(function (x) { return { word: x.word, answers: meaningAnswers(x.gloss).concat(x.accept || []) }; });
+    // near-synonyms (コップ / カップ): "cup" is the other word's meaning, so say so instead of a bare miss
+    catalogOf('vocab').filter(function (x) { return nearSynonyms(x, v); }).forEach(function (x) {
+      twinMeanings.push({ word: x.word, answers: meaningAnswers(x.gloss).concat(x.accept || []), near: true });
+    });
     var forms = [
       f('meaningType', true, function () {
         return typing('What does this word mean? (type in English)', shownWord(v), meaningAnswers(v.gloss).concat(v.accept || []), 'English meaning...', { parts: wordParts(v), twinMeanings: twinMeanings });
@@ -2217,7 +2221,8 @@ function otherMeaning(ex, typed) {
   if (checkTyping(s, ex.answers)) return null;
   return ex.twinMeanings.filter(function (t) { return checkTyping(s, t.answers); })[0] || null;
 }
-function otherMeaningNote(ex) {
+function otherMeaningNote(ex, t) {
+  if (t && t.near) return 'That is the meaning of ' + t.word + ', a different word. Try again.';
   return 'That is another word that looks the same here. Try the other meaning.';
 }
 function otherReadingNote(ex, o) {

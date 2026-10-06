@@ -312,7 +312,8 @@ function Exercises(_ref9) {
     if (typeof resp === 'string') setAnswer(resp);
     var other = isType && otherReading(ex, resp);
     if (other) return setNotice(otherReadingNote(ex, other)); // not a miss: say which word, try again
-    if (isType && otherMeaning(ex, resp)) return setNotice(otherMeaningNote(ex));
+    var twin = isType && otherMeaning(ex, resp);
+    if (twin) return setNotice(otherMeaningNote(ex, twin));
     setNotice(null);
     if (isOpt) setSelected(pick); // the track keeps playing; leaving the question stops it
     setRevealed(true);
