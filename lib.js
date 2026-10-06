@@ -1233,6 +1233,8 @@ function formsFor(item, ctx) {
 
   if (item.kind === 'vocab') {
     var v = item, kanjiWord = hasKanji(v.word);
+    // a reading question shows the kanji spelling: only once every kanji in it is taught
+    var readable = kanjiWord && allKanjiTaught(v.word, ctx.taughtKanji);
     // Same spelling, other reading (人: ひと / じん / にん): typing one of those is not a miss but a
     // retry (otherReading); while one of them is taught, the reading question names the meaning.
     // Same meaning (九 きゅう / く, 私 わたし / わたくし): that reading is simply right too.
@@ -1248,7 +1250,7 @@ function formsFor(item, ctx) {
       }),
       f('readingType', true, function () {
         var hint = homographs.some(function (x) { return ctx.taught[x.id]; }) ? { note: '"' + glossText(v) + '"' } : {};
-        return kanjiWord ? typing('Type the reading of this word in hiragana:', v.word, [kataToHira(v.reading), v.reading].concat(alsoRight).filter(function (a, i, arr) { return arr.indexOf(a) === i; }),
+        return readable ? typing('Type the reading of this word in hiragana:', v.word, [kataToHira(v.reading), v.reading].concat(alsoRight).filter(function (a, i, arr) { return arr.indexOf(a) === i; }),
           'hiragana…', Object.assign(hint, kanaIn)) : null;
       }),
       f('enToJp', true, function () {
@@ -1259,10 +1261,10 @@ function formsFor(item, ctx) {
       }),
       f('meaningMc', false, function () { return mc('mc', 'What does this word mean?', v.word, 'gloss', ctx.vPool, null, { parts: wordParts(v) }); }),
       f('wordMc', false, function () { return mc('mc', 'Which word means "' + glossText(v) + '"?', '', 'word', ctx.vPool); }),
-      f('readingMc', false, function () { return kanjiWord ? mc('mc', 'How do you read this word?', v.word, 'reading', ctx.vPool) : null; }),
+      f('readingMc', false, function () { return readable ? mc('mc', 'How do you read this word?', v.word, 'reading', ctx.vPool) : null; }),
       // exam formats (ticket 11): the word inside a catalog sentence that uses it
       f('kanjiYomi', false, function () {
-        return kanjiWord ? inSentence(v, function (s, raw, sp) {
+        return readable ? inSentence(v, function (s, raw, sp) {
           var parts = spliceParts(quizFurigana(raw, ctx.taughtKanji, v.word), sp.at, sp.end, [{ t: v.word, u: true }]);
           return mc('kanji_yomi', 'How is the underlined word read?', s.jp, 'reading', ctx.vPool, null, { parts: parts, sentence: s.id });
         }) : null;

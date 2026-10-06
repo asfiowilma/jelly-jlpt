@@ -197,6 +197,7 @@ QUnit.module('quiz difficulty model', {
     var units = this.units;
     [['v:明日|あした', 'あす'], ['v:昨日|きのう', 'さくじつ'], ['v:一昨日|おととい', 'おとつい']].forEach(function (c) {
       var v = CATALOG.items[c[0]], u = units.filter(function (x) { return (x.vocab || []).indexOf(v) >= 0; })[0], ctx = quizContext(u);
+      Array.from(v.word).forEach(function (ch) { ctx.taughtKanji[ch] = true; }); // readingType needs the kanji taught
       var ex = formsFor(v, ctx).filter(function (f) { return f.name === 'readingType'; })[0].make();
       assert.ok(answerIsRight(ex, c[1]) && answerIsRight(ex, v.reading), c[0] + ' accepts ' + c[1]);
       for (var r = 0; r < 10; r++) {

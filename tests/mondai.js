@@ -51,7 +51,7 @@ QUnit.module('exam-format questions (mondai)', function () {
 
   QUnit.test('漢字読み (kanji_yomi): sentence, the word underlined without furigana, choose its reading', function (assert) {
     var exs = all('kanjiYomi');
-    assert.ok(exs.length > 40, exs.length + ' questions');
+    assert.ok(exs.length > 10, exs.length + ' questions'); // was 40+ before untaught-kanji words lost this form
     exs.forEach(function (ex) {
       var v = ex.item, u = underlined(ex);
       if (u.length !== 1 || u[0].t !== v.word || u[0].r) return assert.ok(false, v.id + ' underline ' + JSON.stringify(u));
@@ -86,7 +86,7 @@ QUnit.module('exam-format questions (mondai)', function () {
 
   QUnit.test('文脈規定 (bunmyaku): catalog sentence with the word blanked, same-POS options, one sense fits', function (assert) {
     var exs = all('bunmyaku');
-    assert.ok(exs.length > 40, exs.length + ' questions');
+    assert.ok(exs.length > 25, exs.length + ' questions'); // was 40+ before untaught-kanji words lost this form
     exs.forEach(function (ex) {
       var v = ex.item, s = sentenceOf(ex), t = text(ex.parts);
       if (t.split(GAP_BLANK).length !== 2) return assert.ok(false, v.id + ' one blank: ' + t);
