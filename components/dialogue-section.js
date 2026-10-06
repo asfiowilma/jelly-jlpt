@@ -5,7 +5,7 @@
 // (new word, bridge, grammar) and a gloss strip; "Heard" after one full play-through. Audio: the
 // pre-rendered clips of audio/manifest.js, else the browser voice (speakScript). Open / heard is
 // remembered per unit on this device only (lib.js dialogState, never synced).
-// Marks and lines come from lib.js dialogueView; the Remix question is built in buildExercises.
+// Marks and lines come from lib.js dialogueView; the Practice card (components/dialogue-practice.js) follows the lesson content.
 var DLG_GAP_MS = 600;
 var DLG_KIND = { nw: 'New word', br: 'Not taught yet', g: 'Grammar' };
 

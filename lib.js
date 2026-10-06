@@ -1578,7 +1578,6 @@ function spaceOut(exs) {
 // item once (a review samples 20), a second ask only to reach QUIZ_MIN_QUESTIONS; a kana quiz reads
 // mostly words (kanaQuizSlots). At least RECALL_SHARE typed answers. A unit with passages / listening
 // (reviews) ends with their reading then listening questions, in place of as many item questions.
-// A lesson with a dialogue ends with its Remix question.
 function buildExercises(unit) {
   if (unit.kind === 'prep') return prepDrill(unit); // ticket 18; a mock unit runs MockExam instead
   var ctx = quizContext(unit);
@@ -1586,8 +1585,7 @@ function buildExercises(unit) {
   var total = quizSize(unit, ctx.items);
   var reading = readingExercises(unit, ctx.taughtKanji); // takes slots from the item questions
   var listening = listeningExercises(unit, ctx.taughtKanji);
-  var remix = remixExercise(unit);
-  var n = total - reading.length - listening.length; // the Remix question comes on top: every taught item keeps its slot
+  var n = total - reading.length - listening.length;
   var slots = ctx.kanaMode ? kanaQuizSlots(unit, ctx, n) : itemSlots(ctx, n);
   var need = Math.ceil(total * RECALL_SHARE), used = {}, out = [];
   var recallCount = function () { return out.filter(function (e) { return e.recall; }).length; };
@@ -1605,7 +1603,7 @@ function buildExercises(unit) {
     if (r) out[i] = r;
   }
   // reading then listening last, as on the test
-  return spaceOut(out).concat(reading, listening, remix);
+  return spaceOut(out).concat(reading, listening);
 }
 
 // ── Reading passages (ticket 15) ────────────────────────────────────────────
@@ -1744,7 +1742,7 @@ function listeningExercises(unit, taughtKanji) {
 // listeningScript(item).
 var VERB_I_ROW = { 'う': 'い', 'く': 'き', 'ぐ': 'ぎ', 'す': 'し', 'つ': 'ち', 'ぬ': 'に', 'ぶ': 'び', 'む': 'み', 'る': 'り' };
 // dialogState(unitId) / saveDialogState(unitId, st): whether a unit's dialogue card is open and heard,
-// { open, heard }. One localStorage key (a map by unit id): device-only, never synced or exported.
+// { open, heard, practiced } (practiced = the Practice card was finished). One localStorage key (a map by unit id): device-only, never synced or exported.
 var DIALOGS_KEY = 'jlpt_dialogs';
 function dialogState(unitId) {
   try { var o = JSON.parse(localStorage.getItem(DIALOGS_KEY) || '{}'); return o && o[unitId] || {}; } catch (e) { return {}; }
@@ -1752,7 +1750,8 @@ function dialogState(unitId) {
 function saveDialogState(unitId, st) {
   try {
     var o = JSON.parse(localStorage.getItem(DIALOGS_KEY) || '{}') || {};
-    o[unitId] = { open: !!st.open, heard: !!st.heard };
+    var was = o[unitId] || {};
+    o[unitId] = { open: 'open' in st ? !!st.open : !!was.open, heard: 'heard' in st ? !!st.heard : !!was.heard, practiced: 'practiced' in st ? !!st.practiced : !!was.practiced };
     localStorage.setItem(DIALOGS_KEY, JSON.stringify(o));
   } catch (e) {}
 }
@@ -1840,20 +1839,20 @@ function dialogueView(it, unit) {
     seconds: Math.max(5, Math.round((chars / 3.5 + it.lines.length * 0.6) / 5) * 5)
   };
 }
-// remixExercise(unit): [the Remix question] for a lesson with a dialogue, else []. A reorder
-// question: same scene, one detail swapped; the learner builds the line from chunks, one of them a
-// distractor (ex.need = chunks the answer uses). A bridge word in a chunk is glossed in ex.note.
-// Extra to the item questions, counts in the score; itemId is the dialogue, so no SRS card.
-function remixExercise(unit) {
+// dialogueSwaps(unit): the swaps of a lesson's Practice card, [] without a dialogue. Each is a reorder
+// exercise (answerIsRight grades it): same scene, one detail swapped; build the line from chunks, one
+// a distractor (need = chunks the answer uses). A bridge word in a chunk is glossed in note.
+// Ungraded practice: no score, no SRS card, nothing stored but "done" (dialogState).
+function dialogueSwaps(unit) {
   var it = unit.dialogue && CATALOG.items[unit.dialogue];
-  if (!it || !it.remix) return [];
-  var r = it.remix, items = rndShuffle(r.chunks.slice());
-  if (items.join() === r.answer.join()) items = items.slice().reverse();
-  var notes = (it.bridge || []).filter(function (b) { return r.chunks.some(function (c) { return c.indexOf(b.text) >= 0; }); })
-    .map(function (b) { return b.text + ' · ' + b.gloss; });
-  return [{ type: 'reorder', prompt: 'Build it in Japanese: ' + r.en, scene: r.scene, dialogueId: it.id,
-    items: items, answer: r.answer.join(''), need: r.answer.length, explain: r.explain,
-    note: notes.length ? notes.join(' ') : undefined, itemId: it.id, form: 'remix', recall: true }]; // recall: the learner builds the line, no options
+  return ((it && it.remixes) || []).map(function (r) {
+    var items = rndShuffle(r.chunks.slice());
+    if (items.join() === r.answer.join()) items = items.slice().reverse();
+    var notes = (it.bridge || []).filter(function (b) { return r.chunks.some(function (c) { return c.indexOf(b.text) >= 0; }); })
+      .map(function (b) { return b.text + ' · ' + b.gloss; });
+    return { type: 'reorder', prompt: r.en, scene: r.scene, items: items, answer: r.answer.join(''), need: r.answer.length,
+      explain: r.explain, note: notes.length ? notes.join(' ') : undefined };
+  });
 }
 
 // ── Timed quizzes, test prep and mock exams (ticket 18, Q32 / Q36-Q39) ──────
@@ -2174,7 +2173,6 @@ function assignVoices(voices) {
 // quiz (Q31), same item in another form when there is one. Not scored.
 function requeueExercise(unit, ex) {
   var o = ex.type === 'reading' && rndShuffle(ex.options.map(function (_, i) { return i; })); // same question, options reshuffled
-  if (ex.form === 'remix') return Object.assign({}, ex, { items: rndShuffle(ex.items.slice()), requeue: true }); // same chunks, reshuffled
   var r = o ? Object.assign({}, ex, { options: o.map(function (i) { return ex.options[i]; }), optionParts: o.map(function (i) { return ex.optionParts[i]; }), correct: o.indexOf(ex.correct) })
     : ex.type === 'listen_dialog' ? listenQuestion(CATALOG.items[ex.itemId], quizContext(unit).taughtKanji, { mock: ex.maxPlays > 0 })
     : ex.item && makeQuestion(ex.item, quizContext(unit), null, [ex.form], false, ex.part);

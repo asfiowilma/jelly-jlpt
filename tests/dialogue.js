@@ -1,7 +1,7 @@
 "use strict";
 
-// Lesson dialogues (pilot): plan wiring, teaching order, view marks, audio script, Remix question.
-// Catalog-shape checks (cast, lines, names, bridge, remix chunks) are in tests/catalog-checks.js.
+// Lesson dialogues (pilot): plan wiring, teaching order, view marks, audio script, Practice swaps.
+// Catalog-shape checks (cast, lines, names, bridge, remixes chunks) are in tests/catalog-checks.js.
 QUnit.module('dialogue', function () {
   var units = function () { return buildUnits(PLAN, CATALOG); };
   var withDialogue = function () { return units().filter(function (u) { return u.dialogue; }); };
@@ -100,23 +100,23 @@ QUnit.module('dialogue', function () {
     assert.ok(assignVoices([]).M2.pitch !== assignVoices([]).M.pitch, 'no voice at all');
   });
 
-  QUnit.test('Remix: a lesson with a dialogue ends its quiz with one reorder question; the answer builds the target, the distractor is left out', function (assert) {
+  QUnit.test('Quiz has no Remix question; Practice swaps (dialogueSwaps) build the target and leave the distractor out', function (assert) {
     units().forEach(function (u) {
-      var exs = buildExercises(u), remix = exs.filter(function (e) { return e.form === 'remix'; });
-      if (!u.dialogue) { assert.strictEqual(remix.length, 0, u.id + ': no remix'); return; }
-      assert.strictEqual(remix.length, 1, u.id + ': one remix');
-      var ex = exs[exs.length - 1], it = CATALOG.items[u.dialogue];
-      assert.strictEqual(ex, remix[0], 'last question');
-      assert.ok(ex.type === 'reorder' && ex.itemId === it.id && ex.scene === it.remix.scene && ex.need === it.remix.answer.length, 'shape');
-      assert.strictEqual(ex.items.length, ex.need + 1, 'exactly one distractor');
-      var pick = it.remix.answer.map(function (c) { return ex.items.indexOf(c); });
-      assert.ok(answerIsRight(ex, pick), 'right order');
-      assert.ok(!answerIsRight(ex, pick.slice().reverse()), 'wrong order');
-      var distractor = ex.items.filter(function (c) { return it.remix.answer.indexOf(c) < 0; })[0];
-      assert.ok(!answerIsRight(ex, pick.concat([ex.items.indexOf(distractor)])), 'distractor used');
-      assert.strictEqual(it.remix.answer.join(''), ex.answer);
-      if (u.id === 'n5.u028') assert.ok(/を/.test(ex.note), 'bridge を glossed above the question');
-      assert.ok(exs.length >= 8, 'quiz keeps its size: ' + exs.length);
+      var exs = buildExercises(u), swaps = dialogueSwaps(u);
+      assert.ok(!exs.some(function (e) { return e.type === 'reorder'; }), u.id + ': no reorder in the quiz');
+      if (!u.dialogue) { assert.strictEqual(swaps.length, 0, u.id + ': no swaps'); return; }
+      var it = CATALOG.items[u.dialogue];
+      assert.strictEqual(swaps.length, it.remixes.length, u.id + ': one per remix');
+      swaps.forEach(function (ex, n) {
+        var r = it.remixes[n];
+        assert.ok(ex.type === 'reorder' && ex.scene === r.scene && ex.need === r.answer.length && ex.items.length === ex.need + 1, 'shape');
+        var pick = r.answer.map(function (c) { return ex.items.indexOf(c); });
+        assert.ok(answerIsRight(ex, pick), 'right order');
+        assert.ok(!answerIsRight(ex, pick.slice().reverse()), 'wrong order');
+        var distractor = ex.items.filter(function (c) { return r.answer.indexOf(c) < 0; })[0];
+        assert.ok(!answerIsRight(ex, pick.concat([ex.items.indexOf(distractor)])), 'distractor used');
+        if (u.id === 'n5.u028') assert.ok(/を/.test(ex.note), 'bridge を glossed');
+      });
     });
   });
 
@@ -130,7 +130,10 @@ QUnit.module('dialogue', function () {
     try {
       saveDialogState('n5.u019', { open: true, heard: false });
       saveDialogState('n5.u028', { open: false, heard: true });
-      assert.deepEqual([dialogState('n5.u019'), dialogState('n5.u028'), dialogState('n5.u999')], [{ open: true, heard: false }, { open: false, heard: true }, {}]);
+      saveDialogState('n5.u019', { practiced: true }); saveDialogState('n5.u019', { open: true, heard: false });
+      assert.strictEqual(dialogState('n5.u019').practiced, true, 'practiced survives an open / heard save');
+      saveDialogState('n5.u019', { practiced: false });
+      assert.deepEqual([dialogState('n5.u019'), dialogState('n5.u028'), dialogState('n5.u999')], [{ open: true, heard: false, practiced: false }, { open: false, heard: true, practiced: false }, {}]);
     } finally { if (had === null) localStorage.removeItem(DIALOGS_KEY); else localStorage.setItem(DIALOGS_KEY, had); }
   });
 });

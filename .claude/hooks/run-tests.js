@@ -62,6 +62,7 @@ var appFiles = [
   path.join("components", "kana-section.js"),
   path.join("components", "vocab-section.js"),
   path.join("components", "dialogue-section.js"),
+  path.join("components", "dialogue-practice.js"),
   path.join("components", "quiz-shell.js"),
   path.join("components", "exercises.js"),
   path.join("components", "mock-exam.js"),
@@ -305,13 +306,81 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
         a.equal(state[1], true, u.id + ": heard after one full play-through");
         cls(/dlg-tool/).filter(function (el) { return text(el) === "Collapse"; })[0].props.onClick(); render();
         a.ok(cls(/dlg-heard/).length === 1 && /Replay/.test(text(cls(/dlg-play/)[0])), u.id + ": collapsed again, Heard, Replay / Read");
-        a.deepEqual(dialogState(u.id), { open: false, heard: true }, u.id + ": remembered on this device");
+        a.deepEqual(dialogState(u.id), { open: false, heard: true, practiced: false }, u.id + ": remembered on this device");
         try { global.localStorage && global.localStorage.removeItem && global.localStorage.removeItem(DIALOGS_KEY); } catch (e) {}
         spoken.length = 0;
       });
     } finally {
       React.useState = orig.useState; React.useRef = orig.useRef; React.useEffect = orig.useEffect; React.useMemo = orig.useMemo; React.createElement = orig.createElement;
       global.setTimeout = orig.setTimeout; window.speechSynthesis = origSpeech; global.SpeechSynthesisUtterance = origUtt; global.localStorage = origLs;
+    }
+  });
+
+  test("React render: DialoguePractice() shows one swap, grades it, Next / Done, remembers done, never touches the quiz", function (a) {
+    var u = units.filter(function (x) { return x.id === "n5.u019"; })[0], it = CATALOG.items[u.dialogue], real = it.remixes;
+    var orig = { useState: React.useState, createElement: React.createElement }, origLs = global.localStorage, mem = {};
+    global.localStorage = { getItem: function (k) { return k in mem ? mem[k] : null; }, setItem: function (k, v) { mem[k] = String(v); }, removeItem: function (k) { delete mem[k]; } };
+    var fixture = [0, 1, 2].map(function (n) { return Object.assign({}, real[0], { scene: "Swap " + (n + 1) + " scene." }); });
+    var run = function (remixes) {
+      it.remixes = remixes;
+      var state = [], k = 0, els = [];
+      React.useState = function (init) { var i = k++; if (!(i in state)) state[i] = typeof init === "function" ? init() : init; return [state[i], function (v) { state[i] = typeof v === "function" ? v(state[i]) : v; }]; };
+      React.createElement = function (type, props) { var el = { type: type, props: props || {}, children: [].slice.call(arguments, 2) }; els.push(el); return el; };
+      var out;
+      var render = function () { k = 0; els = []; out = DialoguePractice({ unit: u }); };
+      var cls = function (re) { return els.filter(function (el) { return re.test(el.props.className || ""); }); };
+      var text = function (el) { return [].concat(el.children).map(function (c) { return typeof c === "string" ? c : Array.isArray(c) ? c.map(function (x) { return typeof x === "string" ? x : x && x.children ? text(x) : ""; }).join("") : c && c.children ? text(c) : ""; }).join(""); };
+      var btn = function (label) { return els.filter(function (el) { return el.type === "button" && text(el) === label; })[0]; };
+      var build = function (order) { // tap bank tiles for the chunks, in order
+        order.forEach(function (c) {
+          render();
+          var tile = els.filter(function (el) { return el.type === "button" && /qz-tile/.test(el.props.className) && !/used/.test(el.props.className) && text(el) === c && !el.props.disabled; })[0];
+          tile.props.onClick();
+        });
+        render();
+      };
+      return { render: render, cls: cls, text: text, btn: btn, build: build, state: state, out: function () { return out; }, els: function () { return els; } };
+    };
+    try {
+      delete mem[DIALOGS_KEY];
+      // one real swap: no counter, no Next, Done after the right answer
+      var p = run(real); p.render();
+      a.ok(p.out() && p.cls(/dlg-practice/).length === 1, "card renders");
+      a.equal(p.cls(/dlg-pr-count/).length, 0, "single swap: no progress counter");
+      a.ok(p.btn("Replay dialog"), "Replay dialog link");
+      a.equal(p.btn("Check").props.disabled, true, "Check disabled until the chunks are placed");
+      p.build(real[0].answer.slice().reverse()); p.btn("Check").props.onClick(); p.render();
+      a.ok(p.cls(/dlg-pr-why bad/).length === 1 && !p.btn("Next swap") && !p.cls(/dlg-pr-ok/).length, "wrong: explanation, no Done");
+      a.equal(p.cls(/qz-answerline bad/).length, 1, "wrong tone");
+      p.els().filter(function (el) { return /qz-answerline/.test(el.props.className || ""); })[0].children[0][0].props.onClick(); p.render(); // remove a tile: free to rearrange
+      a.equal(p.cls(/qz-answerline$/).length, 1, "rearranging clears the verdict");
+      p.state[3] = []; p.render(); // picks (state slot 3): start over
+      p.build(real[0].answer); p.btn("Check").props.onClick(); p.render();
+      a.ok(p.cls(/dlg-pr-why ok/).length === 1 && p.btn("Practise again") && !p.btn("Next swap"), "right: Done check and Practise again, no Next");
+      a.ok(/Done/.test(p.text(p.cls(/dlg-pr-ok/)[0])), "Done ✓ shown");
+      a.equal(dialogState(u.id).practiced, true, "done remembered on this device");
+      var p2 = run(real); p2.render(); // revisit
+      a.ok(p2.cls(/dlg-pr-done/).length === 1 && /Done/.test(p2.text(p2.cls(/dlg-pr-ok/)[0])), "revisited stage shows Done ✓");
+      p2.btn("Practise again").props.onClick(); p2.render();
+      a.equal(dialogState(u.id).practiced, false, "Practise again clears it");
+      a.ok(p2.btn("Check"), "back to a swap");
+      // three swaps (fixture): progress, Next, Done on the last
+      var q = run(fixture); q.render();
+      a.equal(q.text(q.cls(/dlg-pr-count/)[0]), "1 / 3", "progress 1 / 3");
+      q.build(fixture[0].answer); q.btn("Check").props.onClick(); q.render();
+      a.ok(q.btn("Next swap") && !q.cls(/dlg-pr-ok/).length, "right on swap 1: Next swap, not done");
+      a.equal(dialogState(u.id).practiced, false, "not done after swap 1");
+      q.btn("Next swap").props.onClick(); q.render();
+      a.equal(q.text(q.cls(/dlg-pr-count/)[0]), "2 / 3", "progress 2 / 3");
+      a.ok(/Swap 2/.test(q.text(q.cls(/dlg-pr-scene/)[0])), "swap 2 scene");
+      q.build(fixture[1].answer); q.btn("Check").props.onClick(); q.render(); q.btn("Next swap").props.onClick(); q.render();
+      q.build(fixture[2].answer); q.btn("Check").props.onClick(); q.render();
+      a.ok(!q.btn("Next swap") && q.cls(/dlg-pr-ok/).length === 1 && q.btn("Practise again"), "last swap: Done ✓ + Practise again");
+      a.equal(dialogState(u.id).practiced, true, "done after the last");
+      // ungraded: the quiz of the same unit has no reorder and no card for the dialogue
+      a.ok(!buildExercises(u).some(function (e) { return e.type === "reorder" || e.itemId === u.dialogue; }), "quiz untouched");
+    } finally {
+      it.remixes = real; React.useState = orig.useState; React.createElement = orig.createElement; global.localStorage = origLs;
     }
   });
 
@@ -745,15 +814,6 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
             click(/qz-pc r/, right ? oi : (oi + 1) % ex.options.length);
           });
           click(/qz-check/);
-        } else if (ex.type === "reorder") { // Remix: tap chunks in order (a wrong try = the answer reversed); bank tiles follow the built line
-          seen.reorder = true;
-          if (!find(cls(/qz-recap/)).length) errors.push(unit.id + ": remix without its scene recap");
-          var chunks = ex.form === "remix" ? CATALOG.items[ex.itemId].remix.answer.slice() : [];
-          if (!right) chunks.reverse();
-          if (find(cls(/qz-check/))[0].props.disabled !== true) errors.push(unit.id + ": Check enabled before the chunks are placed");
-          chunks.forEach(function (c, n) { click(/qz-tile/, n + ex.items.indexOf(c)); });
-          if (find(cls(/qz-check/))[0].props.disabled) errors.push(unit.id + ": Check disabled with " + chunks.length + " of " + ex.need + " chunks placed");
-          click(/qz-check/);
         } else {
           var input = function (v) { find(function (el) { return el.type === "input"; })[0].props.onChange({ target: { value: v } }); render(); };
           if (ex.others && ex.others.length) {
@@ -834,9 +894,9 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     a.equal(errors.length, 0, errors.slice(0, 8).join("\n"));
     a.ok(retried > 0, retried + " homograph retries played");
     a.ok(overridden > 1, Math.ceil(overridden / 2) + " \"I was right\" overrides played");
-    // ponytail: no "reading" (passage items, ticket 15); "reorder" is only the Remix question of a dialogue lesson
+    // ponytail: no "reading" (passage items, ticket 15); tap-to-order "reorder" stays unused
     // (★ sentence composition is the MC "order" type)
-    ["reorder", "mc", "listen", "typing", "conjugation", "gap", "pair_match", "fill_blank", "synonym", "kanji_reading",
+    ["mc", "listen", "typing", "conjugation", "gap", "pair_match", "fill_blank", "synonym", "kanji_reading",
       "kanji_yomi", "hyouki", "bunmyaku", "order", "iikae", "bunshou", "listen_dialog"].forEach(function (t) {
       a.ok(seen[t], "type " + t + " was played");
     });

@@ -11,7 +11,7 @@ QUnit.module('quiz answer leaks', function () {
   function partsText(ps) { return (ps || []).map(function (p) { return p.t + ' ' + (p.r || ''); }).join(' '); }
   function leaks(ex) {
     if (ex.type === 'pair_match') return null;
-    var answers = ex.type === 'reorder' ? [ex.answer] : ex.answers ? ex.answers.slice() : [ex.options[ex.correct]]; // Remix: the built line
+    var answers = ex.answers ? ex.answers.slice() : [ex.options[ex.correct]];
     var it = ex.item;
     // a Japanese word answer: its reading gives it away too (表記 shows the reading on purpose)
     if (it && it.kind === 'vocab' && ex.type !== 'hyouki' && answers.indexOf(it.word) >= 0) answers.push(it.reading);

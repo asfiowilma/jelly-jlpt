@@ -150,6 +150,7 @@ function UnitView(props) {
                 React.createElement("div", { className: "grammar-examples" }, grammarExamples(g).map(function (s) { return sentence(s, toks); }))))));
         }),
         examples.length > 0 && section(t('section_examples', lv), React.createElement("div", { className: "example-list" }, examples.map(exampleCard))),
+        unit.dialogue && unit.kind === 'lesson' && React.createElement(DialoguePractice, { key: 'dlgp:' + unit.id, unit: unit }),
         (examples.length > 0 || unit.grammar.length > 0 || unit.guide) && React.createElement("button", {
           className: "furi", 'aria-pressed': showFurigana, onClick: toggleFurigana
         }, React.createElement("i", { 'aria-hidden': true }), t('furigana_label', lv))),

@@ -1347,8 +1347,27 @@ body.quiz-open .toast-stack{bottom:calc(100px + env(safe-area-inset-bottom))}
 .dlg-br{border-bottom:2px dashed var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent);border-radius:3px;cursor:pointer}
 .dlg-gloss{position:sticky;bottom:8px;z-index:2;border:1px solid var(--border);margin-top:14px;min-height:46px;padding:10px 14px;border-radius:10px;background:var(--surface2);font-size:.92rem;display:flex;gap:10px;align-items:baseline}
 @media(max-width:639px){.dlg-gloss{bottom:calc(72px + env(safe-area-inset-bottom))}}
+/* Practice card (components/dialogue-practice.js): same card look as .dlg-hero; tiles are the quiz's .qz-tile */
+.dlg-practice{container:dlgp/inline-size;background:var(--surface2);border-radius:14px;padding:16px 14px}
+.dlg-pr-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.dlg-pr-head h3{font-size:1.1rem;margin:0}
+.dlg-pr-count{font-size:.85rem;font-weight:700;color:var(--accent-fg)}
+.dlg-pr-opt{margin-left:auto;font-size:.75rem;color:var(--muted)}
+.dlg-pr-scene,.dlg-pr-note{color:var(--muted);font-size:.9rem;margin:8px 0 0}
+.dlg-pr-target{font-size:1rem;margin:10px 0 12px}
+.dlg-pr-note{margin:0 0 10px;font-size:.85rem}
+.dlg-practice .qz-answerline{min-height:64px;margin-bottom:12px}
+.dlg-practice .qz-bank{justify-content:flex-start}
+.dlg-practice .qz-bank .qz-tile{background:var(--surface)}
+.dlg-practice .qz-tile.used{display:none}
+.dlg-pr-why{font-size:.9rem;margin:12px 0 0;color:var(--muted)}
+.dlg-pr-why.ok::first-letter{color:var(--ok);font-weight:700}
+.dlg-pr-acts,.dlg-pr-end{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}
+.dlg-pr-end{margin-top:10px}
+.dlg-pr-ok{color:var(--ok)}
+.dlg-play:disabled,.dlg-ghost:disabled{opacity:.45;cursor:default}
+@container dlgp (min-width:560px){.dlg-practice .qz-tile{font-size:1.2rem}}
 .dlg-gloss small{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);white-space:nowrap}
 .dlg-gloss.g-br small{color:var(--warn)}.dlg-gloss.g-nw small,.dlg-gloss.g-g small{color:var(--accent-fg)}
 .dlg-hint{color:var(--muted)}
 .credits-note{margin:10px 0 0;font-size:.82rem;color:var(--muted)}
-.qz-recap{text-align:center;color:var(--muted);font-size:.9rem;margin:0 0 10px}

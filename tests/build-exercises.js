@@ -17,7 +17,7 @@ QUnit.module('buildExercises', {
 
   QUnit.test('N5 lesson quiz length: one question per item, at least 8 (ticket 43)', function (assert) {
     var n = quizItems(this.unit).length;
-    assert.strictEqual(buildExercises(this.unit).length, Math.max(8, Math.min(n, quizLength(this.unit, n))) + (this.unit.dialogue ? 1 : 0), 'a dialogue lesson adds its Remix question');
+    assert.strictEqual(buildExercises(this.unit).length, Math.max(8, Math.min(n, quizLength(this.unit, n))));
   });
 
   QUnit.test('returns empty array for a unit with no items', function (assert) {

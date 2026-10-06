@@ -278,19 +278,21 @@ QUnit.module('catalog checks', function () {
     var names = it.names || [];
     names.forEach(function (n) { if (DIALOGUE_NAMES.indexOf(n) < 0) err('name ' + n + ' is not a canon cast name'); });
     ['M', 'M2'].forEach(function (k) { if (cast[k] && names.indexOf(cast[k].jp) < 0) err('names misses ' + cast[k].jp); });
-    var r = it.remix;
-    if (!r || !r.scene || !r.en || !r.explain || !Array.isArray(r.chunks) || !Array.isArray(r.answer)) err('remix needs scene, en, chunks, answer, explain');
-    else {
+    var swaps = it.remixes;
+    if (!Array.isArray(swaps) || swaps.length < 1 || swaps.length > 3) err('remixes needs 1 to 3 swaps');
+    else swaps.forEach(function (r, n) {
+      var w = 'swap ' + (n + 1) + ': ';
+      if (!r.scene || !r.en || !r.explain || !Array.isArray(r.chunks) || !Array.isArray(r.answer)) return err(w + 'needs scene, en, chunks, answer, explain');
       var rest = r.chunks.slice();
-      r.answer.forEach(function (c) { var i = rest.indexOf(c); if (i < 0) err('remix answer chunk ' + c + ' is not in chunks'); else rest.splice(i, 1); });
-      if (rest.length !== 1) err('remix needs exactly 1 distractor chunk, has ' + rest.length);
-      if (new Set(r.chunks).size !== r.chunks.length) err('remix chunks not distinct');
+      r.answer.forEach(function (c) { var i = rest.indexOf(c); if (i < 0) err(w + 'answer chunk ' + c + ' is not in chunks'); else rest.splice(i, 1); });
+      if (rest.length !== 1) err(w + 'needs exactly 1 distractor chunk, has ' + rest.length);
+      if (new Set(r.chunks).size !== r.chunks.length) err(w + 'chunks not distinct');
       r.chunks.forEach(function (c) {
         var b = bridge.filter(function (x) { return c.indexOf(x.text) >= 0 && x.text.length === 1; })[0];
-        if (b && !b.gloss) err('remix chunk ' + c + ' holds a bridge word without a gloss');
+        if (b && !b.gloss) err(w + 'chunk ' + c + ' holds a bridge word without a gloss');
       });
-      (r.chunks.join('').match(/[ァ-ヺ]+/g) || []).forEach(function (w) { if (names.indexOf(w) < 0) err('katakana ' + w + ' in remix not in names'); });
-    }
+      (r.chunks.join('').match(/[ァ-ヺ]+/g) || []).forEach(function (k) { if (names.indexOf(k) < 0) err(w + 'katakana ' + k + ' not in names'); });
+    });
     return e.concat(ownTextErrors(it, lines.map(function (l) { return l.furigana || ''; }).join('\n'), items));
   }
   function listeningErrors(it, items) {

@@ -10,7 +10,8 @@
 //   quick     = 即時応答: one short line, then 3 replies, heard only; no question.
 //   dialogue  = not a test format: a short scene shown in a lesson unit (unit.dialogue, components/dialogue-section.js).
 //               Fields: title, goal, scene, cast { M, M2 }, lines [{ speaker M | M2, furigana, en }], bridge (max 3 words the
-//               unit has not taught: { text, gloss, ctx?, id? }), remix (the Remix question appended to the unit quiz),
+//               unit has not taught: { text, gloss, ctx?, id? }), remixes (1-3 swaps for the lesson's Practice card:
+//               { scene, en, chunks (answer chunks + 1 distractor), answer, explain }; ungraded, not in the quiz),
 //               names, uses. Two men, so the second speaker is M2 (own voice archetype, tools/audio/README.md).
 // Audio is pre-rendered TTS clips (audio/manifest.js, spoken from the kana readings); the browser's
 // speech synthesis is the fallback when a clip is missing or cannot load.
@@ -663,9 +664,9 @@ CATALOG.add([
       { text: 'くん', gloss: 'like さん; what a teacher calls a boy' },
       { text: 'ね', ctx: 'ですね', id: 'g:ne', gloss: 'ね = right? / isn\u2019t it? (taught a few lessons later)' }
     ],
-    remix: { scene: 'Same scene, new student. Sakura walks in and introduces herself.', en: 'I am Sakura. I am a student.',
+    remixes: [{ scene: 'Same scene, new student. Sakura walks in and introduces herself.', en: 'I am Sakura. I am a student.',
       chunks: ['サクラです。', 'わたしは', 'がくせいです。', 'せんせいです。'], answer: ['サクラです。', 'わたしは', 'がくせいです。'],
-      explain: 'がくせいです means "I am a student"; せんせいです would say Sakura is a teacher.' },
+      explain: 'がくせいです means "I am a student"; せんせいです would say Sakura is a teacher.' }],
     names: ['カカシ', 'サスケ', 'サクラ'],
     notes: 'uses v:ええ|ええ, which is unverified, so the dialogue is too. The course teaches polite form; a real teacher and student would be more casual.',
     uses: ['g:wa-desu', 'v:私|わたし', 'v:先生|せんせい', 'v:学生|がくせい', 'v:名前|なまえ', 'v:ええ|ええ', 'g:ne', 'k:学', 'k:生'],
@@ -688,9 +689,9 @@ CATALOG.add([
       { text: 'くん', gloss: 'like さん; what a teacher calls a boy' },
       { text: 'ぼく', gloss: 'I, me: a boy\u2019s or man\u2019s casual word' }
     ],
-    remix: { scene: 'Same lunch, new order. Now Itadori picks tea and food.', en: 'I drink tea. I eat the food.',
+    remixes: [{ scene: 'Same lunch, new order. Now Itadori picks tea and food.', en: 'I drink tea. I eat the food.',
       chunks: ['おちゃを', 'のみます。', 'たべものを', 'たべます。', 'のみますか。'], answer: ['おちゃを', 'のみます。', 'たべものを', 'たべます。'],
-      explain: 'Each を stays glued to its noun, and ます ends the verb. のみますか would ask a question instead of saying what you do.' },
+      explain: 'Each を stays glued to its noun, and ます ends the verb. のみますか would ask a question instead of saying what you do.' }],
     names: ['いたどり', 'ごじょう'],
     notes: 'uses v:ええ|ええ, which is unverified, so the dialogue is too. The course teaches polite form; a real teacher and student would be more casual.',
     uses: ['g:masu', 'g:wa-desu', 'g:ka', 'g:yo', 'g:ne', 'g:wo', 'v:何|なに', 'v:私|わたし', 'v:飲む|のむ', 'v:牛乳|ぎゅうにゅう', 'v:お茶|おちゃ', 'v:これ|これ', 'v:食べ物|たべもの', 'v:食べる|たべる', 'v:ええ|ええ', 'k:食'],

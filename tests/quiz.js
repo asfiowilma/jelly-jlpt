@@ -44,7 +44,7 @@ QUnit.module('quiz difficulty model', {
     this.units.filter(function (u) { return u.kind === 'kana' || u.kind === 'lesson'; }).forEach(function (u) {
       var items = quizItems(u);
       var exs = buildExercises(u);
-      assert.strictEqual(exs.length, quizSize(u, items) + (u.dialogue ? 1 : 0), u.id + ' length (+1: the Remix question of a dialogue lesson)');
+      assert.strictEqual(exs.length, quizSize(u, items), u.id + ' length');
       if (u.kind === 'lesson') assert.strictEqual(quizSize(u, items), Math.min(quizLength(u, items.length), quizCapacity(items.length)), u.id + ' lesson size');
       var asked = {};
       exs.forEach(function (e) {
@@ -242,7 +242,6 @@ QUnit.module('quiz difficulty model', {
       assert.ok(r, e.form + ' requeued');
       assert.strictEqual(r.itemId, e.itemId);
       assert.ok(r.requeue, 'marked');
-      if (!e.item) return; // Remix / reading / listening: no item, same question again
       var other = formsFor(e.item, quizContext(u)).some(function (f) { return f.name !== e.form && f.make(); });
       if (r.form === e.form && other) assert.ok(false, e.form + ' repeated though another form exists');
     });
