@@ -147,7 +147,7 @@ function SettingsView(props) {
             'aria-labelledby': "set-sfx-label",
             onClick: function () { props.setSfxOn(!props.sfxOn); if (!props.sfxOn) playSfx('correct'); }
           }, props.sfxOn ? L("set_on") : L("set_off"))),
-        // Listening in the app is the browser's own voice (ticket 16); the official samples are real audio
+        // Listening in the app is pre-rendered TTS clips, browser voice as fallback; the official samples are real audio
         labeled(L("set_official_audio_l"), L("set_official_audio_hint"),
           ce("a", { className: "data-btn", href: "https://www.jlpt.jp/e/samples/sampleindex.html", target: "_blank", rel: "noopener noreferrer" }, L("set_official_audio"))))),
     group("data", L("set_grp_data"), L("set_grp_data_d"),

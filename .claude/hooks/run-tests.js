@@ -1282,10 +1282,19 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
 (function () {
   var audioTool = require(path.join(projectDir, "tools", "build-audio-manifest.js"));
 
-  test("audio: every tracks.json line maps (sha1 of clipKey) to its manifest clip and the mp3 exists", function (a) {
+  test("audio: every live listeningScript line maps (sha1 of clipKey) to its manifest clip and the mp3 exists", function (a) {
     // On failure: a transcript or archetype changed without re-rendering. See tools/audio/README.md.
-    var errs = audioTool.check(projectDir, AUDIO_MANIFEST);
-    a.deepEqual(errs, [], "audio out of date, re-render and rerun tools/build-audio-manifest.js (tools/audio/README.md)");
+    // Hashes the live catalog (not tracks.json), so a stale export cannot hide a stale clip.
+    var assign = function (f) { return JSON.parse(fs.readFileSync(path.join(projectDir, "tools", "audio", f), "utf8")); };
+    var man = assign("man-assignments.json"), woman = assign("woman-assignments.json");
+    var tracks = listeningFor("N5").map(function (it) {
+      return { id: it.id, man: (man[it.id] || {}).man || null, woman: (woman[it.id] || {}).woman || null,
+        lines: listeningScript(it).map(function (l) { return { role: l.speaker, say: audioTool.sayText(l.text) }; }) };
+    });
+    var errs = audioTool.check(projectDir, AUDIO_MANIFEST, tracks);
+    a.ok(errs.length === 0, errs.length + " of " + tracks.reduce(function (n, t) { return n + t.lines.length; }, 0) +
+      " clip lines stale: re-render (tools/audio/render-notebook-v2.ipynb), rerun tools/build-audio-manifest.js (tools/audio/README.md)\n    " +
+      errs.slice(0, 5).join("\n    ") + (errs.length > 5 ? "\n    ..." : ""));
   });
 
   test("sw.js: audio mp3s are runtime-cached, never precached; no mp3 is missed by RUNTIME_ONLY", function (a) {

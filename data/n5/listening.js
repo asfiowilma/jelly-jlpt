@@ -8,7 +8,8 @@
 //   utterance = 発話表現: the narrator describes a situation (the test shows a picture; here it is
 //               spoken) and asks なんと いいますか; 3 options, heard only.
 //   quick     = 即時応答: one short line, then 3 replies, heard only; no question.
-// Audio is the browser's speech synthesis (ticket 16, stage 1): lower confidence than recorded audio.
+// Audio is pre-rendered TTS clips (audio/manifest.js, spoken from the kana readings); the browser's
+// speech synthesis is the fallback when a clip is missing or cannot load.
 //
 // Written by hand for this project (sources: ['own']). Fields:
 // - `lines`: [{ speaker: 'M' | 'F' | 'N' (narrator), furigana }]. task / point open with one N line
@@ -54,11 +55,11 @@ CATALOG.add([
   L({ id: 'l:n5-whose-umbrella', format: 'quick',
     lines: [{ speaker: 'M', furigana: 'これは　だれの　かさですか。' }],
     optionSpeaker: 'F',
-    options: ['キムさんです。', 'キムさんのです。', 'わたしの　[本|ほん]です。'], answer: 1,
+    options: ['あそこです。', 'キムさんのです。', 'わたしの　[本|ほん]です。'], answer: 1,
     names: ['キム'],
-    en: 'Man: Whose umbrella is this? — 1. It is Kim. 2. It is Kim\'s. 3. It is my book.',
-    explain: 'だれの asks "whose", so the reply needs の: キムさんのです "Kim\'s". キムさんです means "it is Kim", the answer to だれ alone. The book doesn\'t fit: the question is about an umbrella.',
-    uses: ['g:wa-desu', 'g:ka', 'g:no', 'v:これ|これ', 'v:誰|だれ', 'v:傘|かさ', 'v:さん|さん', 'v:私|わたし', 'v:本|ほん', 'k:本'],
+    en: 'Man: Whose umbrella is this? — 1. It is over there. 2. It is Kim\'s. 3. It is my book.',
+    explain: 'だれの asks "whose", so the reply names the owner: キムさんのです "Kim\'s". あそこです "over there" answers where, not whose. The book doesn\'t fit: the question is about an umbrella.',
+    uses: ['g:wa-desu', 'g:ka', 'g:no', 'v:これ|これ', 'v:誰|だれ', 'v:傘|かさ', 'v:あそこ|あそこ', 'v:さん|さん', 'v:私|わたし', 'v:本|ほん', 'k:本'],
     verified: true }),
 
   L({ id: 'l:n5-nationality', format: 'quick',
@@ -347,13 +348,13 @@ CATALOG.add([
       { speaker: 'F', furigana: 'カレーは　ちょっと　からいですから…。さかなは　どうですか。' },
       { speaker: 'M', furigana: 'さかなは　きょうは　ありません。とりにくか　ぶたにくの　りょうりが　ありますよ。' },
       { speaker: 'F', furigana: 'わたしは　ぶたにくが　あまり　すきじゃありません。' },
-      { speaker: 'M', furigana: 'じゃあ、こっちですね。' },
+      { speaker: 'M', furigana: 'じゃあ、とりにくですね。' },
       { speaker: 'F', furigana: 'そうですね。それを　[食|た]べます。' }],
     question: '[女|おんな]の　[人|ひと]は　[何|なに]を　[食|た]べますか。',
     options: ['カレー', 'さかなの　りょうり', 'ぶたにくの　りょうり', 'とりにくの　りょうり'], answer: 3,
-    en: 'Narrator: At a restaurant, a man and a woman are talking. What will the woman eat? — M: What will you eat? This curry is good. F: Curry is a bit spicy, so… How about fish? M: There\'s no fish today. There are chicken or pork dishes. F: I don\'t really like pork. M: Then this one, right? F: Yes. I\'ll eat that. — What will the woman eat?',
-    explain: 'Curry is too spicy for her, there is no fish today, and she doesn\'t like pork, so こっち is the chicken dish.',
-    uses: uniq(FRAME_USES.concat(['g:de', 'g:wo', 'g:ka', 'g:wa-desu', 'g:yo', 'g:kara', 'g:ka-ka', 'g:no', 'g:ja-nai', 'g:ne', 'g:masu', 'v:レストラン|レストラン', 'v:何|なに', 'v:食べる|たべる', 'v:この|この', 'v:カレー|カレー', 'v:おいしい|おいしい', 'v:ちょっと|ちょっと', 'v:辛い|からい', 'v:魚|さかな', 'v:どう|どう', 'v:今日|きょう', 'v:ある|ある', 'v:とり肉|とりにく', 'v:豚肉|ぶたにく', 'v:料理|りょうり', 'v:私|わたし', 'v:あまり|あまり', 'v:好き|すき', 'v:じゃあ|じゃあ', 'v:こっち|こっち', 'v:そう|そう', 'v:それ|それ', 'k:何', 'k:食'])),
+    en: 'Narrator: At a restaurant, a man and a woman are talking. What will the woman eat? — M: What will you eat? This curry is good. F: Curry is a bit spicy, so… How about fish? M: There\'s no fish today. There are chicken or pork dishes. F: I don\'t really like pork. M: Then the chicken, right? F: Yes. I\'ll eat that. — What will the woman eat?',
+    explain: 'Curry is too spicy for her, there is no fish today, and she doesn\'t like pork, so the man says とりにく and she agrees: the chicken dish.',
+    uses: uniq(FRAME_USES.concat(['g:de', 'g:wo', 'g:ka', 'g:wa-desu', 'g:yo', 'g:kara', 'g:ka-ka', 'g:no', 'g:ja-nai', 'g:ne', 'g:masu', 'v:レストラン|レストラン', 'v:何|なに', 'v:食べる|たべる', 'v:この|この', 'v:カレー|カレー', 'v:おいしい|おいしい', 'v:ちょっと|ちょっと', 'v:辛い|からい', 'v:魚|さかな', 'v:どう|どう', 'v:今日|きょう', 'v:ある|ある', 'v:とり肉|とりにく', 'v:豚肉|ぶたにく', 'v:料理|りょうり', 'v:私|わたし', 'v:あまり|あまり', 'v:好き|すき', 'v:じゃあ|じゃあ', 'v:そう|そう', 'v:それ|それ', 'k:何', 'k:食'])),
     verified: true }),
 
   L({ id: 'l:n5-doctor-advice', format: 'task',
@@ -434,11 +435,11 @@ CATALOG.add([
       { speaker: 'N', furigana: 'うちで　' + MF },
       { speaker: 'F', furigana: 'きょうは　ともだちが　[三|さん][人|にん]　[来|き]ます。おさらを　[出|だ]して　ください。' },
       { speaker: 'M', furigana: 'わたしたちの　おさらも　いりますね。じゃあ、[五|ご]まいですね。' },
-      { speaker: 'F', furigana: '[山川|やまかわ]さんの　おくさんも　[来|き]ますから、[六|ろく]まい　[出|だ]して　ください。' }],
+      { speaker: 'F', furigana: 'ともだちの　[山川|やまかわ]さんの　おくさんも　[来|き]ますから、[六|ろく]まい　[出|だ]して　ください。' }],
     question: '[男|おとこ]の　[人|ひと]は　おさらを　[何|なん]まい　[出|だ]しますか。',
     options: ['[三|さん]まい', '[四|よん]まい', '[五|ご]まい', '[六|ろく]まい'], answer: 3,
     names: ['山川|やまかわ'],
-    en: 'Narrator: At home, a man and a woman are talking. How many plates will the man put out? — F: Three friends are coming today. Please put out the plates. M: We need plates for us too. So, five, right? F: Mr. Yamakawa\'s wife is coming too, so please put out six. — How many plates will the man put out?',
+    en: 'Narrator: At home, a man and a woman are talking. How many plates will the man put out? — F: Three friends are coming today. Please put out the plates. M: We need plates for us too. So, five, right? F: The wife of our friend Mr. Yamakawa is coming too, so please put out six. — How many plates will the man put out?',
     explain: 'Three friends plus the two of them makes five, and Mr. Yamakawa\'s wife is coming too: 六まい. Listen for the last number, not the first.',
     uses: uniq(FRAME_USES.concat(['g:de', 'g:wa-desu', 'g:wo', 'g:te-kudasai', 'g:no', 'g:mo', 'g:ne', 'g:kara', 'g:ka', 'g:masu', 'v:うち|うち', 'v:今日|きょう', 'v:友達|ともだち', 'v:三|さん', 'v:人|にん', 'v:来る|くる', 'v:お皿|おさら', 'v:出す|だす', 'v:私|わたし', 'v:たち|たち', 'v:要る|いる', 'v:じゃあ|じゃあ', 'v:五|ご', 'v:枚|まい', 'v:さん|さん', 'v:奥さん|おくさん', 'v:六|ろく', 'v:何|なん', 'v:四|よん', 'k:三', 'k:来', 'k:出', 'k:五', 'k:山', 'k:川', 'k:六', 'k:何', 'k:四'])),
     verified: true }),

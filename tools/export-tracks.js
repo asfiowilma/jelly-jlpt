@@ -1,13 +1,18 @@
 #!/usr/bin/env node
 // Export every N5 listening item as a flat track list for the TTS notebook.
-// Run: node tools/export-tracks.js  ->  tools/audio/tracks.json
+// Run: node tools/export-tracks.js  ->  tools/audio/tracks.json + tools/audio/render-input.json
 //
 // clipKey rule (the notebook hashes it so identical lines across tracks render once):
-//   clipKey = role + '|' + (role === 'N' ? '' : archetype) + '|' + text
+//   clipKey = role + '|' + (role === 'N' ? '' : archetype) + '|' + say
 // where role is N / M / F, archetype is the track's man / woman key (tracks.json `man` / `woman`;
 // the narrator is one fixed voice, no archetype),
-// and text is the natural text (kanji kept, U+3000 spaces removed).
+// and say is the line's kana reading (listeningScript text, U+3000 spaces removed): the TTS input,
+// so the authored readings decide how each kanji is spoken. `text` (natural, kanji kept) is kept
+// for reading the transcript only.
+// render-input.json (gitignored) is the one file the Colab notebook uploads:
+//   { tracks, manArchetypes, womanArchetypes, have: [clip names already in audio/] }
 const fs = require('fs'), path = require('path'), vm = require('vm');
+const { clipKey, clipName, sayText } = require('./build-audio-manifest.js');
 const root = path.join(__dirname, '..');
 const ctx = { localStorage: { getItem() { return null; }, setItem() {} }, document: {} };
 ctx.window = ctx;
@@ -47,11 +52,11 @@ ctx.listeningFor('N5').forEach(function (it) {
   });
   const man = pick.M || null, woman = pick.F || null;
   tracks.push({ id: it.id, format: it.format, man, woman,
-    lines: nat.map((l, i) => ({ role: l.speaker, text: l.text, kana: kana[i].text })) });
-  nat.forEach(function (l) {
-    total++; allChars += l.text.length;
-    const key = l.speaker + '|' + (l.speaker === 'M' ? man : l.speaker === 'F' ? woman : '') + '|' + l.text;
-    if (!clips.has(key)) { clips.add(key); chars += l.text.length; }
+    lines: nat.map((l, i) => ({ role: l.speaker, text: l.text, kana: kana[i].text, say: sayText(kana[i].text) })) });
+  tracks[tracks.length - 1].lines.forEach(function (l) {
+    total++; allChars += l.say.length;
+    const key = clipKey(l.role, l.role === 'M' ? man : woman, l.say);
+    if (!clips.has(key)) { clips.add(key); chars += l.say.length; }
   });
 });
 ['M', 'F'].forEach(r => Object.keys(A[r].assign).forEach(id => { if (!tracks.some(t => t.id === id)) errors.push(id + ': ' + r + ' assignment for unknown track'); }));
@@ -59,7 +64,12 @@ if (errors.length) { console.error(errors.join('\n')); process.exit(1); }
 
 fs.writeFileSync(path.join(__dirname, 'audio', 'tracks.json'),
   JSON.stringify({ generatedFrom: 'catalog', tracks }, null, 1) + '\n');
+const have = fs.readdirSync(path.join(root, 'audio')).filter(f => /^[0-9a-f]{12}\.mp3$/.test(f)).sort();
+fs.writeFileSync(path.join(__dirname, 'audio', 'render-input.json'),
+  JSON.stringify({ tracks, manArchetypes: A.M.arch, womanArchetypes: A.F.arch, have }) + '\n');
+const names = new Set([...clips].map(clipName)), reused = [...names].filter(n => have.includes(n)).length;
 const dist = {}, wdist = {};
 tracks.forEach(t => { if (t.man) dist[t.man] = (dist[t.man] || 0) + 1; if (t.woman) wdist[t.woman] = (wdist[t.woman] || 0) + 1; });
 console.log('tracks ' + tracks.length + ', lines ' + total + ', unique clips ' + clips.size + ', total chars ' + allChars + ', unique chars ' + chars);
+console.log('to render ' + (names.size - reused) + ', reused from audio/ ' + reused + ' (tools/audio/render-input.json)');
 console.log('man archetypes ' + JSON.stringify(dist) + ', woman archetypes ' + JSON.stringify(wdist));

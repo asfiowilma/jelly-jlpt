@@ -204,7 +204,7 @@ var UI_STRINGS = {
   sync_err_other:    { en: 'Sync failed.',      ja: '同期に失敗しました。' },
   set_sfx:           { en: 'Sound effects',     ja: '効果音' },
   set_official_audio: { en: 'Practice with official audio', ja: '公式の音声で練習' },
-  set_official_audio_hint: { en: 'Listening questions here use your browser’s voice. The official JLPT site has real sample audio (opens jlpt.jp in a new tab).', ja: 'このアプリの聴解はブラウザの音声を使います。JLPT公式サイトに本物の音声サンプルがあります（新しいタブでjlpt.jpを開きます）。' },
+  set_official_audio_hint: { en: 'Listening questions here use pre-rendered synthetic voices (your browser’s voice if a clip can’t load). The official JLPT site has real sample audio (opens jlpt.jp in a new tab).', ja: 'このアプリの聴解は合成音声の録音を使います（読み込めないときはブラウザの音声）。JLPT公式サイトに本物の音声サンプルがあります（新しいタブでjlpt.jpを開きます）。' },
   // Pace (Settings + Overview, see PACE_MODES in lib.js)
   set_pace_section:  { en: 'Pace',              ja: 'ペース' },
   set_pace:          { en: 'Stages per day',     ja: '1日のステージ数' },

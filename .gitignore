@@ -2,3 +2,4 @@
 .playwright-mcp/
 .vercel
 .env*
+tools/audio/render-input.json
