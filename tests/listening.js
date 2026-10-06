@@ -190,6 +190,29 @@ QUnit.module('listening', function () {
     var task = listeningFor('N5', 'task')[0];
     assert.deepEqual(listeningScript(task).map(function (l) { return l.clip; }), AUDIO_MANIFEST.tracks[task.id], 'task: identity mapping');
   });
+
+  // P0-5: options keep their authored order everywhere, so the authored keys must not favour a slot.
+  QUnit.test('answer keys: no option slot over 45% per format or per mock; the key is rarely the one longest option', function (assert) {
+    var len = function (s) { return furiganaParts(s).map(function (p) { return p.t; }).join('').replace(/　/g, '').length; };
+    var share = function (items) {
+      var n = [0, 0, 0, 0];
+      items.forEach(function (it) { n[it.answer]++; });
+      return Math.max.apply(null, n) / items.length;
+    };
+    ['task', 'point', 'utterance', 'quick'].forEach(function (f) {
+      var items = listeningFor('N5', f);
+      assert.ok(share(items) <= 0.45, f + ': top slot ' + Math.round(100 * share(items)) + '%');
+      var longest = items.filter(function (it) {
+        var l = it.options.map(len), mx = Math.max.apply(null, l);
+        return l[it.answer] === mx && l.filter(function (x) { return x === mx; }).length === 1;
+      }).length;
+      assert.ok(longest / items.length <= 0.4, f + ': key is the single longest option in ' + longest + '/' + items.length);
+    });
+    catalogOf('mock').forEach(function (m) {
+      var items = m.sections.listening.map(function (q) { return CATALOG.items[q.l]; });
+      assert.ok(share(items) <= 0.45, m.id + ': top slot ' + Math.round(100 * share(items)) + '%');
+    });
+  });
 });
 QUnit.module('kanji reading speech', function () {
   QUnit.test('readingKana: no markers, no kanji, for every shown reading', function (assert) {
