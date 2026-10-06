@@ -1078,7 +1078,7 @@ CATALOG.add([
       { speaker: 'maomao', furigana: 'わたしは　にちようびは　はたらきません。やすみです。', en: 'I do not work on Sundays. It is my day off.' },
       { speaker: 'nami', furigana: 'じゃあ、わたしも　にちようびは　はたらきません！', en: 'Then I won’t work on Sundays either!' },
       { speaker: 'maomao', furigana: '……どうぞ。', en: '...Be my guest.', tone: 'dry, unimpressed' },
-      { speaker: 'nami', furigana: '……ごごは　はたらきます。', en: '...In the afternoon, I work.', tone: 'sly, playful' }
+      { speaker: 'nami', furigana: 'ごごは　はたらきます！', en: 'But I’ll work in the afternoon!', tone: 'sly, playful' }
     ],
     bridge: [
       { text: 'ありません', id: 'v:ある|ある', gloss: 'ありません = there is none, I don’t have one (from ある, taught later)' },
@@ -1196,7 +1196,7 @@ CATALOG.add([
       { speaker: 'maomao', furigana: '……えいがは　[見|み]ません。', en: '...I don’t watch movies.', tone: 'dry, unimpressed' },
       { speaker: 'sakura', furigana: 'じゃあ、こうえんへ　[行|い]きませんか。', en: 'Then won’t you go to the park?' },
       { speaker: 'maomao', furigana: 'こうえん……。[行|い]きます。', en: 'The park... I will go.' },
-      { speaker: 'sakura', furigana: 'ごご　[三|さん][時|じ]に　こうえんで　あいませんか。', en: 'Won’t we meet at the park at three in the afternoon?' },
+      { speaker: 'sakura', furigana: 'ごご　[三|さん][時|じ]に　こうえんで　あいませんか。', en: 'Why don’t we meet at the park at three in the afternoon?' },
       { speaker: 'maomao', furigana: 'ええ。こうえんの　くさは　おもしろいです。', en: 'Yes. The plants in the park are interesting.' },
       { speaker: 'sakura', furigana: '……さんぽですよ？', en: '...It is a walk, you know?' },
       { speaker: 'maomao', furigana: '……さんぽです。', en: '...A walk.', tone: 'dry, unimpressed' }
@@ -1209,7 +1209,7 @@ CATALOG.add([
       { scene: 'Sakura asks Maomao to a film.', en: 'Won’t you see a movie?',
         chunks: ['えいがを', 'みませんか。', 'みません。'], answer: ['えいがを', 'みませんか。'],
         explain: 'ませんか is a polite invitation: "won’t you...?". Without か, みません is Maomao’s answer: "I don’t watch".' },
-      { scene: 'Sakura sets the time.', en: 'Won’t we meet at the park at three?',
+      { scene: 'Sakura sets the time.', en: 'Why don’t we meet at the park at three?',
         chunks: ['さんじに', 'こうえんで', 'あいませんか。', 'こうえんへ'], answer: ['さんじに', 'こうえんで', 'あいませんか。'],
         explain: 'で marks where something happens: こうえんで あう. へ is for the place you head to, not where you meet.' }
     ],
@@ -1227,7 +1227,7 @@ CATALOG.add([
       { speaker: 'hinata', furigana: 'りょこう！？　いつですか！', en: 'A trip?! When?!' },
       { speaker: 'gojo', furigana: 'らいしゅうの　[金|きん]ようびです。', en: 'Next Friday.' },
       { speaker: 'hinata', furigana: 'どこへ　[行|い]きますか！', en: 'Where are we going?!' },
-      { speaker: 'gojo', furigana: '……がっこうの　[前|まえ]の　こうえんです。', en: '...The park in front of the school.', tone: 'teasing, playful' },
+      { speaker: 'gojo', furigana: 'がっこうの　[前|まえ]の　こうえんです！', en: 'The park in front of the school!', tone: 'teasing, playful' },
       { speaker: 'hinata', furigana: 'こうえん！　こうえんで　あそびましょう！', en: 'The park! Let’s play in the park!' },
       { speaker: 'gojo', furigana: 'ええ。[金|きん]ようびは　[九|く][時|じ]ちょうどに　がっこうで　あいましょう。', en: 'Yes. On Friday, let’s meet at school at nine sharp.' },
       { speaker: 'hinata', furigana: 'はい！　[八|はち][時|じ]に　[来|き]ます！', en: 'Yes! I will come at eight!' },
