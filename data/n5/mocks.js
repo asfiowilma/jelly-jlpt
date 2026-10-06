@@ -44,7 +44,7 @@ CATALOG.add([
      grammar: [
       {"m":"gap","f":"わたしは　まいあさ　コーヒー（　）のみます。","o":["に","を","で","が"],"a":1,"en":"I drink coffee every morning.","explain":"のむ takes its object with を."},
       {"m":"gap","f":"わたしは　[日|にち]ようびに　[友|とも]だち（　）いっしょに　[山|やま]へ　[行|い]きました。","o":["が","を","に","と"],"a":3,"en":"On Sunday I went to the mountains with a friend.","explain":"Together with someone is Xといっしょに."},
-      {"m":"gap","f":"この　かばんは　[高|たか]い（　）、かいませんでした。","o":["から","より","けど","まで"],"a":0,"en":"This bag was expensive, so I didn't buy it.","explain":"The price is the reason for not buying: から \"so\". けど \"but\" would mean the opposite."},
+      {"m":"gap","f":"この　かばんは　[高|たか]い（　）、かいませんでした。","o":["から","より","に","まで"],"a":0,"en":"This bag was expensive, so I didn't buy it.","explain":"The price is the reason for not buying: から \"so\". より compares, まで marks a limit, and に can't follow an adjective."},
       {"m":"gap","f":"あしたは　[雨|あめ]が　ふる（　）。","o":["でしょう","ましょう","ください","ています"],"a":0,"en":"It will probably rain tomorrow.","explain":"A guess about tomorrow: dictionary form + でしょう. ましょう / ください / ています need other verb forms."},
       {"m":"gap","f":"へやに　だれ（　）いません。","o":["を","も","へ","で"],"a":1,"en":"There is nobody in the room.","explain":"だれも + a negative verb = nobody."},
       {"m":"gap","f":"しゅくだいを　して（　）、テレビを　[見|み]ます。","o":["より","ので","から","まで"],"a":2,"en":"I watch TV after doing my homework.","explain":"て-form + から = after doing. ので follows the plain form (するので), not して."},
@@ -122,7 +122,7 @@ CATALOG.add([
      grammar: [
       {"m":"gap","f":"えきまで　バス（　）[行|い]きます。","o":["で","を","に","と"],"a":0,"en":"I go to the station by bus.","explain":"The means of transport takes で: バスで."},
       {"m":"gap","f":"わたしの　へやは　あねの　へや（　）ひろいです。","o":["まで","より","だけ","から"],"a":1,"en":"My room is bigger than my older sister's room.","explain":"Comparing two things: A は B より + adjective."},
-      {"m":"gap","f":"この　くすりは　[一|いち][日|にち]に　[三|さん]かい　のんで（　）。","o":["たい","ない","ください","ましょう"],"a":2,"en":"Please take this medicine three times a day.","explain":"て-form + ください makes a request; ましょう / たい / ない don't follow the て-form."},
+      {"m":"gap","f":"この　くすりは　[一|いち][日|にち]に　[三|さん]かい　のんで（　）。","o":["たい","です","ください","ましょう"],"a":2,"en":"Please take this medicine three times a day.","explain":"て-form + ください makes a request. たい and ましょう join the ます-stem (のみたい, のみましょう), and です can't follow a verb's て-form."},
       {"m":"gap","f":"もう　[九|く][時|じ]ですから、はやく　ねた（　）が　いいですよ。","o":["とき","あと","まえ","ほう"],"a":3,"en":"It's already nine, so you had better go to bed early.","explain":"Advice: た-form + ほうがいい."},
       {"m":"gap","f":"わたしは　まだ　ひるごはんを　[食|た]べて（　）。","o":["ください","から","いません","まで"],"a":2,"en":"I haven't had lunch yet.","explain":"まだ + 〜ていません = not yet."},
       {"m":"gap","f":"あの　みせの　パンは　とても　おいしかった（　）。","o":["ます","です","ません","でした"],"a":1,"en":"The bread at that shop was very good.","explain":"The past of an い-adjective is おいしかったです; でした is never added to an い-adjective."},
@@ -191,7 +191,7 @@ CATALOG.add([
      grammar: [
       {"m":"gap","f":"まいにち　[七|しち][時|じ]（　）おきます。","o":["が","で","に","を"],"a":2,"en":"I get up at seven every day.","explain":"A clock time takes に."},
       {"m":"gap","f":"この　[本|ほん]は　わたし（　）です。","o":["を","に","が","の"],"a":3,"en":"This book is mine.","explain":"わたしの = mine."},
-      {"m":"gap","f":"[山川|やまかわ]さん、あした　いっしょに　えいがを　[見|み]（　）か。","o":["ました","たい","ません","て"],"a":2,"en":"Mr. Yamakawa, would you like to see a movie together tomorrow?","explain":"An invitation: 〜ませんか. ましたか is past, but the plan is for tomorrow."},
+      {"m":"gap","f":"[山川|やまかわ]さん、あした　いっしょに　えいがを　[見|み]（　）か。","o":["ました","に","ません","て"],"a":2,"en":"Mr. Yamakawa, would you like to see a movie together tomorrow?","explain":"An invitation: 〜ませんか. ましたか is past, but the plan is for tomorrow; に and て can't end the sentence before か."},
       {"m":"gap","f":"きょうしつで　たばこを　すわないで（　）。","o":["ます","ください","たい","ません"],"a":1,"en":"Please don't smoke in the classroom.","explain":"ない-form + でください = please don't."},
       {"m":"gap","f":"この　へやは　しずか（　）、きれいです。","o":["く","に","な","で"],"a":3,"en":"This room is quiet and clean.","explain":"A な-adjective joins the next one with で."},
       {"m":"order","s":"s:own:n5-order-kaban-yori","star":2,"o":[0,3,1,2]},
