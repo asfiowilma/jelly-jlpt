@@ -93,6 +93,21 @@ QUnit.module('buildExercises', {
     assert.ok(kya.some(function (x) { return x.char.charAt(0) === 'き' || x.char.charAt(0) === 'ぎ'; }), 'きゃ → きゅ/きょ/ぎゃ…');
   });
 
+  QUnit.test('P2-3 kana pick / read options use only kana learned so far', function (assert) {
+    buildUnits(PLAN, CATALOG).filter(function (u) { return u.kind === 'kana'; }).forEach(function (u) {
+      var ctx = quizContext(u), learned = learnedKana(u);
+      ctx.items.filter(function (it) { return it.kind === 'kana'; }).forEach(function (k) {
+        formsFor(k, ctx).filter(function (f) { return f.name === 'kanaPick'; }).forEach(function (f) {
+          for (var r = 0; r < 3; r++) {
+            var ex = f.make();
+            (ex ? ex.options : []).forEach(function (o) { if (!learned[o]) assert.ok(false, u.id + ' ' + k.romaji + ' offers unlearned ' + o); });
+          }
+        });
+      });
+    });
+    assert.ok(true);
+  });
+
   QUnit.test('N5 lessons teaching a conjugation form ask for that form of one of their verbs', function (assert) {
     ['g:te-form', 'g:nai-form', 'g:ta-form'].forEach(function (gid) {
       var u = buildUnits(PLAN, CATALOG).filter(function (x) {

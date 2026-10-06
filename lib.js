@@ -292,13 +292,15 @@ var KANA_LOOKALIKES = ['あおめぬ', 'いりこに', 'うらつ', 'きさち',
 function kanaBase(ch) { return ch.normalize('NFD').charAt(0); } // が → か, ぱ → は
 // kanaDistractors(k, n, pool): n same-script kana of the same size (single / combo)
 // whose romaji can't be confused with k's: look-alikes and dakuten siblings first
-// (し/つ, か/が, きゃ/きゅ, しゃ/ちゃ), then the unit's own kana (pool), then any.
-function kanaDistractors(k, n, pool) {
+// (し/つ, か/が, きゃ/きゅ, しゃ/ちゃ), then the unit's own kana (pool), then any. learned ({ char:
+// true }, optional): kana not learned yet come only after every learned one (audit P2-3).
+function kanaDistractors(k, n, pool, learned) {
   var first = k.char.charAt(0), small = k.char.slice(1);
   var like = KANA_LOOKALIKES.filter(function (s) { return s.indexOf(kanaBase(first)) >= 0; }).join('');
   var tier = function (x) {
     var f = x.char.charAt(0);
     var sameSmall = x.char.slice(1) === small;
+    if (learned && !learned[x.char]) return 4;
     if (like.indexOf(f) >= 0 && sameSmall) return 0; // シ → ツ before ジ/ヅ
     if (kanaBase(f) === kanaBase(first) || like.indexOf(kanaBase(f)) >= 0 && sameSmall) return 1;
     return pool.indexOf(x) >= 0 ? 2 : 3;
@@ -307,7 +309,7 @@ function kanaDistractors(k, n, pool) {
     return x.script === k.script && x.id !== k.id && x.char.length === k.char.length &&
       x.answers.indexOf(k.romaji) < 0 && k.answers.indexOf(x.romaji) < 0;
   });
-  return [0, 1, 2, 3].reduce(function (acc, t) {
+  return [0, 1, 2, 3, 4].reduce(function (acc, t) {
     return acc.concat(rndShuffle(cands.filter(function (x) { return tier(x) === t; })));
   }, []).slice(0, n);
 }
@@ -1153,7 +1155,7 @@ function formsFor(item, ctx) {
   if (item.kind === 'kana') {
     var k = item;
     var mcKana = function (toRomaji) {
-      var d = kanaDistractors(k, 8, ctx.items.filter(function (x) { return x.kind === 'kana'; }));
+      var d = kanaDistractors(k, 8, ctx.items.filter(function (x) { return x.kind === 'kana'; }), ctx.kanaMode ? ctx.learned : null);
       var right = toRomaji ? k.romaji : k.char;
       // ず / づ share a romaji: keep the first 3 distinct option texts
       var texts = [right];
