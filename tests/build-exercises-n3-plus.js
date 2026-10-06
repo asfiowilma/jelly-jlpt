@@ -55,7 +55,7 @@ QUnit.module('buildExercises (N3+ types)', {
     var meaning = {};
     pm.pairs.forEach(function (p) { meaning[p[0]] = p[1]; });
     pm.items.forEach(function (w) { assert.ok(pm.options.indexOf(meaning[w]) >= 0, w + ' maps to an option'); });
-    assert.strictEqual(meaning['上げる'], 'to raise');
+    assert.strictEqual(meaning['あげる'], 'to raise', 'kanji not taught yet: shown in kana');
   });
 
   QUnit.test('conjugation: form from unit index, uses pos; non-verbs skipped', function (assert) {

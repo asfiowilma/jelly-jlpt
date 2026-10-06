@@ -641,6 +641,7 @@ var DISTRACTOR_RULES = {
 // strings, best first. pool = items of target's kind; field = DISTRACTOR_RULES key.
 // opts: taught ({ id: true }, preferred: learners know them), answer (correct
 // text, default the field's text of target), level (when target has none).
+// shown(item): how a word option is spelled (displayWord), field 'word' only.
 // Ranking: level distance (same, then ±1, further only if nothing else), then the
 // field's score; random within a tie. No cap or recency penalty on how often a word is a wrong
 // option (owner, ticket 43): a good trap stays available.
@@ -661,7 +662,7 @@ function pickDistractors(target, pool, field, n, opts) {
   }
   pool.forEach(function (it) {
     if (it.id === target.id || it.kind !== target.kind || isBound(it)) return; // a bare suffix is no option (ticket 40)
-    rule.texts(it, ans).forEach(function (text) { cands.push({ it: it, text: text, taught: !!taught[it.id] }); });
+    (opts.shown && field === 'word' ? [opts.shown(it)] : rule.texts(it, ans)).forEach(function (text) { cands.push({ it: it, text: text, taught: !!taught[it.id] }); });
   });
   if (rule.fakes) readingFakes(kataToHira(ans)).forEach(function (text) { cands.push({ it: target, text: text, taught: true }); });
   var ok = rndShuffle(cands).filter(function (c) {
@@ -1135,8 +1136,9 @@ function boundForms(v, ctx, f, typing) {
 function formsFor(item, ctx) {
   var rank = ctx.rank, opt = { taught: ctx.taught, level: ctx.unit.level };
   var mc = function (type, prompt, question, field, pool, answer, extra) {
-    answer = answer || DISTRACTOR_RULES[field].texts(item, '')[0];
-    var d = pickDistractors(item, pool, field, 3, Object.assign({ answer: answer }, opt));
+    var word = field === 'word';
+    answer = answer || (word ? displayWord(item, ctx.taughtKanji) : DISTRACTOR_RULES[field].texts(item, '')[0]);
+    var d = pickDistractors(item, pool, field, 3, Object.assign({ answer: answer }, opt, word ? { shown: function (x) { return displayWord(x, ctx.taughtKanji); } } : {}));
     if (d.length < 2) return null;
     var opts = rndShuffle([answer].concat(d));
     return Object.assign({ type: type, prompt: prompt, question: question, options: opts, correct: opts.indexOf(answer) }, extra);
@@ -1320,14 +1322,14 @@ function formsFor(item, ctx) {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       forms.push(f('listen', false, function () { return mc('listen', 'Listen and choose the meaning:', shownWord(v), 'gloss', twinPool, null, { audio: v.reading || v.word }); }));
     }
-    var free = ctx.vocab.filter(function (x) { return x !== v && !isBound(x); });
+    var free = ctx.vocab.filter(function (x) { return x !== v && !isBound(x) && shownWord(x) !== shownWord(v); });
     if (rank >= 2 && free.length >= 3) forms.push(f('pairMatch', false, function () {
-      var pairs = [v].concat(rndShuffle(free).slice(0, 3)).map(function (x) { return [x.word, glossText(x)]; });
+      var pairs = [v].concat(rndShuffle(free).slice(0, 3)).map(function (x) { return [shownWord(x), glossText(x)]; });
       var ans = pairs.map(function (p) { return p[1]; });
       return { type: 'pair_match', prompt: 'Match each word to its meaning:', question: '', items: rndShuffle(pairs.map(function (p) { return p[0]; })),
         answers: ans, pairs: pairs, options: rndShuffle(ans) };
     }));
-    if (rank >= 3) forms.push(f('synonym', false, function () { return mc('synonym', 'Choose the closest meaning to: ' + v.word, v.word, 'gloss', ctx.vPool); }));
+    if (rank >= 3) forms.push(f('synonym', false, function () { return mc('synonym', 'Choose the closest meaning to: ' + shownWord(v), shownWord(v), 'gloss', ctx.vPool); }));
     return forms;
   }
 
