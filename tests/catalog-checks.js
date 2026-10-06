@@ -237,9 +237,10 @@ QUnit.module('catalog checks', function () {
         (Array.from(t).length === 1 && items['k:' + t] && kanjiHira(items['k:' + t]).indexOf(r) >= 0);
       if (!ok) err('ruby ' + t + '|' + r + ' not backed by a used word, name or kanji reading');
     }
-    // Katakana words: each one a used vocab word or a name.
+    // Katakana words: each one a used vocab word, a name, or a dialogue's declared (glossed) bridge word.
+    var bridged = (it.bridge || []).map(function (b) { return b.text; });
     (stripRuby(marked).match(/[ァ-ヺ][ァ-ヺー]+/g) || []).forEach(function (w) {
-      if (names.indexOf(w) < 0 && !vocab.some(function (x) { return x.word === w || x.reading === w; })) err('katakana ' + w + ' not in uses or names');
+      if (names.indexOf(w) < 0 && bridged.indexOf(w) < 0 && !vocab.some(function (x) { return x.word === w || x.reading === w; })) err('katakana ' + w + ' not in uses or names');
     });
     if (it.verified) {
       if (it.sources.join() !== 'own') err("verified own text must be sources ['own']");
@@ -255,7 +256,10 @@ QUnit.module('catalog checks', function () {
     utterance: { n: 3, question: true, spoken: true }, quick: { n: 3, question: false, spoken: true }
   };
   // Lesson dialogues: canon names only (the 14 recurring characters of tools/audio/cast.json, as spoken). Never invent a given name for the cast.
-  var DIALOGUE_NAMES = ['フリーレン', 'ゴジョウ', 'カカシ', 'ルルーシュ', 'ヒナタ', 'エミリア', 'サスケ', 'サクラ', 'ヨル', 'アーニャ', 'キルア', 'マオマオ', 'ナミ', 'サンジ'];
+  // Other canon characters of the same series may be mentioned (never speak): listed below by series.
+  var DIALOGUE_NAMES = ['フリーレン', 'ゴジョウ', 'カカシ', 'ルルーシュ', 'ヒナタ', 'エミリア', 'サスケ', 'サクラ', 'ヨル', 'アーニャ', 'キルア', 'マオマオ', 'ナミ', 'サンジ'].concat(
+    ['ナルト'] // Naruto
+  );
   function dialogueErrors(it, items) {
     var e = [];
     function err(msg) { e.push(it.id + ': ' + msg); }
