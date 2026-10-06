@@ -158,6 +158,25 @@ QUnit.module('quiz difficulty model', {
     assert.ok(n > 10, n + ' gap questions checked');
   });
 
+  QUnit.test('P1-2 typed kanji reading accepts on, kun, extra and bare kun stems', function (assert) {
+    var units = this.units;
+    var ask = function (ch) {
+      var k = CATALOG.items['k:' + ch];
+      var u = units.filter(function (x) { return (x.kanji || []).indexOf(k) >= 0; })[0];
+      return formsFor(k, quizContext(u)).filter(function (f) { return f.name === 'kanjiReadType'; })[0].make();
+    };
+    var ex = ask('長');
+    ['ちょう', 'チョウ', 'ながい', 'なが'].forEach(function (r) { assert.ok(answerIsRight(ex, r), '長 ' + r); });
+    assert.notOk(answerIsRight(ex, 'たかい'), '長 is not たかい');
+    assert.ok(answerIsRight(ask('高'), 'こう') && answerIsRight(ask('高'), 'たか'), '高 こう / たか');
+    assert.ok(answerIsRight(ask('行'), 'おこなう'), '行 extra kun おこなう');
+    assert.ok(answerIsRight(ask('日'), 'じつ'), '日 extra on じつ');
+    catalogOf('kanji').forEach(function (k) {
+      var e = ask(k.char);
+      kanjiValidReadings(k).forEach(function (r) { if (!answerIsRight(e, r)) assert.ok(false, k.char + ' rejects ' + r); });
+    });
+  });
+
   QUnit.test('P0-4 no gap option set holds two patterns that fit the same slot', function (assert) {
     // audit groups: siblings only the English note tells apart (見てもいい / 見なくちゃ, ７時から / ７時まで)
     var groups = [['g:mashou', 'g:masen-ka', 'g:mashou-ka'], ['g:te-mo-ii', 'g:te-wa-ikemasen', 'g:nai-de-kudasai',

@@ -505,9 +505,12 @@ var GRAMMAR_CONFUSABLES = [['g:wa-desu', 'g:ga', 'g:mo'], ['g:de', 'g:ni', 'g:ni
   ['g:no-ga-suki', 'g:no-ga-jouzu', 'g:no-ga-heta'], ['g:ne', 'g:yo', 'g:ka'], ['g:te-iru', 'g:te-kudasai', 'g:te-kara']];
 
 function hiraToKata(s) { return s.replace(/[ぁ-ゖ]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) + 0x60); }); }
-// kanjiValidReadings: every reading of k in hiragana, incl. extra and kun stems (た of た.べる).
+// kanjiValidReadings: every reading of k in hiragana, incl. extra (okurigana glued) and the bare
+// stems of kun / extra readings (た of た.べる), deduped.
 function kanjiValidReadings(k) {
-  return kanjiReadings(k).concat(k.extra || [], (k.kun || []).map(function (r) { return r.split('.')[0]; })).map(kataToHira);
+  var kunLike = (k.kun || []).concat(k.extra || []);
+  return kanjiReadings(k).concat(kunLike.map(function (r) { return r.replace('.', ''); }), kunLike.map(function (r) { return r.split('.')[0]; }))
+    .map(kataToHira).filter(function (r, i, a) { return a.indexOf(r) === i; });
 }
 function scriptShape(s) { return hasKanji(s) ? 'kanji' : /[ァ-ヶ]/.test(s) ? 'kata' : 'hira'; }
 function editDistance(a, b) {
@@ -1254,9 +1257,11 @@ function formsFor(item, ctx) {
   if (item.kind === 'kanji') {
     var kj = item, rs = kanjiReadings(kj);
     return [
-      // any one reading; on accepted in hiragana too (no sample reading as placeholder: it'd be an answer)
+      // any one reading (on, kun, extra; kun with or without okurigana), on in katakana or hiragana
+      // (no sample reading as placeholder: it'd be an answer)
       f('kanjiReadType', true, function () {
-        return typing('Type the reading for this character:', kj.char, rs.concat((kj.on || []).map(kataToHira)), 'reading…', KANA_INPUT);
+        var ons = (kj.on || []).concat((kj.extra || []).filter(function (r) { return /^[ァ-ヶ]/.test(r); }));
+        return typing('Type the reading for this character:', kj.char, ons.concat(kanjiValidReadings(kj)), 'reading…', KANA_INPUT);
       }),
       f('kanjiMeanType', true, function () { return typing('What does this kanji mean? (type in English)', kj.char, meaningAnswers(kj.meaning).concat(kj.accept || []), 'English meaning...'); }),
       f('kanjiReadMc', false, function () {
