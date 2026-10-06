@@ -146,7 +146,7 @@ function resetAllData() {
   if (_achTimer) { clearTimeout(_achTimer); _achTimer = null; }
   _achMode = 'retro';
   disconnectSync(true);
-  var keys = DEVICE_PREF_KEYS.concat([ACH_SEEN_KEY, WELCOME_SEEN_KEY, PERSIST_KEY, SUPPORT_KEY, RECENT_Q_KEY, MOCK_RUN_KEY]);
+  var keys = DEVICE_PREF_KEYS.concat([ACH_SEEN_KEY, WELCOME_SEEN_KEY, PERSIST_KEY, SUPPORT_KEY, RECENT_Q_KEY, MOCK_RUN_KEY, DIALOGS_KEY]);
   return Store.wipe().then(function () {
     if (_achTimer) { clearTimeout(_achTimer); _achTimer = null; }
     keys.forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });

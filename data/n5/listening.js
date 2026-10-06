@@ -8,6 +8,10 @@
 //   utterance = 発話表現: the narrator describes a situation (the test shows a picture; here it is
 //               spoken) and asks なんと いいますか; 3 options, heard only.
 //   quick     = 即時応答: one short line, then 3 replies, heard only; no question.
+//   dialogue  = not a test format: a short scene shown in a lesson unit (unit.dialogue, components/dialogue-section.js).
+//               Fields: title, goal, scene, cast { M, M2 }, lines [{ speaker M | M2, furigana, en }], bridge (max 3 words the
+//               unit has not taught: { text, gloss, ctx?, id? }), remix (the Remix question appended to the unit quiz),
+//               names, uses. Two men, so the second speaker is M2 (own voice archetype, tools/audio/README.md).
 // Audio is pre-rendered TTS clips (audio/manifest.js, spoken from the kana readings); the browser's
 // speech synthesis is the fallback when a clip is missing or cannot load.
 //
@@ -637,6 +641,59 @@ CATALOG.add([
 
   L({id: "l:n5-how-many-tickets",format: "point",lines: [{speaker: "N",furigana: "えいがかんで　[男|おとこ]の　[人|ひと]と　[女|おんな]の　[人|ひと]が　[話|はな]して　います。"},{speaker: "M",furigana: "えいがの　きっぷを　ください。おとな　[二|に]まいと　こども　[一|いち]まいです。"},{speaker: "F",furigana: "こどもは　[何|なん]さいですか。"},{speaker: "M",furigana: "[五|ご]さいです。"},{speaker: "F",furigana: "[六|ろく]さいまでは　きっぷは　いりません。"},{speaker: "M",furigana: "そうですか。じゃあ、おとなの　きっぷだけ　ください。"}],question: "[男|おとこ]の　[人|ひと]は　きっぷを　[何|なん]まい　かいますか。",options: ["[一|いち]まい","[二|に]まい","[三|さん]まい","[五|ご]まい"],answer: 1,en: "Narrator: At a cinema, a man and a woman are talking. How many tickets will the man buy? — M: Movie tickets, please: two adults and one child. F: How old is the child? M: Five. F: Children up to six don't need a ticket. M: I see. Then just the adult tickets, please. — How many tickets will the man buy?",explain: "He first asks for three, but the child is five and children up to six need no ticket, so he buys only the two adult tickets.",uses: ["g:to","g:ga","g:te-iru","v:男|おとこ","v:女|おんな","v:人|ひと","v:話す|はなす","g:de","g:no","g:wo","g:wa-desu","g:ka","g:made","g:masen","g:dake","g:masu","v:映画館|えいがかん","v:映画|えいが","v:切符|きっぷ","v:ください|ください","v:大人|おとな","v:二|に","v:枚|まい","v:子供|こども","v:一|いち","v:何|なん","v:歳|さい","v:五|ご","v:六|ろく","v:要る|いる","v:そう|そう","v:じゃあ|じゃあ","v:三|さん","v:買う|かう","k:男","k:人","k:女","k:話","k:二","k:一","k:何","k:五","k:六","k:三"],verified: true}),
 
-  L({id: "l:n5-shop-sunday",format: "point",lines: [{speaker: "N",furigana: "みせで　[男|おとこ]の　[人|ひと]と　[女|おんな]の　[人|ひと]が　[話|はな]して　います。"},{speaker: "M",furigana: "この　みせは　[何|なん][時|じ]まで　あいて　いますか。"},{speaker: "F",furigana: "[月|げつ]ようびから　[土|ど]ようびまでは　よる　[九|く][時|じ]までです。"},{speaker: "M",furigana: "[日|にち]ようびも　[九|く][時|じ]までですか。"},{speaker: "F",furigana: "[日|にち]ようびは　[六|ろく][時|じ]までです。"}],question: "この　みせは　[日|にち]ようびは　[何|なん][時|じ]まで　あいて　いますか。",options: ["[六|ろく][時|じ]","[七|しち][時|じ]","[八|はち][時|じ]","[九|く][時|じ]"],answer: 0,en: "Narrator: In a shop, a man and a woman are talking. Until what time is this shop open on Sundays? — M: Until what time is this shop open? F: From Monday to Saturday, until nine in the evening. M: Is it until nine on Sundays too? F: On Sundays it is until six. — Until what time is this shop open on Sundays?",explain: "Nine o'clock is for Monday to Saturday; for Sunday the woman says 六時までです.",uses: ["g:to","g:ga","g:te-iru","v:男|おとこ","v:女|おんな","v:人|ひと","v:話す|はなす","g:de","g:wa-desu","g:made","g:ka","g:kara","g:mo","v:この|この","v:店|みせ","v:何|なん","v:時|じ","v:開く|あく","v:月曜日|げつようび","v:土曜日|どようび","v:夜|よる","v:九|く","v:日曜日|にちようび","v:六|ろく","v:七|しち","v:八|はち","k:男","k:人","k:女","k:話","k:何","k:時","k:月","k:土","k:九","k:日","k:六","k:七","k:八"],verified: true})
+  L({id: "l:n5-shop-sunday",format: "point",lines: [{speaker: "N",furigana: "みせで　[男|おとこ]の　[人|ひと]と　[女|おんな]の　[人|ひと]が　[話|はな]して　います。"},{speaker: "M",furigana: "この　みせは　[何|なん][時|じ]まで　あいて　いますか。"},{speaker: "F",furigana: "[月|げつ]ようびから　[土|ど]ようびまでは　よる　[九|く][時|じ]までです。"},{speaker: "M",furigana: "[日|にち]ようびも　[九|く][時|じ]までですか。"},{speaker: "F",furigana: "[日|にち]ようびは　[六|ろく][時|じ]までです。"}],question: "この　みせは　[日|にち]ようびは　[何|なん][時|じ]まで　あいて　いますか。",options: ["[六|ろく][時|じ]","[七|しち][時|じ]","[八|はち][時|じ]","[九|く][時|じ]"],answer: 0,en: "Narrator: In a shop, a man and a woman are talking. Until what time is this shop open on Sundays? — M: Until what time is this shop open? F: From Monday to Saturday, until nine in the evening. M: Is it until nine on Sundays too? F: On Sundays it is until six. — Until what time is this shop open on Sundays?",explain: "Nine o'clock is for Monday to Saturday; for Sunday the woman says 六時までです.",uses: ["g:to","g:ga","g:te-iru","v:男|おとこ","v:女|おんな","v:人|ひと","v:話す|はなす","g:de","g:wa-desu","g:made","g:ka","g:kara","g:mo","v:この|この","v:店|みせ","v:何|なん","v:時|じ","v:開く|あく","v:月曜日|げつようび","v:土曜日|どようび","v:夜|よる","v:九|く","v:日曜日|にちようび","v:六|ろく","v:七|しち","v:八|はち","k:男","k:人","k:女","k:話","k:何","k:時","k:月","k:土","k:九","k:日","k:六","k:七","k:八"],verified: true}),
+
+  // ── dialogue (lesson dialogs, pilot): one scene per lesson unit, shown in the lesson ─────
+  // Not a test format: no question / options / answer. See the header and components/dialogue-section.js.
+  L({ id: 'l:n5-dlg-team-seven', format: 'dialogue',
+    title: 'First day of Team 7', goal: "You can say who you are and ask someone's name.",
+    scene: 'Kakashi-sensei meets his new student.',
+    cast: { M: { name: 'Kakashi', jp: 'カカシ', role: 'Teacher' }, M2: { name: 'Sasuke', jp: 'サスケ', role: 'Student' } },
+    lines: [
+      { speaker: 'M', furigana: 'はじめまして。わたしは　カカシです。せんせいです。', en: 'Nice to meet you. I am Kakashi. I am a teacher.' },
+      { speaker: 'M', furigana: 'おなまえは？', en: 'Your name?' },
+      { speaker: 'M2', furigana: '……サスケです。', en: '...Sasuke.' },
+      { speaker: 'M', furigana: 'サスケくんは　[学生|がくせい]ですね。', en: 'You are a student, right?' },
+      { speaker: 'M2', furigana: '……ええ。', en: '...Yeah.' },
+      { speaker: 'M', furigana: 'よろしく、サスケくん。', en: 'Looking forward to it.' },
+      { speaker: 'M2', furigana: '……よろしく　おねがいします。', en: '...Please take care of me.' }
+    ],
+    bridge: [
+      { text: 'お', ctx: 'おなまえ', gloss: 'お + a name: polite, for the other person\u2019s things' },
+      { text: 'くん', gloss: 'like さん; what a teacher calls a boy' },
+      { text: 'ね', ctx: 'ですね', id: 'g:ne', gloss: 'ね = right? / isn\u2019t it? (taught a few lessons later)' }
+    ],
+    remix: { scene: 'Same scene, new student. Sakura walks in and introduces herself.', en: 'I am Sakura. I am a student.',
+      chunks: ['サクラです。', 'わたしは', 'がくせいです。', 'せんせいです。'], answer: ['サクラです。', 'わたしは', 'がくせいです。'],
+      explain: 'がくせいです means "I am a student"; せんせいです would say Sakura is a teacher.' },
+    names: ['カカシ', 'サスケ', 'サクラ'],
+    notes: 'uses v:ええ|ええ, which is unverified, so the dialogue is too. The course teaches polite form; a real teacher and student would be more casual.',
+    uses: ['g:wa-desu', 'v:私|わたし', 'v:先生|せんせい', 'v:学生|がくせい', 'v:名前|なまえ', 'v:ええ|ええ', 'g:ne', 'k:学', 'k:生'],
+    verified: false }),
+
+  L({ id: 'l:n5-dlg-gojo-lunch', format: 'dialogue',
+    title: 'Lunch with Gojo-sensei', goal: 'You can say what you eat and drink, and offer things.',
+    scene: 'Lunch break. Gojo-sensei takes his student Itadori out to eat.',
+    cast: { M: { name: 'Gojo', jp: 'ごじょう', role: 'Teacher' }, M2: { name: 'Itadori', jp: 'いたどり', role: 'Student' } },
+    lines: [
+      { speaker: 'M', furigana: 'いたどりくん、なにを　のみますか。', en: 'Itadori, what are you drinking?' },
+      { speaker: 'M2', furigana: 'ぼくは　ぎゅうにゅうを　のみます。', en: "I'll have milk." },
+      { speaker: 'M', furigana: 'ぎゅうにゅう？　わたしは　おちゃを　のみます。', en: "Milk? I'm having tea." },
+      { speaker: 'M', furigana: 'これは　たべものですよ。[食|た]べますか。', en: 'This is food. Will you eat?' },
+      { speaker: 'M2', furigana: 'ええ、[食|た]べます！いただきます。', en: "Yes, I will! Let's eat." },
+      { speaker: 'M', furigana: 'いたどりくんは　[食|た]べますね。', en: 'You really do eat, huh.' }
+    ],
+    bridge: [
+      { text: 'を', id: 'g:wo', gloss: 'を marks what you eat or drink (taught later)' },
+      { text: 'くん', gloss: 'like さん; what a teacher calls a boy' },
+      { text: 'ぼく', gloss: 'I, me: a boy\u2019s or man\u2019s casual word' }
+    ],
+    remix: { scene: 'Same lunch, new order. Now Itadori picks tea and food.', en: 'I drink tea. I eat the food.',
+      chunks: ['おちゃを', 'のみます。', 'たべものを', 'たべます。', 'のみますか。'], answer: ['おちゃを', 'のみます。', 'たべものを', 'たべます。'],
+      explain: 'Each を stays glued to its noun, and ます ends the verb. のみますか would ask a question instead of saying what you do.' },
+    names: ['いたどり', 'ごじょう'],
+    notes: 'uses v:ええ|ええ, which is unverified, so the dialogue is too. The course teaches polite form; a real teacher and student would be more casual.',
+    uses: ['g:masu', 'g:wa-desu', 'g:ka', 'g:yo', 'g:ne', 'g:wo', 'v:何|なに', 'v:私|わたし', 'v:飲む|のむ', 'v:牛乳|ぎゅうにゅう', 'v:お茶|おちゃ', 'v:これ|これ', 'v:食べ物|たべもの', 'v:食べる|たべる', 'v:ええ|ええ', 'k:食'],
+    verified: false }),
 ]);
 }());

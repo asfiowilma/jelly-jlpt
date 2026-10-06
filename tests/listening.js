@@ -168,7 +168,7 @@ QUnit.module('listening', function () {
   QUnit.test('clips: every script line and spoken option carries its pre-rendered clip', function (assert) {
     if (typeof AUDIO_MANIFEST === 'undefined') { assert.ok(true, 'no manifest loaded: speech only'); return; }
     var bad = [];
-    listeningFor('N5').forEach(function (it) {
+    listeningFor('N5').filter(function (it) { return it.format !== 'dialogue'; }).forEach(function (it) { // dialogues have their own check (tests/dialogue.js)
       var files = AUDIO_MANIFEST.tracks[it.id], q = listenQuestion(it, {});
       if (!files) { bad.push(it.id + ': no track'); return; }
       if (q.script.length !== files.length) bad.push(it.id + ': ' + q.script.length + ' lines, ' + files.length + ' clips');

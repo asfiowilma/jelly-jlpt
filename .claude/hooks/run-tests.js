@@ -61,6 +61,7 @@ var appFiles = [
   path.join("components", "kanji-section.js"),
   path.join("components", "kana-section.js"),
   path.join("components", "vocab-section.js"),
+  path.join("components", "dialogue-section.js"),
   path.join("components", "quiz-shell.js"),
   path.join("components", "exercises.js"),
   path.join("components", "mock-exam.js"),
@@ -259,6 +260,59 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     withVocab.forEach(function (u) {
       try { VocabSection({ unit: u }); } catch (e) { a.ok(false, u.id + ": " + e.message); }
     });
+  });
+
+  test("React render: DialogueSection() renders collapsed, open and heard; Replay plays every line; open state is remembered", function (a) {
+    var withD = units.filter(function (u) { return u.dialogue; });
+    a.equal(withD.length, 2, "two pilot lessons carry a dialogue");
+    var orig = { useState: React.useState, useRef: React.useRef, useEffect: React.useEffect, useMemo: React.useMemo, createElement: React.createElement, setTimeout: global.setTimeout };
+    var origSpeech = window.speechSynthesis, origUtt = global.SpeechSynthesisUtterance, origLs = global.localStorage, mem = {}, spoken = [];
+    global.localStorage = { getItem: function (k) { return k in mem ? mem[k] : null; }, setItem: function (k, v) { mem[k] = String(v); }, removeItem: function (k) { delete mem[k]; } };
+    window.speechSynthesis = { getVoices: function () { return [{ name: "Ichiro", lang: "ja-JP", localService: true }, { name: "Keita", lang: "ja-JP", localService: true }]; },
+      cancel: function () {}, speak: function (u) { spoken.push(u); if (u.onend) u.onend(); } };
+    global.SpeechSynthesisUtterance = function (text) { this.text = text; };
+    try {
+      withD.forEach(function (u) {
+        var state = [], k = 0, els = [], refs = [], r = 0, effects = [];
+        React.useState = function (init) { var i = k++; if (!(i in state)) state[i] = typeof init === "function" ? init() : init; return [state[i], function (v) { state[i] = typeof v === "function" ? v(state[i]) : v; }]; };
+        React.useRef = function (init) { var i = r++; if (!(i in refs)) refs[i] = { current: init === undefined ? null : init }; return refs[i]; };
+        React.useMemo = function (fn) { return fn(); };
+        React.useEffect = function (fn) { effects.push(fn); };
+        React.createElement = function (type, props) { var el = { type: type, props: props || {}, children: [].slice.call(arguments, 2) }; els.push(el); return el; };
+        var render = function () { k = 0; r = 0; els = []; effects = []; DialogueSection({ unit: u, showFurigana: true, toggleFurigana: noop }); effects.forEach(function (fn) { fn(); }); };
+        var cls = function (re) { return els.filter(function (el) { return re.test(el.props.className || ""); }); };
+        var text = function (el) { return [].concat(el.children).map(function (c) { return typeof c === "string" ? c : c && c.children ? text(c) : ""; }).join(""); };
+        try { global.localStorage && global.localStorage.removeItem && global.localStorage.removeItem(DIALOGS_KEY); } catch (e) {}
+        render();
+        a.equal(cls(/dlg-hero/).length, 1, u.id + ": collapsed hero");
+        a.equal(cls(/dlg-msg/).length, 0, u.id + ": no script before Play / Read first");
+        a.ok(cls(/dlg-side/).length === 1 && cls(/dlg-cast/).length === 2, u.id + ": cast column present (CSS hides it on a phone)");
+        a.ok(!cls(/dlg-heard/).length && /Play/.test(text(cls(/dlg-play/)[0])), u.id + ": Play, not heard yet");
+        cls(/dlg-ghost/)[0].props.onClick(); render(); // Read first
+        a.equal(cls(/dlg-msg/).length, CATALOG.items[u.dialogue].lines.length, u.id + ": one bubble per line");
+        a.equal(spoken.length, 0, u.id + ": Read first is silent");
+        a.ok(cls(/dlg-nw|dlg-br/).length > 0, u.id + ": marks rendered");
+        cls(/dlg-nw/)[0].props.onClick({ stopPropagation: noop }); render();
+        a.ok(cls(/dlg-gloss g-nw/).length === 1, u.id + ": tapping a new word fills the gloss strip");
+        cls(/dlg-msg/)[1].props.onClick(); render(); // one line
+        a.equal(spoken.length, 1, u.id + ": a tapped line speaks once");
+        a.equal(state[1], false, u.id + ": a single line is not a full play-through");
+        global.setTimeout = function (fn) { fn(); };
+        render();
+        cls(/dlg-tool strong/)[0].props.onClick(); render(); // Replay
+        global.setTimeout = orig.setTimeout;
+        a.equal(spoken.length, 1 + CATALOG.items[u.dialogue].lines.length, u.id + ": Replay speaks every line");
+        a.equal(state[1], true, u.id + ": heard after one full play-through");
+        cls(/dlg-tool/).filter(function (el) { return text(el) === "Collapse"; })[0].props.onClick(); render();
+        a.ok(cls(/dlg-heard/).length === 1 && /Replay/.test(text(cls(/dlg-play/)[0])), u.id + ": collapsed again, Heard, Replay / Read");
+        a.deepEqual(dialogState(u.id), { open: false, heard: true }, u.id + ": remembered on this device");
+        try { global.localStorage && global.localStorage.removeItem && global.localStorage.removeItem(DIALOGS_KEY); } catch (e) {}
+        spoken.length = 0;
+      });
+    } finally {
+      React.useState = orig.useState; React.useRef = orig.useRef; React.useEffect = orig.useEffect; React.useMemo = orig.useMemo; React.createElement = orig.createElement;
+      global.setTimeout = orig.setTimeout; window.speechSynthesis = origSpeech; global.SpeechSynthesisUtterance = origUtt; global.localStorage = origLs;
+    }
   });
 
   test("vocabGroups / vocabHasReading: grouping by part of speech; reading column only for kanji words", function (a) {
@@ -691,6 +745,15 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
             click(/qz-pc r/, right ? oi : (oi + 1) % ex.options.length);
           });
           click(/qz-check/);
+        } else if (ex.type === "reorder") { // Remix: tap chunks in order (a wrong try = the answer reversed); bank tiles follow the built line
+          seen.reorder = true;
+          if (!find(cls(/qz-recap/)).length) errors.push(unit.id + ": remix without its scene recap");
+          var chunks = ex.form === "remix" ? CATALOG.items[ex.itemId].remix.answer.slice() : [];
+          if (!right) chunks.reverse();
+          if (find(cls(/qz-check/))[0].props.disabled !== true) errors.push(unit.id + ": Check enabled before the chunks are placed");
+          chunks.forEach(function (c, n) { click(/qz-tile/, n + ex.items.indexOf(c)); });
+          if (find(cls(/qz-check/))[0].props.disabled) errors.push(unit.id + ": Check disabled with " + chunks.length + " of " + ex.need + " chunks placed");
+          click(/qz-check/);
         } else {
           var input = function (v) { find(function (el) { return el.type === "input"; })[0].props.onChange({ target: { value: v } }); render(); };
           if (ex.others && ex.others.length) {
@@ -771,9 +834,9 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     a.equal(errors.length, 0, errors.slice(0, 8).join("\n"));
     a.ok(retried > 0, retried + " homograph retries played");
     a.ok(overridden > 1, Math.ceil(overridden / 2) + " \"I was right\" overrides played");
-    // ponytail: no "reading" (passage items, ticket 15); tap-to-order "reorder" stays unused
+    // ponytail: no "reading" (passage items, ticket 15); "reorder" is only the Remix question of a dialogue lesson
     // (★ sentence composition is the MC "order" type)
-    ["mc", "listen", "typing", "conjugation", "gap", "pair_match", "fill_blank", "synonym", "kanji_reading",
+    ["reorder", "mc", "listen", "typing", "conjugation", "gap", "pair_match", "fill_blank", "synonym", "kanji_reading",
       "kanji_yomi", "hyouki", "bunmyaku", "order", "iikae", "bunshou", "listen_dialog"].forEach(function (t) {
       a.ok(seen[t], "type " + t + " was played");
     });
@@ -1295,8 +1358,9 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     // Hashes the live catalog (not tracks.json), so a stale export cannot hide a stale clip.
     var assign = function (f) { return JSON.parse(fs.readFileSync(path.join(projectDir, "tools", "audio", f), "utf8")); };
     var man = assign("man-assignments.json"), woman = assign("woman-assignments.json");
-    var tracks = listeningFor("N5").map(function (it) {
-      return { id: it.id, man: (man[it.id] || {}).man || null, woman: (woman[it.id] || {}).woman || null,
+    // a dialogue has no clips until rendered (Web Speech fallback): skipped here while the manifest has no track for it
+    var tracks = listeningFor("N5").filter(function (it) { return it.format !== "dialogue" || AUDIO_MANIFEST.tracks[it.id]; }).map(function (it) {
+      return { id: it.id, man: (man[it.id] || {}).man || null, man2: (man[it.id] || {}).man2 || null, woman: (woman[it.id] || {}).woman || null,
         lines: listeningScript(it).map(function (l) { return { role: l.speaker, say: audioTool.sayText(l.text) }; }) };
     });
     var errs = audioTool.check(projectDir, AUDIO_MANIFEST, tracks);

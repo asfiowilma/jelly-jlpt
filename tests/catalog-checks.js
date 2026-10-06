@@ -72,7 +72,7 @@ QUnit.module('catalog checks', function () {
       if (distinct.length < 2) err('verified needs ≥2 distinct sources');
       if (distinct.indexOf('legacy') >= 0) err("verified can't cite legacy");
     }
-    (REQUIRED[it.kind] || []).forEach(function (f) { if (typeof it[f] !== 'string' || !it[f]) err('missing ' + f); });
+    (it.kind === 'listening' && it.format === 'dialogue' ? ['format'] : REQUIRED[it.kind] || []).forEach(function (f) { if (typeof it[f] !== 'string' || !it[f]) err('missing ' + f); });
     // glosses / meanings are English only: quiz prompts show them (vocab hints go in usage, grammar in notes)
     if (/^(vocab|kanji|grammar)$/.test(it.kind)) [].concat(it.gloss || it.meaning || []).forEach(function (g) {
       if (/[぀-ヿ㐀-鿿～〜]/.test(g)) err('Japanese in gloss/meaning: ' + g);
@@ -254,9 +254,49 @@ QUnit.module('catalog checks', function () {
     task: { n: 4, question: true }, point: { n: 4, question: true },
     utterance: { n: 3, question: true, spoken: true }, quick: { n: 3, question: false, spoken: true }
   };
+  // Lesson dialogues (pilot): canon names only. Never invent a given name for the cast.
+  var DIALOGUE_NAMES = ['カカシ', 'サスケ', 'サクラ', 'ごじょう', 'いたどり'];
+  function dialogueErrors(it, items) {
+    var e = [];
+    function err(msg) { e.push(it.id + ': ' + msg); }
+    if (!/^l:n[1-5]-dlg-[a-z0-9-]+$/.test(it.id)) err('id not l:<level>-dlg-<slug>');
+    ['title', 'goal', 'scene'].forEach(function (f) { if (typeof it[f] !== 'string' || !it[f]) err('missing ' + f); });
+    ['question', 'options', 'answer', 'optionSpeaker'].forEach(function (f) { if (it[f] !== undefined) err('a dialogue has no ' + f); });
+    var cast = it.cast || {}, lines = Array.isArray(it.lines) ? it.lines : [];
+    ['M', 'M2'].forEach(function (k) { if (!cast[k] || !cast[k].name || !cast[k].jp || !cast[k].role) err('cast ' + k + ' needs name, jp, role'); });
+    if (lines.length < 6 || lines.length > 10) err('6-10 lines, has ' + lines.length);
+    if (lines.some(function (l) { return ['M', 'M2'].indexOf(l.speaker) < 0 || !l.furigana || !l.en; })) err('every line needs speaker M / M2, furigana and en');
+    else if (['M', 'M2'].some(function (k) { return !lines.some(function (l) { return l.speaker === k; }); })) err('two speakers talk');
+    var bridge = it.bridge || [];
+    if (bridge.length > 3) err('at most 3 bridge words');
+    var plain = lines.map(function (l) { return stripRuby(l.furigana || ''); }).join('\n');
+    bridge.forEach(function (b) {
+      if (!b.text || !b.gloss) err('bridge word needs text and gloss');
+      else if (plain.indexOf(b.ctx || b.text) < 0) err('bridge ' + b.text + ' not in the lines');
+      if (b.id && (it.uses || []).indexOf(b.id) < 0) err('bridge ' + b.id + ' not in uses');
+    });
+    var names = it.names || [];
+    names.forEach(function (n) { if (DIALOGUE_NAMES.indexOf(n) < 0) err('name ' + n + ' is not a canon cast name'); });
+    ['M', 'M2'].forEach(function (k) { if (cast[k] && names.indexOf(cast[k].jp) < 0) err('names misses ' + cast[k].jp); });
+    var r = it.remix;
+    if (!r || !r.scene || !r.en || !r.explain || !Array.isArray(r.chunks) || !Array.isArray(r.answer)) err('remix needs scene, en, chunks, answer, explain');
+    else {
+      var rest = r.chunks.slice();
+      r.answer.forEach(function (c) { var i = rest.indexOf(c); if (i < 0) err('remix answer chunk ' + c + ' is not in chunks'); else rest.splice(i, 1); });
+      if (rest.length !== 1) err('remix needs exactly 1 distractor chunk, has ' + rest.length);
+      if (new Set(r.chunks).size !== r.chunks.length) err('remix chunks not distinct');
+      r.chunks.forEach(function (c) {
+        var b = bridge.filter(function (x) { return c.indexOf(x.text) >= 0 && x.text.length === 1; })[0];
+        if (b && !b.gloss) err('remix chunk ' + c + ' holds a bridge word without a gloss');
+      });
+      (r.chunks.join('').match(/[ァ-ヺ]+/g) || []).forEach(function (w) { if (names.indexOf(w) < 0) err('katakana ' + w + ' in remix not in names'); });
+    }
+    return e.concat(ownTextErrors(it, lines.map(function (l) { return l.furigana || ''; }).join('\n'), items));
+  }
   function listeningErrors(it, items) {
     var e = [];
     function err(msg) { e.push(it.id + ': ' + msg); }
+    if (it.format === 'dialogue') return dialogueErrors(it, items);
     var f = LISTEN_FORMATS[it.format];
     if (!/^l:n[1-5]-[a-z0-9-]+$/.test(it.id)) err('id not l:<level>-<slug>');
     if (!f) return [it.id + ': format ' + it.format];

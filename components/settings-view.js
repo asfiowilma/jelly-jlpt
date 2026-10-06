@@ -174,7 +174,8 @@ function SettingsView(props) {
             ce("a", { href: c.url, target: "_blank", rel: "noopener noreferrer" }, c.name),
             ': ' + L(c.key) + ' (',
             ce("a", { href: c.licenseUrl, target: "_blank", rel: "noopener noreferrer" }, c.license), ')');
-        }))),
+        })),
+        ce("p", { className: "credits-note" }, L("cred_cameo"))),
       ce(SentenceCredits, { L: L }),
       ce(ResetZone, { L: L, onExport: props.onExport, onReset: props.onReset, synced: !!(props.sync && props.sync.connected) })),
     ce("footer", { className: "settings-foot" }, made[0], icon("heart"), made[1]));

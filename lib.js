@@ -83,6 +83,12 @@ function validatePlan(plan, catalog) {
         if (!MONDAI[dk] && ['short', 'mid', 'info'].indexOf(dk) < 0 && !LISTEN_PROMPTS[dk]) return { valid: false, error: u.id + ' drill ' + dk };
       }
       if (u.kind === 'mock' && !(catalog.items[u.mock] && catalog.items[u.mock].kind === 'mock')) return { valid: false, error: u.id + ' references missing mock ' + u.mock };
+      // dialogue: the lesson dialog shown above the vocabulary (lesson units only)
+      if (u.dialogue) {
+        var dl = catalog.items[u.dialogue];
+        if (u.kind !== 'lesson') return { valid: false, error: u.id + ' has a dialogue but is not a lesson' };
+        if (!dl || dl.kind !== 'listening' || dl.format !== 'dialogue') return { valid: false, error: u.id + ' references missing dialogue ' + u.dialogue };
+      }
       // passages / listening: texts and dialogues a unit's quiz asks about (tickets 15, 17);
       // not taught items, no cards
       for (var pf in UNIT_QUIZ_FIELDS) {
@@ -1572,6 +1578,7 @@ function spaceOut(exs) {
 // item once (a review samples 20), a second ask only to reach QUIZ_MIN_QUESTIONS; a kana quiz reads
 // mostly words (kanaQuizSlots). At least RECALL_SHARE typed answers. A unit with passages / listening
 // (reviews) ends with their reading then listening questions, in place of as many item questions.
+// A lesson with a dialogue ends with its Remix question.
 function buildExercises(unit) {
   if (unit.kind === 'prep') return prepDrill(unit); // ticket 18; a mock unit runs MockExam instead
   var ctx = quizContext(unit);
@@ -1579,7 +1586,8 @@ function buildExercises(unit) {
   var total = quizSize(unit, ctx.items);
   var reading = readingExercises(unit, ctx.taughtKanji); // takes slots from the item questions
   var listening = listeningExercises(unit, ctx.taughtKanji);
-  var n = total - reading.length - listening.length;
+  var remix = remixExercise(unit);
+  var n = total - reading.length - listening.length; // the Remix question comes on top: every taught item keeps its slot
   var slots = ctx.kanaMode ? kanaQuizSlots(unit, ctx, n) : itemSlots(ctx, n);
   var need = Math.ceil(total * RECALL_SHARE), used = {}, out = [];
   var recallCount = function () { return out.filter(function (e) { return e.recall; }).length; };
@@ -1597,7 +1605,7 @@ function buildExercises(unit) {
     if (r) out[i] = r;
   }
   // reading then listening last, as on the test
-  return spaceOut(out).concat(reading, listening);
+  return spaceOut(out).concat(reading, listening, remix);
 }
 
 // ── Reading passages (ticket 15) ────────────────────────────────────────────
@@ -1663,6 +1671,14 @@ function speechText(s) { return furiganaParts(s).map(function (p) { return p.r |
 // utterance: situation, question, then each option (narrator says its number). quick: the line,
 // then each reply.
 function listeningScript(it, order) {
+  if (it.format === 'dialogue') { // lines only, no narrator; the voice skips the "……" pause marks
+    var dc = listenClips(it);
+    return it.lines.map(function (l, j) {
+      var o = { speaker: l.speaker, text: speechText(l.furigana).replace(/…+/g, '') };
+      if (dc) o.clip = dc[j];
+      return o;
+    });
+  }
   order = order || it.options.map(function (_, i) { return i; });
   var say = function (speaker, s) { return { speaker: speaker, text: speechText(s) }; };
   var lines = it.lines.map(function (l) { return say(l.speaker, l.furigana); });
@@ -1720,6 +1736,118 @@ function listeningExercises(unit, taughtKanji) {
   return (unit.listening || []).map(function (id) { return CATALOG.items[id]; })
     .filter(function (it) { return it && it.kind === 'listening'; })
     .map(function (it) { return listenQuestion(it, taughtKanji); });
+}
+
+// ── Lesson dialogues (pilot) ────────────────────────────────────────────────
+// A lesson unit may carry `dialogue: 'l:n5-dlg-…'` (a listening item of format dialogue). Speakers
+// are M (first, left) and M2 (second, right). dialogueView builds what the card shows; the audio is
+// listeningScript(item).
+var VERB_I_ROW = { 'う': 'い', 'く': 'き', 'ぐ': 'ぎ', 'す': 'し', 'つ': 'ち', 'ぬ': 'に', 'ぶ': 'び', 'む': 'み', 'る': 'り' };
+// dialogState(unitId) / saveDialogState(unitId, st): whether a unit's dialogue card is open and heard,
+// { open, heard }. One localStorage key (a map by unit id): device-only, never synced or exported.
+var DIALOGS_KEY = 'jlpt_dialogs';
+function dialogState(unitId) {
+  try { var o = JSON.parse(localStorage.getItem(DIALOGS_KEY) || '{}'); return o && o[unitId] || {}; } catch (e) { return {}; }
+}
+function saveDialogState(unitId, st) {
+  try {
+    var o = JSON.parse(localStorage.getItem(DIALOGS_KEY) || '{}') || {};
+    o[unitId] = { open: !!st.open, heard: !!st.heard };
+    localStorage.setItem(DIALOGS_KEY, JSON.stringify(o));
+  } catch (e) {}
+}
+// verbStem('飲む', 'のむ', pos) → ['飲み', 'のみ']: the part that stays before ます
+function verbStem(word, reading, pos) {
+  var cut = function (w) {
+    return pos === 'verb-ichidan' ? w.slice(0, -1) : VERB_I_ROW[w.slice(-1)] ? w.slice(0, -1) + VERB_I_ROW[w.slice(-1)] : w;
+  };
+  return [cut(word), cut(reading)];
+}
+// dialogueView(item, unit): { title, goal, scene, cast, lines, pills, seconds }.
+// lines[i] = { speaker, name, initial, en, segs: [{ t, r?, kind?, gloss? }] }. kind marks a seg:
+// 'br' = bridge (not taught yet), 'nw' = new this lesson (unit vocab), 'g' = grammar token.
+// Marks are found in the text (bridge first, then vocab, then grammar) and never overlap; a ruby
+// block is marked whole.
+function dialogueView(it, unit) {
+  var vocab = (unit.vocab || []).map(function (v) {
+    var n = [v.word, v.reading];
+    if (/^verb/.test(v.pos || '')) n = verbStem(v.word, v.reading, v.pos);
+    return { v: v, needles: n.filter(function (x, i, a) { return x && a.indexOf(x) === i; }), gloss: v.reading + ' · ' + glossText(v) };
+  });
+  var grammar = (unit.grammar || []).map(function (g) {
+    var toks = ((g.ref && g.ref.length) ? g.ref : g.pattern.replace(/[〜～…]|\([^)]*\)|[A-Za-z]+(-\S*)?/g, ' ').split(/\s+/))
+      .join('/').replace(/[～〜]/g, '').split('/').map(function (x) { return x.trim(); }).filter(Boolean);
+    return { g: g, toks: toks, gloss: g.pattern + ' · ' + g.meaning };
+  });
+  // longest first, so たべもの is not read as the たべ of 食べる
+  var needles = [].concat.apply([], vocab.map(function (x) { return x.needles.map(function (n) { return { n: n, v: x.v, gloss: x.gloss }; }); }))
+    .sort(function (a, b) { return b.n.length - a.n.length; });
+  var usedWords = {};
+  var lines = it.lines.map(function (l, i) {
+    var parts = furiganaParts(l.furigana), plain = parts.map(function (p) { return p.t; }).join('');
+    // one cell per ruby block, one per plain character
+    var cells = [], at = [];
+    parts.forEach(function (p) {
+      if (p.r) { Array.from(p.t).forEach(function () { at.push(cells.length); }); cells.push({ t: p.t, r: p.r }); }
+      else Array.from(p.t).forEach(function (c) { at.push(cells.length); cells.push({ t: c }); });
+    });
+    // plain is indexed by UTF-16 unit; every char here is BMP, so offsets = cell offsets
+    var claim = function (from, to, kind, gloss, word) {
+      var ci = [], k;
+      for (k = from; k < to; k++) if (ci.indexOf(at[k]) < 0) ci.push(at[k]);
+      if (ci.some(function (c) { return cells[c].kind; })) return;
+      ci.forEach(function (c) { cells[c].kind = kind; cells[c].gloss = gloss; });
+      if (word) usedWords[word] = true;
+    };
+    var each = function (needle, fn) {
+      for (var p = plain.indexOf(needle); p >= 0; p = plain.indexOf(needle, p + 1)) fn(p);
+    };
+    (it.bridge || []).forEach(function (b) {
+      each(b.ctx || b.text, function (p) {
+        var q = p + (b.ctx ? b.ctx.indexOf(b.text) : 0);
+        claim(q, q + b.text.length, 'br', b.text + ' · ' + b.gloss);
+      });
+    });
+    needles.forEach(function (x) { each(x.n, function (p) { claim(p, p + x.n.length, 'nw', x.gloss, x.v.id); }); });
+    grammar.forEach(function (x) {
+      x.toks.forEach(function (n) {
+        each(n, function (p) { if (p > 0) claim(p, p + n.length, 'g', x.gloss, x.g.id); });
+      });
+    });
+    var segs = [];
+    cells.forEach(function (c) {
+      var last = segs[segs.length - 1];
+      if (last && !c.r && !last.r && last.kind === c.kind && last.gloss === c.gloss) last.t += c.t;
+      else segs.push({ t: c.t, r: c.r, kind: c.kind, gloss: c.gloss });
+    });
+    var who = it.cast[l.speaker];
+    return { i: i, speaker: l.speaker, name: who.name, initial: Array.from(who.jp)[0], en: l.en, segs: segs };
+  });
+  var chars = it.lines.reduce(function (n, l) { return n + speechText(l.furigana).replace(/…+/g, '').length; }, 0);
+  return {
+    id: it.id, title: it.title, goal: it.goal, scene: it.scene, bridge: it.bridge || [],
+    cast: Object.keys(it.cast).map(function (k) { return { speaker: k, name: it.cast[k].name, role: it.cast[k].role, initial: Array.from(it.cast[k].jp)[0] }; }),
+    lines: lines,
+    pills: vocab.filter(function (x) { return usedWords[x.v.id]; }).map(function (x) { return x.v.word; })
+      .concat(grammar.filter(function (x) { return usedWords[x.g.id]; }).map(function (x) { return x.g.pattern; })),
+    // ~3.5 kana a second at the learner's slow speech rate, plus a pause per line
+    seconds: Math.max(5, Math.round((chars / 3.5 + it.lines.length * 0.6) / 5) * 5)
+  };
+}
+// remixExercise(unit): [the Remix question] for a lesson with a dialogue, else []. A reorder
+// question: same scene, one detail swapped; the learner builds the line from chunks, one of them a
+// distractor (ex.need = chunks the answer uses). A bridge word in a chunk is glossed in ex.note.
+// Extra to the item questions, counts in the score; itemId is the dialogue, so no SRS card.
+function remixExercise(unit) {
+  var it = unit.dialogue && CATALOG.items[unit.dialogue];
+  if (!it || !it.remix) return [];
+  var r = it.remix, items = rndShuffle(r.chunks.slice());
+  if (items.join() === r.answer.join()) items = items.slice().reverse();
+  var notes = (it.bridge || []).filter(function (b) { return r.chunks.some(function (c) { return c.indexOf(b.text) >= 0; }); })
+    .map(function (b) { return b.text + ' · ' + b.gloss; });
+  return [{ type: 'reorder', prompt: 'Build it in Japanese: ' + r.en, scene: r.scene, dialogueId: it.id,
+    items: items, answer: r.answer.join(''), need: r.answer.length, explain: r.explain,
+    note: notes.length ? notes.join(' ') : undefined, itemId: it.id, form: 'remix', recall: true }]; // recall: the learner builds the line, no options
 }
 
 // ── Timed quizzes, test prep and mock exams (ticket 18, Q32 / Q36-Q39) ──────
@@ -2006,7 +2134,7 @@ function chunkSpeech(text, max) {
   return out.map(function (s) { return s.trim(); }).filter(Boolean);
 }
 
-// assignVoices(voices): speaker → { voice, pitch } for M (man), F (woman), N (narrator).
+// assignVoices(voices): speaker → { voice, pitch } for M (man), M2 (second man), F (woman), N (narrator).
 // Two different ja voices when there are (by name: a male-named voice for M, a female-named one
 // for F), else the same voice with pitch 0.8 (M) / 1.25 (F); a voice already of that gender keeps
 // pitch 1. Local voices first: network ones (Chrome's Google voice) cut out on long lines.
@@ -2026,8 +2154,11 @@ function assignVoices(voices) {
   if (!m && !f) { m = ja[0]; f = ja[1] || ja[0]; } else if (!f) f = other(m); else if (!m) m = other(f);
   var rest = ja.filter(function (v) { return v !== m && v !== f; });
   var n = rest.filter(isFemale)[0] || rest.filter(function (v) { return !isMale(v); })[0] || rest[0];
+  // M2 = the second man of a two-man dialogue: another male voice if there is one, else M's voice a step higher
+  var m2 = ja.filter(function (v) { return v !== m && isMale(v); })[0];
   return {
     M: { voice: m || null, pitch: isMale(m) ? 1 : 0.8 },
+    M2: { voice: m2 || m || null, pitch: m2 ? 1 : isMale(m) ? 1.2 : 1.05 },
     F: { voice: f || null, pitch: isFemale(f) && f !== m ? 1 : 1.25 },
     N: n ? { voice: n, pitch: 1 } : { voice: f || null, pitch: f ? 0.85 : 1 }
   };
@@ -2037,6 +2168,7 @@ function assignVoices(voices) {
 // quiz (Q31), same item in another form when there is one. Not scored.
 function requeueExercise(unit, ex) {
   var o = ex.type === 'reading' && rndShuffle(ex.options.map(function (_, i) { return i; })); // same question, options reshuffled
+  if (ex.form === 'remix') return Object.assign({}, ex, { items: rndShuffle(ex.items.slice()), requeue: true }); // same chunks, reshuffled
   var r = o ? Object.assign({}, ex, { options: o.map(function (i) { return ex.options[i]; }), optionParts: o.map(function (i) { return ex.optionParts[i]; }), correct: o.indexOf(ex.correct) })
     : ex.type === 'listen_dialog' ? listenQuestion(CATALOG.items[ex.itemId], quizContext(unit).taughtKanji, { mock: ex.maxPlays > 0 })
     : ex.item && makeQuestion(ex.item, quizContext(unit), null, [ex.form], false, ex.part);

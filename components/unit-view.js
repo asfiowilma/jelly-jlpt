@@ -109,6 +109,8 @@ function UnitView(props) {
             note.body.map(function (line, i) { return React.createElement("p", { key: i, className: "unit-note-line" }, line); }));
         })(),
         unit.kana.length > 0 && React.createElement(KanaSection, { key: 'kana:' + unit.id, unit: unit }),
+        unit.dialogue && unit.kind === 'lesson' && React.createElement(DialogueSection, {
+          key: 'dlg:' + unit.id, unit: unit, showFurigana: showFurigana, toggleFurigana: toggleFurigana }),
         unit.vocab.length > 0 && React.createElement(VocabSection, { key: 'vocab:' + unit.id, unit: unit }),
         // kana units: read-only practice words (no card, not quizzed), shown in kana
         practice.length > 0 && section(t('section_read', lv), React.createElement("ul", { className: "vocab-list read-list" }, practice.map(function (v) {

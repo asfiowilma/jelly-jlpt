@@ -248,6 +248,7 @@ var UI_STRINGS = {
   cred_kenney:       { en: 'sound effects',     ja: '効果音' },
   cred_qwen3tts:     { en: 'listening audio (Qwen3-TTS-12Hz-1.7B CustomVoice, VoiceDesign, Base)', ja: '聴解の音声' },
   cred_dicebear:     { en: 'achievement stamp icons (identicon)', ja: '実績スタンプのアイコン' },
+  cred_cameo:        { en: 'Dialog characters are fan-style cameos, not affiliated with their creators or publishers.', ja: 'ダイアログの登場人物はファン風のカメオで、原作の作者や出版社とは関係ありません。' },
   cred_react:        { en: 'UI library',        ja: 'UIライブラリ' },
   cred_pouchdb:      { en: 'local storage and sync', ja: 'ローカル保存と同期' },
   cred_edrdg:        { en: 'readings, meanings and stroke counts checked against JMdict and KANJIDIC while writing the course (no files shipped)', ja: '読み・意味・画数の確認（ファイルは含みません）' },

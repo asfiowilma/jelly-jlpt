@@ -300,7 +300,7 @@ function Exercises(_ref9) {
   var isListen = ex.type === 'listen_dialog';
   var isType = !isOpt && !isPair && !isReorder;
   var ready = isOpt ? pick !== null
-    : isReorder ? picks.length === ex.items.length
+    : isReorder ? picks.length === (ex.need || ex.items.length) // need: a Remix chunk list holds a distractor
     : isPair ? ex.items.every(function (_, i) { return typeof picks[i] === 'number'; })
     : answer.trim() !== '';
   var okNow = revealed && results[cur] === true;
@@ -375,7 +375,12 @@ function Exercises(_ref9) {
     wide = c.wide;
   } else if (isReorder) {
     // Reorder: tap tiles to build the sentence, tap a placed tile to remove it
-    main = [promptEl, questionEl(),
+    main = [ex.scene && h("p", { key: "recap", className: "qz-recap" }, ex.scene, " ",
+        h("button", { className: "link-btn", onClick: function () {
+          leaveQuiz();
+          setTimeout(function () { var el = document.getElementById('dlg-hero'); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 80);
+        } }, "Replay dialog")),
+      promptEl, questionEl(),
       h("div", { key: "built", className: "qz-answerline" + tone, lang: "ja" }, picks.map(function (itemIdx, pos) {
         return h("button", {
           key: pos, className: "qz-tile", disabled: revealed,

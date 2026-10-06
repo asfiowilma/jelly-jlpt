@@ -204,6 +204,8 @@ kanaUnits(KATAKANA, "katakana");
 
 const kanjiAll = items.filter(function (it) { return it.kind === "kanji"; }); // kanji.js order = Tanos frequency order
 // Written forms per lesson, to see where each kanji shows up.
+// Lesson dialogs (pilot): lesson title -> l:n5-dlg-… (data/n5/listening.js, format dialogue). Shown above the vocabulary.
+const DIALOGUES = { "Introducing yourself": "l:n5-dlg-team-seven", "Eating and drinking": "l:n5-dlg-gojo-lunch" };
 const lessonText = LESSONS.map(function (l) { return words(l[2]).map(function (id) { return CATALOG.items[id].word; }).join(" "); });
 const soon = function (k, n) { return lessonText.slice(n + 1, n + 7).some(function (s) { return s.indexOf(k.char) >= 0; }); };
 // Kanji placement: in the first lesson that has a word written with it, most frequent first
@@ -231,7 +233,7 @@ function pickPassage() {
 // Listening (ticket 17): each lesson review also gets one listening item whose vocab and grammar
 // are all taught by then, formats in turn (quick, task, utterance, point; the next eligible one when
 // the wanted format has none yet). The rest are kept for test prep and mocks (listeningFor in lib.js).
-const listenItems = items.filter(function (it) { return it.kind === "listening" && !inMock.has(it.id); });
+const listenItems = items.filter(function (it) { return it.kind === "listening" && it.format !== "dialogue" && !inMock.has(it.id); });
 const LISTEN_TURN = ["quick", "task", "utterance", "point"];
 const usedListening = new Set();
 let listenTurn = 0;
@@ -251,6 +253,7 @@ let sinceReview = [];
 LESSONS.forEach(function (l, n) {
   const u = { id: uid(), level: "N5", kind: "lesson", title: l[0], vocab: words(l[2]), kanji: [], grammar: l[1] ? [l[1]] : [] };
   if (l[1] && !CATALOG.items[l[1]]) problems.push("no grammar " + l[1]);
+  if (DIALOGUES[l[0]]) { u.dialogue = DIALOGUES[l[0]]; if (!CATALOG.items[u.dialogue]) problems.push("no dialogue " + u.dialogue); }
   // l[3]: kanji chosen by hand for this lesson (the rest are placed automatically)
   const fixed = (l[3] || "").split(" ").filter(Boolean).map(function (c) {
     const k = CATALOG.items["k:" + c];
