@@ -1255,9 +1255,14 @@ function formsFor(item, ctx) {
     var homographs = spellings.filter(function (x) { return !same(x); });
     var others = homographs.map(function (x) { return { id: x.id, word: x.word, reading: kataToHira(x.reading), gloss: glossText(x) }; });
     var kanaIn = Object.assign({ others: others }, KANA_INPUT);
+    // Twins: another word shown the same way (早い / 速い are both はやい until their kanji are taught).
+    // Their meanings are never options, and typing a twin's meaning is a retry (otherMeaning), not a miss.
+    var twins = catalogOf('vocab').filter(function (x) { return x.id !== v.id && !x.alt && !isBound(x) && shownWord(x) === shownWord(v); });
+    var twinPool = twins.length ? ctx.vPool.filter(function (x) { return twins.indexOf(x) < 0; }) : ctx.vPool;
+    var twinMeanings = twins.map(function (x) { return { word: x.word, answers: meaningAnswers(x.gloss).concat(x.accept || []) }; });
     var forms = [
       f('meaningType', true, function () {
-        return typing('What does this word mean? (type in English)', shownWord(v), meaningAnswers(v.gloss).concat(v.accept || []), 'English meaning...', { parts: wordParts(v) });
+        return typing('What does this word mean? (type in English)', shownWord(v), meaningAnswers(v.gloss).concat(v.accept || []), 'English meaning...', { parts: wordParts(v), twinMeanings: twinMeanings });
       }),
       f('readingType', true, function () {
         var hint = homographs.some(function (x) { return ctx.taught[x.id]; }) ? { note: '"' + glossText(v) + '"' } : {};
@@ -1270,7 +1275,7 @@ function formsFor(item, ctx) {
         var ans = [v.reading, kataToHira(v.reading), v.word].concat(alsoRight).filter(function (a, i, arr) { return arr.indexOf(a) === i; });
         return clash ? null : typing('Type the Japanese for "' + glossText(v) + '":', '', ans, 'in Japanese…', kanaIn);
       }),
-      f('meaningMc', false, function () { return mc('mc', 'What does this word mean?', shownWord(v), 'gloss', ctx.vPool, null, { parts: wordParts(v) }); }),
+      f('meaningMc', false, function () { return mc('mc', 'What does this word mean?', shownWord(v), 'gloss', twinPool, null, { parts: wordParts(v) }); }),
       f('wordMc', false, function () { return mc('mc', 'Which word means "' + glossText(v) + '"?', '', 'word', ctx.vPool); }),
       f('readingMc', false, function () { return readable ? mc('mc', 'How do you read this word?', v.word, 'reading', ctx.vPool) : null; }),
       // exam formats (ticket 11): the word inside a catalog sentence that uses it
@@ -1309,7 +1314,7 @@ function formsFor(item, ctx) {
     ];
     if (ctx.conjForm && isVerbItem(v)) forms.push(f('conj', true, function () { return conjEx(v, ctx.conjForm); }));
     if (typeof window !== 'undefined' && window.speechSynthesis) {
-      forms.push(f('listen', false, function () { return mc('listen', 'Listen and choose the meaning:', shownWord(v), 'gloss', ctx.vPool, null, { audio: v.reading || v.word }); }));
+      forms.push(f('listen', false, function () { return mc('listen', 'Listen and choose the meaning:', shownWord(v), 'gloss', twinPool, null, { audio: v.reading || v.word }); }));
     }
     var free = ctx.vocab.filter(function (x) { return x !== v && !isBound(x); });
     if (rank >= 2 && free.length >= 3) forms.push(f('pairMatch', false, function () {
@@ -2203,6 +2208,17 @@ function otherReading(ex, typed) {
   if (checkTyping(s, ex.answers)) return null;
   var u = kataToHira(foldAns(s));
   return ex.others.filter(function (o) { return o.reading === u; })[0] || null;
+}
+// otherMeaning(ex, typed): the twin word (same look, other meaning) whose meaning was typed, or
+// null. Not a miss: the learner is told it is the other word and tries again (ex.twinMeanings).
+function otherMeaning(ex, typed) {
+  if (!ex.twinMeanings || !ex.twinMeanings.length) return null;
+  var s = String(typed == null ? '' : typed);
+  if (checkTyping(s, ex.answers)) return null;
+  return ex.twinMeanings.filter(function (t) { return checkTyping(s, t.answers); })[0] || null;
+}
+function otherMeaningNote(ex) {
+  return 'That is another word that looks the same here. Try the other meaning.';
 }
 function otherReadingNote(ex, o) {
   var it = ex.item || {};

@@ -150,3 +150,20 @@ QUnit.module('bound morphemes and homograph readings', function () {
     });
   });
 });
+
+QUnit.module('twin words (早い / 速い)', function () {
+  QUnit.test('the twin meaning is a retry, not a miss, and never an option', function (assert) {
+    var hayai = CATALOG.items['v:早い|はやい'];
+    var late = buildUnits(PLAN, CATALOG).filter(function (u) { return u.level === 'N5'; }).slice(-1)[0];
+    var ctx = quizContext(late);
+    var mt = formsFor(hayai, ctx).filter(function (fm) { return fm.name === 'meaningType'; })[0].make();
+    assert.ok(mt.twinMeanings && mt.twinMeanings.length, 'twin listed while both show as はやい');
+    assert.equal(otherMeaning(mt, 'fast').word, '速い', 'fast → retry');
+    assert.equal(otherMeaning(mt, 'early'), null, 'own meaning is just right');
+    assert.equal(otherMeaning(mt, 'dog'), null, 'plain miss stays a miss');
+    for (var i = 0; i < 20; i++) {
+      var mc = formsFor(hayai, ctx).filter(function (fm) { return fm.name === 'meaningMc'; })[0].make();
+      assert.ok(!mc || mc.options.every(function (o) { return !/fast|quick/.test(o); }), 'no twin meaning option');
+    }
+  });
+});
