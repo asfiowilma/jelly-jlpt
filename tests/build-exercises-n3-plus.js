@@ -76,8 +76,8 @@ QUnit.module('buildExercises (N3+ types)', {
     var u = unit('N3', 1, { vocab: [v('書く', 'かく', 'to write'), v('難しい', 'むずかしい', 'difficult')] });
     for (var i = 0; i < 10; i++) {
       buildExercises(u).filter(function (e) { return e.type === 'conjugation'; }).forEach(function (c) {
-        assert.strictEqual(c.question, '書く');
-        assert.deepEqual(c.parts, [{ t: '書く', r: 'かく' }], 'untaught kanji → reading as furigana');
+        assert.strictEqual(c.question, 'かく', 'untaught kanji: kana only');
+        assert.deepEqual(c.parts, [{ t: 'かく' }]);
         assert.deepEqual(c.answers, ['書かない', 'かかない']);
       });
     }

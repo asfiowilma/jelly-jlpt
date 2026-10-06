@@ -195,7 +195,7 @@ function ReviewMode(_ref1) {
           h('div', null, h('h2', { role: 'status' }, kind === 'day' ? "That's today done." : 'Review done'), h('p', { className: 'rv-note' }, sub))),
         h('div', { className: 'rv-tally' }, RV_RATINGS.map(function (r, i) { return h('div', { key: r }, t(RV_LABELS[i], level), h('b', null, tally[r])); })),
         again.length > 0 && h('div', { className: 'rv-watch' }, h('h3', null, 'Rated Again · back tomorrow'),
-          h('ul', null, again.map(function (c) { return h('li', { key: c.id }, h('span', { className: 'rv-jp' }, c.front), h('span', null, c.back)); }))),
+          h('ul', null, again.map(function (c) { return h('li', { key: c.id }, h('span', { className: 'rv-jp' }, c.type === 'vocab' && CATALOG.items[c.id] ? displayWord(CATALOG.items[c.id], window._learnedKanji || {}) : c.front), h('span', null, c.back)); }))),
         h('p', { className: 'rv-note' }, tomorrow ? dayPlural(tomorrow, 'Next card is due tomorrow ({n}).', 'Next cards are due tomorrow ({n}).') : 'Nothing is due tomorrow.'),
         h('div', { className: 'rv-acts' }, acts))));
   }
@@ -232,18 +232,20 @@ function ReviewMode(_ref1) {
         ? h('i', { className: 'qz-seg rv-track' }, h('b', { style: { width: idx / due.length * 100 + '%' } }))
         : due.map(function (c, i) { return h('i', { key: i, className: 'qz-seg' + (i < idx ? ' ' + log[i].r : i === idx ? ' now' : '') }); })),
     h('span', { className: 'rv-count' }, (idx + 1) + ' / ' + due.length));
+  var item = card.type === 'vocab' && CATALOG.items[card.id];
+  var front = item ? displayWord(item, window._learnedKanji || {}) : card.front;
   var cardEl = h('div', {
     className: 'rv-card', tabIndex: flipped ? undefined : 0, role: flipped ? undefined : 'button',
     'aria-label': flipped ? undefined : 'Show answer',
     onClick: function () { if (!flipped) setFlipped(true); }
   },
     h('div', { className: 'rv-kind' }, kindLabel),
-    h('div', { className: 'rv-front' }, card.front, h('button', {
-      className: 'rv-spk', 'aria-label': 'Listen to ' + card.front,
+    h('div', { className: 'rv-front' }, front, h('button', {
+      className: 'rv-spk', 'aria-label': 'Listen to ' + front,
       onClick: function (e) { e.stopPropagation(); speak(cardSpeech(card)); }
     }, icon('speaker'))),
     flipped ? h('div', { className: 'rv-back' },
-      card.reading && card.reading !== card.front && h('div', { className: 'rv-rd' }, card.reading),
+      card.reading && card.reading !== front && h('div', { className: 'rv-rd' }, card.reading),
       h('div', { className: 'rv-mean' }, card.back),
       ex && h('div', { className: 'rv-ex' }, h('div', { className: 'rv-jp', lang: 'ja' }, rvSentence(ex, furigana)), h('small', null, ex.s.en)),
       stage && _ref1.onOpenStage && h('button', { className: 'rv-link', onClick: function () { _ref1.onOpenStage(stage.index); } }, 'From Stage ' + (stage.index + 1) + ' →'))

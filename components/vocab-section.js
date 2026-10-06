@@ -29,12 +29,13 @@ function vocabGroups(vocab, lv) {
 }
 
 // A word with a reading worth testing: kanji in it and a reading that differs.
-function vocabHasReading(v) { return hasKanji(v.word) && v.reading !== v.word; }
+function vocabHasReading(v, tk) { return hasKanji(v.word) && v.reading !== v.word && (!tk || displayWord(v, tk) === v.word); }
 
 function VocabSection(props) {
   var unit = props.unit,
     lv = unit.level,
-    vocab = unit.vocab;
+    vocab = unit.vocab,
+    tk = unitTaughtKanji(unit);
   var _pr = React.useState(false), practice = _pr[0], setPractice = _pr[1];
   var _rev = React.useState({}), rev = _rev[0], setRev = _rev[1]; // '<id>:m' / '<id>:r' → opened
   var _order = React.useState(null), order = _order[0], setOrder = _order[1]; // shuffled vocab | null
@@ -42,7 +43,7 @@ function VocabSection(props) {
   var cells = [];
   vocab.forEach(function (v) {
     cells.push(v.id + ':m');
-    if (vocabHasReading(v)) cells.push(v.id + ':r');
+    if (vocabHasReading(v, tk)) cells.push(v.id + ':r');
   });
   var opened = cells.filter(function (c) { return rev[c]; }).length;
   var setMode = function (p) { setPractice(p); setRev({}); setOrder(null); };
@@ -54,7 +55,7 @@ function VocabSection(props) {
     }, React.createElement("span", { className: "vocab-tap" }, t('tap_reveal', lv)));
   };
   var row = function (v) {
-    var readingCell = !vocabHasReading(v)
+    var readingCell = !vocabHasReading(v, tk)
       ? React.createElement("span", { className: "vocab-cell vocab-none", 'aria-hidden': true }, "–")
       : practice && !rev[v.id + ':r'] ? cover(v.id + ':r', t('vocab_reading', lv))
       : React.createElement("span", { className: "vocab-cell vocab-reading jp" }, v.reading);
@@ -64,12 +65,12 @@ function VocabSection(props) {
         v.usage && React.createElement("span", { className: "vocab-usage", lang: "ja" }, v.usage),
         React.createElement("span", { className: "pos-chip" }, posChip(v.pos)));
     return React.createElement("li", { key: v.id, className: "vocab-row" },
-      React.createElement("div", { className: "vocab-jp jp" }, v.word),
+      React.createElement("div", { className: "vocab-jp jp" }, displayWord(v, tk)),
       React.createElement("div", { className: "vocab-col-reading" }, readingCell),
       React.createElement("div", { className: "vocab-col-meaning" }, meaningCell),
       React.createElement("button", {
         className: "speak-btn speak-btn-row", onClick: function () { speak(v.reading); },
-        title: "Listen to pronunciation", 'aria-label': "Listen to " + v.word
+        title: "Listen to pronunciation", 'aria-label': "Listen to " + displayWord(v, tk)
       }, "🔊"));
   };
 

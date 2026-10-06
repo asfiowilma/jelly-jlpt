@@ -881,6 +881,17 @@ function wordSpan(raw, word, reading) {
 function allKanjiTaught(w, taughtKanji) {
   return Array.from(w).every(function (ch) { return !hasKanji(ch) || taughtKanji[ch]; });
 }
+// displayWord(v, taughtKanji): how a vocab word is spelled for the learner. A word with a kanji
+// not taught yet (隣 となり) shows its kana reading only; everything else keeps its spelling.
+function displayWord(v, taughtKanji) {
+  return v.reading && hasKanji(v.word) && !allKanjiTaught(v.word, taughtKanji || {}) ? v.reading : v.word;
+}
+// unitTaughtKanji(unit): { char: true } for the kanji taught by this unit or any earlier one.
+function unitTaughtKanji(unit) {
+  var tk = {};
+  Object.keys(taughtIds(unit)).forEach(function (id) { if (id.indexOf('k:') === 0) tk[id.slice(2)] = true; });
+  return tk;
+}
 // spellingFakes(v): wrong kanji spellings of a vocab word for 表記 — one kanji swapped
 // for a real kanji with a shared on-reading (校 → 高 交) or a look-alike (KANJI_LOOKALIKES),
 // then, only if that gives fewer than 3, one of the same set (KANJI_GROUPS: 山 → 川).
@@ -1013,8 +1024,7 @@ function isVerbItem(v) {
 function quizContext(unit) {
   var items = quizItems(unit);
   var taught = taughtIds(unit);
-  var taughtKanji = {};
-  Object.keys(taught).forEach(function (id) { if (id.indexOf('k:') === 0) taughtKanji[id.slice(2)] = true; });
+  var taughtKanji = unitTaughtKanji(unit);
   var own = function (kind) { return items.filter(function (it) { return it.kind === kind; }); };
   var poolOf = function (kind) { // the quiz's own items (may be outside the catalog) + the catalog's
     var o = own(kind);
@@ -1134,14 +1144,15 @@ function formsFor(item, ctx) {
   var typing = function (prompt, question, answers, placeholder, extra) {
     return Object.assign({ type: 'typing', prompt: prompt, question: question, answers: answers, placeholder: placeholder }, extra);
   };
-  var wordParts = function (w) { return quizFurigana([{ t: w.word, r: w.reading }], ctx.taughtKanji, ''); };
+  var shownWord = function (w) { return displayWord(w, ctx.taughtKanji); };
+  var wordParts = function (w) { return allKanjiTaught(w.word, ctx.taughtKanji) ? quizFurigana([{ t: w.word, r: w.reading }], ctx.taughtKanji, '') : [{ t: shownWord(w) }]; };
   var conjEx = function (v, form) {
     var c = v && conjugate(v.word, v.reading, form, v.pos);
     if (!c) return null;
     // another spelling of the word (alt: 終る for 終わる) conjugates to a right answer too
     var alts = catalogOf('vocab').filter(function (x) { return x.alt === v.id; }).map(function (x) { var a = conjugate(x.word, x.reading, form, x.pos); return a && a.kanji; });
     var answers = [c.kanji, c.kana].concat(alts).filter(function (a, i, arr) { return a && arr.indexOf(a) === i; });
-    return { type: 'conjugation', prompt: 'Conjugate to ' + form + ':', question: v.word, parts: wordParts(v),
+    return { type: 'conjugation', prompt: 'Conjugate to ' + form + ':', question: shownWord(v), parts: wordParts(v),
       answers: answers, targetForm: form, placeholder: form + '...', conjItem: v.id };
   };
   var f = function (name, recall, make) { return { name: name, recall: recall, make: make }; };
@@ -1246,7 +1257,7 @@ function formsFor(item, ctx) {
     var kanaIn = Object.assign({ others: others }, KANA_INPUT);
     var forms = [
       f('meaningType', true, function () {
-        return typing('What does this word mean? (type in English)', v.word, meaningAnswers(v.gloss).concat(v.accept || []), 'English meaning...', { parts: wordParts(v) });
+        return typing('What does this word mean? (type in English)', shownWord(v), meaningAnswers(v.gloss).concat(v.accept || []), 'English meaning...', { parts: wordParts(v) });
       }),
       f('readingType', true, function () {
         var hint = homographs.some(function (x) { return ctx.taught[x.id]; }) ? { note: '"' + glossText(v) + '"' } : {};
@@ -1259,7 +1270,7 @@ function formsFor(item, ctx) {
         var ans = [v.reading, kataToHira(v.reading), v.word].concat(alsoRight).filter(function (a, i, arr) { return arr.indexOf(a) === i; });
         return clash ? null : typing('Type the Japanese for "' + glossText(v) + '":', '', ans, 'in Japanese…', kanaIn);
       }),
-      f('meaningMc', false, function () { return mc('mc', 'What does this word mean?', v.word, 'gloss', ctx.vPool, null, { parts: wordParts(v) }); }),
+      f('meaningMc', false, function () { return mc('mc', 'What does this word mean?', shownWord(v), 'gloss', ctx.vPool, null, { parts: wordParts(v) }); }),
       f('wordMc', false, function () { return mc('mc', 'Which word means "' + glossText(v) + '"?', '', 'word', ctx.vPool); }),
       f('readingMc', false, function () { return readable ? mc('mc', 'How do you read this word?', v.word, 'reading', ctx.vPool) : null; }),
       // exam formats (ticket 11): the word inside a catalog sentence that uses it
@@ -1298,7 +1309,7 @@ function formsFor(item, ctx) {
     ];
     if (ctx.conjForm && isVerbItem(v)) forms.push(f('conj', true, function () { return conjEx(v, ctx.conjForm); }));
     if (typeof window !== 'undefined' && window.speechSynthesis) {
-      forms.push(f('listen', false, function () { return mc('listen', 'Listen and choose the meaning:', v.word, 'gloss', ctx.vPool, null, { audio: v.reading || v.word }); }));
+      forms.push(f('listen', false, function () { return mc('listen', 'Listen and choose the meaning:', shownWord(v), 'gloss', ctx.vPool, null, { audio: v.reading || v.word }); }));
     }
     var free = ctx.vocab.filter(function (x) { return x !== v && !isBound(x); });
     if (rank >= 2 && free.length >= 3) forms.push(f('pairMatch', false, function () {

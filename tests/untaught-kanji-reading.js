@@ -33,3 +33,26 @@ QUnit.module('no reading question for untaught kanji', function () {
     assert.ok(forms.meaningMc || forms.meaningType, 'asked for its meaning: ' + Object.keys(forms));
   });
 });
+
+// displayWord: a word with an untaught kanji shows only its kana reading everywhere.
+QUnit.module('displayWord hides untaught kanji', function () {
+  var unitOf = function (id) { return buildUnits(PLAN, CATALOG).filter(function (x) { return (x.vocab || []).some(function (i) { return i.id === id; }); })[0]; };
+  QUnit.test('kana for 隣, the spelling once every kanji is taught', function (assert) {
+    var tonari = CATALOG.items['v:隣|となり'], gakkou = CATALOG.items['v:学校|がっこう'];
+    assert.equal(displayWord(tonari, {}), 'となり');
+    assert.equal(displayWord(gakkou, { 学: true }), 'がっこう', 'one kanji still missing');
+    assert.equal(displayWord(gakkou, { 学: true, 校: true }), '学校');
+    assert.equal(displayWord(tonari, unitTaughtKanji(unitOf(tonari.id))), 'となり', 'at its own lesson');
+    assert.equal(displayWord({ word: 'ねこ', reading: 'ねこ' }, {}), 'ねこ');
+  });
+  QUnit.test('quiz question text shows the kana for 隣', function (assert) {
+    var u = unitOf('v:隣|となり'), seen = 0;
+    for (var r = 0; r < 30; r++) buildExercises(u).forEach(function (ex) {
+      if (ex.item && ex.item.id === 'v:隣|となり' && (ex.form === 'meaningMc' || ex.form === 'meaningType')) {
+        seen++; assert.equal(ex.question, 'となり');
+        assert.equal(ex.parts.map(function (p) { return p.t + (p.r || ''); }).join(''), 'となり');
+      }
+    });
+    assert.ok(seen > 0, 'a meaning question was built');
+  });
+});
