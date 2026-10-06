@@ -183,4 +183,41 @@ QUnit.module('kana reading through words (ticket 44)', function () {
     assert.notOk(answerIsRight(ex, 'オオゼイ'), 'wrong script');
     assert.notOk(answerLeaks(ex), 'no leak');
   });
+  QUnit.test('kanaHear: every kana stage hears 2-3 words; 4 distinct options, one right spelling, learned kana only', function (assert) {
+    var orig = window.speechSynthesis;
+    window.speechSynthesis = {};
+    try {
+      withSeed(11, function () {
+        kanaStages().forEach(function (u) {
+          var learned = learnedKana(u), hear = 0, runs = 6;
+          for (var run = 0; run < runs; run++) {
+            var exs = buildExercises(u), n = 0;
+            exs.forEach(function (e) {
+              if (e.form !== 'kanaHear') return;
+              n++;
+              var tag = u.id + ' ' + e.audio;
+              assert.strictEqual(e.type, 'listen', tag + ': listen type');
+              assert.strictEqual(e.part, 'read', tag + ': reading part');
+              assert.strictEqual(e.options.length, 4, tag + ': 4 options');
+              assert.strictEqual(new Set(e.options).size, 4, tag + ': distinct');
+              assert.strictEqual(e.options[e.correct], e.audio, tag + ': the spoken word is the answer');
+              var keys = e.options.map(soundKey);
+              assert.strictEqual(new Set(keys).size, 4, tag + ': no homophone option');
+              assert.ok(e.options.every(function (o) { return kanaReadable(o, learned); }), tag + ': learned kana only');
+              assert.notOk(answerLeaks(e), tag + ': no leak');
+              assert.strictEqual(e.question, '', tag + ': no text shown');
+            });
+            assert.ok(n <= KANA_HEAR_COUNT, u.id + ': at most ' + KANA_HEAR_COUNT);
+            hear += n;
+          }
+          assert.ok(hear >= runs, u.id + ': hearing questions appear (' + hear + ' in ' + runs + ' quizzes)');
+        });
+      });
+      window.speechSynthesis = undefined;
+      kanaStages().forEach(function (u) {
+        assert.ok(buildExercises(u).every(function (e) { return e.form !== 'kanaHear'; }), u.id + ': none without speech synthesis');
+      });
+    } finally { window.speechSynthesis = orig; }
+    assert.strictEqual(soundKey('こうこう'), soundKey('こおこお'), 'おう = おお'); assert.strictEqual(soundKey('はなぢ'), soundKey('はなじ'), 'ぢ = じ');
+  });
 });

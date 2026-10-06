@@ -1471,8 +1471,41 @@ function askedRecently(recent, id) {
 }
 
 // Kana quiz parts (ticket 44): reading forms (single kana, kana words) vs the meaning forms of a taught word.
-var KANA_READ_FORMS = { kanaType: true, kanaRead: true, kanaPick: true, romajiType: true, romajiPick: true, kanaSpell: true };
+var KANA_READ_FORMS = { kanaHear: true, kanaType: true, kanaRead: true, kanaPick: true, romajiType: true, romajiPick: true, kanaSpell: true };
 function formPart(name) { return KANA_READ_FORMS[name] ? 'read' : 'meaning'; }
+
+// Kana hearing question: the browser voice says a kana word, the learner picks which written word
+// they heard. KANA_HEAR_COUNT = at most this many of a kana quiz's reading slots (fewer in short
+// quizzes), only with speech synthesis. Distractors sound close but are never a second right
+// spelling: soundKey equal (おう / おお, じ / ぢ, ず / づ, を / お) is rejected.
+var KANA_HEAR_COUNT = 3;
+var SOUND_SWAPS = ['しち', 'つす', 'ぬむ', 'ざだ', 'ばぱ'];
+function soundKey(s) { return kanaToRomaji(kataToHira(s)).replace(/ou/g, 'oo').replace(/ei/g, 'ee'); }
+// hearQuestion(item, ctx): MC 'listen' question for a kana word item (kanaword / kana-only vocab), or null.
+function hearQuestion(item, ctx) {
+  var w = item.word;
+  // ponytail: skip を and a final は / へ (the voice may read them as particles: wa / e)
+  if (!w || !KANA_WORD_RE.test(w) || /を|[はへ]$/.test(w) || !kanaReadable(w, ctx.learned)) return null;
+  var kata = /[ァ-ヺ]/.test(w), ch = Array.from(w), cands = kanaWordFakes(w, ctx.learned);
+  ch.forEach(function (c, i) {
+    var h = kataToHira(c);
+    SOUND_SWAPS.forEach(function (pr) {
+      var j = pr.indexOf(h);
+      if (j >= 0) { var o = pr.charAt(1 - j); cands.push(ch.slice(0, i).concat(kata ? hiraToKata(o) : o, ch.slice(i + 1)).join('')); }
+    });
+  });
+  var key = {}, r = kanaToRomaji(w), fakes = [];
+  key[soundKey(w)] = true;
+  rndShuffle(cands).forEach(function (f) {
+    var k = soundKey(f);
+    if (fakes.length < 3 && f !== w && !key[k] && kanaReadable(f, ctx.learned) && !/^[ぁぃぅぇぉゃゅょっァィゥェォャュョッー]/.test(f) &&
+      editDistance(kanaToRomaji(f), r) <= 2) { key[k] = true; fakes.push(f); }
+  });
+  if (fakes.length < 3) return null;
+  var opts = rndShuffle([w].concat(fakes));
+  return { type: 'listen', prompt: 'Listen and choose the word you hear:', question: '', options: opts, correct: opts.indexOf(w), audio: w,
+    item: item, itemId: item.kind === 'kanaword' ? undefined : item.id, form: 'kanaHear', recall: false, part: 'read' };
+}
 
 // makeQuestion(item, ctx, wantRecall, avoid, strict, part): one exercise for item — a form
 // of the wanted kind (true recall / false MC / null any) not in avoid if
@@ -1589,15 +1622,24 @@ function buildExercises(unit) {
   var slots = ctx.kanaMode ? kanaQuizSlots(unit, ctx, n) : itemSlots(ctx, n);
   var need = Math.ceil(total * RECALL_SHARE), used = {}, out = [];
   var recallCount = function () { return out.filter(function (e) { return e.recall; }).length; };
+  if (ctx.kanaMode && typeof window !== 'undefined' && window.speechSynthesis) { // hearing: a few of the reading slots
+    var reads = slots.filter(function (sl) { return sl.part === 'read'; }), left = Math.min(KANA_HEAR_COUNT, Math.floor(reads.length / 3)), tried = {};
+    notRecentFirst(rndShuffle(reads), function (sl) { return !!(ctx.recent || {})[sl.item.id + '|kanaHear']; }).forEach(function (sl) {
+      if (left <= 0 || tried[sl.item.id] || sl.item.kind === 'kana') return;
+      tried[sl.item.id] = true; // one hearing question per word
+      var hx = hearQuestion(sl.item, ctx);
+      if (hx) { sl.hear = hx; left--; }
+    });
+  }
   slots.forEach(function (sl) {
-    var ex = makeQuestion(sl.item, ctx, recallCount() < need, used[sl.item.id] || [], false, sl.part);
+    var ex = sl.hear || makeQuestion(sl.item, ctx, recallCount() < need, used[sl.item.id] || [], false, sl.part);
     if (!ex) return;
     out.push(ex);
     (used[sl.item.id] = used[sl.item.id] || []).push(ex.form);
   });
   // top-up: swap MC questions for recall ones until the share is met
   for (var i = 0; i < out.length && recallCount() < need; i++) {
-    if (out[i].recall) continue;
+    if (out[i].recall || out[i].form === 'kanaHear') continue;
     var it = out[i].item, part = out[i].part;
     var r = makeQuestion(it, ctx, true, used[it.id], true, part) || makeQuestion(it, ctx, true, [], true, part);
     if (r) out[i] = r;
