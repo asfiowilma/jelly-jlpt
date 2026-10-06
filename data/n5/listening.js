@@ -683,7 +683,7 @@ CATALOG.add([
       { speaker: 'sasuke', furigana: '……はい。', en: '...Yes.', tone: 'quiet, curt, low energy' },
       { speaker: 'kakashi', furigana: 'しずかな　[人|ひと]ですね。', en: 'You are a quiet person, huh.', tone: 'dry, amused, lazy' },
       { speaker: 'sasuke', furigana: '……よろしく　おねがいします。', en: '...Please take care of me.', tone: 'quiet, curt, low energy' },
-      { speaker: 'kakashi', furigana: 'はい、よろしく。わたしは　しずかな　せんせいです。', en: 'Sure, likewise. I am a quiet teacher, you know.', tone: 'dry, amused, lazy' }
+      { speaker: 'kakashi', furigana: 'はい、よろしく。', en: 'Sure, likewise.', tone: 'dry, amused, lazy' }
     ],
     bridge: [
       { text: 'お', ctx: 'おなまえ', gloss: 'お + a name: polite, for the other person’s things' },
