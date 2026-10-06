@@ -1153,7 +1153,7 @@ function formsFor(item, ctx) {
     var alts = catalogOf('vocab').filter(function (x) { return x.alt === v.id; }).map(function (x) { var a = conjugate(x.word, x.reading, form, x.pos); return a && a.kanji; });
     var answers = [c.kanji, c.kana].concat(alts).filter(function (a, i, arr) { return a && arr.indexOf(a) === i; });
     return { type: 'conjugation', prompt: 'Conjugate to ' + form + ':', question: shownWord(v), parts: wordParts(v),
-      answers: answers, targetForm: form, placeholder: form + '...', conjItem: v.id };
+      answers: answers, targetForm: form, placeholder: form + '...', conjItem: v.id, kana: true };
   };
   var f = function (name, recall, make) { return { name: name, recall: recall, make: make }; };
   // inSentence(w, make): make(sentence, raw furigana parts, span) for a random catalog
