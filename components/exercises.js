@@ -348,7 +348,7 @@ function Exercises(_ref9) {
       return revealed ? next() : check();
     }
     if (tag === 'INPUT' || tag === 'SELECT') return;
-    if (e.key === ' ' && ex.type === 'listen_dialog') { e.preventDefault(); if (!e.repeat) play(ex.script); return; }
+    if (e.key === ' ' && (ex.type === 'listen_dialog' || ex.type === 'listen')) { e.preventDefault(); if (!e.repeat) { if (ex.type === 'listen') speak(ex.audio); else play(ex.script); } return; }
     var n =/^[1-9]$/.test(e.key) ? Number(e.key) - 1 : -1;
     if (isOpt && !revealed && n >= 0 && n < ex.options.length) setPick(n); // picking never cuts a playing listening track
   };
@@ -446,7 +446,7 @@ function Exercises(_ref9) {
     dock = h("div", { className: "qz-dock" }, h("div", { className: "qz-in" },
       h("button", { className: "qz-gb", onClick: skip }, "Skip"),
       extra,
-      h("span", { className: "qz-sp" }, isOpt && h("span", { className: "qz-keys" }, h("kbd", null, "1–" + ex.options.length), " choose ", h("kbd", null, "Enter"), " check")),
+      h("span", { className: "qz-sp" }, isOpt && h("span", { className: "qz-keys" }, (ex.type === 'listen_dialog' || ex.type === 'listen') && [h("kbd", { key: "sp" }, "Space"), " play "], h("kbd", null, "1–" + ex.options.length), " choose ", h("kbd", null, "Enter"), " check")),
       h("button", { className: "qz-btn qz-check", disabled: !ready, onClick: check }, t('check_btn', lv))));
   } else {
     // a missed typed answer lists every accepted answer, so the learner sees the range
