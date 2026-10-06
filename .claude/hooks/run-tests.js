@@ -994,12 +994,15 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
 
   test("React render: PlacementQuestion() renders every question type the engine builds", function (a) {
     var seen = {};
-    units.filter(function (u) { return u.kind === "kana" || u.kind === "lesson"; }).forEach(function (u) {
-      placementQuestions(u, 2, []).forEach(function (ex) {
-        seen[ex.type] = true;
-        try { PlacementQuestion({ ex: ex, level: "N5", onAnswer: noop }); } catch (e) { a.ok(false, u.id + " " + ex.type + ": " + e.message); }
+    // a gap is picked only for some grammar points (P0-4), so a pass may miss it: retry a few passes
+    for (var pass = 0; pass < 8 && !(seen.typing && seen.gap && seen.order && seen.mc); pass++) {
+      units.filter(function (u) { return u.kind === "kana" || u.kind === "lesson"; }).forEach(function (u) {
+        placementQuestions(u, 2, []).forEach(function (ex) {
+          seen[ex.type] = true;
+          try { PlacementQuestion({ ex: ex, level: "N5", onAnswer: noop }); } catch (e) { a.ok(false, u.id + " " + ex.type + ": " + e.message); }
+        });
       });
-    });
+    }
     a.ok(seen.typing && seen.gap && seen.order && seen.mc, "typed, gap, order and mc all rendered: " + Object.keys(seen));
   });
 
