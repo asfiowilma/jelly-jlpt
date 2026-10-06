@@ -602,8 +602,8 @@ var DISTRACTOR_RULES = {
   reading: { // word → reading; synthesized fakes allowed here only
     texts: function (it) { return [it.reading]; },
     fakes: true,
-    prep: function (t) { // every reading of the same spelling (一日: いちにち, ついたち)
-      return catalogOf('vocab').filter(function (v) { return v.word === t.word; }).map(function (v) { return v.reading; });
+    prep: function (t) { // every reading of the same spelling (一日: いちにち, ついたち; alsoRead: 明日 あす)
+      return [].concat.apply([], catalogOf('vocab').filter(function (v) { return v.word === t.word; }).map(function (v) { return [v.reading].concat(v.alsoRead || []); }));
     },
     reject: function (c, t, ans, valid) { return valid.indexOf(c.text) >= 0; },
     score: function (c, t, ans) {
@@ -1216,7 +1216,7 @@ function formsFor(item, ctx) {
     // Same meaning (九 きゅう / く, 私 わたし / わたくし): that reading is simply right too.
     var spellings = catalogOf('vocab').filter(function (x) { return x.word === v.word && x.id !== v.id && kataToHira(x.reading) !== kataToHira(v.reading); });
     var same = function (x) { return !isBound(x) && normEn(x.gloss[0]) === normEn(v.gloss[0]); };
-    var alsoRight = spellings.filter(same).map(function (x) { return kataToHira(x.reading); });
+    var alsoRight = spellings.filter(same).map(function (x) { return kataToHira(x.reading); }).concat(v.alsoRead || []); // 明日: あす too
     var homographs = spellings.filter(function (x) { return !same(x); });
     var others = homographs.map(function (x) { return { id: x.id, word: x.word, reading: kataToHira(x.reading), gloss: glossText(x) }; });
     var kanaIn = Object.assign({ others: others }, KANA_INPUT);

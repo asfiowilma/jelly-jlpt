@@ -15,7 +15,9 @@
 //                                English answers for typed meaning questions, own wording), contexts (bound
 //                                items, pos suffix/prefix/counter: [furigana compound, English, extra readings?],
 //                                the morpheme its own [kanji|reading] block or plain kana at the end/start;
-//                                quizzes ask these items only inside a context, ticket 40)
+//                                quizzes ask these items only inside a context, ticket 40), alsoRead
+//                                (other readings of the same word, accepted when typed: 明日 あす; each must be
+//                                a reading of this word in the cached JMdict entry, else the build fails)
 //   D:/…/.scratch/content-audit/research/data/vocab-n5.json  list sources (tanos/elzup) per row
 //   <cache>/<keyword>.json       raw Jisho responses (JMdict-based, CC BY-SA: used only as a check,
 //                                nothing from it is copied into the output except pos labels)
@@ -138,6 +140,14 @@ keys.forEach(function (k) {
   if (o.accept) it.accept = o.accept;
   if (o.contexts) it.contexts = o.contexts.map(function (c) { const x = { f: c[0], en: c[1] }; if (c[2]) x.alt = c[2]; return x; });
   if (o.usage) it.usage = o.usage;
+  if (o.alsoRead) {
+    const file = cacheFile(queryOf(k)), data = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")).data : [];
+    const same = data.filter(function (e) { return e.japanese.some(function (j) { return j.word === w && j.reading === r; }); });
+    o.alsoRead.forEach(function (x) {
+      if (!same.some(function (e) { return e.japanese.some(function (j) { return j.word === w && j.reading === x; }); })) { console.error(k + ": alsoRead " + x + " is not a JMdict reading"); process.exit(1); }
+    });
+    it.alsoRead = o.alsoRead;
+  }
   if (notes) it.notes = notes;
   if (o.alt) it.alt = "v:" + o.alt; // duplicate spelling: not taught, covered by the alt item (ticket 34)
   if (!c.ok) reasons[c.reason.replace(/ for .*| is .*/, "")] = (reasons[c.reason.replace(/ for .*| is .*/, "")] || 0) + 1;

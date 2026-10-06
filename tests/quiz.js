@@ -193,6 +193,18 @@ QUnit.module('quiz difficulty model', {
     });
   });
 
+  QUnit.test('P2-11 typed reading accepts the JMdict alternates of 明日 / 昨日 / 一昨日', function (assert) {
+    var units = this.units;
+    [['v:明日|あした', 'あす'], ['v:昨日|きのう', 'さくじつ'], ['v:一昨日|おととい', 'おとつい']].forEach(function (c) {
+      var v = CATALOG.items[c[0]], u = units.filter(function (x) { return (x.vocab || []).indexOf(v) >= 0; })[0], ctx = quizContext(u);
+      var ex = formsFor(v, ctx).filter(function (f) { return f.name === 'readingType'; })[0].make();
+      assert.ok(answerIsRight(ex, c[1]) && answerIsRight(ex, v.reading), c[0] + ' accepts ' + c[1]);
+      for (var r = 0; r < 10; r++) {
+        if (pickDistractors(v, catalogOf('vocab'), 'reading', 3).indexOf(c[1]) >= 0) assert.ok(false, c[0] + ': ' + c[1] + ' offered as a wrong reading');
+      }
+    });
+  });
+
   QUnit.test('P0-4 no gap option set holds two patterns that fit the same slot', function (assert) {
     // audit groups: siblings only the English note tells apart (見てもいい / 見なくちゃ, ７時から / ７時まで)
     var groups = [['g:mashou', 'g:masen-ka', 'g:mashou-ka'], ['g:te-mo-ii', 'g:te-wa-ikemasen', 'g:nai-de-kudasai',
