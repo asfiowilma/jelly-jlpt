@@ -1768,6 +1768,8 @@ function verbStem(word, reading, pos) {
 // 'br' = bridge (not taught yet), 'nw' = new this lesson (unit vocab), 'g' = grammar token.
 // Marks are found in the text (bridge first, then vocab, then grammar) and never overlap; a ruby
 // block is marked whole.
+// Fixed expressions, not catalog items: never an application of the lesson's grammar, so no 'g' mark inside them.
+var SET_PHRASES = ['はじめまして', 'よろしく', 'おねがいします', 'いただきます', 'ごちそうさま', 'ありがとうございます', 'ありがとう', 'すみません'];
 function dialogueView(it, unit) {
   var vocab = (unit.vocab || []).map(function (v) {
     var n = [v.word, v.reading];
@@ -1809,9 +1811,13 @@ function dialogueView(it, unit) {
       });
     });
     needles.forEach(function (x) { each(x.n, function (p) { claim(p, p + x.n.length, 'nw', x.gloss, x.v.id); }); });
+    var setAt = [];
+    SET_PHRASES.forEach(function (s) { each(s, function (p) { setAt.push([p, p + s.length]); }); });
     grammar.forEach(function (x) {
       x.toks.forEach(function (n) {
-        each(n, function (p) { if (p > 0) claim(p, p + n.length, 'g', x.gloss, x.g.id); });
+        each(n, function (p) {
+          if (p > 0 && !setAt.some(function (r) { return p < r[1] && p + n.length > r[0]; })) claim(p, p + n.length, 'g', x.gloss, x.g.id);
+        });
       });
     });
     var segs = [];

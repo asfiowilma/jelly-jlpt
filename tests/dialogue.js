@@ -58,6 +58,25 @@ QUnit.module('dialogue', function () {
     assert.ok(/br:を/.test(kinds(v2.lines[0])), 'を is a bridge in lesson ' + u2.id);
   });
 
+  QUnit.test('dialogueView: set phrases carry no grammar mark, real grammar still does', function (assert) {
+    var seen = 0, real = 0;
+    withDialogue().forEach(function (u) {
+      dialogueView(CATALOG.items[u.dialogue], u).lines.forEach(function (l) {
+        var plain = l.segs.map(function (s) { return s.t; }).join(''), mark = [], o = 0;
+        l.segs.forEach(function (s) { if (s.kind === 'g') { mark.push([o, o + s.t.length]); real++; } o += s.t.length; });
+        SET_PHRASES.forEach(function (ph) {
+          for (var p = plain.indexOf(ph); p >= 0; p = plain.indexOf(ph, p + 1)) {
+            seen++;
+            assert.ok(!mark.some(function (r) { return p < r[1] && p + ph.length > r[0]; }), u.id + ': no grammar mark in ' + ph);
+          }
+        });
+      });
+    });
+    assert.ok(seen >= 3 && real > 0, 'set phrases present (' + seen + '), grammar marks kept (' + real + ')');
+    var u2 = withDialogue()[1], v2 = dialogueView(CATALOG.items[u2.dialogue], u2);
+    assert.ok(v2.lines.some(function (l) { return l.segs.some(function (s) { return s.kind === 'g' && /たべ?ます|ます/.test(s.t) && l.en; }); }), 'ます still marked outside set phrases');
+  });
+
   QUnit.test('listeningScript: lines only, no narrator, speaker M / M2, no pause marks; clips only when rendered', function (assert) {
     dialogues().forEach(function (it) {
       var s = listeningScript(it);
