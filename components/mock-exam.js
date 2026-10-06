@@ -391,6 +391,7 @@ function MockExam(props) {
     if (quitting || sheet || finishAsk) return;
     var n = /^[1-9]$/.test(e.key) ? Number(e.key) - 1 : -1;
     if (n >= 0 && n < ex.options.length) choose(n);
+    else if (e.key === ' ' && ex.type === 'listen_dialog') { e.preventDefault(); if (!e.repeat) play(ex.script); }
     else if (e.key === 'ArrowLeft' && cur > 0) go(cur - 1);
     else if (e.key === 'ArrowRight' && !last) go(cur + 1);
     else if (e.key === 'Enter' && !last && !e.isComposing && !(e.target && e.target.tagName === 'BUTTON' && !e.target.classList.contains('qz-opt'))) { e.preventDefault(); go(cur + 1); } // never finishes the part

@@ -347,7 +347,8 @@ function Exercises(_ref9) {
       return revealed ? next() : check();
     }
     if (tag === 'INPUT' || tag === 'SELECT') return;
-    var n = /^[1-9]$/.test(e.key) ? Number(e.key) - 1 : -1;
+    if (e.key === ' ' && ex.type === 'listen_dialog') { e.preventDefault(); if (!e.repeat) play(ex.script); return; }
+    var n =/^[1-9]$/.test(e.key) ? Number(e.key) - 1 : -1;
     if (isOpt && !revealed && n >= 0 && n < ex.options.length) setPick(n); // picking never cuts a playing listening track
   };
 
