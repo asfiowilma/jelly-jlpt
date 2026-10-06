@@ -98,7 +98,7 @@ activate never deletes. Offline and not yet played = the page falls back to the 
   | mondai | `m:<slug>`: authored exam items (`type` iikae / bunshou), not taught, no SRS card |
   | mock | `x:<lvl>-mock-<n>`: a fixed mock exam (`format` full / diagnostic), sections of fixed questions |
   | passage | `p:<level>-<slug>`: own reading texts (`format` short / mid / info), review units list them in `passages` |
-  | listening | `l:<level>-<slug>`: own dialogue scripts (`format` task / point / utterance / quick), review units list one in `listening` |
+  | listening | `l:<level>-<slug>`: own dialogue scripts (`format` task / point / utterance / quick), review units list one in `listening`. `format: dialogue` (`l:<level>-dlg-<slug>`) is a lesson dialog shown in a lesson unit (`unit.dialogue`), voiced per character from `tools/audio/cast.json`: see `docs/dialogue-authoring.md` |
 
   Items carry `level`, `sources`, `verified`. Vocab has `pos` (drives conjugation). Vocab and kanji
   may carry `accept` (extra English answers for typed meaning questions); vocab may carry `alsoRead`
