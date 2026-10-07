@@ -1847,12 +1847,12 @@ CATALOG.add([
       { text: 'ください', ctx: 'まって　ください', id: 'g:te-kudasai', gloss: 'て-form + ください = please do it (taught next lesson)' }
     ],
     remixes: [
-      { scene: 'Kakashi gives the next instruction.', en: 'Please close your book.',
-        chunks: ['ほんを', 'しめて', 'ください。', 'しめます'], answer: ['ほんを', 'しめて', 'ください。'],
-        explain: 'ください follows the て-form: しめて ください. The ます form cannot go before ください.' },
-      { scene: 'Sakura did not catch the answer.', en: 'Please say it once more, slowly.',
-        chunks: ['もういちど', 'ゆっくりと', 'いって', 'ください。', 'いいて'], answer: ['もういちど', 'ゆっくりと', 'いって', 'ください。'],
-        explain: 'いう ends in う, so its て-form is いって (う → って). いいて is not a word.' }
+      { scene: 'This time Kakashi has a question for Sakura.', en: 'Please answer the question.',
+        chunks: ['しつもんに', 'こたえて', 'ください。', 'こたえって'], answer: ['しつもんに', 'こたえて', 'ください。'],
+        explain: 'こたえる is a る-verb: drop る and add て, こたえて. っ comes only in う-verbs (いって, まって), so こたえって is not a form.' },
+      { scene: 'The classroom is hot. Kakashi points at the window.', en: 'Please open the window.',
+        chunks: ['まどを', 'あけて', 'ください。', 'あけます'], answer: ['まどを', 'あけて', 'ください。'],
+        explain: 'ください follows the て-form: あけて ください. The ます form cannot go before ください.' }
     ],
     names: ['カカシ', 'サクラ'],
     uses: ['g:te-form', 'g:te-kudasai', 'g:wa-desu', 'g:ka', 'g:wo', 'g:no', 'g:yo', 'v:さん|さん', 'v:本|ほん', 'v:開ける|あける', 'v:ちょっと|ちょっと', 'v:待つ|まつ', 'v:ください|ください', 'v:先生|せんせい', 'v:質問|しつもん', 'v:どうぞ|どうぞ', 'v:テスト|テスト', 'v:いつ|いつ', 'v:明日|あした', 'v:もう一度|もういちど', 'v:ゆっくりと|ゆっくりと', 'v:言う|いう', 'v:その|その', 'v:閉める|しめる', 'k:本', 'k:先', 'k:生'],
@@ -1873,9 +1873,9 @@ CATALOG.add([
       { speaker: 'gojo', furigana: '……ちょっと　おもいです。', en: '...It’s a little heavy.' }
     ],
     remixes: [
-      { scene: 'Gojo takes one more thing from Emilia.', en: 'Please hold this bag too.',
-        chunks: ['この', 'かばんも', 'もって', 'ください。', 'もちて'], answer: ['この', 'かばんも', 'もって', 'ください。'],
-        explain: 'もつ ends in つ, so its て-form is もって (つ → って). もちて is not a word.' },
+      { scene: 'At the library door, Gojo hands the books back to Emilia.', en: 'Please return the books to the library.',
+        chunks: ['ほんを', 'としょかんに', 'かえして', 'ください。', 'かえって'], answer: ['ほんを', 'としょかんに', 'かえして', 'ください。'],
+        explain: 'かえす is "give back": かえして ください. かえって is the て-form of かえる, "go home", the wrong verb here.' },
       { scene: 'Emilia tells Gojo where the books go.', en: 'Please put the books here.',
         chunks: ['ほんを', 'ここに', 'おいて', 'ください。', 'おくて'], answer: ['ほんを', 'ここに', 'おいて', 'ください。'],
         explain: 'おく ends in く, so its て-form is おいて (く → いて). おくて is not a word.' }
@@ -1901,12 +1901,12 @@ CATALOG.add([
       { speaker: 'frieren', furigana: '……マオマオさんと　[話|はな]して　います。', en: '...I’m talking with you, Maomao.' }
     ],
     remixes: [
-      { scene: 'Maomao tells Frieren what she is doing.', en: 'I am taking medicine now.',
-        chunks: ['いま', 'くすりを', 'のんでいます。', 'のみます。'], answer: ['いま', 'くすりを', 'のんでいます。'],
-        explain: 'のみます is "I take" or "I will take". For something going on right now, use the て-form + います: のんで います.' },
-      { scene: 'Maomao says who is making the noise.', en: 'The person next door is singing.',
-        chunks: ['となりの', 'ひとが', 'うたって', 'います。', 'ひとを'], answer: ['となりの', 'ひとが', 'うたって', 'います。'],
-        explain: 'が marks who is doing it: ひとが うたって います. を would make the person the thing being sung.' }
+      { scene: 'Later in the call, Maomao has put the medicine away and made tea.', en: 'I am drinking tea now.',
+        chunks: ['いま', 'おちゃを', 'のんでいます。', 'のみます。'], answer: ['いま', 'おちゃを', 'のんでいます。'],
+        explain: 'のみます is "I drink" or "I will drink". For something going on right now, use the て-form + います: のんで います.' },
+      { scene: 'Later, it goes quiet next door.', en: 'The person next door is sleeping now.',
+        chunks: ['となりの', 'ひとは', 'いま', 'ねて', 'います。', 'ねって'], answer: ['となりの', 'ひとは', 'いま', 'ねて', 'います。'],
+        explain: 'ねる is a る-verb: drop る and add て, ねて います. ねって is not a form.' }
     ],
     names: ['マオマオ', 'フリーレン'],
     uses: ['g:te-iru', 'g:te-form', 'g:wa-desu', 'g:ka', 'g:wo', 'g:ga', 'g:no', 'g:mo', 'g:yo', 'g:to', 'g:adj-i', 'v:もしもし|もしもし', 'v:さん|さん', 'v:今|いま', 'v:本|ほん', 'v:読む|よむ', 'v:そう|そう', 'v:私|わたし', 'v:薬|くすり', 'v:飲む|のむ', 'v:病気|びょうき', 'v:いいえ|いいえ', 'v:新しい|あたらしい', 'v:おもしろい|おもしろい', 'v:誰|だれ', 'v:歌う|うたう', 'v:隣|となり', 'v:人|ひと', 'v:ギター|ギター', 'v:弾く|ひく', 'v:上手|じょうず', 'v:何|なん', 'v:電話|でんわ', 'v:話す|はなす', 'k:本', 'k:読', 'k:人', 'k:何', 'k:話'],
@@ -1933,9 +1933,9 @@ CATALOG.add([
       { scene: 'Sanji asks before he sits down.', en: 'May I sit here?',
         chunks: ['ここに', 'すわっても', 'いいですか。', 'すわりても'], answer: ['ここに', 'すわっても', 'いいですか。'],
         explain: 'すわる ends in る but is an う-verb: すわって. Add も いいですか to ask for permission.' },
-      { scene: 'Sanji wants a photo of the cafe window.', en: 'May I take a photo of the window?',
-        chunks: ['まどの', 'しゃしんを', 'とっても', 'いいですか。', 'とっては'], answer: ['まどの', 'しゃしんを', 'とっても', 'いいですか。'],
-        explain: 'Permission is てもいいですか: とっても いいですか. とっては goes with いけません, "must not" (a later lesson).' }
+      { scene: 'The cafe is warm. Sanji looks at the window.', en: 'May I open the window?',
+        chunks: ['まどを', 'あけても', 'いいですか。', 'あけては'], answer: ['まどを', 'あけても', 'いいですか。'],
+        explain: 'Permission is てもいいですか: あけても いいですか. あけては goes with いけません, "you must not open it" (a later lesson).' }
     ],
     names: ['サンジ', 'ナミ'],
     uses: ['g:te-mo-ii', 'g:te-form', 'g:te-kudasai', 'g:ka', 'g:no', 'g:ni', 'g:ni-ikimasu', 'g:wo', 'g:wa-desu', 'g:de', 'g:yo', 'g:adj-na', 'g:ne', 'v:入る|はいる', 'v:いい|いい', 'v:ええ|ええ', 'v:こちら|こちら', 'v:どうぞ|どうぞ', 'v:あの|あの', 'v:窓|まど', 'v:テーブル|テーブル', 'v:座る|すわる', 'v:コーヒー|コーヒー', 'v:きれい|きれい', 'v:写真|しゃしん', 'v:撮る|とる', 'v:たくさん|たくさん', 'v:ください|ください', 'v:ここ|ここ', 'v:たばこ|たばこ', 'v:吸う|すう', 'v:灰皿|はいざら', 'g:to', 'v:マッチ|マッチ', 'v:百|ひゃく', 'v:円|えん', 'k:入', 'k:百', 'k:円'],
@@ -1957,12 +1957,12 @@ CATALOG.add([
       { speaker: 'sasuke', furigana: '……[食|た]べません。', en: '...I won’t.' }
     ],
     remixes: [
-      { scene: 'Gojo gives the first rule again.', en: 'You must not run here.',
-        chunks: ['ここで', 'はしっては', 'いけません。', 'はしっても'], answer: ['ここで', 'はしっては', 'いけません。'],
-        explain: 'はしっても いい means "you may run", and はしっても いけません means "you must not run here either" (も = also). The rule itself is the て-form + は: はしっては いけません.' },
-      { scene: 'Gojo points at the light.', en: 'You must not switch off the light.',
-        chunks: ['でんきを', 'けしては', 'いけません。', 'でんきに'], answer: ['でんきを', 'けしては', 'いけません。'],
-        explain: 'を marks the thing you switch off: でんきを けします. に is for a place or a time.' }
+      { scene: 'Gojo reads the next rule on the factory wall.', en: 'You must not smoke here.',
+        chunks: ['ここで', 'たばこを', 'すっては', 'いけません。', 'すっても'], answer: ['ここで', 'たばこを', 'すっては', 'いけません。'],
+        explain: 'すっても いいですか asks "may I smoke?". The rule "must not" is the て-form + は: すっては いけません.' },
+      { scene: 'Gojo points at a window in the factory.', en: 'You must not open this window.',
+        chunks: ['この', 'まどを', 'あけては', 'いけません。', 'あいては'], answer: ['この', 'まどを', 'あけては', 'いけません。'],
+        explain: 'あく is "it opens" by itself and takes no を. To open something, use あける: まどを あけては いけません.' }
     ],
     names: ['ゴジョウ', 'サスケ'],
     uses: ['g:te-wa-ikemasen', 'g:te-form', 'g:te-iru', 'g:te-kudasai', 'g:de', 'g:wa-desu', 'g:yo', 'g:kara', 'g:mo', 'g:ka', 'g:masen', 'g:masu', 'g:itsumo', 'v:さん|さん', 'v:ここ|ここ', 'v:走る|はしる', 'v:危ない|あぶない', 'v:この|この', 'v:ドア|ドア', 'v:押す|おす', 'v:引く|ひく', 'v:ください|ください', 'v:あの|あの', 'v:電気|でんき', 'v:消す|けす', 'v:いつも|いつも', 'v:つける|つける', 'v:食べる|たべる', 'v:先生|せんせい', 'k:食', 'k:先', 'k:生'],
@@ -1986,9 +1986,9 @@ CATALOG.add([
       { text: 'ピーナッツ', gloss: 'ピーナッツ = peanuts' }
     ],
     remixes: [
-      { scene: 'Yor says the order once more.', en: 'Wash your face, then eat breakfast.',
-        chunks: ['かおを', 'あらってから', 'あさごはんを', 'たべます。', 'あらうから'], answer: ['かおを', 'あらってから', 'あさごはんを', 'たべます。'],
-        explain: 'あらうから means "because I wash": から after the dictionary form gives a reason. For "after", join the て-form: あらって + から.' },
+      { scene: 'Bedtime. Yor gives the evening order.', en: 'Brush your teeth, then go to bed.',
+        chunks: ['はを', 'みがいてから', 'ねます。', 'みがくから'], answer: ['はを', 'みがいてから', 'ねます。'],
+        explain: 'みがくから means "because I brush": から after the dictionary form gives a reason. For "after", join the て-form: みがいて + から.' },
       { scene: 'Yor says what happens after breakfast.', en: 'After eating breakfast, we go out.',
         chunks: ['あさごはんを', 'たべてから', 'でかけます。', 'あさごはんで'], answer: ['あさごはんを', 'たべてから', 'でかけます。'],
         explain: 'を marks what you eat: あさごはんを たべて. で would mark a place or a tool.' }
@@ -2015,12 +2015,12 @@ CATALOG.add([
       { speaker: 'frieren', furigana: '……もう　すこし　[本|ほん]を　[読|よ]みます。', en: '...I’ll read a little more.' }
     ],
     remixes: [
-      { scene: 'Emilia reports on her homework.', en: 'I already finished my homework.',
-        chunks: ['しゅくだいは', 'もう', 'おわりました。', 'もういちど'], answer: ['しゅくだいは', 'もう', 'おわりました。'],
-        explain: 'もう before a finished action means "already". もういちど means "once more", which does not fit here.' },
-      { scene: 'Emilia tells Frieren the time.', en: 'It is already nine o’clock.',
-        chunks: ['もう', 'くじ', 'です。', 'くじに'], answer: ['もう', 'くじ', 'です。'],
-        explain: 'With です the time stands alone: くじです. に marks when something happens, as in くじに はじまります.' }
+      { scene: 'Ten minutes later, Emilia hears the class next door begin.', en: 'Class has already started.',
+        chunks: ['じゅぎょうは', 'もう', 'はじまりました。', 'はじまります。'], answer: ['じゅぎょうは', 'もう', 'はじまりました。'],
+        explain: 'もう with a finished action takes the past: もう はじまりました, "has already started". はじまります is "it will start".' },
+      { scene: 'An hour later, Frieren is still reading.', en: 'It is already ten o’clock.',
+        chunks: ['もう', 'じゅうじ', 'です。', 'じゅうじに'], answer: ['もう', 'じゅうじ', 'です。'],
+        explain: 'With です the time stands alone: じゅうじです. に marks when something happens, as in くじに はじまります.' }
     ],
     names: ['フリーレン', 'エミリア'],
     uses: ['g:mou', 'g:yo', 'g:ni', 'g:wa-desu', 'g:masu', 'g:mashita', 'g:mo', 'g:no', 'g:wo', 'g:te-iru', 'g:te-form', 'g:masen', 'v:先生|せんせい', 'v:もう|もう', 'v:九|く', 'v:時|じ', 'v:授業|じゅぎょう', 'v:始まる|はじまる', 'v:さん|さん', 'v:宿題|しゅくだい', 'v:終わる|おわる', 'v:作文|さくぶん', 'v:書く|かく', 'v:問題|もんだい', 'v:練習|れんしゅう', 'v:それ|それ', 'v:今日|きょう', 'v:少し|すこし', 'v:本|ほん', 'v:読む|よむ', 'k:先', 'k:生', 'k:九', 'k:時', 'k:書', 'k:本', 'k:読'],
@@ -2043,12 +2043,12 @@ CATALOG.add([
       { speaker: 'hinata', furigana: '[先生|せんせい]！　もういちど　おしえて　ください！', en: 'Sensei! Teach me once more!' }
     ],
     remixes: [
-      { scene: 'Hinata makes his promise.', en: 'I won’t forget!',
-        chunks: ['もう', 'わすれない！', 'わすれらない！'], answer: ['もう', 'わすれない！'],
+      { scene: 'Kakashi shows Hinata the katakana too.', en: 'I won’t forget katakana either!',
+        chunks: ['かたかなも', 'わすれない！', 'わすれらない！'], answer: ['かたかなも', 'わすれない！'],
         explain: 'わすれる is a る-verb: drop る and add ない, わすれない. わすれらない is not a form.' },
-      { scene: 'Kakashi gives Hinata a task.', en: 'Please remember this kanji.',
-        chunks: ['この', 'かんじを', 'おぼえて', 'ください。', 'おぼえって'], answer: ['この', 'かんじを', 'おぼえて', 'ください。'],
-        explain: 'おぼえる is a る-verb: drop る, add て, おぼえて. っ appears only in う-verbs ending in う, つ or る (and いく).' }
+      { scene: 'Kakashi points at a word next. Hinata is lost again.', en: 'I don’t know what this word means.',
+        chunks: ['この', 'ことばの', 'いみは', 'わからない。', 'わかない。'], answer: ['この', 'ことばの', 'いみは', 'わからない。'],
+        explain: 'わかる is an う-verb ending in る: る changes to ら before ない, わからない. わかない is not a form.' }
     ],
     names: ['カカシ', 'ヒナタ'],
     uses: ['g:nai-form', 'g:mou', 'g:te-form', 'g:te-kudasai', 'g:wa-desu', 'g:no', 'g:yo', 'g:mo', 'g:masen', 'g:mashita', 'v:さん|さん', 'v:この|この', 'v:漢字|かんじ', 'v:意味|いみ', 'v:分かる|わかる', 'v:昨日|きのう', 'v:教える|おしえる', 'v:川|かわ', 'v:もう|もう', 'v:忘れる|わすれる', 'v:これ|これ', 'v:山|やま', 'v:初め|はじめ', 'v:まだ|まだ', 'v:先生|せんせい', 'v:もう一度|もういちど', 'v:ください|ください', 'k:川', 'k:山', 'k:先', 'k:生'],
@@ -2071,12 +2071,12 @@ CATALOG.add([
       { speaker: 'yor', furigana: '……もういちど　きります！', en: '...I’ll cut them again!' }
     ],
     remixes: [
-      { scene: 'Yor asks before adding the soy sauce.', en: 'Do I put the soy sauce in too?',
-        chunks: ['しょうゆも', 'いれますか？', 'いれりますか？'], answer: ['しょうゆも', 'いれますか？'],
-        explain: 'いれる is a る-verb: drop る and add ます, いれます. いれります is not a form.' },
-      { scene: 'Sanji answers about the meat.', en: 'Not yet. The meat comes later.',
-        chunks: ['まだです。', 'にくは', 'あとです。', 'もうです。'], answer: ['まだです。', 'にくは', 'あとです。'],
-        explain: 'まだです alone means "not yet". もう needs a finished action, like もう いれました; もうです is not said.' }
+      { scene: 'Yor reaches for the rice. Sanji stops her.', en: 'Not the rice yet.',
+        chunks: ['ごはんは', 'まだです。', 'ごはんを'], answer: ['ごはんは', 'まだです。'],
+        explain: 'Xは まだです = "not X yet": ごはんは まだです. を marks the object of a verb, and まだです has no verb.' },
+      { scene: 'Yor has used up the vegetables. Sanji looks at the meat.', en: 'There is still lots of meat.',
+        chunks: ['にくは', 'まだ', 'たくさん', 'ありますよ。', 'いますよ。'], answer: ['にくは', 'まだ', 'たくさん', 'ありますよ。'],
+        explain: 'まだ here means "still": まだ たくさん あります. Meat is a thing, not a living being, so it takes あります, not います.' }
     ],
     names: ['サンジ', 'ヨル'],
     uses: ['g:mada', 'g:mou', 'g:mashou', 'g:te-form', 'g:te-kudasai', 'g:ga', 'g:wa-desu', 'g:wo', 'g:ni', 'g:mo', 'g:ka', 'g:yo', 'g:masu', 'g:mashita', 'g:totemo', 'v:さん|さん', 'v:一緒|いっしょ', 'v:晩御飯|ばんごはん', 'v:作る|つくる', 'v:私|わたし', 'v:料理|りょうり', 'v:下手|へた', 'v:大丈夫|だいじょうぶ', 'v:この|この', 'v:野菜|やさい', 'v:切る|きる', 'v:ください|ください', 'v:もう|もう', 'v:とても|とても', 'v:きれい|きれい', 'v:肉|にく', 'v:入れる|いれる', 'v:いいえ|いいえ', 'v:まだ|まだ', 'v:しょうゆ|しょうゆ', 'v:たくさん|たくさん', 'v:ある|ある', 'v:もう一度|もういちど'],
@@ -2102,12 +2102,12 @@ CATALOG.add([
       { text: 'チョコレート', gloss: 'チョコレート = chocolate' }
     ],
     remixes: [
-      { scene: 'Killua answers about the plates, politely this time.', en: 'I have not put the plates out yet.',
-        chunks: ['おさらは', 'まだ', 'おいていません。', 'おきません。'], answer: ['おさらは', 'まだ', 'おいていません。'],
-        explain: 'まだ おきません is "I won’t put them out yet" (a choice). "I haven’t done it yet" is まだ + the て-form + いません: まだ おいて いません.' },
-      { scene: 'Gojo asks about the bowls again.', en: 'Have you put the bowls out yet?',
-        chunks: ['もう', 'ちゃわんを', 'おきましたか？', 'まだ'], answer: ['もう', 'ちゃわんを', 'おきましたか？'],
-        explain: 'To ask "yet?", use もう with ました: もう おきましたか. まだ belongs in the "not yet" answer.' }
+      { scene: 'After dinner, Gojo looks at the sink.', en: 'I haven’t washed the plates yet.',
+        chunks: ['おさらは', 'まだ', 'あらっていません。', 'あらいません。'], answer: ['おさらは', 'まだ', 'あらっていません。'],
+        explain: 'まだ あらいません is "I won’t wash them yet" (a choice). "I haven’t done it yet" is まだ + the て-form + いません: まだ あらって いません.' },
+      { scene: 'Gojo asks about homework next.', en: 'I haven’t done my homework yet.',
+        chunks: ['まだ', 'しゅくだいを', 'していない。', 'しない。'], answer: ['まだ', 'しゅくだいを', 'していない。'],
+        explain: 'まだ しない is "I won’t do it yet". "Haven’t done it yet" is まだ + the て-form + いない: まだ して いない.' }
     ],
     names: ['ゴジョウ', 'キルア'],
     uses: ['g:mada-te-imasen', 'g:mada', 'g:mou', 'g:te-iru', 'g:te-form', 'g:nai-form', 'g:mashita', 'g:masu', 'g:wo', 'g:ni', 'g:to', 'g:mo', 'g:ka', 'v:さん|さん', 'v:もう|もう', 'v:ちゃわん|ちゃわん', 'v:テーブル|テーブル', 'v:置く|おく', 'v:まだ|まだ', 'v:お皿|おさら', 'v:スプーン|スプーン', 'v:それ|それ', 'v:カップ|カップ', 'v:先生|せんせい', 'v:晩御飯|ばんごはん', 'v:作る|つくる', 'v:私|わたし', 'v:食べる|たべる', 'k:先', 'k:生', 'k:食'],
@@ -2134,12 +2134,12 @@ CATALOG.add([
       { text: 'ピーナッツ', gloss: 'ピーナッツ = peanuts' }
     ],
     remixes: [
-      { scene: 'Maomao checks Anya’s mouth.', en: 'Please don’t close your mouth.',
-        chunks: ['くちを', 'しめないで', 'ください。', 'しめなくて'], answer: ['くちを', 'しめないで', 'ください。'],
-        explain: 'しめなくて means "not closing, so…". Only the ない-form + で goes before ください to ask someone not to do something: しめないで ください.' },
-      { scene: 'Maomao gives one more rule.', en: 'Please don’t eat a lot.',
-        chunks: ['たくさん', 'たべないで', 'ください。', 'たべて'], answer: ['たくさん', 'たべないで', 'ください。'],
-        explain: 'たべて ください asks her to eat. "Please don’t" needs the ない-form + で: たべないで ください.' }
+      { scene: 'Maomao gives a rule for Anya’s stomach.', en: 'Please don’t drink cold water.',
+        chunks: ['つめたい', 'みずを', 'のまないで', 'ください。', 'のんで'], answer: ['つめたい', 'みずを', 'のまないで', 'ください。'],
+        explain: 'のんで ください asks her to drink. "Please don’t" needs the ない-form + で: のまないで ください.' },
+      { scene: 'Anya hopes for a day off, and Maomao agrees.', en: 'Please don’t go to school today.',
+        chunks: ['きょうは', 'がっこうへ', 'いかないで', 'ください。', 'いきないで'], answer: ['きょうは', 'がっこうへ', 'いかないで', 'ください。'],
+        explain: 'いく is an う-verb: く changes to か before ない, いかない, so いかないで. いきないで is not a form.' }
     ],
     names: ['マオマオ', 'アーニャ'],
     uses: ['g:nai-de-kudasai', 'g:nai-form', 'g:te-kudasai', 'g:te-form', 'g:ga', 'g:ka', 'g:mo', 'g:wo', 'g:mashita', 'g:wa-desu', 'g:yo', 'v:さん|さん', 'v:どこ|どこ', 'v:痛い|いたい', 'v:おなか|おなか', 'v:頭|あたま', 'v:口|くち', 'v:開ける|あける', 'v:ください|ください', 'v:閉める|しめる', 'v:医者|いしゃ', 'v:嫌い|きらい', 'v:昨日|きのう', 'v:何|なに', 'v:食べる|たべる', 'v:たくさん|たくさん', 'v:少し|すこし', 'v:いい|いい', 'k:何', 'k:食'],
@@ -2161,12 +2161,12 @@ CATALOG.add([
       { speaker: 'nami', furigana: 'そうですか。ポストは　あちらです。', en: 'I see. The postbox is over there.' }
     ],
     remixes: [
-      { scene: 'Nami reminds Sasuke about the stamp.', en: 'You have to buy a stamp.',
-        chunks: ['きってを', 'かわなくては', 'いけません。', 'かいなくては'], answer: ['きってを', 'かわなくては', 'いけません。'],
-        explain: 'かう ends in う, and its ない-form uses わ: かわない, so かわなくては. かいなくては is not a form.' },
-      { scene: 'Nami points at the envelope.', en: 'You have to write the name on the envelope.',
-        chunks: ['ふうとうに', 'なまえを', 'かかなくては', 'いけません。', 'いいです。'], answer: ['ふうとうに', 'なまえを', 'かかなくては', 'いけません。'],
-        explain: 'なくては goes with いけません: "not doing it is not OK", so you must. なくては いいです is not said.' }
+      { scene: 'Sasuke has no money left after the stamp.', en: 'I have to go to the bank.',
+        chunks: ['ぎんこうへ', 'いかなくては', 'いけません。', 'いきなくては'], answer: ['ぎんこうへ', 'いかなくては', 'いけません。'],
+        explain: 'いく is an う-verb: its ない-form is いかない, so いかなくては. いきなくては is not a form.' },
+      { scene: 'Sasuke also has a postcard in his pocket.', en: 'I have to send this postcard too.',
+        chunks: ['この', 'はがきも', 'ださなくては', 'いけません。', 'だしなくては'], answer: ['この', 'はがきも', 'ださなくては', 'いけません。'],
+        explain: 'だす ends in す: す changes to さ before ない, ださない, so ださなくては. だしなくては is not a form.' }
     ],
     names: ['ナミ', 'サスケ'],
     uses: ['g:nakute-wa-ikenai', 'g:tai', 'g:wo', 'g:ni', 'g:yo', 'g:mo', 'g:no', 'g:de', 'g:wa-desu', 'g:ka', 'g:mashita', 'v:この|この', 'v:手紙|てがみ', 'v:出す|だす', 'v:封筒|ふうとう', 'v:名前|なまえ', 'v:書く|かく', 'v:切手|きって', 'v:買う|かう', 'v:百|ひゃく', 'v:円|えん', 'v:二|に', 'v:どうぞ|どうぞ', 'v:きれい|きれい', 'v:いい|いい', 'v:そう|そう', 'v:ポスト|ポスト', 'v:あちら|あちら', 'k:名', 'k:前', 'k:書', 'k:百', 'k:円', 'k:二'],
@@ -2187,12 +2187,12 @@ CATALOG.add([
       { speaker: 'maomao', furigana: '……それは　おねがいします。', en: '...That one, yes please.' }
     ],
     remixes: [
-      { scene: 'Sanji offers to put up the paper.', en: 'Shall I put up this paper?',
-        chunks: ['この', 'かみを', 'はりましょうか。', 'はりましょう。'], answer: ['この', 'かみを', 'はりましょうか。'],
-        explain: 'はりましょう is "let’s put it up" (both of us). ましょうか offers to do it for the other person: はりましょうか.' },
-      { scene: 'Sanji offers tea.', en: 'Shall I make some tea?',
-        chunks: ['おちゃを', 'いれましょうか。', 'おちゃで'], answer: ['おちゃを', 'いれましょうか。'],
-        explain: 'を marks the tea you make: おちゃを いれます. で would mark a place or a tool.' }
+      { scene: 'A cold wind blows in. Sanji has another offer.', en: 'Shall I close the window?',
+        chunks: ['まどを', 'しめましょうか。', 'しめましょう。'], answer: ['まどを', 'しめましょうか。'],
+        explain: 'しめましょう is "let’s close it" (both of us). ましょうか offers to do it for the other person: しめましょうか.' },
+      { scene: 'Maomao has a letter to send. Sanji offers once more.', en: 'Shall I post the letter?',
+        chunks: ['てがみを', 'だしましょうか。', 'だしませんか。'], answer: ['てがみを', 'だしましょうか。'],
+        explain: 'だしませんか invites her to send it herself ("won’t you send it?"). ましょうか offers to do it for her: だしましょうか.' }
     ],
     names: ['サンジ', 'マオマオ'],
     uses: ['g:mashou-ka', 'g:wo', 'g:wa-desu', 'g:ni', 'g:no', 'g:ka', 'g:masu', 'g:mashita', 'g:mou', 'g:yo', 'v:さん|さん', 'v:その|その', 'v:紙|かみ', 'v:貼る|はる', 'v:もう|もう', 'v:私|わたし', 'v:万年筆|まんねんひつ', 'v:貸す|かす', 'v:ペン|ペン', 'v:ポケット|ポケット', 'v:ある|ある', 'v:お茶|おちゃ', 'v:入れる|いれる', 'v:昼|ひる', 'v:昼御飯|ひるごはん', 'v:作る|つくる', 'v:それ|それ', 'k:万', 'k:年'],
@@ -2216,12 +2216,12 @@ CATALOG.add([
       { text: 'ぎゃく', gloss: 'ぎゃく = the other way round' }
     ],
     remixes: [
-      { scene: 'Sasuke warns Emilia about the bridge.', en: 'You have to cross the bridge.',
-        chunks: ['はしを', 'わたらなくては', 'なりません。', 'わたっては'], answer: ['はしを', 'わたらなくては', 'なりません。'],
-        explain: 'わたっては なりません means "must not cross". "Have to cross" uses the ない-form: わたらなくては なりません.' },
-      { scene: 'Sasuke gives the first turn again.', en: 'Turn left at the corner.',
-        chunks: ['かどを', 'ひだりに', 'まがって', 'ください。', 'ひだりで'], answer: ['かどを', 'ひだりに', 'まがって', 'ください。'],
-        explain: 'に marks the direction you turn: ひだりに まがります. で marks where an action happens, not which way.' }
+      { scene: 'After the bridge, the road turns the other way.', en: 'You have to turn right.',
+        chunks: ['みぎに', 'まがらなくては', 'なりません。', 'まがっては'], answer: ['みぎに', 'まがらなくては', 'なりません。'],
+        explain: 'まがっては なりません means "must not turn". "Have to turn" uses the ない-form: まがらなくては なりません.' },
+      { scene: 'There is no bus. Sasuke tells Emilia the last part.', en: 'You have to walk to the station.',
+        chunks: ['えきまで', 'あるかなくては', 'なりません。', 'あるきなくては'], answer: ['えきまで', 'あるかなくては', 'なりません。'],
+        explain: 'あるく is an う-verb: く changes to か before ない, あるかない, so あるかなくては. あるきなくては is not a form.' }
     ],
     names: ['エミリア', 'サスケ'],
     uses: ['g:nakute-wa-naranai', 'g:tai', 'g:te-form', 'g:te-kudasai', 'g:ni-ikimasu', 'g:wo', 'g:ni', 'g:wa-desu', 'g:to', 'g:ga', 'g:mo', 'g:ne', 'g:masu', 'v:あの|あの', 'v:駅|えき', 'v:行く|いく', 'v:この|この', 'v:道|みち', 'v:まっすぐ|まっすぐ', 'v:角|かど', 'v:左|ひだり', 'v:曲がる|まがる', 'v:ください|ください', 'v:橋|はし', 'v:渡る|わたる', 'v:地図|ちず', 'v:ある|ある', 'v:その|その', 'v:上|うえ', 'v:下|した', 'v:ほんとう|ほんとう', 'v:右|みぎ', 'v:交差点|こうさてん', 'v:一緒|いっしょ', 'k:行', 'k:左', 'k:右', 'k:上', 'k:下'],
@@ -2244,12 +2244,12 @@ CATALOG.add([
       { speaker: 'nami', furigana: 'ちずです。', en: 'A map.' }
     ],
     remixes: [
-      { scene: 'Nami tells Gojo where the station is.', en: 'The station is across the bridge.',
-        chunks: ['えきは', 'はしの', 'むこうです。', 'むこうを'], answer: ['えきは', 'はしの', 'むこうです。'],
-        explain: 'の links the two nouns: はしの むこう, "the far side of the bridge". を marks an object and cannot end this sentence.' },
-      { scene: 'Nami says where the shop is.', en: 'It is next to the east exit.',
-        chunks: ['ひがしの', 'でぐちの', 'よこです。', 'ひがしに'], answer: ['ひがしの', 'でぐちの', 'よこです。'],
-        explain: 'の chains the places: ひがしの でぐちの よこ, "beside the east exit". ひがしに would break the chain.' }
+      { scene: 'Gojo also needs the post office.', en: 'The post office is south of the station.',
+        chunks: ['ゆうびんきょくは', 'えきの', 'みなみです。', 'えきに'], answer: ['ゆうびんきょくは', 'えきの', 'みなみです。'],
+        explain: 'の links the two nouns: えきの みなみ, "south of the station". えきに would need a verb after it.' },
+      { scene: 'Gojo asks about a park too.', en: 'Is the park near the station?',
+        chunks: ['こうえんは', 'えきの', 'ちかくですか？', 'ちかいですか？'], answer: ['こうえんは', 'えきの', 'ちかくですか？'],
+        explain: 'ちかく is a noun, "the area near": えきの ちかく. ちかい is an adjective and cannot follow の.' }
     ],
     names: ['ナミ', 'ゴジョウ'],
     uses: ['g:wa-desu', 'g:ni', 'g:no', 'g:yo', 'g:ka', 'g:ja-nai', 'g:adj-i', 'v:この|この', 'v:辺|へん', 'v:駅|えき', 'v:ある|ある', 'v:北|きた', 'v:あの|あの', 'v:橋|はし', 'v:向こう|むこう', 'v:どっち|どっち', 'v:あっち|あっち', 'v:近く|ちかく', 'v:おいしい|おいしい', 'v:店|みせ', 'v:東|ひがし', 'v:出口|でぐち', 'v:横|よこ', 'v:西|にし', 'v:五|ご', 'v:百|ひゃく', 'v:円|えん', 'v:何|なん', 'v:地図|ちず', 'k:北', 'k:東', 'k:西', 'k:五', 'k:百', 'k:円', 'k:何'],
@@ -2270,12 +2270,12 @@ CATALOG.add([
       { speaker: 'killua', furigana: '[先生|せんせい]、[本|ほん]を　[読|よ]まないで　ください。ならべなくちゃ。', en: 'Sensei, don’t read the books. You have to line them up.' }
     ],
     remixes: [
-      { scene: 'Kakashi says the first chore again.', en: 'We have to do the laundry.',
-        chunks: ['せんたくを', 'しなくちゃ', 'いけません。', 'すなくちゃ'], answer: ['せんたくを', 'しなくちゃ', 'いけません。'],
-        explain: 'する is irregular: its ない-form is しない, so しなくちゃ. すなくちゃ is not a form.' },
-      { scene: 'Killua tells Kakashi what the books need.', en: 'You have to line up the books.',
-        chunks: ['ほんを', 'ならべなくちゃ', 'いけません。', 'ならばなくちゃ'], answer: ['ほんを', 'ならべなくちゃ', 'いけません。'],
-        explain: 'ならべる is a る-verb: drop る, ならべない, so ならべなくちゃ. ならばなくちゃ treats it like an う-verb.' }
+      { scene: 'After lunch, Kakashi gives the next chore.', en: 'We have to wash the plates.',
+        chunks: ['おさらを', 'あらわなくちゃ', 'いけません。', 'あらいなくちゃ'], answer: ['おさらを', 'あらわなくちゃ', 'いけません。'],
+        explain: 'あらう ends in う, and its ない-form uses わ: あらわない, so あらわなくちゃ. あらいなくちゃ is not a form.' },
+      { scene: 'The room smells of old books. Killua points at the window.', en: 'We have to open the window.',
+        chunks: ['まどを', 'あけなくちゃ。', 'あかなくちゃ。'], answer: ['まどを', 'あけなくちゃ。'],
+        explain: 'あける is "open something" and takes を: まどを あけなくちゃ. あく is "it opens" by itself and takes no を.' }
     ],
     names: ['カカシ', 'キルア'],
     uses: ['g:nakucha-ikenai', 'g:nai-form', 'g:nai-de-kudasai', 'g:te-kudasai', 'g:te-form', 'g:to', 'g:wo', 'g:wa-desu', 'g:no', 'g:ga', 'g:kara', 'g:mou', 'g:mashita', 'g:masu', 'g:adj-i', 'v:さん|さん', 'v:今日|きょう', 'v:洗濯|せんたく', 'v:掃除|そうじ', 'v:する|する', 'v:今|いま', 'v:この|この', 'v:部屋|へや', 'v:汚い|きたない', 'v:物|もの', 'v:先生|せんせい', 'v:本|ほん', 'v:私|わたし', 'v:並べる|ならべる', 'v:ください|ください', 'v:もう|もう', 'v:終わる|おわる', 'v:ちょっと|ちょっと', 'v:待つ|まつ', 'v:読む|よむ', 'k:先', 'k:生', 'k:本', 'k:読'],
@@ -2300,12 +2300,12 @@ CATALOG.add([
       { text: 'チェス', gloss: 'チェス = chess' }
     ],
     remixes: [
-      { scene: 'Lelouch says what he likes.', en: 'I like reading newspapers.',
-        chunks: ['しんぶんを', 'よむのが', 'すきです。', 'よむが'], answer: ['しんぶんを', 'よむのが', 'すきです。'],
-        explain: 'の turns よむ into a thing you can like: よむの. Without の, よむが cannot go with すき.' },
-      { scene: 'Hinata asks Lelouch again.', en: 'What do you like doing?',
-        chunks: ['なにを', 'するのが', 'すきですか？', 'なにが'], answer: ['なにを', 'するのが', 'すきですか？'],
-        explain: 'を marks what you do: なにを する. が already comes after の, so なにが has no place here.' }
+      { scene: 'Lelouch names one more hobby.', en: 'I like drawing pictures.',
+        chunks: ['えを', 'かくのが', 'すきです。', 'かくが'], answer: ['えを', 'かくのが', 'すきです。'],
+        explain: 'の turns かく into a thing you can like: かくの. Without の, かくが cannot go with すき.' },
+      { scene: 'Hinata asks about music next.', en: 'Do you like listening to music?',
+        chunks: ['おんがくを', 'きくのが', 'すきですか？', 'きくのを'], answer: ['おんがくを', 'きくのが', 'すきですか？'],
+        explain: 'すき takes が: きくのが すきですか. を marks the object of a verb, and すき is not a verb.' }
     ],
     names: ['ヒナタ', 'ルルーシュ'],
     uses: ['g:no-ga-suki', 'g:wa-desu', 'g:ka', 'g:wo', 'g:ya', 'g:mo', 'g:te-iru', 'g:te-form', 'g:masen-ka', 'g:ni-iku', 'g:no', 'g:masu', 'v:さん|さん', 'v:休み|やすみ', 'v:何|なに', 'v:する|する', 'v:好き|すき', 'v:本|ほん', 'v:新聞|しんぶん', 'v:読む|よむ', 'v:雑誌|ざっし', 'v:私|わたし', 'v:毎日|まいにち', 'v:聞く|きく', 'v:スポーツ|スポーツ', 'v:見る|みる', 'v:明日|あした', 'v:来る|くる', 'v:行く|いく', 'v:持つ|もつ', 'k:何', 'k:本', 'k:読', 'k:聞', 'k:見', 'k:来', 'k:行'],
@@ -2329,12 +2329,12 @@ CATALOG.add([
       { speaker: 'sakura', furigana: 'ほそい　[人|ひと]も　つよいですよ！', en: 'Slim people can be strong too!' }
     ],
     remixes: [
-      { scene: 'Emilia praises Sakura again.', en: 'Sakura is good at running.',
-        chunks: ['サクラさんは', 'はしるのが', 'じょうずです。', 'はしるのを'], answer: ['サクラさんは', 'はしるのが', 'じょうずです。'],
-        explain: 'じょうず takes が: はしるのが じょうずです. を marks the object of a verb, and じょうず is not a verb.' },
-      { scene: 'Sakura points out Sasuke.', en: 'That tall person is Sasuke.',
-        chunks: ['あの', 'せが', 'たかい', 'ひとは', 'サスケさんです。', 'せを'], answer: ['あの', 'せが', 'たかい', 'ひとは', 'サスケさんです。'],
-        explain: 'せが たかい means "tall" (the height is high). を cannot go with an adjective like たかい.' }
+      { scene: 'Sakura has heard Emilia sing.', en: 'Emilia, you’re good at singing.',
+        chunks: ['エミリアさんは', 'うたうのが', 'じょうずです。', 'うたうのを'], answer: ['エミリアさんは', 'うたうのが', 'じょうずです。'],
+        explain: 'じょうず takes が: うたうのが じょうずです. を marks the object of a verb, and じょうず is not a verb.' },
+      { scene: 'Gojo-sensei runs past the two of them.', en: 'Gojo-sensei is good at running.',
+        chunks: ['ゴジョウせんせいは', 'はしるのが', 'じょうずです。', 'はしりのが'], answer: ['ゴジョウせんせいは', 'はしるのが', 'じょうずです。'],
+        explain: 'Before の the verb stays in the dictionary form: はしるの. はしり is only a stem and cannot take の.' }
     ],
     bridge: [
       { text: 'ちび', gloss: 'ちび = shorty, a small person (casual and teasing: only about a friend)' },
@@ -2362,12 +2362,12 @@ CATALOG.add([
       { speaker: 'gojo', furigana: 'いっしょに　うたいましょう！', en: 'Let’s sing together!' }
     ],
     remixes: [
-      { scene: 'Kakashi says it once more.', en: 'I am bad at singing.',
-        chunks: ['わたしは', 'うたうのが', 'へたです。', 'うたいのが'], answer: ['わたしは', 'うたうのが', 'へたです。'],
-        explain: 'Before の the verb stays in the dictionary form: うたうの. うたい is only a stem and cannot take の.' },
-      { scene: 'Kakashi fires back at Gojo.', en: 'Gojo-sensei is bad at listening.',
-        chunks: ['ゴジョウせんせいは', 'きくのが', 'へたです。', 'きくのに'], answer: ['ゴジョウせんせいは', 'きくのが', 'へたです。'],
-        explain: 'へた takes が, like すき and じょうず: きくのが へたです. に does not go with へた here.' }
+      { scene: 'Kakashi admits one more weak point.', en: 'I am bad at drawing pictures.',
+        chunks: ['わたしは', 'えを', 'かくのが', 'へたです。', 'かきのが'], answer: ['わたしは', 'えを', 'かくのが', 'へたです。'],
+        explain: 'Before の the verb stays in the dictionary form: かくの. かき is only a stem and cannot take の.' },
+      { scene: 'Gojo wants to sing again right away. Kakashi sighs.', en: 'Gojo-sensei is bad at waiting.',
+        chunks: ['ゴジョウせんせいは', 'まつのが', 'へたです。', 'まつのを'], answer: ['ゴジョウせんせいは', 'まつのが', 'へたです。'],
+        explain: 'へた takes が, like すき and じょうず: まつのが へたです. を marks the object of a verb, and へた is not a verb.' }
     ],
     names: ['ゴジョウ', 'カカシ'],
     uses: ['g:no-ga-heta', 'g:no-ga-jouzu', 'g:ga', 'g:ga-arimasu', 'g:mashou', 'g:wa-desu', 'g:yo', 'g:te-kudasai', 'g:te-form', 'g:de', 'g:wo', 'g:ne', 'g:ni', 'g:masu', 'g:adj-i', 'v:今日|きょう', 'v:仕事|しごと', 'v:ある|ある', 'v:歌う|うたう', 'v:私|わたし', 'v:下手|へた', 'v:上手|じょうず', 'v:聞く|きく', 'v:ください|ください', 'v:大きな|おおきな', 'v:声|こえ', 'v:次|つぎ', 'v:この|この', 'v:赤い|あかい', 'v:ボタン|ボタン', 'v:押す|おす', 'v:小さな|ちいさな', 'v:ほんとう|ほんとう', 'v:一緒|いっしょ', 'v:先生|せんせい', 'k:聞', 'k:大', 'k:小', 'k:先', 'k:生'],
@@ -2392,12 +2392,12 @@ CATALOG.add([
       { text: '年', id: 'v:年|ねん', gloss: '年 (ねん) = year, as a counter: ひゃくねん = a hundred years (taught later)' }
     ],
     remixes: [
-      { scene: 'Frieren says what she came for.', en: 'I want a jacket before winter.',
-        chunks: ['ふゆの', 'まえに', 'うわぎが', 'ほしいです。', 'なつの'], answer: ['ふゆの', 'まえに', 'うわぎが', 'ほしいです。'],
-        explain: 'A noun takes の before まえに: ふゆの まえに, "before winter". なつの would make it before summer.' },
-      { scene: 'Frieren asks before she pays.', en: 'May I try it on before I buy it?',
-        chunks: ['かう', 'まえに', 'きても', 'いいですか。', 'きては'], answer: ['かう', 'まえに', 'きても', 'いいですか。'],
-        explain: 'A verb stays in the dictionary form before まえに: かう まえに. 〜ても いいですか asks permission; きては goes with いけません, "you must not wear it".' }
+      { scene: 'Frieren is going on a trip soon.', en: 'I want a jacket before my trip.',
+        chunks: ['りょこうの', 'まえに', 'うわぎが', 'ほしいです。', 'あとで'], answer: ['りょこうの', 'まえに', 'うわぎが', 'ほしいです。'],
+        explain: 'Xの まえに = before X: りょこうの まえに. あとで means "after", the wrong way round.' },
+      { scene: 'Frieren would like some tea before she leaves.', en: 'May I drink some tea before I go home?',
+        chunks: ['かえる', 'まえに', 'おちゃを', 'のんでも', 'いいですか。', 'かえります'], answer: ['かえる', 'まえに', 'おちゃを', 'のんでも', 'いいですか。'],
+        explain: 'A verb stays in the dictionary form before まえに: かえる まえに. The ます form かえります cannot go before まえに.' }
     ],
     names: ['ナミ', 'フリーレン'],
     uses: ['g:mae-ni', 'g:ga', 'g:yo', 'g:mo', 'g:no', 'g:wa-desu', 'g:ka', 'g:te-mo-ii', 'g:te-form', 'g:ne', 'g:wo', 'g:mashita', 'g:masu', 'g:adj-i', 'v:新しい|あたらしい', 'v:服|ふく', 'v:たくさん|たくさん', 'v:ある|ある', 'v:ワイシャツ|ワイシャツ', 'v:背広|せびろ', 'v:冬|ふゆ', 'v:前|まえ', 'v:暖かい|あたたかい', 'v:上着|うわぎ', 'v:欲しい|ほしい', 'v:これ|これ', 'v:どう|どう', 'v:一|いち', 'v:万|まん', 'v:円|えん', 'v:買う|かう', 'v:着る|きる', 'v:いい|いい', 'v:どうぞ|どうぞ', 'v:その|その', 'v:古い|ふるい', 'v:セーター|セーター', 'v:ズボン|ズボン', 'v:この|この', 'v:百|ひゃく', 'v:年|ねん', 'v:ください|ください', 'k:前', 'k:一', 'k:万', 'k:円', 'k:百', 'k:年'],
@@ -2420,12 +2420,12 @@ CATALOG.add([
       { speaker: 'anya', furigana: 'まだ！', en: 'Not yet!' }
     ],
     remixes: [
-      { scene: 'Anya reports on her shoes.', en: 'I took off my shoes!',
-        chunks: ['くつを', 'ぬいだ！', 'ぬぎた！'], answer: ['くつを', 'ぬいだ！'],
-        explain: 'ぬぐ ends in ぐ, so its た-form is ぬいだ (ぐ → いだ), like its て-form ぬいで. ぬぎた is not a form.' },
-      { scene: 'Anya tells Yor where she went.', en: 'Anya went outside!',
-        chunks: ['アーニャ、', 'そとへ', 'いった！', 'いきた！'], answer: ['アーニャ、', 'そとへ', 'いった！'],
-        explain: 'いく is the one exception: its た-form is いった, like its て-form いって. いきた is not a form.' }
+      { scene: 'Two minutes later, Anya comes back from the sink.', en: 'I washed my hands!',
+        chunks: ['てを', 'あらった！', 'あらいた！'], answer: ['てを', 'あらった！'],
+        explain: 'あらう ends in う, so its た-form is あらった (う → った), like its て-form あらって. あらいた is not a form.' },
+      { scene: 'Anya takes her socks off too.', en: 'Took my socks off too!',
+        chunks: ['くつしたも', 'ぬいだ！', 'ぬぐ！'], answer: ['くつしたも', 'ぬいだ！'],
+        explain: 'ぬいだ is the past: she has done it. ぬぐ is the dictionary form, "I will take them off".' }
     ],
     names: ['ヨル', 'アーニャ'],
     uses: ['g:ta-form', 'g:wo', 'g:mashita', 'g:ka', 'g:mo', 'g:to', 'g:no', 'g:wa-desu', 'g:te-form', 'g:te-kudasai', 'g:ni-ikimasu', 'g:ga', 'g:mada', 'v:靴|くつ', 'v:脱ぐ|ぬぐ', 'v:スリッパ|スリッパ', 'v:はく|はく', 'v:その|その', 'v:帽子|ぼうし', 'v:眼鏡|めがね', 'v:お父さん|おとうさん', 'v:父|ちち', 'v:かぶる|かぶる', 'v:かける|かける', 'v:外|そと', 'v:行く|いく', 'v:ちょっと|ちょっと', 'v:頭|あたま', 'v:痛い|いたい', 'v:取る|とる', 'v:ください|ください', 'v:手|て', 'v:洗う|あらう', 'v:まだ|まだ', 'k:外', 'k:行'],
@@ -2447,11 +2447,11 @@ CATALOG.add([
       { speaker: 'nami', furigana: '[今|いま]から　[行|い]く！', en: 'I’m going right now!' }
     ],
     remixes: [
-      { scene: 'Nami answers Lelouch.', en: 'I have never been on a plane.',
-        chunks: ['ひこうきに', 'のった', 'ことが', 'ない。', 'ある。'], answer: ['ひこうきに', 'のった', 'ことが', 'ない。'],
-        explain: 'た-form + ことが ない = "have never done it". ある would say she has.' },
-      { scene: 'Lelouch asks about the embassy.', en: 'Have you ever been to the embassy?',
-        chunks: ['たいしかんへ', 'いった', 'ことが', 'ある？', 'いく'], answer: ['たいしかんへ', 'いった', 'ことが', 'ある？'],
+      { scene: 'Lelouch asks about food from abroad.', en: 'Have you ever eaten foreign food?',
+        chunks: ['がいこくの', 'りょうりを', 'たべた', 'ことが', 'ある？', 'たべて'], answer: ['がいこくの', 'りょうりを', 'たべた', 'ことが', 'ある？'],
+        explain: 'Experience takes the た-form: たべた ことが ある. The て-form たべて cannot go before こと.' },
+      { scene: 'Lelouch remembers a trip by car.', en: 'I have been abroad by car.',
+        chunks: ['くるまで', 'がいこくへ', 'いった', 'ことが', 'ある。', 'いく'], answer: ['くるまで', 'がいこくへ', 'いった', 'ことが', 'ある。'],
         explain: 'Experience takes the た-form: いった ことが ある. With the dictionary form, いく ことが ある means "I sometimes go".' }
     ],
     names: ['ナミ', 'ルルーシュ'],
@@ -2478,12 +2478,12 @@ CATALOG.add([
       { text: 'トマト', gloss: 'トマト = tomato' }
     ],
     remixes: [
-      { scene: 'Sakura plans the day.', en: 'I want to walk, watch the birds, things like that!',
-        chunks: ['あるいたり、', 'とりを', 'みたり', 'したい！', 'みて'], answer: ['あるいたり、', 'とりを', 'みたり', 'したい！'],
-        explain: 'In a たり list every verb takes たり, and する closes the list: みたり したい. みて would link to a next step that never comes.' },
-      { scene: 'Sasuke picks his spot.', en: 'I want to sleep under a tree.',
-        chunks: ['きの', 'したで', 'ねたい。', 'うえで'], answer: ['きの', 'したで', 'ねたい。'],
-        explain: 'した is "under": きの したで. うえで would put Sasuke up in the tree.' }
+      { scene: 'Sakura adds plans for the flowers.', en: 'I want to look at the flowers, take photos, things like that!',
+        chunks: ['はなを', 'みたり、', 'しゃしんを', 'とったり', 'したい！', 'とって'], answer: ['はなを', 'みたり、', 'しゃしんを', 'とったり', 'したい！'],
+        explain: 'In a たり list every verb takes たり, and する closes the list: とったり したい. とって would link to a next step that never comes.' },
+      { scene: 'Sasuke has one more idea for under the tree.', en: 'I want to read a book, sleep, things like that.',
+        chunks: ['ほんを', 'よんだり、', 'ねたり', 'したい。', 'よみたり、'], answer: ['ほんを', 'よんだり、', 'ねたり', 'したい。'],
+        explain: 'よむ ends in む, so its たり-form is よんだり, like its た-form よんだ. よみたり is not a form.' }
     ],
     names: ['サクラ', 'サスケ'],
     uses: ['g:tari-tari', 'g:te-form', 'g:te-iru', 'g:ta-form', 'g:verb-groups-dict', 'g:ga', 'g:adj-i', 'g:no', 'g:wo', 'g:de', 'g:tai', 'g:ni', 'g:yo', 'v:見る|みる', 'v:花|はな', 'v:たくさん|たくさん', 'v:咲く|さく', 'v:晴れる|はれる', 'v:よい|よい', 'v:今日|きょう', 'v:池|いけ', 'v:そば|そば', 'v:歩く|あるく', 'v:鳥|とり', 'v:する|する', 'v:木|き', 'v:下|した', 'v:寝る|ねる', 'v:空|そら', 'v:一緒|いっしょ', 'v:お弁当|おべんとう', 'v:後|あと', 'v:入れる|いれる', 'v:今|いま', 'v:食べる|たべる', 'v:やる|やる', 'k:見', 'k:木', 'k:今', 'k:食'],
@@ -2508,12 +2508,12 @@ CATALOG.add([
     ],
     unmark: [{ text: 'かぜ', ctx: 'かぜをひく' }, { text: 'かぜ', ctx: 'かぜはひか' }],
     remixes: [
-      { scene: 'Emilia feels the wind.', en: 'The wind has got stronger too.',
-        chunks: ['かぜも', 'つよく', 'なった。', 'つよい'], answer: ['かぜも', 'つよく', 'なった。'],
-        explain: 'An い-adjective drops い and takes く before なる: つよい → つよく なった. つよい なった is not said.' },
-      { scene: 'Emilia sees the rain start.', en: 'It turned to rain!',
-        chunks: ['あめに', 'なった！', 'あめが'], answer: ['あめに', 'なった！'],
-        explain: 'A noun takes に before なる: あめに なった, "it turned to rain". あめが なった is not said.' }
+      { scene: 'The next morning, the rain has stopped.', en: 'The sky has got bright!',
+        chunks: ['そらが', 'あかるく', 'なった！', 'あかるい'], answer: ['そらが', 'あかるく', 'なった！'],
+        explain: 'An い-adjective drops い and takes く before なる: あかるい → あかるく なった. あかるい なった is not said.' },
+      { scene: 'Earlier that afternoon, the sun went away.', en: 'It turned cloudy.',
+        chunks: ['くもりに', 'なった。', 'くもりが'], answer: ['くもりに', 'なった。'],
+        explain: 'くもり is a noun, so it takes に before なる: くもりに なった. くもりが なった is not said.' }
     ],
     names: ['エミリア', 'キルア'],
     uses: ['g:naru', 'g:ga', 'g:te-iru', 'g:te-form', 'g:mada', 'g:tai', 'g:mo', 'g:ta-form', 'g:adj-i', 'g:nakucha-ikenai', 'g:nai-form', 'g:wo', 'g:yo', 'g:ni', 'v:空|そら', 'v:だんだん|だんだん', 'v:暗い|くらい', 'v:なる|なる', 'v:まだ|まだ', 'v:夕方|ゆうがた', 'v:遊ぶ|あそぶ', 'v:風|かぜ', 'v:強い|つよい', 'v:寒い|さむい', 'v:雨|あめ', 'v:傘|かさ', 'v:ない|ない', 'v:帰る|かえる', 'v:風邪|かぜ', 'v:引く|ひく', 'v:私|わたし', 'v:分かる|わかる', 'k:雨'],
@@ -2539,12 +2539,12 @@ CATALOG.add([
       { text: 'まほう', gloss: 'まほう = magic, a spell' }
     ],
     remixes: [
-      { scene: 'Frieren turns down the bread.', en: 'Just that is fine.',
-        chunks: ['それ', 'だけで', 'いいです。', 'も'], answer: ['それ', 'だけで', 'いいです。'],
-        explain: 'だけ means "only": それだけで いいです, "just that is fine". With も, それも いいです means "that is fine too".' },
-      { scene: 'Sanji checks the order.', en: 'Just one slice?',
-        chunks: ['いちまい', 'だけですか？', 'いっさつ'], answer: ['いちまい', 'だけですか？'],
-        explain: 'まい counts flat things, like slices of bread: いちまい. さつ counts books: いっさつ is one book.' }
+      { scene: 'Another day, Frieren only wants water.', en: 'Just water is fine.',
+        chunks: ['みず', 'だけで', 'いいです。', 'も'], answer: ['みず', 'だけで', 'いいです。'],
+        explain: 'だけ means "only": みずだけで いいです, "just water is fine". With も, みずも いいです means "water is fine too".' },
+      { scene: 'Frieren wants something to drink with the bread.', en: 'Just one cup of tea, please.',
+        chunks: ['おちゃを', 'いっぱい', 'だけ', 'ください。', 'いちまい'], answer: ['おちゃを', 'いっぱい', 'だけ', 'ください。'],
+        explain: 'はい counts cups and glasses: いっぱい = one cup. まい counts flat things, like slices of bread.' }
     ],
     names: ['サンジ', 'フリーレン'],
     uses: ['g:dake', 'g:wo', 'g:ka', 'g:mo', 'g:yo', 'g:ga', 'g:mashita', 'g:de', 'g:wa-desu', 'g:no', 'g:te-iru', 'g:te-form', 'g:masu', 'g:verb-groups-dict', 'v:何|なに', 'v:何|なん', 'v:飲む|のむ', 'v:コーヒー|コーヒー', 'v:ください|ください', 'v:パン|パン', 'v:ある|ある', 'v:今朝|けさ', 'v:私|わたし', 'v:作る|つくる', 'v:だけ|だけ', 'v:いい|いい', 'v:本|ほん', 'v:読む|よむ', 'v:まずい|まずい', 'v:さん|さん', 'v:一|いち', 'v:枚|まい', 'v:二|に', 'k:何', 'k:本', 'k:読', 'k:一', 'k:二'],
@@ -2570,12 +2570,12 @@ CATALOG.add([
       { text: 'みかん', gloss: 'みかん = a mandarin orange, a tangerine' }
     ],
     remixes: [
-      { scene: 'Nami asks Hinata to choose.', en: 'Two or ten: which is it?',
-        chunks: ['ふたつか', 'とおか、', 'どちらですか？', 'とおと、'], answer: ['ふたつか', 'とおか、', 'どちらですか？'],
-        explain: 'In 〜か〜か each choice ends in か: ふたつか とおか. と joins things ("two and ten") and cannot offer a choice.' },
-      { scene: 'Hinata asks the price.', en: 'How much is one?',
-        chunks: ['ひとつ', 'いくらですか？', 'いくつですか？'], answer: ['ひとつ', 'いくらですか？'],
-        explain: 'いくら asks the price. いくつ asks how many.' }
+      { scene: 'Nami offers a smaller choice.', en: 'Three or four: which is it?',
+        chunks: ['みっつか', 'よっつか、', 'どちらですか？', 'よっつと、'], answer: ['みっつか', 'よっつか、', 'どちらですか？'],
+        explain: 'In 〜か〜か each choice ends in か: みっつか よっつか. と joins things ("three and four") and cannot offer a choice.' },
+      { scene: 'Hinata wants tangerines for the whole team.', en: 'Seven or eight, please!',
+        chunks: ['ななつか', 'やっつか', 'ください！', 'やっつも'], answer: ['ななつか', 'やっつか', 'ください！'],
+        explain: 'In 〜か〜か each choice ends in か: ななつか やっつか. も means "also" and offers no choice.' }
     ],
     names: ['ヒナタ', 'ナミ'],
     uses: ['g:ka-ka', 'g:wo', 'g:ne', 'g:wa-desu', 'g:ka', 'g:de', 'g:yo', 'g:adj-i', 'v:その|その', 'v:果物|くだもの', 'v:ください|ください', 'v:いくつ|いくつ', 'v:二つ|ふたつ', 'v:三つ|みっつ', 'v:十|とお', 'v:どう|どう', 'v:千|せん', 'v:円|えん', 'v:安い|やすい', 'v:一つ|ひとつ', 'v:いくら|いくら', 'v:二|に', 'v:百|ひゃく', 'v:どちら|どちら', 'k:千', 'k:円', 'k:二', 'k:百'],
@@ -2599,9 +2599,9 @@ CATALOG.add([
       { speaker: 'maomao', furigana: 'いいえ。……すきですから。', en: 'No. ...I just like it.' }
     ],
     remixes: [
-      { scene: 'Maomao gives the dose.', en: 'Take it three times a day.',
-        chunks: ['いちにちに', 'さんど', 'のんで', 'ください。', 'さんじ'], answer: ['いちにちに', 'さんど', 'のんで', 'ください。'],
-        explain: 'ど counts times: さんど = three times. さんじ is three o’clock.' },
+      { scene: 'For a child, the dose is smaller.', en: 'Take it twice a day.',
+        chunks: ['いちにちに', 'にど', 'のんで', 'ください。', 'にじ'], answer: ['いちにちに', 'にど', 'のんで', 'ください。'],
+        explain: 'ど counts times: にど = twice. にじ is two o’clock.' },
       { scene: 'This time the medicine comes as tablets.', en: 'Take one each time.',
         chunks: ['ひとつずつ', 'のんで', 'ください。', 'ひとつだけ'], answer: ['ひとつずつ', 'のんで', 'ください。'],
         explain: 'ずつ means "each time, apiece": ひとつずつ. ひとつだけ would mean only one in all.' }
@@ -2630,12 +2630,12 @@ CATALOG.add([
       { text: 'チェス', gloss: 'チェス = chess' }
     ],
     remixes: [
-      { scene: 'Lelouch makes his guess.', en: 'Next year it will probably be five days.',
-        chunks: ['らいねんは', 'いつかでしょう。', 'いつかでした。'], answer: ['らいねんは', 'いつかでしょう。'],
-        explain: 'でしょう guesses about something not certain yet, like next year. でした is the past: "it was".' },
-      { scene: 'Emilia checks with Lelouch.', en: 'You can do that every day, can’t you?',
-        chunks: ['それは', 'まいにち', 'できるでしょう？', 'できましたか？'], answer: ['それは', 'まいにち', 'できるでしょう？'],
-        explain: 'でしょう？ with a rising voice asks the other person to agree: "right?". できましたか asks whether he managed it in the past.' }
+      { scene: 'Lelouch guesses even further ahead.', en: 'The year after next it will probably be six days.',
+        chunks: ['さらいねんは', 'むいかでしょう。', 'むいかでした。'], answer: ['さらいねんは', 'むいかでしょう。'],
+        explain: 'でしょう guesses about something not certain yet, like the year after next. でした is the past: "it was".' },
+      { scene: 'Lelouch guesses about the day after tomorrow.', en: 'You will probably get up late the day after tomorrow.',
+        chunks: ['あさっては', 'おそく', 'おきるでしょう。', 'おきたでしょう。'], answer: ['あさっては', 'おそく', 'おきるでしょう。'],
+        explain: 'For a guess about the future, でしょう follows the dictionary form: おきるでしょう. おきたでしょう guesses about the past.' }
     ],
     names: ['エミリア', 'ルルーシュ'],
     uses: ['g:deshou', 'g:wa-desu', 'g:mo', 'g:ne', 'g:mashita', 'g:dake', 'g:yo', 'g:ka', 'g:wo', 'g:to', 'g:masu', 'g:adj-i', 'v:来年|らいねん', 'v:毎朝|まいあさ', 'v:早い|はやい', 'v:起きる|おきる', 'v:今年|ことし', 'v:そう|そう', 'v:言う|いう', 'v:去年|きょねん', 'v:たぶん|たぶん', 'v:三日|みっか', 'v:だけ|だけ', 'v:四日|よっか', 'v:五日|いつか', 'v:さん|さん', 'v:何|なに', 'v:する|する', 'v:毎年|まいとし', 'v:同じ|おなじ', 'v:それ|それ', 'v:毎日|まいにち', 'v:できる|できる', 'k:今', 'k:年', 'k:何', 'k:毎', 'k:日'],
@@ -2662,12 +2662,12 @@ CATALOG.add([
       { text: 'トマト', gloss: 'トマト = tomato' }
     ],
     remixes: [
-      { scene: 'Sakura says her plan.', en: 'I plan to cook!',
-        chunks: ['わたしは', 'りょうりを', 'つくる', 'つもり！', 'つくった'], answer: ['わたしは', 'りょうりを', 'つくる', 'つもり！'],
-        explain: 'For a plan, つもり follows the dictionary form: つくる つもり. つくった つもり means "I believe I made it".' },
-      { scene: 'Sasuke answers about his birthday.', en: 'I plan to do nothing.',
-        chunks: ['なにも', 'しない', 'つもり。', 'する'], answer: ['なにも', 'しない', 'つもり。'],
-        explain: 'なにも goes with a negative: なにも しない, "do nothing". なにも する is not said.' }
+      { scene: 'Sakura has a second plan.', en: 'I plan to write a letter!',
+        chunks: ['わたしは', 'てがみを', 'かく', 'つもり！', 'かいた'], answer: ['わたしは', 'てがみを', 'かく', 'つもり！'],
+        explain: 'For a plan, つもり follows the dictionary form: かく つもり. かいた つもり means "I believe I wrote it".' },
+      { scene: 'Sasuke changes his plan a little.', en: 'I plan to sleep all day.',
+        chunks: ['いちにちじゅう', 'ねる', 'つもり。', 'ねない'], answer: ['いちにちじゅう', 'ねる', 'つもり。'],
+        explain: 'ねる つもり is a plan to sleep. ねない つもり would be a plan not to sleep.' }
     ],
     names: ['サクラ', 'サスケ'],
     uses: ['g:tsumori', 'g:ni', 'g:ta-form', 'g:ne', 'g:wo', 'g:mo', 'g:nai-form', 'g:no', 'g:to', 'g:te-form', 'g:verb-groups-dict', 'v:月|がつ', 'v:生まれる|うまれる', 'v:七|しち', 'v:二|に', 'v:十|じゅう', 'v:三|さん', 'v:日|にち', 'v:来月|らいげつ', 'v:そう|そう', 'v:誕生日|たんじょうび', 'v:何|なに', 'v:する|する', 'v:私|わたし', 'v:料理|りょうり', 'v:作る|つくる', 'v:食べる|たべる', 'v:来年|らいねん', 'v:二十歳|はたち', 'v:大人|おとな', 'v:居る|いる', 'v:今|いま', 'v:もう一度|もういちど', 'v:言う|いう', 'k:何', 'k:月', 'k:生', 'k:七', 'k:二', 'k:十', 'k:三', 'k:日', 'k:食', 'k:今'],
@@ -2690,11 +2690,11 @@ CATALOG.add([
       { speaker: 'yor', furigana: 'みずを　どうぞ！', en: 'Here, have some water!' }
     ],
     remixes: [
-      { scene: 'Sanji gives the first tip.', en: 'You’d better put in just a little salt.',
-        chunks: ['しおは', 'すこしだけ', 'いれた', 'ほうがいいです。', 'たくさん'], answer: ['しおは', 'すこしだけ', 'いれた', 'ほうがいいです。'],
-        explain: 'すこしだけ = just a little. With たくさん the advice would be to add lots of salt, the opposite of what Sanji means.' },
-      { scene: 'Yor asks about the sugar.', en: 'Is it better not to put in sugar?',
-        chunks: ['さとうは', 'いれない', 'ほうがいいですか？', 'いれた'], answer: ['さとうは', 'いれない', 'ほうがいいですか？'],
+      { scene: 'Sanji has eaten the salty eggs. Yor is worried.', en: 'You’d better drink some water.',
+        chunks: ['みずを', 'のんだ', 'ほうがいいです。', 'のまない'], answer: ['みずを', 'のんだ', 'ほうがいいです。'],
+        explain: 'た-form + ほうがいい = you’d better do it: のんだ ほうがいいです. のまない ほうがいい means "better not to drink".' },
+      { scene: 'Yor asks about the soy sauce.', en: 'Is it better not to put in soy sauce?',
+        chunks: ['しょうゆは', 'いれない', 'ほうがいいですか？', 'いれた'], answer: ['しょうゆは', 'いれない', 'ほうがいいですか？'],
         explain: 'ない-form + ほうがいい = better not to: いれない ほうがいい. いれた ほうがいい means "better to put it in".' }
     ],
     names: ['ヨル', 'サンジ'],
@@ -2717,12 +2717,12 @@ CATALOG.add([
       { speaker: 'hinata', furigana: '[今|いま]は　いい……。', en: 'Not now...' }
     ],
     remixes: [
-      { scene: 'Killua turns down the curry.', en: 'This is too spicy.',
-        chunks: ['これは', 'からすぎる。', 'からいすぎる。'], answer: ['これは', 'からすぎる。'],
-        explain: 'An い-adjective drops い before すぎる: からい → からすぎる. からいすぎる is not a form.' },
-      { scene: 'Hinata owns up.', en: 'I ate too much today.',
-        chunks: ['きょうは', 'たべすぎた。', 'たべるすぎた。'], answer: ['きょうは', 'たべすぎた。'],
-        explain: 'すぎる joins the ます-stem: たべ(ます) → たべすぎる, past たべすぎた. The dictionary form たべる cannot take すぎる.' }
+      { scene: 'After the curry, Hinata buys a hot tea.', en: 'This tea is too hot.',
+        chunks: ['この', 'おちゃは', 'あつすぎる。', 'あついすぎる。'], answer: ['この', 'おちゃは', 'あつすぎる。'],
+        explain: 'An い-adjective drops い before すぎる: あつい → あつすぎる. あついすぎる is not a form.' },
+      { scene: 'The next morning, Killua is late for class.', en: 'I slept too long this morning.',
+        chunks: ['けさは', 'ねすぎた。', 'ねるすぎた。'], answer: ['けさは', 'ねすぎた。'],
+        explain: 'すぎる joins the ます-stem: ね(ます) → ねすぎる, past ねすぎた. The dictionary form ねる cannot take すぎる.' }
     ],
     names: ['ヒナタ', 'キルア'],
     uses: ['g:sugiru', 'g:no', 'g:ta-form', 'g:ga', 'g:te-iru', 'g:te-form', 'g:itsumo', 'g:hou-ga-ii', 'g:adj-i', 'g:verb-groups-dict', 'v:食堂|しょくどう', 'v:カレー|カレー', 'v:二|に', 'v:杯|はい', 'v:食べる|たべる', 'v:牛肉|ぎゅうにく', 'v:たくさん|たくさん', 'v:入る|はいる', 'v:おいしい|おいしい', 'v:辛い|からい', 'v:お菓子|おかし', 'v:ほう|ほう', 'v:いい|いい', 'v:いつも|いつも', 'v:甘い|あまい', 'v:おなか|おなか', 'v:大丈夫|だいじょうぶ', 'v:ちょっと|ちょっと', 'v:痛い|いたい', 'v:今|いま', 'k:二', 'k:食', 'k:今'],
@@ -2746,12 +2746,12 @@ CATALOG.add([
       { text: 'まほう', gloss: 'まほう = magic, a spell' }
     ],
     remixes: [
-      { scene: 'Sasuke points at the crowd.', en: 'There are lots of students, so there are no chairs.',
-        chunks: ['せいとが', 'おおぜい', 'いるので、', 'いすが', 'ありません。', 'いても、'], answer: ['せいとが', 'おおぜい', 'いるので、', 'いすが', 'ありません。'],
+      { scene: 'Sasuke looks around the full room.', en: 'There are lots of students, so the room is cramped.',
+        chunks: ['せいとが', 'おおぜい', 'いるので、', 'へやが', 'せまいです。', 'いても、'], answer: ['せいとが', 'おおぜい', 'いるので、', 'へやが', 'せまいです。'],
         explain: 'ので gives the reason: いるので, "since there are". いても means "even if there are" and gives no reason.' },
-      { scene: 'Frieren gives her reason.', en: 'Because you are a student here.',
-        chunks: ['ここの', 'せいとなので。', 'せいとので。'], answer: ['ここの', 'せいとなので。'],
-        explain: 'After a noun, ので takes な: せいとなので. せいとので is not a form.' }
+      { scene: 'After the lesson, Sasuke wants to go home.', en: 'I’m tired, so I’m going home.',
+        chunks: ['つかれたので、', 'かえります。', 'つかれたなので、'], answer: ['つかれたので、', 'かえります。'],
+        explain: 'After a verb, ので follows the plain form directly: つかれたので. な comes only after a noun, as in せいとなので.' }
     ],
     names: ['サスケ', 'フリーレン'],
     uses: ['g:node', 'g:ga', 'g:masen', 'g:no', 'g:mo', 'g:te-iru', 'g:te-form', 'g:wa-desu', 'g:ka', 'g:wo', 'g:mashita', 'g:te-mo-ii', 'g:dake', 'g:doushite', 'g:verb-groups-dict', 'v:生徒|せいと', 'v:大勢|おおぜい', 'v:居る|いる', 'v:いす|いす', 'v:ある|ある', 'v:隣|となり', 'v:クラス|クラス', 'v:男の子|おとこのこ', 'v:女の子|おんなのこ', 'v:来る|くる', 'v:先生|せんせい', 'v:どうして|どうして', 'v:今日|きょう', 'v:花|はな', 'v:教える|おしえる', 'v:みんな|みんな', 'v:何|なに', 'v:できる|できる', 'v:たくさん|たくさん', 'v:咲く|さく', 'v:それ|それ', 'v:だけ|だけ', 'v:帰る|かえる', 'v:いい|いい', 'v:さん|さん', 'v:この|この', 'k:来', 'k:先', 'k:生', 'k:何'],
@@ -2774,12 +2774,12 @@ CATALOG.add([
       { speaker: 'gojo', furigana: 'いいんですか！', en: 'Can I really?!' }
     ],
     remixes: [
-      { scene: 'Anya says why she came.', en: 'I lost my purse.',
-        chunks: ['さいふを', 'なくしたんです。', 'なくすんです。'], answer: ['さいふを', 'なくしたんです。'],
+      { scene: 'The next day, Anya is back at the police box.', en: 'I lost my key.',
+        chunks: ['かぎを', 'なくしたんです。', 'なくすんです。'], answer: ['かぎを', 'なくしたんです。'],
         explain: 'なくした is the past: it has already happened. なくすんです would explain something that is going to happen.' },
-      { scene: 'Gojo greets the next visitor.', en: 'What’s the matter?',
-        chunks: ['どう', 'したんですか？', 'するんですか？'], answer: ['どう', 'したんですか？'],
-        explain: 'どう したんですか asks what happened, so it takes the past した. どう するんですか asks "what will you do?".' }
+      { scene: 'Gojo asks Anya about the key.', en: 'Where did you lose it?',
+        chunks: ['どこで', 'なくしたんですか？', 'なくしたですか？'], answer: ['どこで', 'なくしたんですか？'],
+        explain: 'んです needs ん after the plain form: なくしたんですか. なくしたですか is not said.' }
     ],
     names: ['ゴジョウ', 'アーニャ'],
     uses: ['g:n-desu', 'g:ta-form', 'g:wo', 'g:wa-desu', 'g:mashita', 'g:ne', 'g:ka', 'g:ni', 'g:ga', 'g:te-iru', 'g:te-form', 'g:yo', 'g:te-kudasai', 'g:adj-i', 'v:どう|どう', 'v:する|する', 'v:財布|さいふ', 'v:無くす|なくす', 'v:それ|それ', 'v:困る|こまる', 'v:どんな|どんな', 'v:赤い|あかい', 'v:中|なか', 'v:飴|あめ', 'v:入る|はいる', 'v:今朝|けさ', 'v:誰か|だれか', 'v:交番|こうばん', 'v:持つ|もつ', 'v:来る|くる', 'v:これ|これ', 'v:よい|よい', 'v:見せる|みせる', 'v:ください|ください', 'v:ある|ある', 'v:おまわりさん|おまわりさん', 'v:一つ|ひとつ', 'v:どうぞ|どうぞ', 'v:いい|いい', 'k:来'],
@@ -2806,11 +2806,11 @@ CATALOG.add([
     ],
     unmark: [{ text: 'いる', ctx: 'でいるん' }],
     remixes: [
-      { scene: 'Yor says where she works.', en: 'I work at the town office.',
-        chunks: ['まちの', 'やくしょに', 'つとめて', 'います。', 'やくしょで'], answer: ['まちの', 'やくしょに', 'つとめて', 'います。'],
-        explain: 'つとめる takes に for the place you work: やくしょに つとめて います. で goes with はたらく: やくしょで はたらいて います.' },
-      { scene: 'Killua says how long the trip is.', en: 'It takes three hours by train.',
-        chunks: ['でんしゃで', 'さんじかん', 'かかる。', 'かける。'], answer: ['でんしゃで', 'さんじかん', 'かかる。'],
+      { scene: 'Yor says where she lives.', en: 'I live near the station.',
+        chunks: ['わたしは', 'えきの', 'ちかくに', 'すんで', 'います。', 'ちかくで'], answer: ['わたしは', 'えきの', 'ちかくに', 'すんで', 'います。'],
+        explain: 'すむ takes に for the place you live: ちかくに すんで います. で goes with actions, such as はたらく.' },
+      { scene: 'Yor says how long her walk to work is.', en: 'It takes ten minutes on foot to the town office.',
+        chunks: ['やくしょまで', 'あるいて', 'じゅっぷん', 'かかります。', 'かけます。'], answer: ['やくしょまで', 'あるいて', 'じゅっぷん', 'かかります。'],
         explain: 'かかる means "it takes" (time or money). かける is to hang something up or to make a phone call.' }
     ],
     names: ['ヨル', 'キルア'],
@@ -2835,12 +2835,12 @@ CATALOG.add([
       { speaker: 'frieren', furigana: '……おかしには　おちゃです。', en: '...Sweets need tea.' }
     ],
     remixes: [
-      { scene: 'Kakashi offers the tea.', en: 'I’ve made some tea. Would you like some?',
-        chunks: ['おちゃを', 'いれましたけど、', 'いかがですか。', 'いかがでしたか。'], answer: ['おちゃを', 'いれましたけど、', 'いかがですか。'],
-        explain: 'けど here softens the offer: "I made tea, so... would you like some?". いかがでしたか asks how something was, after the fact.' },
-      { scene: 'Kakashi reminds Frieren what she said about the tea.', en: 'You said no to the tea, though.',
-        chunks: ['おちゃは', 'けっこうでした', 'けど。', 'から。'], answer: ['おちゃは', 'けっこうでした', 'けど。'],
-        explain: 'けど sets what she said before against what she says now: she turned the tea down, and now she wants it. から would make her refusal the reason for something.' }
+      { scene: 'The next day, Kakashi has bought sweets for Frieren.', en: 'I bought some sweets. Would you like some?',
+        chunks: ['おかしを', 'かいましたけど、', 'いかがですか。', 'いかがでしたか。'], answer: ['おかしを', 'かいましたけど、', 'いかがですか。'],
+        explain: 'けど here softens the offer: "I bought sweets, so... would you like some?". いかがでしたか asks how something was, after the fact.' },
+      { scene: 'Frieren explains her choice.', en: 'No tea for me, but I’ll have the sweets.',
+        chunks: ['おちゃは', 'けっこうですけど、', 'おかしは', 'いただきます。', 'けっこうですから、'], answer: ['おちゃは', 'けっこうですけど、', 'おかしは', 'いただきます。'],
+        explain: 'けど sets the two halves against each other: no tea, but yes to the sweets. から would make saying no to the tea the reason she takes the sweets.' }
     ],
     names: ['カカシ', 'フリーレン'],
     uses: ['g:kedo', 'g:wo', 'g:mashita', 'g:ka', 'g:wa-desu', 'g:mo', 'g:ga', 'g:node', 'g:deshita', 'v:お茶|おちゃ', 'v:入れる|いれる', 'v:いかが|いかが', 'v:結構|けっこう', 'v:では|では', 'v:コーヒー|コーヒー', 'v:嫌|いや', 'v:甘い|あまい', 'v:お菓子|おかし', 'v:ある|ある', 'v:私|わたし', 'v:物|もの', 'v:嫌い|きらい', 'v:どうぞ|どうぞ', 'v:先生|せんせい', 'k:先', 'k:生'],
@@ -2866,12 +2866,12 @@ CATALOG.add([
       { text: 'くん', ctx: 'サスケくん', gloss: 'くん = a friendly name ending for a boy: Sakura always calls him サスケくん' }
     ],
     remixes: [
-      { scene: 'Sakura sums up her day.', en: 'Tired, but it was fun!',
-        chunks: ['つかれたけれども、', 'たのしかった！', 'つかれたから、'], answer: ['つかれたけれども、', 'たのしかった！'],
-        explain: 'けれども joins two things that pull different ways: tired, but fun. から would make being tired the reason it was fun.' },
-      { scene: 'Sasuke gives his answer.', en: 'I’ll go, but I’m not shopping.',
-        chunks: ['いくけれども、', 'かいものは', 'しない。', 'いくので、'], answer: ['いくけれども、', 'かいものは', 'しない。'],
-        explain: 'けれども sets the two halves against each other: he goes, but he won’t shop. ので would make going the reason he won’t shop.' }
+      { scene: 'Sakura talks about a busy day last week.', en: 'Busy, but it was fun!',
+        chunks: ['いそがしかったけれども、', 'たのしかった！', 'いそがしかったから、'], answer: ['いそがしかったけれども、', 'たのしかった！'],
+        explain: 'けれども joins two things that pull different ways: busy, but fun. から would make being busy the reason it was fun.' },
+      { scene: 'Sakura tells Sasuke about the film.', en: 'The film is long, but it’s interesting!',
+        chunks: ['えいがは', 'ながいけれども、', 'おもしろい！', 'ながいので、'], answer: ['えいがは', 'ながいけれども、', 'おもしろい！'],
+        explain: 'けれども sets the two halves against each other: long, but interesting. ので would make the length the reason it is interesting.' }
     ],
     names: ['サクラ', 'サスケ'],
     uses: ['g:keredomo', 'g:de', 'g:te-form', 'g:nai-form', 'g:ni-ikimasu', 'g:ta-form', 'g:adj-i', 'g:wo', 'g:to', 'g:ja-nai', 'g:te-iru', 'g:tai', 'g:no', 'g:verb-groups-dict', 'v:今日|きょう', 'v:病院|びょういん', 'v:働く|はたらく', 'v:それから|それから', 'v:図書館|としょかん', 'v:行く|いく', 'v:疲れる|つかれる', 'v:楽しい|たのしい', 'v:明日|あした', 'v:休み|やすみ', 'v:何|なに', 'v:する|する', 'v:映画|えいが', 'v:見る|みる', 'v:そして|そして', 'v:買い物|かいもの', 'v:また|また', 'v:ここ|ここ', 'v:コーヒー|コーヒー', 'v:飲む|のむ', 'v:全部|ぜんぶ', 'v:一人|ひとり', 'v:好き|すき', 'v:知る|しる', 'v:でも|でも', 'k:行', 'k:何', 'k:見'],
