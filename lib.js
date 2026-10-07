@@ -1705,32 +1705,36 @@ function listeningFor(level, format) {
 // readingKana: a kanji reading as the voice should hear it ("た.べる" -> "たべる", "-ちゅう" -> "ちゅう").
 function readingKana(r) { return r.replace(/[.\-\s]/g, ''); }
 function speechText(s) { return furiganaParts(s).map(function (p) { return p.r || p.t; }).join(''); }
-// particleSpeech(kana): the TTS reads kana as written, so the particles は / へ / を come out "ha" / "he" / "wo".
-// Rule: a は, へ or を that ends a phrase (before U+3000, punctuation or the end) is spoken わ / え / お.
-// こんにちは, こんばんは, では, には end a phrase the same way and are said わ too. A word ending in は / へ
-// at a phrase end (はは。) or a particle inside a phrase is wrong: give that line a `say` (dialogueSpeech).
-var PARTICLE_SOUND = { 'は': 'わ', 'へ': 'え', 'を': 'お' };
-function particleSpeech(s) {
-  return s.replace(/[はへを](?=[　\s、。，！？!?…」』）]|$)/g, function (c) { return PARTICLE_SOUND[c]; });
+// dialogueSpeech(line): what the voice says for a dialogue line (clips and the Web Speech fallback): line.say
+// when set (overrides everything), else the line as displayed: kanji kept (word boundaries, natural accent, particles
+// read from context), punctuation and …… kept, U+3000 phrase spaces removed. Exception: from a ruby block whose
+// kanji hold a numeral to the end of its phrase (U+3000 or punctuation), ruby blocks are spoken as their authored
+// kana ([九|く][時|じ] くじ, [一|いち]まん[三|さん]ぜん[円|えん]): numbers, counters, dates and times are where TTS
+// misreads. The display text (furigana) never changes.
+var NUMERAL_KANJI = /[一二三四五六七八九十百千万]/;
+function dialogueSpeech(l) {
+  if (l.say) return l.say.replace(/　/g, '');
+  var num = false;
+  return l.furigana.replace(/\[([^|\]]+)(?:\|[^|\]]*)+\]|[　、。，！？!?…「」]/g, function (m, kanji) {
+    if (!kanji) { num = false; return m === '　' ? '' : m; }
+    num = num || NUMERAL_KANJI.test(kanji);
+    return num ? speechText(m) : kanji;
+  });
 }
-// dialogueSpeech(line): what the voice says for a dialogue line (no "……" pause marks): line.say (kana as
-// spoken, overrides the rule) or the particle rule on its reading. The display text (furigana) never changes.
-function dialogueSpeech(l) { return (l.say || particleSpeech(speechText(l.furigana))).replace(/…+/g, ''); }
 
 // listeningScript(item, order?): the whole play sequence [{ speaker, text }], options in
 // `order` (indexes into item.options). task / point: scene, question, dialogue, question again.
 // utterance: situation, question, then each option (narrator says its number). quick: the line,
 // then each reply.
 function listeningScript(it, order) {
-  if (it.format === 'dialogue') { // lines only, no narrator; the voice skips the "……" pause marks
+  if (it.format === 'dialogue') { // lines only, no narrator
     // speaker = the character's gender (M / F: the clipKey role), who = the character id (the clip's voice),
-    // slot = the browser-voice slot (M, M2, F, F2: the second character of a gender gets the 2), tone = the line's delivery hint
+    // slot = the browser-voice slot (M, M2, F, F2: the second character of a gender gets the 2)
     var dc = listenClips(it), keys = Object.keys(it.cast);
     return it.lines.map(function (l, j) {
       var g = it.cast[l.speaker].gender;
       var rank = keys.filter(function (k) { return it.cast[k].gender === g; }).indexOf(l.speaker);
       var o = { speaker: g, who: l.speaker, slot: rank > 0 ? g + '2' : g, text: dialogueSpeech(l) };
-      if (l.tone) o.tone = l.tone;
       if (dc) o.clip = dc[j];
       return o;
     });

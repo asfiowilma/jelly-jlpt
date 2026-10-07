@@ -7,10 +7,10 @@
 // where role is N / M / F, archetype is the track's man / woman key (tracks.json `man` / `woman`;
 // the narrator is one fixed voice, no archetype). A dialogue line (format dialogue) is voiced by its character:
 // role = the character's gender (M / F), archetype = the character id (tools/audio/cast.json, per-line `arch`
-// in tracks.json), and an optional per-line `tone` is appended: clipKey + '|' + tone (only when set),
-// and say is the line's kana reading (listeningScript text, U+3000 spaces removed; dialogue lines speak
-// phrase-final は / へ / を as わ / え / お, dialogueSpeech in lib.js): the TTS input,
-// so the authored readings decide how each kanji is spoken. `text` (natural, kanji kept) is kept
+// in tracks.json), and say is the line's listeningScript text with U+3000 spaces removed: the TTS input.
+// Non-dialogue lines: the kana reading, so the authored readings decide how each kanji is spoken.
+// Dialogue lines: the speech text (dialogueSpeech in lib.js: the display text, kanji kept, numerals from their
+// ruby, or the line's `say`), so `kana` holds that same text there. `text` (natural, kanji kept) is kept
 // for reading the transcript only.
 // render-input.json (gitignored) is the one file the Colab notebook uploads:
 //   { tracks, manArchetypes, womanArchetypes, characters (cast.json), have: [clip names already in audio/] }
@@ -52,7 +52,6 @@ ctx.listeningFor('N5').forEach(function (it) {
     const c = CAST[l.who];
     if (!c) errors.push(it.id + ': character ' + l.who + ' is not in cast.json');
     else if (c.gender !== l.speaker) errors.push(it.id + ': ' + l.who + ' is ' + c.gender + ' in cast.json, ' + l.speaker + ' in the item');
-    if (l.tone && l.tone.includes("|")) errors.push(it.id + ': tone must not contain |');
   });
   else [['M', 'M', 'man'], ['F', 'F', 'woman']].forEach(function (x) {
     const r = x[0], a = A[x[1]];
@@ -64,11 +63,11 @@ ctx.listeningFor('N5').forEach(function (it) {
   });
   const man = pick.M || null, woman = pick.F || null;
   tracks.push({ id: it.id, format: it.format, man, woman,
-    lines: nat.map((l, i) => ({ role: l.speaker, ...(kana[i].who ? { arch: kana[i].who } : {}), ...(kana[i].tone ? { tone: kana[i].tone } : {}),
+    lines: nat.map((l, i) => ({ role: l.speaker, ...(kana[i].who ? { arch: kana[i].who } : {}),
       text: l.text, kana: kana[i].text, say: sayText(kana[i].text) })) });
   tracks[tracks.length - 1].lines.forEach(function (l) {
     total++; allChars += l.say.length;
-    const key = clipKey(l.role, archOf(tracks[tracks.length - 1], l), l.say, l.tone);
+    const key = clipKey(l.role, archOf(tracks[tracks.length - 1], l), l.say);
     if (!clips.has(key)) { clips.add(key); chars += l.say.length; }
   });
 });

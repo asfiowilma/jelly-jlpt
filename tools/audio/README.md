@@ -2,37 +2,42 @@
 
 `tracks.json` lists every N5 listening item as a flat play sequence, for the Colab TTS notebook
 that renders the audio. Each track has `lines` of `{ role, text, kana, say }`: `text` is the natural
-Japanese (kanji kept, full-width spaces removed, for reading only), `kana` the reading the Web Speech
-fallback uses, and `say` = `kana` with full-width spaces removed: the text the clips are rendered from,
-so the authored readings (何人, 四日, 九時...) decide the pronunciation, not the TTS model.
+Japanese (kanji kept, full-width spaces removed, for reading only), `kana` the text the Web Speech
+fallback uses, and `say` = `kana` with full-width spaces removed: the text the clips are rendered from.
+Exam tracks speak the kana reading, so the authored readings (何人, 四日, 九時...) decide the pronunciation;
+lesson dialogues speak their natural text (below), so for them `kana` and `say` hold that text.
 Role N is the narrator, M the man, F the woman. `man` and `woman` are the track's archetypes, or null when that voice is absent.
 
 A lesson dialogue (format `dialogue`) has no man / woman archetype (both null). Each line is voiced by its **character**
-(`cast.json`): `role` = the character's gender (M / F), `arch` = the character id (`kakashi`, `yor`...), and an optional `tone`.
+(`cast.json`): `role` = the character's gender (M / F), `arch` = the character id (`kakashi`, `yor`...). One voice per character, no per-line tone.
 Any two characters work (man + man, woman + woman, man + woman). Non-dialogue tracks are unchanged.
 
 ## Characters (`cast.json`)
 
 14 recurring characters, one fixed voice each, reused in every dialogue they appear in. Per id: `name` (shown), `jp` (katakana, shown and
 the chip initial), `gender` M / F (the clipKey role), `role` (typical part), `personality`, `voice` (a Qwen3-TTS voice-design prompt in the style of
-`man-archetypes.json`; every prompt is different so the characters sound apart). Both genders use voice design (`design()` in the notebook): six women on the
+`man-archetypes.json`; every prompt states the gender ("Clearly male" / "Clearly female") and a pitch range, carries the character's usual delivery, and is different so the characters sound apart). Both genders use voice design (`design()` in the notebook): six women on the
 single preset Ono_Anna would sound alike. A dialogue item's `cast` must match `name`, `jp`, `gender` here (checked by `run-tests.js`; `export-tracks.js` fails on an unknown id or a gender mismatch).
-Changing a `voice` prompt does not rename clips (the key has the id, not the prompt): to re-voice a character, delete that character's clips from `audio/` and the manifest, then re-render.
+The notebook locks ONE voice per character (a voice-design render of the fixed reference sentence, cloned by the Base model) and uses it for
+all their lines. The Base model takes no per-line instruction, so there is no per-line tone: delivery comes from punctuation (……, ！, ？).
 
-### Tone
+### Changing a voice
 
-A dialogue line may carry `tone`, a short English delivery hint ("quiet, curt, low energy"). The notebook appends it to the character's voice prompt
-("... Delivery: <tone>.") and renders that line with its own locked voice (same designed voice, that delivery). It is part of the clipKey **only when set**
-(`role|char|say|tone`), so lines without one keep their names. No `|` in a tone. A line starting with 「……」 is a pause marker: the speech text drops the dots, so use `tone` for the curt, quiet delivery.
-Use a tone sparingly (each distinct tone is one more reference render): the character's `voice` already carries their usual manner.
+1. In Colab, after the upload cell, run the **Tweak a voice** cell: set `CHAR` and `VOICE` (the new prompt), run, listen, repeat. It drops that
+   character's cached voice and renders one sample line; nothing is written.
+2. Put the prompt you keep into that character's `voice` in `cast.json`, rerun `node tools/export-tracks.js`.
+3. Delete that character's rendered clips: clip names hold the character id, not the prompt, so old clips would be kept as they are. Delete
+   them from the notebook's output folder and, once shipped, from `audio/` and `audio/manifest.js` (find them by the character's `arch` in `tracks.json`), then re-render.
 
-### Particles (dialogue lines only)
+### Speech text (dialogue lines only)
 
-The TTS reads kana as written, so the particles は / へ / を would come out "ha" / "he" / "wo". For a dialogue line, `kana` and `say`
-come from `dialogueSpeech(line)` in `lib.js` (the same text Web Speech gets): a は / へ / を that ends a phrase (before U+3000, punctuation
-or the line end) is spoken わ / え / お (こんにちは, では, には too); words keep their kana (はい, へや, はたらきます). A line the rule gets wrong
-carries `say` (kana as spoken), used as is. The clipKey hashes this text, so clips, manifest and the audio-hash test agree.
-Non-dialogue tracks keep the written kana (their rendered clips keep their names; ~287 phrase-final は / へ / を there are still read as written).
+A dialogue line is spoken from natural text, the way Japanese TTS reads best: `dialogueSpeech(line)` in `lib.js` (the same text Web Speech gets) is the
+display text with kanji kept (word boundaries, natural accent; は / へ / を read as particles from context), punctuation and `……` kept, U+3000 removed.
+From a ruby block whose kanji hold a numeral to the end of its phrase, ruby blocks are spoken as their authored kana (九時 くじ, 一万三千円
+いちまんさんぜんえん): numbers, counters, dates and times are where TTS misreads. A line's optional `say` overrides the whole text for anything else
+it gets wrong. The clipKey hashes this text, so clips, manifest and the audio-hash test agree. The notebook's **A/B text test** cell plays three lines as
+A (this text), B (display text with phrase spaces) and C (the old all-kana style) for comparison.
+Non-dialogue tracks keep the written kana (their rendered clips keep their names).
 
 Regenerate after any change to `data/n5/listening.js` or the archetype files:
 
@@ -44,7 +49,7 @@ track with that voice to an archetype, with a one-line reason; written by readin
 The tool fails if such a track has no assignment or names an unknown archetype. New listening
 items need an entry in both (dialogues do not: they use `cast.json`).
 
-The notebook dedupes clips with `clipKey = role + '|' + (role === 'N' ? '' : archetype) + '|' + say [+ '|' + tone]`
+The notebook dedupes clips with `clipKey = role + '|' + (role === 'N' ? '' : archetype) + '|' + say`
 (archetype = the character id for a dialogue line), so identical lines across tracks render once. (Before the switch to `say` the key used `text`; lines
 written all in kana hash the same either way, so their clips were reused.)
 
@@ -53,7 +58,7 @@ written all in kana hash the same either way, so their clips were reused.)
 - Woman: Qwen3-TTS preset Ono_Anna for all; only the instruction changes per archetype (lively is the approved base).
 - Narrator: preset Serena with the exam-style instruction, one fixed voice for every track.
 - Man: a designed voice per archetype, from `man-archetypes.json`.
-- Dialogue characters: a designed voice each (either gender), from `cast.json`; Ono_Anna is only for the old woman archetypes.
+- Dialogue characters: one designed, locked voice each (either gender) for all their lines, from `cast.json`; no per-line tone; Ono_Anna is only for the old woman archetypes.
 - Loudness: TARGET_DB -20, GAIN_DB F +1, M 0, N 0.
 - Output: MP3, mono. Clips are cached by the service worker on first play.
 

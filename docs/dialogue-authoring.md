@@ -14,7 +14,7 @@ L({ id: 'l:n5-dlg-first-class', format: 'dialogue',          // l:<level>-dlg-<s
           sasuke:  { name: 'Sasuke',  jp: 'サスケ', gender: 'M', role: 'Student' } },
   lines: [
     { speaker: 'kakashi', furigana: 'はじめまして。わたしは　カカシです。せんせいです。', en: 'Nice to meet you. I am Kakashi. I am a teacher.' },
-    { speaker: 'sasuke',  furigana: '……サスケです。', en: '...Sasuke.', tone: 'quiet, curt, low energy' },
+    { speaker: 'sasuke',  furigana: '……サスケです。', en: '...Sasuke.' },
     ...
   ],
   bridge: [ { text: 'お', ctx: 'おなまえ', gloss: '...' }, { text: 'ね', ctx: 'ですね', id: 'g:ne', gloss: '...' }, { text: 'しずかな', gloss: '...' } ],
@@ -29,7 +29,7 @@ L({ id: 'l:n5-dlg-first-class', format: 'dialogue',          // l:<level>-dlg-<s
 | `id` | `l:<level>-dlg-<slug>`. New text = new id (clips and manifest are keyed per track). |
 | `title`, `goal`, `scene` | English, shown in the hero / opened panel. `goal` starts "You can ...". |
 | `cast` | Exactly two characters. Key = character id from `tools/audio/cast.json`. The first key is the left speaker (chip colour `a`), the second the right (`b`). Per entry: `name`, `jp` (same as cast.json; first character is the chip initial), `gender` M / F (same as cast.json), `role` (this scene's part, English, shown under the name). |
-| `lines[]` | 6-10 lines. `speaker` = a cast key, `furigana` = kana with `[漢字\|かな]` ruby and U+3000 between phrases, `en` = English of the line, `tone` (optional, below), `say` (optional speech override, below). Both characters speak. |
+| `lines[]` | 6-10 lines. `speaker` = a cast key, `furigana` = kana with `[漢字\|かな]` ruby and U+3000 between phrases, `en` = English of the line, `say` (optional speech override, below). No `tone`: one voice per character. Both characters speak. |
 | `bridge[]` | At most 3 words the unit has not taught yet, each `{ text, gloss, ctx?, id? }`. `gloss` is mandatory. `ctx` = the surrounding text when the word is only a bridge inside it (お in おなまえ). `id` = the grammar / vocab id when it is a catalog item taught later (it must also be in `uses`). Shown with a dashed mark; the gloss strip explains it. |
 | `remixes[]` | The Practice card's swaps (ungraded, not in the quiz): `scene`, `en` (the target in English), `chunks` (the answer chunks plus exactly 1 distractor, all distinct), `answer` (ordered chunks), `explain`. Every katakana word in the chunks is in `names`. A chunk holding a one-character bridge word (を) gets its gloss as a note automatically. |
 | `names` | Every spoken name, exactly as written (katakana), canon only; includes both cast `jp` values. The test has the allowed list (the 14 characters). Never invent a given or family name the original does not use in speech. |
@@ -45,27 +45,32 @@ Dialogue text is hand-written for this project (`sources: ['own']`, set by `L()`
 - teaching order: every `uses` id is taught by the unit or an earlier one, or is a declared bridge; at most 3 bridge words; each bridge text appears in the lines
 - the unit's own grammar point is used (`は/です` in Stage 19, `ます` in Stage 28): its id is in `uses` and its tokens appear
 - kanji appear only when taught by the unit or earlier, inside a ruby block, and are in `uses` (`k:...`); everything else in kana
-- 6-10 lines; two cast characters, both speak; every line has `en`; `tone` is a non-empty string without `|`
+- 6-10 lines; two cast characters, both speak; every line has `en`; no `tone`; a `say` (when set) is a non-empty string
 - names canon only and complete; the Practice swaps: 1-3, answer chunks present, exactly 1 distractor, distinct chunks
 - every ruby reading backed by a used word, a name or the kanji's readings; every katakana word a used word or a name
 - the cast matches `tools/audio/cast.json` (`run-tests.js`, headless)
 - the audio hash test: every rendered line's clip name equals the sha1 of its clipKey (skipped for a dialogue until its track is in `audio/manifest.js`)
 
-## Characters, voices and tone
+## Characters, voices and speech text
 
 `tools/audio/cast.json` is the roster: 14 characters, each with `name`, `jp`, `gender`, `role`, `personality` and `voice` (a Qwen3-TTS voice-design prompt). One fixed voice per
-character, reused in every dialogue. Pick the pair for the scene from `.scratch/lesson-dialogs/cast.md` and `scenarios.html` (register: polite pairs early, plain-form pairs only after the plain form is taught).
+character, reused for all their lines in every dialogue. Pick the pair for the scene from `.scratch/lesson-dialogs/cast.md` and `scenarios.html` (register: polite pairs early, plain-form pairs only after the plain form is taught).
 
-A line's voice is its character (`role|<character id>|<kana reading>`). Any pairing works (man+man, woman+woman, man+woman). In the browser-voice fallback the second character of a gender gets
+A line's voice is its character (clipKey `role|<character id>|<speech text>`). Any pairing works (man+man, woman+woman, man+woman). In the browser-voice fallback the second character of a gender gets
 another voice or a different pitch.
 
-Particles: the voice reads the speech text, not the display text. `dialogueSpeech(line)` (lib.js) turns a は / へ / を that ends a phrase
-(before U+3000, punctuation or the line end) into わ / え / お, so write particles at a phrase end (`わたしは　カカシです`, not `わたしはね`).
-A line the rule gets wrong (a word ending in は / へ at a phrase end, like `はは。`) takes `say`: its kana as spoken, used as is.
-`tests/dialogue.js` fails when a は / へ / を is left that is not inside a used word or a set phrase. The learner never sees `say`.
+Speech text: the voice (clips and the browser fallback) reads the line as displayed, the way Japanese TTS reads best: kanji kept (word
+boundaries, natural accent; は / へ / を are read as particles from context), punctuation and `……` kept, the U+3000 phrase spaces removed.
+`dialogueSpeech(line)` in lib.js. One exception: from a ruby block whose kanji hold a numeral (一二三四五六七八九十百千万) to the end of
+its phrase, the ruby blocks are spoken as their authored kana (`[九|く][時|じ]` → くじ, `[一|いち]まん[三|さん]ぜん[円|えん]` → いちまんさんぜんえん):
+numbers, counters, dates and times are where TTS misreads. `わたしは　[学生|がくせい]です。` is spoken `わたしは学生です。`.
 
-`tone` is optional: a short English delivery hint ("quiet, curt, low energy", "dry, amused, lazy"), appended to the voice prompt at render time. It changes the clip name only when set.
-A line that starts with `……` starts with a pause marker (not spoken): put the curt delivery in `tone`. Use tones sparingly, only where the line differs from the character's usual manner.
+`say` (optional) overrides the speech text of one line for anything else the voice gets wrong (a kanji misread, an odd accent): the text as it should
+be spoken, used as is (U+3000 removed). The learner never sees `say`; it changes that line's clip name.
+
+No per-line tone: each character has one locked voice (their `voice` prompt in `cast.json` carries their usual delivery: Sasuke quiet and curt, Gojo teasing,
+Frieren flat). Delivery within a line comes from punctuation only: `……` (hesitation), `！`, `？`. To change how a character sounds, edit their prompt
+(try it first in the notebook's "Tweak a voice" cell) and delete that character's rendered clips: see `tools/audio/README.md`.
 
 ## Adding a dialogue
 

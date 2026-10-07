@@ -82,11 +82,11 @@ QUnit.module('dialogue', function () {
     assert.ok(v2.lines.some(function (l) { return l.segs.some(function (s) { return s.kind === 'g' && /たべ?ます|ます/.test(s.t) && l.en; }); }), 'ます still marked outside set phrases');
   });
 
-  QUnit.test('listeningScript: lines only, no narrator, speaker = the character gender, who / slot / tone, no pause marks; clips only when rendered', function (assert) {
+  QUnit.test('listeningScript: lines only, no narrator, speaker = the character gender, who / slot, text = dialogueSpeech; clips only when rendered', function (assert) {
     dialogues().forEach(function (it) {
       var s = listeningScript(it);
       assert.strictEqual(s.length, it.lines.length, it.id + ': one entry per line');
-      assert.ok(s.every(function (l, i) { return l.who === it.lines[i].speaker && l.speaker === it.cast[l.who].gender && !/…/.test(l.text) && !/[一-鿿\[|]/.test(l.text) && l.tone === it.lines[i].tone; }), 'kana speech text, gender role, character id, tone');
+      assert.ok(s.every(function (l, i) { return l.who === it.lines[i].speaker && l.speaker === it.cast[l.who].gender && l.text === dialogueSpeech(it.lines[i]) && !/[　\[|]/.test(l.text) && !('tone' in l); }), 'speech text, gender role, character id, no tone');
       var slots = {};
       s.forEach(function (l) { slots[l.who] = l.slot; });
       var want = Object.keys(it.cast).map(function (k) { return it.cast[k].gender; }).map(function (g, i, a) { return a.indexOf(g) === i ? g : g + '2'; });
@@ -96,32 +96,22 @@ QUnit.module('dialogue', function () {
     });
   });
 
-  QUnit.test('particleSpeech: phrase-final は / へ / を are spoken わ / え / お, words keep their kana', function (assert) {
-    [['ははは　げんきです。', 'ははわ　げんきです。'], ['はなは　きれいです。', 'はなわ　きれいです。'], ['へやへ　いきます。', 'へやえ　いきます。'],
-      ['はい、そうです。', 'はい、そうです。'], ['こんにちは！', 'こんにちわ！'], ['こんばんは。', 'こんばんわ。'], ['それでは、また。', 'それでわ、また。'],
-      ['わたしは　がくせいです。', 'わたしわ　がくせいです。'], ['えきへ　いきます。', 'えきえ　いきます。'], ['パンを　たべます。', 'パンお　たべます。'],
-      ['がくせいでは　ありません。', 'がくせいでわ　ありません。'], ['まいにちは　いそがしいです。', 'まいにちわ　いそがしいです。'], ['がっこうには　いきません', 'がっこうにわ　いきません'],
-      ['おなまえは？', 'おなまえわ？'], ['ははです。', 'ははです。'], ['はじめまして。', 'はじめまして。'], ['へやは　ここです。', 'へやわ　ここです。']
-    ].forEach(function (c) { assert.strictEqual(particleSpeech(c[0]), c[1], c[0]); });
-    assert.strictEqual(dialogueSpeech({ furigana: '……[私|わたし]は　[七|なな]ひゃく[円|えん]です。' }), 'わたしわ　ななひゃくえんです。', 'ruby read, pause marks dropped');
-    assert.strictEqual(dialogueSpeech({ furigana: 'はは。', say: 'はは。' }), 'はは。', 'a line\'s say overrides the rule (word-final は at a phrase end)');
-  });
-
-  QUnit.test('dialogue speech: no particle は / へ / を left (every remaining は / へ sits in a used word or a set phrase)', function (assert) {
-    var SET = ['はじめまして', 'おはよう'], left = [];
+  QUnit.test('dialogueSpeech: the display text with kanji kept and no phrase spaces, numerals spoken from their ruby, say wins', function (assert) {
+    [['わたしは　[学生|がくせい]です。', 'わたしは学生です。', 'kanji kept, particle は as written, U+3000 removed'],
+      ['……[先生|せんせい]の　とけいです。', '……先生のとけいです。', 'pause marks kept'],
+      ['ごご　[三|さん][時|じ]ごろに　おきる。', 'ごごさんじごろにおきる。', 'from a numeral block to the phrase end: its kana (九時 くじ)'],
+      ['[午前|ごぜん]　[七|しち][時|じ]ですよ。', '午前しちじですよ。', 'only the numeral run'],
+      ['[四日|よっか]です！', 'よっかです！', 'a numeral inside one block'],
+      ['[一|いち]まん[三|さん]ぜん[円|えん]でした！', 'いちまんさんぜんえんでした！', 'later ruby blocks of the same phrase too (the counter)'],
+      ['[金|きん]ようびは？', '金ようびは？', 'no numeral: kanji kept'],
+      ['[二人|ふたり]で　[行|い]く！', 'ふたりで行く！', 'a phrase space ends the number']
+    ].forEach(function (c) { assert.strictEqual(dialogueSpeech({ furigana: c[0] }), c[1], c[2]); });
+    var line = { furigana: 'はは　です。', say: 'ハハです。' };
+    assert.strictEqual(dialogueSpeech(line), 'ハハです。', "a line's say overrides the rule");
+    assert.strictEqual(line.furigana, 'はは　です。', 'display text unchanged');
     dialogues().forEach(function (it) {
-      var words = SET.concat((it.uses || []).filter(function (id) { return /^v:/.test(id); }).map(function (id) {
-        var v = CATALOG.items[id], r = kataToHira(v.reading);
-        return /^(verb|adj-i)/.test(v.pos) ? r.slice(0, -1) : r; // inflected: the stem (はたらき-ます)
-      }));
-      listeningScript(it).forEach(function (l, j) {
-        if (it.lines[j].say) return; // spelled out by hand
-        var s = l.text.replace(/[\u3000\s]/g, ''), covered = {};
-        words.forEach(function (w) { for (var i = s.indexOf(w); i >= 0; i = s.indexOf(w, i + 1)) for (var k = i; k < i + w.length; k++) covered[k] = true; });
-        for (var i = 0; i < s.length; i++) if ((s[i] === 'を' || /[はへ]/.test(s[i]) && !covered[i])) left.push(it.id + ' line ' + (j + 1) + ': ' + s);
-      });
+      it.lines.forEach(function (l) { assert.ok(!/　/.test(dialogueSpeech(l)), it.id + ': no full-width spaces'); });
     });
-    assert.deepEqual(left, [], 'add a `say` to a line the rule gets wrong (docs/dialogue-authoring.md)');
   });
 
   QUnit.test('assignVoices: the second man / woman gets another voice or a different pitch', function (assert) {
