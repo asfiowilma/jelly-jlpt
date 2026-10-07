@@ -258,7 +258,9 @@ QUnit.module('catalog checks', function () {
   // Lesson dialogues: canon names only (the 14 recurring characters of tools/audio/cast.json, as spoken). Never invent a given name for the cast.
   // Other canon characters of the same series may be mentioned (never speak): listed below by series.
   var DIALOGUE_NAMES = ['フリーレン', 'ゴジョウ', 'カカシ', 'ルルーシュ', 'ヒナタ', 'エミリア', 'サスケ', 'サクラ', 'ヨル', 'アーニャ', 'キルア', 'マオマオ', 'ナミ', 'サンジ'].concat(
-    ['ナルト'] // Naruto
+    ['ナルト', 'パックン'], // Naruto
+    ['ボンド'], // Spy x Family
+    ['ゴン'] // Hunter x Hunter
   );
   function dialogueErrors(it, items) {
     var e = [];
