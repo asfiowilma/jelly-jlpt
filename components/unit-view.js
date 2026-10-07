@@ -82,6 +82,15 @@ function UnitView(props) {
       .sort(function (a, b) { return a.n - b.n || b.w - a.w; }).slice(0, 3).map(function (x) { return x.s; });
   }
   var practice = unit.practice || [];
+  // lesson note box; lessons with a dialogue show it right after the dialogue
+  var noteAfterDialogue = unit.kind === 'lesson' && !!unit.dialogue;
+  var noteBox = function () {
+    var note = noteParts(unit.notes);
+    return React.createElement("aside", { className: "unit-note", 'aria-label': t('note_label', lv) },
+      React.createElement("div", { className: "unit-note-label" }, icon('bulb'), t('note_label', lv)),
+      React.createElement("h3", { className: "unit-note-head" }, note.head),
+      note.body.map(function (line, i) { return React.createElement("p", { key: i, className: "unit-note-line" }, line); }));
+  };
   var knownN = knownCount(unitItems([unit]), props.cards || {}); // seeded as already known (ticket 37)
   var last = units.length - 1;
   return React.createElement("div", { className: "day-card" },
@@ -101,16 +110,11 @@ function UnitView(props) {
           React.createElement('div', { className: 'unit-note-label' }, icon('bulb'), t('guide_label', lv)),
           React.createElement('h3', { className: 'unit-note-head' }, pgText(unit.guide.lead, showFurigana))),
         unit.guide && React.createElement(PrepGuide, { guide: unit.guide, showFurigana: showFurigana }),
-        unit.notes && (function () {
-          var note = noteParts(unit.notes);
-          return React.createElement("aside", { className: "unit-note", 'aria-label': t('note_label', lv) },
-            React.createElement("div", { className: "unit-note-label" }, icon('bulb'), t('note_label', lv)),
-            React.createElement("h3", { className: "unit-note-head" }, note.head),
-            note.body.map(function (line, i) { return React.createElement("p", { key: i, className: "unit-note-line" }, line); }));
-        })(),
+        unit.notes && !noteAfterDialogue && noteBox(),
         unit.kana.length > 0 && React.createElement(KanaSection, { key: 'kana:' + unit.id, unit: unit }),
         unit.dialogue && unit.kind === 'lesson' && React.createElement(DialogueSection, {
           key: 'dlg:' + unit.id, unit: unit, showFurigana: showFurigana, toggleFurigana: toggleFurigana }),
+        unit.notes && noteAfterDialogue && noteBox(),
         unit.vocab.length > 0 && React.createElement(VocabSection, { key: 'vocab:' + unit.id, unit: unit }),
         // kana units: read-only practice words (no card, not quizzed), shown in kana
         practice.length > 0 && section(t('section_read', lv), React.createElement("ul", { className: "vocab-list read-list" }, practice.map(function (v) {

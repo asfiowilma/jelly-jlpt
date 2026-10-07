@@ -205,6 +205,10 @@ kanaUnits(KATAKANA, "katakana");
 const kanjiAll = items.filter(function (it) { return it.kind === "kanji"; }); // kanji.js order = Tanos frequency order
 // Written forms per lesson, to see where each kanji shows up.
 // Lesson dialogs (pilot): lesson title -> l:n5-dlg-… (data/n5/listening.js, format dialogue). Shown above the vocabulary.
+// Optional lesson note (the box above the lesson): first sentence = headline, rest = quiet lines.
+const LESSON_NOTES = {
+  "One thing, two things": "These ten words have a rhythm: ひとつ, ふたつ, みっつ … ここのつ, とお. Songs make rhythm stick. Try searching for the Naruto \"Bijuu Kazoe Uta\" (the tailed-beast counting song) and sing along. It runs from ひとつ to ここのつ, which is most of this lesson.",
+};
 const DIALOGUES = {
   "Introducing yourself": "l:n5-dlg-first-class",
   "Eating and drinking": "l:n5-dlg-forger-table",
@@ -328,6 +332,7 @@ let sinceReview = [];
 LESSONS.forEach(function (l, n) {
   const u = { id: uid(), level: "N5", kind: "lesson", title: l[0], vocab: words(l[2]), kanji: [], grammar: l[1] ? [l[1]] : [] };
   if (l[1] && !CATALOG.items[l[1]]) problems.push("no grammar " + l[1]);
+  if (LESSON_NOTES[l[0]]) u.notes = LESSON_NOTES[l[0]];
   if (DIALOGUES[l[0]]) { u.dialogue = DIALOGUES[l[0]]; if (!CATALOG.items[u.dialogue]) problems.push("no dialogue " + u.dialogue); }
   // l[3]: kanji chosen by hand for this lesson (the rest are placed automatically)
   const fixed = (l[3] || "").split(" ").filter(Boolean).map(function (c) {

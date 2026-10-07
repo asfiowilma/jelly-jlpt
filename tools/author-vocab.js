@@ -140,6 +140,7 @@ keys.forEach(function (k) {
   if (o.accept) it.accept = o.accept;
   if (o.contexts) it.contexts = o.contexts.map(function (c) { const x = { f: c[0], en: c[1] }; if (c[2]) x.alt = c[2]; return x; });
   if (o.usage) it.usage = o.usage;
+  if (o.tip) it.tip = o.tip; // learner-facing note, shown under the word in the lesson (notes stay authoring-only)
   if (o.alsoRead) {
     const file = cacheFile(queryOf(k)), data = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")).data : [];
     const same = data.filter(function (e) { return e.japanese.some(function (j) { return j.word === w && j.reading === r; }); });

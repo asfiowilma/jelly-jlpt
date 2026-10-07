@@ -71,7 +71,10 @@ function VocabSection(props) {
       React.createElement("button", {
         className: "speak-btn speak-btn-row", onClick: function () { speak(v.reading); },
         title: "Listen to pronunciation", 'aria-label': "Listen to " + displayWord(v, tk)
-      }, "🔊"));
+      }, "🔊"),
+      v.tip && (!practice || rev[v.id + ':m']) && React.createElement("div", { className: "vocab-tip" },
+        React.createElement("div", { className: "vocab-tip-label" }, icon('bulb'), t('vocab_tip', lv)),
+        React.createElement("p", null, v.tip)));
   };
 
   var groups = vocabGroups(vocab, lv);

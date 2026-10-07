@@ -212,6 +212,10 @@ a.data-btn{display:inline-flex;align-items:center;text-decoration:none}
 .vocab-cell.covered:hover{border-color:var(--accent-fg)}
 .vocab-tap{font-size:0.75rem;font-weight:400}
 .vocab-usage{color:var(--muted);font-weight:400}
+.vocab-tip{grid-column:1 / -1;margin:2px 4px 6px -2px;padding:9px 12px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px}
+.vocab-tip-label{display:flex;align-items:center;gap:6px;font-size:0.68rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent-fg)}
+.vocab-tip-label svg{width:14px;height:14px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.vocab-tip p{margin-top:3px;font-size:0.85rem;line-height:1.6;color:var(--text);text-wrap:pretty}
 .pos-chip{font-size:0.68rem;font-weight:600;padding:1px 7px;border-radius:99px;border:1px solid var(--border);color:var(--muted)}
 .speak-btn-row{width:44px;height:44px;padding:0;border-radius:var(--radius)}
 .speak-btn-row:hover{background:var(--surface)}
