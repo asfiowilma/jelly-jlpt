@@ -63,10 +63,10 @@ function DialogueSection(props) {
   };
   var collapse = function () { halt(); setOn(-1); setPlaying(false); setOpen(false); };
 
-  var chip = function (side, initial, key) {
-    return h('span', { key: key, className: 'dlg-chip ' + side, 'aria-hidden': true }, initial);
+  var chip = function (side, initial, key, color) {
+    return h('span', { key: key, className: 'dlg-chip ' + side + ' c' + color, 'aria-hidden': true }, initial);
   };
-  var chips = view.cast.map(function (c, i) { return chip(c.side, c.initial, i); });
+  var chips = view.cast.map(function (c, i) { return chip(c.side, c.initial, i, c.color); });
 
   // a mark opens the gloss strip; Enter / Space work on the keyboard
   var seg = function (s, i) {
@@ -81,11 +81,11 @@ function DialogueSection(props) {
   var bubble = function (l) {
     var a = l.side === 'a';
     return h('div', {
-      key: l.i, id: 'dlg-m' + l.i, className: 'dlg-msg ' + (a ? 'a' : 'b') + (on === l.i ? ' on' : ''),
+      key: l.i, id: 'dlg-m' + l.i, className: 'dlg-msg ' + (a ? 'a' : 'b') + (on === l.i ? ' on' : '') + ' c' + l.color,
       role: 'button', tabIndex: 0, 'aria-label': 'Play line ' + (l.i + 1) + ', ' + l.name,
       onClick: function () { play(l.i, true); },
       onKeyDown: function (e) { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); play(l.i, true); } }
-    }, chip(l.side, l.initial),
+    }, chip(l.side, l.initial, undefined, l.color),
       h('div', { className: 'dlg-bub' },
         h('div', { className: 'dlg-nm' }, l.name),
         h('div', { className: 'dlg-jp' + (hide ? ' hide' : ''), lang: 'ja' }, l.segs.map(seg)),
@@ -106,7 +106,7 @@ function DialogueSection(props) {
       h('aside', { className: 'dlg-side' },
         h('div', { className: 'dlg-label' }, 'Cast'),
         view.cast.map(function (c, i) {
-          return h('div', { key: i, className: 'dlg-cast' }, chip(c.side, c.initial), h('div', null, h('b', null, c.name), h('span', null, c.role)));
+          return h('div', { key: i, className: 'dlg-cast' }, chip(c.side, c.initial, undefined, c.color), h('div', null, h('b', null, c.name), h('span', null, c.role)));
         }),
         h('div', { className: 'dlg-label dlg-youuse' }, 'You will use'),
         h('div', { className: 'dlg-pills' }, view.pills.map(function (w, i) { return h('span', { key: i }, w); }))));

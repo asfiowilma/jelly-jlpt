@@ -1924,6 +1924,9 @@ function verbStem(word, reading, pos) {
 // block is marked whole.
 // Fixed expressions, not catalog items: never an application of the lesson's grammar, so no 'g' mark inside them.
 var SET_PHRASES = ['はい', 'はじめまして', 'よろしく', 'おねがいします', 'いただきます', 'ごちそうさま', 'ありがとうございます', 'ありがとう', 'すみません'];
+// Fixed accent slot (1-5 = the palette's --n5..--n1) per character: the same colour in every dialogue, and no two characters
+// who share a dialogue share a slot (tests/dialogue.js checks it). A new pairing that collides: recolour here.
+var CAST_COLOR = { emilia: 1, nami: 2, gojo: 3, frieren: 3, hinata: 1, lelouch: 4, sasuke: 5, sanji: 4, sakura: 4, maomao: 5, killua: 2, anya: 4, kakashi: 5, yor: 1 };
 function dialogueView(it, unit) {
   var vocab = (unit.vocab || []).map(function (v) {
     var n = [v.word, v.reading];
@@ -1982,12 +1985,12 @@ function dialogueView(it, unit) {
       else segs.push({ t: c.t, r: c.r, kind: c.kind, gloss: c.gloss });
     });
     var who = it.cast[l.speaker];
-    return { i: i, speaker: l.speaker, side: sideOf(l.speaker), name: who.name, initial: Array.from(who.jp)[0], en: l.en, segs: segs };
+    return { i: i, speaker: l.speaker, side: sideOf(l.speaker), color: CAST_COLOR[l.speaker] || 1, name: who.name, initial: Array.from(who.jp)[0], en: l.en, segs: segs };
   });
   var chars = it.lines.reduce(function (n, l) { return n + speechText(l.furigana).replace(/…+/g, '').length; }, 0);
   return {
     id: it.id, title: it.title, goal: it.goal, scene: it.scene, bridge: it.bridge || [],
-    cast: Object.keys(it.cast).map(function (k) { return { speaker: k, side: sideOf(k), name: it.cast[k].name, role: it.cast[k].role, initial: Array.from(it.cast[k].jp)[0] }; }),
+    cast: Object.keys(it.cast).map(function (k) { return { speaker: k, side: sideOf(k), color: CAST_COLOR[k] || 1, name: it.cast[k].name, role: it.cast[k].role, initial: Array.from(it.cast[k].jp)[0] }; }),
     lines: lines,
     pills: vocab.filter(function (x) { return usedWords[x.v.id]; }).map(function (x) { return x.v.word; })
       .concat(grammar.filter(function (x) { return usedWords[x.g.id]; }).map(function (x) { return x.g.pattern; })),

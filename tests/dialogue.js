@@ -43,6 +43,16 @@ QUnit.module('dialogue', function () {
     assert.deepEqual(problems, []);
   });
 
+  QUnit.test('CAST_COLOR: every character has a slot, a pair never shares one', function (assert) {
+    var bad = [];
+    withDialogue().forEach(function (u) {
+      var ids = Object.keys(CATALOG.items[u.dialogue].cast);
+      ids.forEach(function (id) { if (!CAST_COLOR[id]) bad.push(id + ' has no colour'); });
+      if (CAST_COLOR[ids[0]] === CAST_COLOR[ids[1]]) bad.push(u.id + ' ' + ids.join('+') + ' share a colour');
+    });
+    assert.deepEqual(bad, []);
+  });
+
   QUnit.test('dialogueView: marks, cast, pills, estimate', function (assert) {
     var u = withDialogue()[0], v = dialogueView(CATALOG.items[u.dialogue], u);
     var kinds = function (l) { return l.segs.filter(function (s) { return s.kind; }).map(function (s) { return s.kind + ':' + s.t; }).join(' '); };
