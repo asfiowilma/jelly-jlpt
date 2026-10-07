@@ -22,6 +22,8 @@ single preset Ono_Anna would sound alike. A dialogue item's `cast` must match `n
 ONE voice per character: a voice-design render of a reference sentence, cloned by the Base model for all their lines. The Base model takes no
 per-line instruction, so there is no per-line tone: delivery comes from punctuation (……, ！, ？).
 
+**`render-notebook-v4.ipynb` supersedes v3 for dialogue characters** (same refs and clip names): one setup cell, refs uploaded once (kept on Drive), tuning in a collapsed optional section (also saves + downloads the new ref), render all remaining or a listed set of characters, one manifest + zip cell. v3 below describes the shared model; v3 itself is kept for its per-clip Review / REDO cell.
+
 ### Saved voice references (`render-notebook-v3.ipynb`)
 
 Dialogue characters render with `render-notebook-v3.ipynb`, one character at a time. v2 designed each reference again in every Colab session, and
