@@ -1287,14 +1287,14 @@ CATALOG.add([
     scene: 'Evening at home. Yor asks Anya about her eating habits, and the answer is mostly peanuts.',
     cast: { yor: { name: 'Yor', jp: 'ヨル', gender: 'F', role: 'Host' }, anya: { name: 'Anya', jp: 'アーニャ', gender: 'F', role: 'Child' } },
     lines: [
-      { speaker: 'yor', furigana: 'アーニャさん、[毎|まい]あさ　ぎゅうにゅうを　のみますか？', en: 'Anya, do you drink milk every morning?' },
+      { speaker: 'yor', furigana: '[毎|まい]あさ　ぎゅうにゅうを　のみますか？', en: 'Do you drink milk every morning?' },
       { speaker: 'anya', furigana: 'ときどき！', en: 'Sometimes!' },
       { speaker: 'yor', furigana: 'ピーナッツは？', en: 'And peanuts?' },
       { speaker: 'anya', furigana: 'いつも！　[毎|まい]あさも、[毎|まい]ばんも！', en: 'Always! Every morning and every night!' },
       { speaker: 'yor', furigana: 'パンは　よく　[食|た]べますか？', en: 'Do you often eat bread?' },
       { speaker: 'anya', furigana: 'パンは　あまり　[食|た]べません。', en: 'I don’t eat bread much.' },
       { speaker: 'yor', furigana: '[今|こん]ばん　ピーナッツの　パンを　[食|た]べますか？', en: 'Will you have peanut bread tonight?' },
-      { speaker: 'anya', furigana: '[食|た]べる！　アーニャ、パンは　よく　[食|た]べる！', en: 'I’ll eat it! Anya eats bread a lot!' }
+      { speaker: 'anya', furigana: '[食|た]べる！　ピーナッツの　パンは　いつも　[食|た]べる！', en: 'I’ll eat it! Peanut bread, I always eat!' }
     ],
     bridge: [
       { text: 'ピーナッツ', gloss: 'ピーナッツ = peanuts' }
@@ -1308,7 +1308,7 @@ CATALOG.add([
         explain: 'いつも = always, and it goes before what you do. を marks what you drink; おちゃで would make the tea a tool.' }
     ],
     names: ['ヨル', 'アーニャ'],
-    uses: ['g:itsumo', 'g:masu', 'g:masen', 'g:verb-groups-dict', 'g:wo', 'g:ka', 'g:mo', 'g:no', 'v:さん|さん', 'v:いつも|いつも', 'v:よく|よく', 'v:時々|ときどき', 'v:あまり|あまり', 'v:毎朝|まいあさ', 'v:毎晩|まいばん', 'v:今晩|こんばん', 'v:牛乳|ぎゅうにゅう', 'v:飲む|のむ', 'v:パン|パン', 'v:食べる|たべる', 'k:毎', 'k:食', 'k:今'],
+    uses: ['g:itsumo', 'g:masu', 'g:masen', 'g:verb-groups-dict', 'g:wo', 'g:ka', 'g:mo', 'g:no', 'v:いつも|いつも', 'v:よく|よく', 'v:時々|ときどき', 'v:あまり|あまり', 'v:毎朝|まいあさ', 'v:毎晩|まいばん', 'v:今晩|こんばん', 'v:牛乳|ぎゅうにゅう', 'v:飲む|のむ', 'v:パン|パン', 'v:食べる|たべる', 'k:毎', 'k:食', 'k:今'],
     notes: 'ピーナッツ is not on the N5 list: a bridge only.',
     verified: true }),
 
@@ -1354,13 +1354,12 @@ CATALOG.add([
       { speaker: 'hinata', furigana: 'テレビは　ありますか？', en: 'Is there a TV?' },
       { speaker: 'emilia', furigana: 'テレビは　ありません。', en: 'No, there’s no TV.' },
       { speaker: 'hinata', furigana: 'わたしの　へやには　バレーボールが　あります！　つくえは　ないです！', en: 'In my room there’s a volleyball! There’s no desk!' },
-      { speaker: 'emilia', furigana: 'じゃあ、べんきょうは？', en: 'Then what about studying?' },
+      { speaker: 'emilia', furigana: 'べんきょうは？', en: 'And studying?' },
       { speaker: 'hinata', furigana: 'エミリアさんの　つくえで！', en: 'At your desk, Emilia!' },
       { speaker: 'emilia', furigana: 'はい、どうぞ。', en: 'Sure, go ahead.' }
     ],
     bridge: [
-      { text: 'バレーボール', gloss: 'バレーボール = volleyball' },
-      { text: 'じゃあ', id: 'v:じゃあ|じゃあ', gloss: 'じゃあ = then, in that case (taught later)' }
+      { text: 'バレーボール', gloss: 'バレーボール = volleyball' }
     ],
     remixes: [
       { scene: 'Emilia shows one more thing in her room.', en: 'There is a window too.',
@@ -1371,7 +1370,7 @@ CATALOG.add([
         explain: 'With ある, the thing is marked by が or は, never を: つくえは ありません.' }
     ],
     names: ['エミリア', 'ヒナタ'],
-    uses: ['g:ga-arimasu', 'g:ni', 'g:de', 'g:mo', 'g:no', 'g:yo', 'g:ka', 'g:wa-desu', 'v:私|わたし', 'v:ここ|ここ', 'v:部屋|へや', 'v:さん|さん', 'v:どうぞ|どうぞ', 'v:机|つくえ', 'v:ある|ある', 'v:窓|まど', 'v:本棚|ほんだな', 'v:テレビ|テレビ', 'v:ない|ない', 'v:じゃあ|じゃあ', 'v:勉強|べんきょう', 'v:はい|はい'],
+    uses: ['g:ga-arimasu', 'g:ni', 'g:de', 'g:mo', 'g:no', 'g:yo', 'g:ka', 'g:wa-desu', 'v:私|わたし', 'v:ここ|ここ', 'v:部屋|へや', 'v:さん|さん', 'v:どうぞ|どうぞ', 'v:机|つくえ', 'v:ある|ある', 'v:窓|まど', 'v:本棚|ほんだな', 'v:テレビ|テレビ', 'v:ない|ない', 'v:勉強|べんきょう', 'v:はい|はい'],
     notes: 'uses v:はい|はい, which is unverified, so the dialogue is too. バレーボール is not on the N5 list: a bridge only.',
     verified: false }),
 
@@ -1404,13 +1403,12 @@ CATALOG.add([
 
   L({ id: 'l:n5-dlg-house-tour', format: 'dialogue',
     title: 'Around the house', goal: 'You can name the rooms of a house and list things with と.',
-    scene: 'Yor has just come to live with the family. Anya proudly shows her around the house.',
-    cast: { yor: { name: 'Yor', jp: 'ヨル', gender: 'F', role: 'New mother' }, anya: { name: 'Anya', jp: 'アーニャ', gender: 'F', role: 'Child' } },
+    scene: 'Anya plays tour guide and shows Yor around the house.',
+    cast: { yor: { name: 'Yor', jp: 'ヨル', gender: 'F', role: 'Mother' }, anya: { name: 'Anya', jp: 'アーニャ', gender: 'F', role: 'Child' } },
     lines: [
       { speaker: 'anya', furigana: 'ここ、げんかん！', en: 'This is the entrance!' },
       { speaker: 'yor', furigana: 'アーニャさん、げんかんの　はこは　[何|なん]ですか？', en: 'Anya, what is the box by the door?' },
-      { speaker: 'anya', furigana: 'ちちの　はこ！', en: 'Papa’s box!' },
-      { speaker: 'anya', furigana: 'こっちは　だいどころと　おふろ！', en: 'This way is the kitchen and the bath!' },
+      { speaker: 'anya', furigana: 'ちちの　はこ！　こっちは　だいどころと　おふろ！', en: 'Papa’s box! This way is the kitchen and the bath!' },
       { speaker: 'yor', furigana: 'だいどころ……。れいぞうこに　[何|なに]が　ありますか？', en: 'The kitchen... What is in the fridge?' },
       { speaker: 'anya', furigana: 'ピーナッツと　ぎゅうにゅう！', en: 'Peanuts and milk!' },
       { speaker: 'yor', furigana: 'かいだんの　[上|うえ]は？', en: 'And at the top of the stairs?' },
@@ -1471,9 +1469,9 @@ CATALOG.add([
     scene: 'Gojo takes Anya to buy an umbrella. She wants every colour at once.',
     cast: { gojo: { name: 'Gojo', jp: 'ゴジョウ', gender: 'M', role: 'Teacher' }, anya: { name: 'Anya', jp: 'アーニャ', gender: 'F', role: 'Child' } },
     lines: [
-      { speaker: 'gojo', furigana: 'アーニャさん、どの　いろの　かさですか？', en: 'Anya, which colour umbrella?' },
-      { speaker: 'anya', furigana: 'あかや　きいろや　みどり！', en: 'Red, yellow, green...!' },
-      { speaker: 'gojo', furigana: 'あかですか？　あおですか？', en: 'Red? Or blue?' },
+      { speaker: 'gojo', furigana: 'どの　いろの　かさですか？', en: 'Which colour umbrella?' },
+      { speaker: 'anya', furigana: 'あかや　あおや　きいろや　みどり！', en: 'Red, blue, yellow, green...!' },
+      { speaker: 'gojo', furigana: 'どれですか？　あかですか？　あおですか？', en: 'Which one? Red? Blue?' },
       { speaker: 'anya', furigana: 'あかも　あおも！', en: 'Red and blue!' },
       { speaker: 'gojo', furigana: 'あかと　あおで……むらさきですね。', en: 'Red and blue together... that is purple.' },
       { speaker: 'anya', furigana: 'むらさき！　むらさきの　かさ！', en: 'Purple! A purple umbrella!' },
@@ -1493,7 +1491,7 @@ CATALOG.add([
         explain: 'おなじ uses と: X と おなじ = the same as X. を does not go with おなじ.' }
     ],
     names: ['ゴジョウ', 'アーニャ'],
-    uses: ['g:ya', 'g:to', 'g:de', 'g:mo', 'g:no', 'g:ne', 'g:yo', 'g:ka', 'g:wa-desu', 'v:さん|さん', 'v:どの|どの', 'v:色|いろ', 'v:傘|かさ', 'v:赤|あか', 'v:黄色|きいろ', 'v:緑|みどり', 'v:青|あお', 'v:ある|ある', 'v:白|しろ', 'v:黒|くろ', 'v:先生|せんせい', 'v:同じ|おなじ', 'v:いい|いい', 'k:白', 'k:先', 'k:生'],
+    uses: ['g:ya', 'g:to', 'g:de', 'g:mo', 'g:no', 'g:ne', 'g:yo', 'g:ka', 'g:wa-desu', 'v:どの|どの', 'v:どれ|どれ', 'v:色|いろ', 'v:傘|かさ', 'v:赤|あか', 'v:黄色|きいろ', 'v:緑|みどり', 'v:青|あお', 'v:ある|ある', 'v:白|しろ', 'v:黒|くろ', 'v:先生|せんせい', 'v:同じ|おなじ', 'v:いい|いい', 'k:白', 'k:先', 'k:生'],
     notes: 'むらさき (purple) is not on the N5 list: a bridge only. あか and あお stay in kana: their kanji are taught later.',
     verified: true }),
 
@@ -1502,13 +1500,13 @@ CATALOG.add([
     scene: 'Emilia wants to take Maomao to a famous cafe. Maomao is busy, until she hears what kind of tea they serve.',
     cast: { emilia: { name: 'Emilia', jp: 'エミリア', gender: 'F', role: 'Friend' }, maomao: { name: 'Maomao', jp: 'マオマオ', gender: 'F', role: 'Friend' } },
     lines: [
-      { speaker: 'emilia', furigana: 'マオマオさん、[今日|きょう]は　ひまですか？', en: 'Maomao, are you free today?' },
+      { speaker: 'emilia', furigana: '[今日|きょう]は　ひまですか？', en: 'Are you free today?' },
       { speaker: 'maomao', furigana: '……ひまじゃ　ありません。', en: '...I am not free.' },
-      { speaker: 'emilia', furigana: 'ゆうめいな　きっさてんへ　[行|い]きませんか？　しずかな　きっさてんです。', en: 'Won’t you come to a famous cafe? It is a quiet cafe.' },
+      { speaker: 'emilia', furigana: 'ゆうめいな　きっさてんへ　[行|い]きませんか？　えきの　[前|まえ]の　べんりな　きっさてんです。', en: 'Won’t you come to a famous cafe? It is a handy cafe in front of the station.' },
       { speaker: 'maomao', furigana: '……[行|い]きません。', en: '...I won’t.' },
-      { speaker: 'emilia', furigana: 'おちゃは　ゆうめいですよ。くさの　おちゃです。', en: 'The tea is famous. It is herb tea.' },
+      { speaker: 'emilia', furigana: 'しずかな　きっさてんですよ。くさの　おちゃは　ゆうめいです。', en: 'It is a quiet cafe. And its herb tea is famous.' },
       { speaker: 'maomao', furigana: 'くさの　おちゃ。……[行|い]きます。ひまです。', en: 'Herb tea. ...I’ll go. I’m free.' },
-      { speaker: 'emilia', furigana: 'べんりな　きっさてんですよ。えきの　[前|まえ]です。', en: 'It is a handy cafe. It is in front of the station.' },
+      { speaker: 'emilia', furigana: '……ひまですか？', en: '...You’re free?' },
       { speaker: 'maomao', furigana: '……くさは　たいせつです。', en: '...Herbs are important.' }
     ],
     bridge: [
@@ -1523,7 +1521,7 @@ CATALOG.add([
         explain: 'At the end of a sentence a な-adjective takes です straight away: たいせつです. な only comes before a noun.' }
     ],
     names: ['エミリア', 'マオマオ'],
-    uses: ['g:adj-na', 'g:ja-nai', 'g:masen-ka', 'g:masen', 'g:masu', 'g:ni-ikimasu', 'g:no', 'g:yo', 'g:ka', 'g:wa-desu', 'v:さん|さん', 'v:今日|きょう', 'v:暇|ひま', 'v:有名|ゆうめい', 'v:喫茶店|きっさてん', 'v:行く|いく', 'v:静か|しずか', 'v:お茶|おちゃ', 'v:便利|べんり', 'v:駅|えき', 'v:前|まえ', 'v:大切|たいせつ', 'k:今', 'k:日', 'k:行', 'k:前'],
+    uses: ['g:adj-na', 'g:ja-nai', 'g:masen-ka', 'g:masen', 'g:masu', 'g:ni-ikimasu', 'g:no', 'g:yo', 'g:ka', 'g:wa-desu', 'v:今日|きょう', 'v:暇|ひま', 'v:有名|ゆうめい', 'v:喫茶店|きっさてん', 'v:行く|いく', 'v:静か|しずか', 'v:お茶|おちゃ', 'v:便利|べんり', 'v:駅|えき', 'v:前|まえ', 'v:大切|たいせつ', 'k:今', 'k:日', 'k:行', 'k:前'],
     notes: 'くさ is not on the N5 list: a bridge only.',
     verified: true }),
 
@@ -1540,7 +1538,7 @@ CATALOG.add([
       { speaker: 'lelouch', furigana: 'となりの　へやは？', en: 'And the room next door?' },
       { speaker: 'frieren', furigana: '……せまいです。[本|ほん]も　ありません。', en: '...Narrow. And no books.' },
       { speaker: 'lelouch', furigana: 'この　へやの　[本|ほん]は？', en: 'What about the books in this room?' },
-      { speaker: 'frieren', furigana: '……いっしょです。よい　[本|ほん]ですよ。', en: '...They come too. They are good books.' }
+      { speaker: 'frieren', furigana: '……へやと　いっしょです。よい　[本|ほん]ですよ。', en: '...They come with the room. They are good books.' }
     ],
     remixes: [
       { scene: 'Lelouch sums up the room.', en: 'This room is spacious.',
@@ -1551,7 +1549,7 @@ CATALOG.add([
         explain: 'An い-adjective goes straight before a noun: あつい ほん. No な in between.' }
     ],
     names: ['フリーレン', 'ルルーシュ'],
-    uses: ['g:ya', 'g:ga-arimasu', 'g:adj-i', 'g:adj-na', 'g:no', 'g:mo', 'g:ne', 'g:yo', 'g:wa-desu', 'v:この|この', 'v:部屋|へや', 'v:広い|ひろい', 'v:本棚|ほんだな', 'v:りっぱ|りっぱ', 'v:本|ほん', 'v:いろいろ|いろいろ', 'v:ある|ある', 'v:厚い|あつい', 'v:薄い|うすい', 'v:私|わたし', 'v:さん|さん', 'v:狭い|せまい', 'v:隣|となり', 'v:一緒|いっしょ', 'v:よい|よい', 'k:本'],
+    uses: ['g:ya', 'g:to', 'g:ga-arimasu', 'g:adj-i', 'g:adj-na', 'g:no', 'g:mo', 'g:ne', 'g:yo', 'g:wa-desu', 'v:この|この', 'v:部屋|へや', 'v:広い|ひろい', 'v:本棚|ほんだな', 'v:りっぱ|りっぱ', 'v:本|ほん', 'v:いろいろ|いろいろ', 'v:ある|ある', 'v:厚い|あつい', 'v:薄い|うすい', 'v:私|わたし', 'v:さん|さん', 'v:狭い|せまい', 'v:隣|となり', 'v:一緒|いっしょ', 'v:よい|よい', 'k:本'],
     verified: true }),
 
   L({ id: 'l:n5-dlg-grand-weather', format: 'dialogue',
@@ -1686,14 +1684,13 @@ CATALOG.add([
       { speaker: 'killua', furigana: '[山|やま]。ゴンと　[山|やま]に　のぼりたい。', en: 'The mountains. I want to climb a mountain with Gon.' },
       { speaker: 'hinata', furigana: 'いいですね！　わたしは　うみで　およぎたいです！', en: 'Nice! I want to swim in the sea!' },
       { speaker: 'killua', furigana: 'うみは　あつい。[山|やま]で　やすみたい。', en: 'The sea is hot. I want to rest in the mountains.' },
-      { speaker: 'hinata', furigana: 'じゃあ、[山|やま]の　しゃしんが　ほしいです！', en: 'Then I want a photo of the mountains!' },
-      { speaker: 'killua', furigana: 'じゃあ、チョコが　ほしい。', en: 'Then I want chocolate.' },
+      { speaker: 'hinata', furigana: 'わたしは　[山|やま]の　しゃしんが　ほしいです！', en: 'I want a photo of the mountains!' },
+      { speaker: 'killua', furigana: 'しゃしん？　……チョコが　ほしい。', en: 'A photo? ...I want chocolate.' },
       { speaker: 'hinata', furigana: 'いいですよ！', en: 'All right!' },
       { speaker: 'killua', furigana: '[山|やま]の　[上|うえ]で　[食|た]べたい。', en: 'I want to eat it on top of the mountain.' },
-      { speaker: 'hinata', furigana: 'わたしも　のぼりたいです！', en: 'I want to climb too!' }
+      { speaker: 'hinata', furigana: '[山|やま]の　[上|うえ]の　しゃしんも　ほしいです！', en: 'I want a photo from the top too!' }
     ],
     bridge: [
-      { text: 'じゃあ', id: 'v:じゃあ|じゃあ', gloss: 'じゃあ = then, in that case (taught later)' },
       { text: 'チョコ', gloss: 'チョコ = chocolate' }
     ],
     remixes: [
@@ -1705,7 +1702,7 @@ CATALOG.add([
         explain: 'と after a person means "with". ゴンを would make Gon the thing being climbed.' }
     ],
     names: ['ヒナタ', 'キルア', 'ゴン'],
-    uses: ['g:tai', 'g:ni-ikimasu', 'g:ni', 'g:de', 'g:to', 'g:no', 'g:mo', 'g:yo', 'g:ne', 'g:ka', 'g:wa-desu', 'v:夏休み|なつやすみ', 'v:さん|さん', 'v:どこ|どこ', 'v:行く|いく', 'v:山|やま', 'v:登る|のぼる', 'v:いい|いい', 'v:私|わたし', 'v:海|うみ', 'v:泳ぐ|およぐ', 'v:暑い|あつい', 'v:休む|やすむ', 'v:じゃあ|じゃあ', 'v:写真|しゃしん', 'v:欲しい|ほしい', 'v:上|うえ', 'v:食べる|たべる', 'k:行', 'k:山', 'k:上', 'k:食'],
+    uses: ['g:tai', 'g:ni-ikimasu', 'g:ni', 'g:de', 'g:to', 'g:no', 'g:mo', 'g:yo', 'g:ne', 'g:ka', 'g:wa-desu', 'v:夏休み|なつやすみ', 'v:さん|さん', 'v:どこ|どこ', 'v:行く|いく', 'v:山|やま', 'v:登る|のぼる', 'v:いい|いい', 'v:私|わたし', 'v:海|うみ', 'v:泳ぐ|およぐ', 'v:暑い|あつい', 'v:休む|やすむ', 'v:写真|しゃしん', 'v:欲しい|ほしい', 'v:上|うえ', 'v:食べる|たべる', 'k:行', 'k:山', 'k:上', 'k:食'],
     notes: 'チョコ is not on the N5 list: a bridge only.',
     verified: true }),
 
@@ -1716,12 +1713,11 @@ CATALOG.add([
     lines: [
       { speaker: 'sanji', furigana: 'エミリアさん！　かいものですか？', en: 'Emilia! Out shopping?' },
       { speaker: 'emilia', furigana: 'はい。やさいを　かいに　[来|き]ました。', en: 'Yes. I came to buy vegetables.' },
-      { speaker: 'sanji', furigana: 'どうぞ！　[今日|きょう]の　やさいは　とても　やすいですよ！', en: 'Please! Today’s vegetables are very cheap!' },
-      { speaker: 'emilia', furigana: 'この　やさいは　いくらですか？', en: 'How much is this vegetable?' },
+      { speaker: 'sanji', furigana: 'どうぞ！　[今日|きょう]の　やさいは　とても　やすいですよ！', en: 'Take a look! Today’s vegetables are very cheap!' },
+      { speaker: 'emilia', furigana: 'これは　いくらですか？', en: 'How much is this?' },
       { speaker: 'sanji', furigana: '[百|ひゃく][円|えん]です！', en: '100 yen!' },
       { speaker: 'emilia', furigana: 'ぎゅうにゅうも　ありますか？', en: 'Do you have milk too?' },
-      { speaker: 'sanji', furigana: 'ぎゅうにゅう……。ここは　やおやですから……。', en: 'Milk... This is a greengrocer, so...' },
-      { speaker: 'sanji', furigana: '[今|いま]　かいに　[行|い]きます！', en: 'I’ll go and buy some right now!' },
+      { speaker: 'sanji', furigana: 'ぎゅうにゅう……。ここは　やおやですから……。[今|いま]　かいに　[行|い]きます！', en: 'Milk... This is a greengrocer, so... I’ll go and buy some right now!' },
       { speaker: 'emilia', furigana: 'サンジさん、みせは？', en: 'Sanji, what about the shop?' },
       { speaker: 'sanji', furigana: '[五|ご]ふんで　かえります！', en: 'I’ll be back in five minutes!' }
     ],
@@ -1737,7 +1733,7 @@ CATALOG.add([
         explain: 'いくら asks the price, and か makes the question. よ tells someone something, so it cannot end a question.' }
     ],
     names: ['サンジ', 'エミリア'],
-    uses: ['g:ni-iku', 'g:kara', 'g:adj-i', 'g:totemo', 'g:mashita', 'g:de', 'g:no', 'g:mo', 'g:yo', 'g:ka', 'g:wa-desu', 'v:さん|さん', 'v:買い物|かいもの', 'v:野菜|やさい', 'v:買う|かう', 'v:来る|くる', 'v:どうぞ|どうぞ', 'v:今日|きょう', 'v:とても|とても', 'v:安い|やすい', 'v:この|この', 'v:いくら|いくら', 'v:百|ひゃく', 'v:円|えん', 'v:牛乳|ぎゅうにゅう', 'v:ある|ある', 'v:ここ|ここ', 'v:八百屋|やおや', 'v:今|いま', 'v:行く|いく', 'v:店|みせ', 'v:五|ご', 'v:分|ふん', 'v:帰る|かえる', 'v:はい|はい', 'k:来', 'k:今', 'k:日', 'k:百', 'k:円', 'k:行', 'k:五'],
+    uses: ['g:ni-iku', 'g:kara', 'g:adj-i', 'g:totemo', 'g:mashita', 'g:de', 'g:no', 'g:mo', 'g:yo', 'g:ka', 'g:wa-desu', 'v:さん|さん', 'v:買い物|かいもの', 'v:野菜|やさい', 'v:買う|かう', 'v:来る|くる', 'v:どうぞ|どうぞ', 'v:今日|きょう', 'v:とても|とても', 'v:安い|やすい', 'v:これ|これ', 'v:いくら|いくら', 'v:百|ひゃく', 'v:円|えん', 'v:牛乳|ぎゅうにゅう', 'v:ある|ある', 'v:ここ|ここ', 'v:八百屋|やおや', 'v:今|いま', 'v:行く|いく', 'v:店|みせ', 'v:五|ご', 'v:分|ふん', 'v:帰る|かえる', 'v:はい|はい', 'k:来', 'k:今', 'k:日', 'k:百', 'k:円', 'k:行', 'k:五'],
     notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
     verified: false }),
 
@@ -1747,14 +1743,14 @@ CATALOG.add([
     cast: { maomao: { name: 'Maomao', jp: 'マオマオ', gender: 'F', role: 'Staff' }, lelouch: { name: 'Lelouch', jp: 'ルルーシュ', gender: 'M', role: 'Visitor' } },
     lines: [
       { speaker: 'lelouch', furigana: 'プールは　どこですか？', en: 'Where is the pool?' },
-      { speaker: 'maomao', furigana: 'この　たてものの　[上|うえ]です。エレベーターは　あちらです。', en: 'At the top of this building. The lift is over there.' },
-      { speaker: 'lelouch', furigana: 'エレベーター……。かいだんは？', en: 'The lift... And the stairs?' },
+      { speaker: 'maomao', furigana: 'この　たてものの　[上|うえ]です。', en: 'At the top of this building.' },
+      { speaker: 'lelouch', furigana: 'エレベーターは　どこですか？', en: 'Where is the lift?' },
+      { speaker: 'maomao', furigana: 'あちらです。[今日|きょう]は　やすみですよ。', en: 'Over there. It is out today.' },
+      { speaker: 'lelouch', furigana: '……かいだんは？', en: '...And the stairs?' },
       { speaker: 'maomao', furigana: 'かいだんは　[入|い]りぐちの　となりです。', en: 'The stairs are next to the entrance.' },
-      { speaker: 'lelouch', furigana: 'エレベーターで　[行|い]きます。', en: 'I will take the lift.' },
-      { speaker: 'maomao', furigana: '[今日|きょう]は　エレベーターが　やすみです。', en: 'The lift is out today.' },
       { speaker: 'lelouch', furigana: '……[出|で]ぐちは　どこですか？', en: '...Where is the exit?' },
-      { speaker: 'maomao', furigana: '[出|で]ぐちは　[入|い]りぐちと　おなじ　ところです。', en: 'The exit is in the same place as the entrance.' },
-      { speaker: 'lelouch', furigana: 'かいだんで　[行|い]きます。', en: 'I will take the stairs.' }
+      { speaker: 'maomao', furigana: '[出|で]ぐちは　かいだんと　おなじ　ところです。', en: 'The exit is in the same place as the stairs.' },
+      { speaker: 'lelouch', furigana: '……かいだんで　[行|い]きます。', en: '...I will take the stairs.' }
     ],
     remixes: [
       { scene: 'Maomao tells Lelouch where the stairs are.', en: 'The stairs are next to the entrance.',
@@ -1765,7 +1761,7 @@ CATALOG.add([
         explain: 'か makes the question. よ tells someone something, so it cannot end a question with どこ.' }
     ],
     names: ['マオマオ', 'ルルーシュ'],
-    uses: ['g:ga', 'g:to', 'g:de', 'g:no', 'g:masu', 'g:ka', 'g:wa-desu', 'v:プール|プール', 'v:どこ|どこ', 'v:この|この', 'v:建物|たてもの', 'v:上|うえ', 'v:エレベーター|エレベーター', 'v:あちら|あちら', 'v:階段|かいだん', 'v:入口|いりぐち', 'v:隣|となり', 'v:行く|いく', 'v:今日|きょう', 'v:休み|やすみ', 'v:出口|でぐち', 'v:同じ|おなじ', 'v:所|ところ', 'k:上', 'k:入', 'k:行', 'k:今', 'k:日', 'k:出'],
+    uses: ['g:to', 'g:de', 'g:no', 'g:masu', 'g:ka', 'g:yo', 'g:wa-desu', 'v:プール|プール', 'v:どこ|どこ', 'v:この|この', 'v:建物|たてもの', 'v:上|うえ', 'v:エレベーター|エレベーター', 'v:あちら|あちら', 'v:階段|かいだん', 'v:入口|いりぐち', 'v:隣|となり', 'v:行く|いく', 'v:今日|きょう', 'v:休み|やすみ', 'v:出口|でぐち', 'v:同じ|おなじ', 'v:所|ところ', 'k:上', 'k:入', 'k:行', 'k:今', 'k:日', 'k:出'],
     notes: '入口 / 出口 are written 入りぐち / 出ぐち: 口 is taught later.',
     verified: true }),
 
