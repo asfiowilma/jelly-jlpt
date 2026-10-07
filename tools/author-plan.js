@@ -262,7 +262,24 @@ const DIALOGUES = {
   "Housework": "l:n5-dlg-chore-day",
   "Hobbies": "l:n5-dlg-free-time",
   "Body and build": "l:n5-dlg-sports-club",
-  "Drawing and singing": "l:n5-dlg-karaoke"
+  "Drawing and singing": "l:n5-dlg-karaoke",
+  "Clothes": "l:n5-dlg-warm-jacket",
+  "Putting on and taking off": "l:n5-dlg-papas-glasses",
+  "Travelling abroad": "l:n5-dlg-first-flight",
+  "Spring in the park": "l:n5-dlg-spring-picnic",
+  "Changing weather": "l:n5-dlg-rain-coming",
+  "Counting things": "l:n5-dlg-bread-spell",
+  "One thing, two things": "l:n5-dlg-tangerines",
+  "Kilos, metres and how often": "l:n5-dlg-stomach-medicine",
+  "Next year and last year": "l:n5-dlg-new-year-plan",
+  "Birthdays and plans": "l:n5-dlg-birthday-plan",
+  "Sweet, spicy, salty": "l:n5-dlg-salty-eggs",
+  "Eating too much": "l:n5-dlg-curry-bowls",
+  "Everyone in class": "l:n5-dlg-flower-spell",
+  "Lost and found": "l:n5-dlg-red-purse",
+  "Living and working": "l:n5-dlg-second-job",
+  "Polite conversation": "l:n5-dlg-staff-room-tea",
+  "Linking sentences": "l:n5-dlg-film-date"
 };
 const lessonText = LESSONS.map(function (l) { return words(l[2]).map(function (id) { return CATALOG.items[id].word; }).join(" "); });
 const soon = function (k, n) { return lessonText.slice(n + 1, n + 7).some(function (s) { return s.indexOf(k.char) >= 0; }); };
