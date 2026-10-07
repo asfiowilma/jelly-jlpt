@@ -207,6 +207,8 @@ const kanjiAll = items.filter(function (it) { return it.kind === "kanji"; }); //
 // Lesson dialogs (pilot): lesson title -> l:n5-dlg-… (data/n5/listening.js, format dialogue). Shown above the vocabulary.
 // Optional lesson note (the box above the lesson): first sentence = headline, rest = quiet lines.
 const LESSON_NOTES = {
+  "Days of the week": "The seven days come in a fixed order, so a song helps: げつ, か, すい, もく, きん, ど, にち. Try searching for 「いっしゅうかんのうた」 and sing along until the order feels automatic.",
+  "At the doctor's": "Most of the body words here are in a children's touch-and-sing game: あたま, め, みみ, はな, くち, あし. Try searching for 「あたま かた ひざ ポン」 and touch each part as you sing. Versions differ a little, so just follow along.",
   "One thing, two things": "These ten words have a rhythm: ひとつ, ふたつ, みっつ … ここのつ, とお. Songs make rhythm stick. Try searching for the Naruto \"Bijuu Kazoe Uta\" (the tailed-beast counting song) and sing along. It runs from ひとつ to ここのつ, which is most of this lesson.",
 };
 const DIALOGUES = {
