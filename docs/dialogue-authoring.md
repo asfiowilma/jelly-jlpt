@@ -91,7 +91,7 @@ the clipKey gets `#<take>`, so the clip has a new name and the notebook renders 
 
 No per-line tone: each character has one locked voice (their `voice` prompt in `cast.json` carries their usual delivery: Sasuke quiet and curt, Gojo teasing,
 Frieren flat). Delivery within a line comes from punctuation only: `……` (hesitation), `！`, `？`. To change how a character sounds, edit their prompt
-(try it first in the notebook's "Tweak a voice" cell) and bump their `rev` in `cast.json` (absent = 1; set 2, then 3...): the clipKey's archetype
+(tune it in `render-notebook-v3.ipynb`, which saves the approved voice reference and prints the lines to paste) and bump their `rev` in `cast.json` (absent = 1; set 2, then 3...): the clipKey's archetype
 becomes `<id>@<rev>`, so all their clips get new names and re-render. Delete nothing: see `tools/audio/README.md`.
 
 ## Adding a dialogue
@@ -99,7 +99,7 @@ becomes `<id>@<rev>`, so all their clips get new names and re-render. Delete not
 1. Write the item in `data/n5/listening.js` (the dialogue block at the end). Check what the unit and earlier units taught: `taughtIds(unit)` (see `tests/dialogue.js`).
 2. `tools/author-plan.js`: add `"<lesson title>": "l:n5-dlg-<slug>"` to `DIALOGUES`, then `node tools/author-plan.js` (regenerates `data/n5/plan.js`).
 3. `node tools/export-tracks.js`: fails on an unknown character or a gender mismatch; prints how many clips need rendering. Writes `tools/audio/tracks.json` and the gitignored `render-input.json`.
-4. Render the missing clips in Colab (`tools/audio/render-notebook-v2.ipynb`): upload `render-input.json`, Run all, download `jelly-audio-new.zip`.
+4. Render the missing clips in Colab (`tools/audio/render-notebook-v3.ipynb`, one character at a time from its saved voice reference): upload `render-input.json`, render each character the table lists, then the Manifest and Zip cells download `jelly-audio-new.zip`.
 5. Unzip, copy the mp3s into `audio/`, `node tools/build-audio-manifest.js <rendered dir>` (verifies every clip name and file, writes `audio/manifest.js`).
 6. `node tools/build-sw.js`, then `CLAUDE_PROJECT_DIR=$(pwd) node .claude/hooks/run-tests.js`. Commit `sw.js` with the change.
 

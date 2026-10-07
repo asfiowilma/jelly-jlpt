@@ -19,19 +19,29 @@ Any two characters work (man + man, woman + woman, man + woman). Non-dialogue tr
 the chip initial), `gender` M / F (the clipKey role), `role` (typical part), `personality`, `voice` (a Qwen3-TTS voice-design prompt in the style of
 `man-archetypes.json`; every prompt states the gender ("Clearly male" / "Clearly female") and a pitch range, carries the character's usual delivery, and is different so the characters sound apart). Both genders use voice design (`design()` in the notebook): six women on the
 single preset Ono_Anna would sound alike. A dialogue item's `cast` must match `name`, `jp`, `gender` here (checked by `run-tests.js`; `export-tracks.js` fails on an unknown id or a gender mismatch).
-The notebook locks ONE voice per character (a voice-design render of the fixed reference sentence, cloned by the Base model) and uses it for
-all their lines. The Base model takes no per-line instruction, so there is no per-line tone: delivery comes from punctuation (……, ！, ？).
+ONE voice per character: a voice-design render of a reference sentence, cloned by the Base model for all their lines. The Base model takes no
+per-line instruction, so there is no per-line tone: delivery comes from punctuation (……, ！, ？).
+
+### Saved voice references (`render-notebook-v3.ipynb`)
+
+Dialogue characters render with `render-notebook-v3.ipynb`, one character at a time. v2 designed each reference again in every Colab session, and
+VoiceDesign on an fp16 GPU is not reproducible, so a render resumed in another session could clone from a different reference (another voice). v3
+designs it once: you tune it by ear (prompt + seed, 3 sample lines), then save it to Drive as `refs/<id>@<rev>.wav` + `.json` (audio, reference
+text, prompt, seed) next to the clips. Every later session loads that file; the Render cell refuses to run without one, or when its prompt differs
+from the input's `characters[<id>].voice`. A Review cell plays the new clips; a clip that still drifted is listed in `REDO` and rendered again
+from the same reference with another seed, under the same name (only before it ships). v2 stays for the exam and listening archetype tracks.
 
 ### Changing a voice (`rev`) or re-rendering one clip (`take`)
 
 Nothing is deleted by hand: a change gets new clip names, the notebook renders what is missing, the manifest points at the new clips.
 
-1. In Colab, after the upload cell, run the **Tweak a voice** cell: set `CHAR` and `VOICE` (the new prompt), run, listen, repeat. It drops that
-   character's cached voice and renders one sample line; nothing is written.
-2. Put the prompt you keep into that character's `voice` in `cast.json` and bump its optional integer `rev` (absent = 1; set 2, then 3...).
-   The clipKey's archetype becomes `<id>@<rev>` (e.g. `F|nami@2|...`), so every clip of that character gets a new name. The notebook voices
-   `<id>@<rev>` with `characters[<id>].voice`.
-3. `node tools/export-tracks.js`, render, ship as below. The old clips are no longer in the manifest; delete them from `audio/` whenever you like.
+1. In v3, choose the character, edit `VOICE` (and / or `VOICE_SEED`) in the Tune cell with `USE_SAVED = False`, run, listen, repeat.
+2. Save it (`SAVE_REFERENCE = True`). A changed prompt is saved as the next rev (`refs/<id>@<rev+1>`) and the cell prints the `"rev"` and `"voice"`
+   lines to paste into that character's entry in `cast.json` (optional integer `rev`, absent = 1). The clipKey's archetype becomes `<id>@<rev>`
+   (e.g. `F|nami@3|...`), so every clip of that character gets a new name. To re-render a character with the same prompt (another seed), bump
+   `rev` in `cast.json` first, re-export, then tune and save under the new rev.
+3. `node tools/export-tracks.js`, upload the new `render-input.json`, render, ship as below. The old clips are no longer in the manifest;
+   delete them from `audio/` whenever you like.
 
 One bad clip (drifted to another voice, decodes to nothing): give that line `take: 2` (then 3...) in `data/n5/listening.js`. The clipKey
 gets `#<take>` after the say text (`F|maomao|……そうですか。#2`), so only that clip is renamed and re-rendered; the spoken text is unchanged.
@@ -46,7 +56,7 @@ A dialogue line is spoken from natural adult Japanese in full kanji, the way Jap
 catalog stay kana, words not in `uses` stay as written. Punctuation and `……` kept, U+3000 removed. From a ruby block whose kanji hold a numeral to
 the end of its phrase, ruby blocks are spoken as their authored kana (九時 くじ, 一万三千円 いちまんさんぜんえん) and nothing is swapped:
 numbers, counters, dates and times are where TTS misreads. A line's optional `say` overrides the whole text for anything the rule gets wrong.
-Full rule: `docs/dialogue-authoring.md`. The clipKey hashes this text, so clips, manifest and the audio-hash test agree. The notebook's **A/B text test** cell plays three lines as
+Full rule: `docs/dialogue-authoring.md`. The clipKey hashes this text, so clips, manifest and the audio-hash test agree. The v2 notebook's **A/B text test** cell plays three lines as
 A (this text), B (display text with phrase spaces) and C (the old all-kana style) for comparison.
 Non-dialogue tracks keep the written kana (their rendered clips keep their names).
 
@@ -69,7 +79,7 @@ written all in kana hash the same either way, so their clips were reused.)
 - Woman: Qwen3-TTS preset Ono_Anna for all; only the instruction changes per archetype (lively is the approved base).
 - Narrator: preset Serena with the exam-style instruction, one fixed voice for every track.
 - Man: a designed voice per archetype, from `man-archetypes.json`.
-- Dialogue characters: one designed, locked voice each (either gender) for all their lines, from `cast.json`; no per-line tone; Ono_Anna is only for the old woman archetypes.
+- Dialogue characters: one designed, locked voice each (either gender) for all their lines, from `cast.json`, cloned from a saved reference (v3); no per-line tone; Ono_Anna is only for the old woman archetypes.
 - Loudness: TARGET_DB -20, GAIN_DB F +1, M 0, N 0.
 - Output: MP3, mono. Clips are cached by the service worker on first play.
 
@@ -81,8 +91,9 @@ To retire an old track: delete its `"l:...": [...]` line from `audio/manifest.js
 
 ## After rendering (ship the clips)
 
-The notebook (`render-notebook-v2.ipynb`, run on Colab; `render-notebook.ipynb` is the old one that rendered
-from `text`) reads one input file and writes `<12 hex>.mp3` clips plus `manifest.json`
+The notebooks (run on Colab: `render-notebook-v3.ipynb` for dialogue characters, `render-notebook-v2.ipynb` for the exam and listening
+tracks; `render-notebook.ipynb` is the old one that rendered from `text`) read one input file, share the Drive output folder, and write
+`<12 hex>.mp3` clips plus `manifest.json`
 (`{ version: 1, tracks: { <id>: [file per line] } }`, same order and length as `lines`).
 
 - Input: `tools/audio/render-input.json` (gitignored), written by `export-tracks.js`:
