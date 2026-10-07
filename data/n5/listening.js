@@ -1315,7 +1315,7 @@ CATALOG.add([
     lines: [
       { speaker: 'maomao', furigana: 'もしもし。', en: 'Hello?' },
       { speaker: 'frieren', furigana: '……マオマオさん、フリーレンです。いま、[本|ほん]を　[読|よ]んで　います。', en: '...Maomao, it’s Frieren. I’m reading a book right now.' },
-      { speaker: 'maomao', furigana: 'そうですか。わたしは　くすりを　のんで　います。', en: '...I see. I’m taking some medicine.' },
+      { speaker: 'maomao', furigana: 'そうですか。わたしは　くすりを　のんで　います。', en: 'I see. I’m taking some medicine.' },
       { speaker: 'frieren', furigana: '……びょうきですか。', en: '...Are you sick?' },
       { speaker: 'maomao', furigana: 'いいえ。あたらしい　くすりです。おもしろいですよ。', en: 'No. It’s a new medicine. It’s interesting.' },
       { speaker: 'frieren', furigana: '……だれが　うたって　いますか。', en: '...Who is singing?' },
@@ -1326,7 +1326,7 @@ CATALOG.add([
     ],
     remixes: [
       { scene: 'Maomao tells Frieren what she is doing.', en: 'I am taking medicine now.',
-        chunks: ['いま', 'くすりを', 'のんで', 'います。', 'のみます。'], answer: ['いま', 'くすりを', 'のんで', 'います。'],
+        chunks: ['いま', 'くすりを', 'のんでいます。', 'のみます。'], answer: ['いま', 'くすりを', 'のんでいます。'],
         explain: 'のみます is "I take" or "I will take". For something going on right now, use the て-form + います: のんで います.' },
       { scene: 'Maomao says who is making the noise.', en: 'The person next door is singing.',
         chunks: ['となりの', 'ひとが', 'うたって', 'います。', 'ひとを'], answer: ['となりの', 'ひとが', 'うたって', 'います。'],
@@ -1351,7 +1351,7 @@ CATALOG.add([
       { speaker: 'lelouch', furigana: 'きれいな　コーヒーですね。しゃしんを　とっても　いいですか。', en: 'What a beautiful coffee. May I take a photo?' },
       { speaker: 'sanji', furigana: 'どうぞ！　たくさん　とって　ください！', en: 'Go ahead! Take lots!' },
       { speaker: 'sanji', furigana: '……ここで　たばこを　すっても　いいですか。', en: '...May I smoke here?' },
-      { speaker: 'lelouch', furigana: 'はいざらは　あちらですよ。', en: '...The ashtray is over there.' }
+      { speaker: 'lelouch', furigana: 'はいざらは　あちらですよ。', en: 'The ashtray is over there.' }
     ],
     remixes: [
       { scene: 'Lelouch asks before he sits down.', en: 'May I sit here?',
@@ -1383,7 +1383,7 @@ CATALOG.add([
     remixes: [
       { scene: 'Gojo gives the first rule again.', en: 'You must not run here.',
         chunks: ['ここで', 'はしっては', 'いけません。', 'はしっても'], answer: ['ここで', 'はしっては', 'いけません。'],
-        explain: 'はしっても いい means "you may run". To say it is not allowed, use the て-form + は いけません: はしっては いけません.' },
+        explain: 'はしっても いい means "you may run", and はしっても いけません means "you must not run here either" (も = also). The rule itself is the て-form + は: はしっては いけません.' },
       { scene: 'Gojo points at the light.', en: 'You must not switch off the light.',
         chunks: ['でんきを', 'けしては', 'いけません。', 'でんきに'], answer: ['でんきを', 'けしては', 'いけません。'],
         explain: 'を marks the thing you switch off: でんきを けします. に is for a place or a time.' }
@@ -1491,7 +1491,7 @@ CATALOG.add([
       { speaker: 'yor', furigana: 'にくも　いれますか？', en: 'Do I put the meat in too?' },
       { speaker: 'sanji', furigana: 'いいえ、にくは　まだです。しょうゆも　まだですよ。', en: 'No, not the meat yet. Not the soy sauce yet, either.' },
       { speaker: 'yor', furigana: '……しょうゆは　もう　いれました。', en: '...I already put the soy sauce in.' },
-      { speaker: 'sanji', furigana: 'だいじょうぶです！　まだ　[六|ろく][時|じ]です。', en: '...It’s all right. It’s still only six.' }
+      { speaker: 'sanji', furigana: 'だいじょうぶです！　まだ　[六|ろく][時|じ]です。', en: 'It’s all right! It’s still only six.' }
     ],
     remixes: [
       { scene: 'Yor asks before adding the soy sauce.', en: 'Do I put the soy sauce in too?',
@@ -1518,14 +1518,14 @@ CATALOG.add([
       { speaker: 'gojo', furigana: 'カップも　まだ　おいて　いませんか？', en: 'You haven’t put out the cups yet either?' },
       { speaker: 'killua', furigana: 'テーブルには　チョコレートが　ある。[先生|せんせい]は？', en: 'There’s chocolate on the table. What about you?' },
       { speaker: 'gojo', furigana: 'わたしは　かびんを　おきましたよ！', en: 'I put out the vase!' },
-      { speaker: 'killua', furigana: 'かびんは　[食|た]べない。', en: '...Nobody eats a vase.' }
+      { speaker: 'killua', furigana: 'かびんは　[食|た]べない。', en: 'Nobody eats a vase.' }
     ],
     bridge: [
       { text: 'チョコレート', gloss: 'チョコレート = chocolate' }
     ],
     remixes: [
       { scene: 'Killua answers about the plates, politely this time.', en: 'I have not put the plates out yet.',
-        chunks: ['おさらは', 'まだ', 'おいて', 'いません。', 'おきません。'], answer: ['おさらは', 'まだ', 'おいて', 'いません。'],
+        chunks: ['おさらは', 'まだ', 'おいていません。', 'おきません。'], answer: ['おさらは', 'まだ', 'おいていません。'],
         explain: 'まだ おきません is "I won’t put them out yet" (a choice). "I haven’t done it yet" is まだ + the て-form + いません: まだ おいて いません.' },
       { scene: 'Gojo asks about the bowls again.', en: 'Have you put the bowls out yet?',
         chunks: ['もう', 'ちゃわんを', 'おきましたか？', 'まだ'], answer: ['もう', 'ちゃわんを', 'おきましたか？'],
@@ -1580,7 +1580,7 @@ CATALOG.add([
       { speaker: 'sasuke', furigana: '……どうぞ。', en: '...Here.' },
       { speaker: 'nami', furigana: '[二|に][百|ひゃく][円|えん]の　きっては　きれいですよ。', en: 'The 200-yen stamps are pretty, you know.' },
       { speaker: 'sasuke', furigana: '……[百|ひゃく][円|えん]の　きってで　いいです。', en: '...The 100-yen stamp is fine.' },
-      { speaker: 'nami', furigana: 'そうですか。ポストは　あちらです。', en: '...I see. The postbox is over there.' }
+      { speaker: 'nami', furigana: 'そうですか。ポストは　あちらです。', en: 'I see. The postbox is over there.' }
     ],
     remixes: [
       { scene: 'Nami reminds Sasuke about the stamp.', en: 'You have to buy a stamp.',
@@ -1715,7 +1715,7 @@ CATALOG.add([
       { speaker: 'hinata', furigana: 'ルルーシュさんは　スポーツは？', en: 'And you, Lelouch? Sports?' },
       { speaker: 'lelouch', furigana: '[見|み]るのは　すきです。', en: 'I like watching them.' },
       { speaker: 'hinata', furigana: 'あした、[見|み]に　[来|き]ませんか！', en: 'Won’t you come and watch tomorrow?!' },
-      { speaker: 'lelouch', furigana: '[見|み]に　[行|い]きます。チェスの　[本|ほん]を　もって。', en: '...I’ll come and watch. With a chess book.' }
+      { speaker: 'lelouch', furigana: '[見|み]に　[行|い]きます。チェスの　[本|ほん]を　もって。', en: 'I’ll come and watch. With a chess book.' }
     ],
     bridge: [
       { text: 'バレーボール', gloss: 'バレーボール = volleyball' },
