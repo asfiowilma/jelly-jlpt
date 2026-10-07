@@ -32,7 +32,6 @@ var AUDIO_MANIFEST = { tracks: {
   "l:n5-dlg-faster-way": ["9ca0b4f3b54e.mp3","16bb669a5fb1.mp3","3ed27ba304ea.mp3","0a259b2a9880.mp3","d40d5e39e39a.mp3","616a4031590e.mp3","dee8949642c6.mp3","017e20ce6d71.mp3"],
   "l:n5-dlg-film-date": ["668df9b272c2.mp3","3a977478ecab.mp3","bab37a260680.mp3","d11f352694e6.mp3","9fd14b6a21f8.mp3","ce18d9a55f74.mp3","9b647a13a227.mp3","9faa465469ed.mp3","d8fc114d08ed.mp3","0bdf2ffcdc59.mp3"],
   "l:n5-dlg-first-class": ["23186e7095cf.mp3","a90695bde595.mp3","ce0145b747aa.mp3","b64e55ca1a10.mp3","071bb3bea757.mp3","9d48f5c0d1cc.mp3","e0c20079bc1b.mp3","c6ef448d891b.mp3","de6dc1fbce04.mp3"],
-  "l:n5-dlg-first-flight": ["c808ac2867df.mp3","fd8348a4a4d1.mp3","8eb2ba3b22fc.mp3","763389843bb7.mp3","97697df505ca.mp3","3c83c1b5db94.mp3","b48abb181c84.mp3","38e2c6132f20.mp3","0ec959d1ec16.mp3"],
   "l:n5-dlg-first-tomato": ["3062f02a05d1.mp3","dc70a006f6f2.mp3","c046e5b1467d.mp3","b670948918b1.mp3","c1e81f085a53.mp3","408436dedce2.mp3","7c4137c5d650.mp3","3094a351bf67.mp3","9af116f6d116.mp3"],
   "l:n5-dlg-flower-spell": ["77c563fe1f80.mp3","ed86e9538ea1.mp3","a57c49648d93.mp3","9092ad728381.mp3","d42d6228df67.mp3","ed4a2d0aa0ac.mp3","f98ea23ed7b3.mp3","58ed33b734d8.mp3"],
   "l:n5-dlg-forger-table": ["c3eb4733b7eb.mp3","1279b1cee6d8.mp3","5eb51501eeeb.mp3","ddf6f1b380e3.mp3","cf983a37b535.mp3","bf34fc21e7a2.mp3","24e839235d91.mp3","0cd80431661a.mp3"],

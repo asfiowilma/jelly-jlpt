@@ -2438,7 +2438,7 @@ CATALOG.add([
     lines: [
       { speaker: 'nami', furigana: '[見|み]て！　ひこうきの　きっぷ！　らいしゅう、[外国|がいこく]へ　[行|い]く！', en: 'Look! A plane ticket! I’m going abroad next week!' },
       { speaker: 'lelouch', furigana: '……ナミは　ひこうきに　のった　ことが　ある？', en: '...Have you ever been on a plane, Nami?' },
-      { speaker: 'nami', furigana: 'ない！　はじめて！', en: 'Never! It’s my first time!' },
+      { speaker: 'nami', furigana: 'ない！　はじめて！　ルルーシュは　のった　ことが　ある？', en: 'Never! It’s my first time! Have you ever been on one, Lelouch?' },
       { speaker: 'lelouch', furigana: 'ある。りゅうがくせいの　とき、ひこうきで　[来|き]た。', en: 'I have. When I was an exchange student, I came by plane.', say: 'ある。留学生のとき、飛行機で来た。' },
       { speaker: 'nami', furigana: 'ひこうきの　なかで　[何|なに]を　した？', en: 'What did you do on the plane?' },
       { speaker: 'lelouch', furigana: '……ねた。たいしかんへ　[行|い]った　ことは　ある？', en: '...Slept. Have you ever been to the embassy?' },
