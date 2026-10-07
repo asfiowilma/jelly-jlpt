@@ -1012,27 +1012,28 @@ CATALOG.add([
     cast: { sanji: { name: 'Sanji', jp: 'サンジ', gender: 'M', role: 'Receptionist' }, hinata: { name: 'Hinata', jp: 'ヒナタ', gender: 'M', role: 'Guest' } },
     lines: [
       { speaker: 'sanji', furigana: 'ヒナタさんですね。へやは　せん[二|に]ひゃく[九|きゅう]です。', en: 'Mr. Hinata, right? Your room is 1209.' },
-      { speaker: 'hinata', furigana: 'はい！　……タクシーは　[一|いち]まん[三|さん]ぜんえんでした！', en: 'Yes! ...The taxi was 13,000 yen!' },
-      { speaker: 'sanji', furigana: 'タクシーでしたか。えきの　バスは　[七|なな]ひゃくえんですよ。', en: 'A taxi, was it? The bus from the station is 700 yen.' },
-      { speaker: 'hinata', furigana: '[七|なな]ひゃくえん……。', en: '700 yen...', tone: 'quiet, curt, low energy' },
-      { speaker: 'sanji', furigana: '……ヒナタさん、パンです。どうぞ。', en: '...Mr. Hinata, here is some bread. Please.' },
-      { speaker: 'hinata', furigana: 'パン！　いただきます！', en: 'Bread! Thank you!' },
+      { speaker: 'hinata', furigana: 'はい！　タクシーは　[一|いち]まん[三|さん]ぜん[円|えん]でした！', en: 'Yes! The taxi was 13,000 yen!' },
+      { speaker: 'sanji', furigana: 'タクシーでしたか。えきの　バスは　[七|なな]ひゃく[円|えん]ですよ。', en: 'A taxi, was it? The bus from the station is 700 yen.' },
+      { speaker: 'hinata', furigana: '……[七|なな]ひゃく[円|えん]？', en: '...700 yen?', tone: 'quiet, curt, low energy' },
+      { speaker: 'sanji', furigana: 'はい。[七|なな]ひゃく[円|えん]です。', en: 'Yes. 700 yen.' },
+      { speaker: 'hinata', furigana: 'わたしの　[一|いち]まん[三|さん]ぜん[円|えん]……。', en: 'My 13,000 yen...', tone: 'defeated, deflated' },
+      { speaker: 'sanji', furigana: '……ヒナタさん、パンです。どうぞ。ゼロ[円|えん]ですよ。', en: '...Mr. Hinata, here is some bread. It is zero yen.' },
+      { speaker: 'hinata', furigana: 'ゼロ[円|えん]！　いただきます！', en: 'Zero yen! Thank you!' },
       { speaker: 'sanji', furigana: 'かぎも　どうぞ。せん[二|に]ひゃく[九|きゅう]ですよ。', en: 'Your key too. It is 1209.' }
     ],
     bridge: [
-      { text: 'へや', id: 'v:部屋|へや', gloss: 'へや = room (taught later)' },
-      { text: 'えん', id: 'v:円|えん', gloss: 'えん = yen, Japanese money (taught later)' }
+      { text: 'へや', id: 'v:部屋|へや', gloss: 'へや = room (taught later)' }
     ],
     remixes: [
-      { scene: 'Sanji gives another guest the room number.', en: 'Your room is 1200.',
-        chunks: ['へやは', 'せんにひゃく', 'です。', 'ななひゃく'], answer: ['へやは', 'せんにひゃく', 'です。'],
-        explain: 'せんにひゃく is 1,200: せん (1,000) + にひゃく (200). ななひゃく is 700, the bus fare.' },
       { scene: 'Hinata thinks back on the ride.', en: 'It was 13,000 yen.',
         chunks: ['いちまんさんぜんえん', 'でした。', 'です。'], answer: ['いちまんさんぜんえん', 'でした。'],
-        explain: 'でした is the past of です: the ride is over. です would give a price for now. いちまん is 10,000 and さんぜん 3,000.' }
+        explain: 'でした is the past of です: the ride is over. です would give a price for now. いちまん is 10,000 and さんぜん 3,000.' },
+      { scene: 'Sanji gives another guest the room number.', en: 'Your room is 1200.',
+        chunks: ['へやは', 'せんにひゃく', 'です。', 'にせんひゃく'], answer: ['へやは', 'せんにひゃく', 'です。'],
+        explain: 'Big numbers go from the largest part down: せん (1,000) + にひゃく (200) = 1,200. にせんひゃく is 2,100.' }
     ],
     names: ['サンジ', 'ヒナタ'],
-    uses: ['g:deshita', 'g:wa-desu', 'g:ka', 'g:ne', 'g:yo', 'g:no', 'g:mo', 'v:さん|さん', 'v:部屋|へや', 'v:円|えん', 'v:一|いち', 'v:二|に', 'v:三|さん', 'v:七|なな', 'v:九|きゅう', 'v:百|ひゃく', 'v:千|せん', 'v:万|まん', 'v:タクシー|タクシー', 'v:駅|えき', 'v:バス|バス', 'v:パン|パン', 'v:かぎ|かぎ', 'v:どうぞ|どうぞ', 'v:はい|はい', 'k:一', 'k:二', 'k:三', 'k:七', 'k:九'],
+    uses: ['g:deshita', 'g:wa-desu', 'g:ka', 'g:ne', 'g:yo', 'g:no', 'g:mo', 'v:さん|さん', 'v:部屋|へや', 'v:円|えん', 'v:私|わたし', 'v:ゼロ|ゼロ', 'v:一|いち', 'v:二|に', 'v:三|さん', 'v:七|なな', 'v:九|きゅう', 'v:百|ひゃく', 'v:千|せん', 'v:万|まん', 'v:タクシー|タクシー', 'v:駅|えき', 'v:バス|バス', 'v:パン|パン', 'v:かぎ|かぎ', 'v:どうぞ|どうぞ', 'v:はい|はい', 'k:一', 'k:二', 'k:三', 'k:七', 'k:九', 'k:円'],
     notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
     verified: false }),
 
