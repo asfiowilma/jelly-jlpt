@@ -1325,7 +1325,7 @@ CATALOG.add([
       { speaker: 'lelouch', furigana: 'わたしは　ゆうべ　はじめて　トマトを　[食|た]べました。', en: 'Last night I ate a tomato for the first time.' },
       { speaker: 'sasuke', furigana: '……けさは？', en: '...And this morning?' },
       { speaker: 'lelouch', furigana: 'けさは　[食|た]べませんでした。', en: 'This morning I did not.' },
-      { speaker: 'sasuke', furigana: '……どうぞ。', en: '...Here.' },
+      { speaker: 'sasuke', furigana: '……トマトです。どうぞ。', en: '...A tomato. Here.' },
       { speaker: 'lelouch', furigana: 'つぎの　[休|やす]みに　[食|た]べます。', en: 'I will eat it at the next break.' }
     ],
     bridge: [
@@ -1628,7 +1628,7 @@ CATALOG.add([
       { speaker: 'maomao', furigana: 'わかりません。あたらしい　くすりですから。', en: 'I don’t know. Because it is a new medicine.' },
       { speaker: 'sanji', furigana: 'わかりませんか！？', en: 'You don’t know?!' },
       { speaker: 'maomao', furigana: '[今|いま]　のみませんか？　たのしいですよ。', en: 'Won’t you take it now? It will be fun.' },
-      { speaker: 'sanji', furigana: 'おなかは　いたくないです！', en: 'My stomach doesn’t hurt!' }
+      { speaker: 'sanji', furigana: '[今|いま]は　いたくないです！', en: 'It doesn’t hurt now!' }
     ],
     remixes: [
       { scene: 'Sanji explains why he is tired.', en: 'I’m tired, because I am busy.',
@@ -1886,7 +1886,7 @@ CATALOG.add([
 
   L({ id: 'l:n5-dlg-phone-call', format: 'dialogue',
     title: 'On the phone', goal: 'You can say what someone is doing now with 〜ています.',
-    scene: 'Frieren calls Maomao in the evening. Neither of them says much.',
+    scene: 'Frieren calls Maomao in the evening. Someone near Maomao is singing. Neither of them says much.',
     cast: { maomao: { name: 'Maomao', jp: 'マオマオ', gender: 'F', role: 'Friend' }, frieren: { name: 'Frieren', jp: 'フリーレン', gender: 'F', role: 'Friend' } },
     lines: [
       { speaker: 'maomao', furigana: 'もしもし。', en: 'Hello?' },
