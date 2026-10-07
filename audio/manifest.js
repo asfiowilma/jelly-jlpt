@@ -71,7 +71,7 @@ var AUDIO_MANIFEST = { tracks: {
   "l:n5-dlg-red-purse": ["eb782ccc1006.mp3","bc398fa2c0f1.mp3","6380a06a7f3a.mp3","3805242b163a.mp3","db87990bfaac.mp3","ba4591e107c9.mp3","1aaf8453445d.mp3","4a64ebd9e054.mp3","ec958ac5b9fd.mp3"],
   "l:n5-dlg-right-bus": ["0e3332263e8e.mp3","82e171a5ca70.mp3","ee61f6af0525.mp3","a0e9c5e084e8.mp3","46abf6606513.mp3","c8b07546d96c.mp3","18ff94736c39.mp3","0f47ab902d56.mp3","2dc1c1b12f5a.mp3"],
   "l:n5-dlg-room-viewing": ["7918fbc1d565.mp3","c92e6139e2ae.mp3","92ff4f5327e1.mp3","8bc77823141d.mp3","264f0780da84.mp3","61de795bf6ce.mp3","b1c007b5da6b.mp3","7db7b22433b9.mp3","07f7cf4f9261.mp3"],
-  "l:n5-dlg-salty-eggs": ["7e1b8915e151.mp3","c05a8e502e1a.mp3","91d866da46a6.mp3","4bffe84b0b99.mp3","b2ef21491519.mp3","aff049298f08.mp3","5521f2ae0446.mp3","5037913afcbe.mp3","a87b1fc5ad88.mp3"],
+  "l:n5-dlg-salty-eggs": ["7e1b8915e151.mp3","33040c4f7c1d.mp3","7b7437dfa172.mp3","2cd90dd1a734.mp3","b2ef21491519.mp3","aff049298f08.mp3","5521f2ae0446.mp3","5037913afcbe.mp3","a87b1fc5ad88.mp3"],
   "l:n5-dlg-school-entrance": ["084fb2022b53.mp3","61c86569a258.mp3","f4f709ba1483.mp3","65c4a828b6a7.mp3","6d365ba60753.mp3","877cd43d2f87.mp3","3c894263a848.mp3"],
   "l:n5-dlg-second-job": ["ef0d79c89385.mp3","3debfaf4e47b.mp3","17c10638a3c7.mp3","2705cac106cb.mp3","f6ad45c4b397.mp3","0fda26501732.mp3","2d4d69896e42.mp3","92055c716c69.mp3","cc5df18c79af.mp3"],
   "l:n5-dlg-sports-centre": ["3cea73155985.mp3","dec972007eb9.mp3","fc786d8ed68c.mp3","587f65d57cae.mp3","e624367ed2e1.mp3","e6ce1816efe0.mp3","024d2e737087.mp3","3512c18149ee.mp3","f882aebc47d4.mp3"],

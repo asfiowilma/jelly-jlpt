@@ -1724,10 +1724,10 @@ var SPEECH_NUMERAL_OK = /一緒|一番/; // hold a numeral kanji but are not num
 // Ambiguous readings: words whose kanji a TTS may read another way stay in their authored kana, both when the line
 // has them in kana (never swapped) and as a ruby block ([家|いえ] spoken いえ). 家 (うち), 明日 (あす), 何 (なに / なん:
 // 何の), 今 (こん: いま　午前 spoken 今午前 reads こんごぜん), 昨夜 (さくや), 居る (おる; and いる is kana in normal text), 入る (いる: 入ります), 入口 (いりくち), 開ける
-// (ひらける), 上 / 下 / 中 (かみ / しも / じゅう: 上と下), 辺 (あたり), 角 (かく / つの), 所 (しょ), 物 (ぶつ), 背 (せい).
+// (ひらける), 塩 (えん: しお), 上 / 下 / 中 (かみ / しも / じゅう: 上と下), 辺 (あたり), 角 (かく / つの), 所 (しょ), 物 (ぶつ), 背 (せい).
 // Kept as kanji, read reliably: 今日, 昨日, 上手, 下手, 人, 後ろ, 出口. Numbers (一人, 一日) are kana anyway.
 var SPEECH_KANA_KEEP = ['家|いえ', '明日|あした', '何|なに', '何|なん', '昨夜|ゆうべ', '居る|いる', '入る|はいる', '入口|いりぐち',
-  '開ける|あける', '上|うえ', '下|した', '中|なか', '辺|へん', '角|かど', '所|ところ', '物|もの', '背|せ'].map(function (e) { return e.split('|'); });
+  '開ける|あける', '上|うえ', '下|した', '中|なか', '辺|へん', '角|かど', '所|ところ', '物|もの', '背|せ', '塩|しお'].map(function (e) { return e.split('|'); });
 // kana words a shorter word would split wrongly (いくら → 行くら, ほんとう → 本とう): nothing is swapped at their start
 var SPEECH_KANA_WORDS = /^(?:いくら|いくつ|ほんとう)/;
 // a kana number right before a counter in ruby (ろく[時|じ], さん[円|えん]): the counter is spoken as its kana too
