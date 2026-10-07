@@ -224,7 +224,26 @@ const DIALOGUES = {
   "At the library": "l:n5-dlg-library",
   "With friends": "l:n5-dlg-going-out",
   "Going out together": "l:n5-dlg-cafe-invite",
-  "This week, next week": "l:n5-dlg-next-month"
+  "This week, next week": "l:n5-dlg-next-month",
+  "In the classroom": "l:n5-dlg-open-books",
+  "Lending a hand": "l:n5-dlg-heavy-bag",
+  "On the phone": "l:n5-dlg-phone-call",
+  "May I?": "l:n5-dlg-may-i",
+  "Rules and warnings": "l:n5-dlg-factory-rules",
+  "Morning routine": "l:n5-dlg-morning-order",
+  "Homework and classes": "l:n5-dlg-class-over",
+  "Learning Japanese": "l:n5-dlg-kanji-again",
+  "Cooking dinner": "l:n5-dlg-cooking-lesson",
+  "Setting the table": "l:n5-dlg-table-set",
+  "At the doctor's": "l:n5-dlg-clinic",
+  "The bank and the post office": "l:n5-dlg-post-office",
+  "Paper, pens and pockets": "l:n5-dlg-help-offer",
+  "Asking the way": "l:n5-dlg-left-corner",
+  "North, south, east, west": "l:n5-dlg-north-bridge",
+  "Housework": "l:n5-dlg-chore-day",
+  "Hobbies": "l:n5-dlg-free-time",
+  "Body and build": "l:n5-dlg-sports-club",
+  "Drawing and singing": "l:n5-dlg-karaoke"
 };
 const lessonText = LESSONS.map(function (l) { return words(l[2]).map(function (id) { return CATALOG.items[id].word; }).join(" "); });
 const soon = function (k, n) { return lessonText.slice(n + 1, n + 7).some(function (s) { return s.indexOf(k.char) >= 0; }); };
