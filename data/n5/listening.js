@@ -673,31 +673,31 @@ CATALOG.add([
   // Not a test format: no question / options / answer. See the header, docs/dialogue-authoring.md and components/dialogue-section.js.
   L({ id: 'l:n5-dlg-first-class', format: 'dialogue',
     title: 'First class', goal: "You can say who you are and ask someone's name.",
-    scene: 'Kakashi-sensei meets a new student on the first day of class.',
-    cast: { kakashi: { name: 'Kakashi', jp: 'カカシ', gender: 'M', role: 'Teacher' }, sasuke: { name: 'Sasuke', jp: 'サスケ', gender: 'M', role: 'Student' } },
+    scene: 'First day of class. Lelouch sits calmly at the front desk with a small chess set when a quiet new student walks in.',
+    cast: { lelouch: { name: 'Lelouch', jp: 'ルルーシュ', gender: 'M', role: 'New student' }, sasuke: { name: 'Sasuke', jp: 'サスケ', gender: 'M', role: 'New student' } },
     lines: [
-      { speaker: 'kakashi', furigana: 'はじめまして。わたしは　カカシです。せんせいです。', en: 'Nice to meet you. I am Kakashi. I am a teacher.' },
-      { speaker: 'kakashi', furigana: 'おなまえは？', en: 'Your name?' },
+      { speaker: 'lelouch', furigana: 'はじめまして。わたしは　ルルーシュです。', en: 'Nice to meet you. I am Lelouch.' },
+      { speaker: 'sasuke', furigana: '……せんせいですか。', en: '...Are you the teacher?', tone: 'quiet, curt, low energy' },
+      { speaker: 'lelouch', furigana: 'いいえ。わたしは　[学生|がくせい]です。', en: 'No. I am a student.' },
+      { speaker: 'lelouch', furigana: 'おなまえは？', en: 'And your name?' },
       { speaker: 'sasuke', furigana: '……サスケです。', en: '...Sasuke.', tone: 'quiet, curt, low energy' },
-      { speaker: 'kakashi', furigana: 'サスケさんは　[学生|がくせい]ですね。', en: 'You are a student, right?' },
-      { speaker: 'sasuke', furigana: '……はい。', en: '...Yes.', tone: 'quiet, curt, low energy' },
-      { speaker: 'kakashi', furigana: 'しずかな　[人|ひと]ですね。', en: 'You are a quiet person, huh.', tone: 'dry, amused, lazy' },
-      { speaker: 'sasuke', furigana: '……よろしく　おねがいします。', en: '...Please take care of me.', tone: 'quiet, curt, low energy' },
-      { speaker: 'kakashi', furigana: 'はい、よろしく。', en: 'Sure, likewise.', tone: 'dry, amused, lazy' }
+      { speaker: 'lelouch', furigana: 'サスケさんは　せんせいですか。', en: 'Are you the teacher, Sasuke?', tone: 'sly, playful' },
+      { speaker: 'sasuke', furigana: '……[学生|がくせい]です。', en: '...A student.', tone: 'quiet, curt, low energy' },
+      { speaker: 'lelouch', furigana: 'サスケさん、よろしく　おねがいします。', en: 'Sasuke, it is good to meet you.' },
+      { speaker: 'sasuke', furigana: '……ええ。よろしく。', en: '...Yeah. Likewise.', tone: 'quiet, curt, low energy' }
     ],
     bridge: [
       { text: 'お', ctx: 'おなまえ', id: 'v:お|お', gloss: 'お + a name: polite, for the other person’s things' },
-      { text: 'ね', ctx: 'ですね', id: 'g:ne', gloss: 'ね = right? / isn’t it? (taught a few lessons later)' },
-      { text: 'しずかな', id: 'v:静か|しずか', gloss: 'しずか = quiet; しずかな ひと = a quiet person' }
+      { text: 'か', ctx: 'ですか', id: 'g:ka', gloss: 'か at the end = a question: せんせいですか = are you the teacher? (taught next lesson)' }
     ],
     remixes: [
-      { scene: 'Same classroom, new student. Emilia walks in and introduces herself.', en: 'I am Emilia. I am a student.',
-        chunks: ['エミリアです。', 'わたしは', 'がくせいです。', 'せんせいです。'], answer: ['エミリアです。', 'わたしは', 'がくせいです。'],
-        explain: 'がくせいです means "I am a student"; せんせいです would say Emilia is a teacher.' }
+      { scene: 'Same classroom. Sakura walks in and introduces herself.', en: 'I am Sakura. I am a student.',
+        chunks: ['わたしは', 'サクラです。', 'がくせいです。', 'サクラさんです。'], answer: ['わたしは', 'サクラです。', 'がくせいです。'],
+        explain: 'さん is for other people, never for your own name: Sakura says サクラです. Lelouch calls her サクラさん.' }
     ],
-    names: ['カカシ', 'サスケ', 'エミリア'],
-    uses: ['g:wa-desu', 'g:ne', 'v:私|わたし', 'v:先生|せんせい', 'v:学生|がくせい', 'v:お|お', 'v:名前|なまえ', 'v:静か|しずか', 'v:さん|さん', 'v:人|ひと', 'v:はい|はい', 'k:学', 'k:生', 'k:人'],
-    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
+    names: ['ルルーシュ', 'サスケ', 'サクラ'],
+    uses: ['g:wa-desu', 'g:ka', 'v:私|わたし', 'v:先生|せんせい', 'v:学生|がくせい', 'v:いいえ|いいえ', 'v:お|お', 'v:名前|なまえ', 'v:さん|さん', 'v:ええ|ええ', 'k:学', 'k:生'],
+    notes: 'uses v:ええ|ええ, which is unverified, so the dialogue is too. 先生 stays in kana: 先 is taught later.',
     verified: false }),
 
   L({ id: 'l:n5-dlg-forger-table', format: 'dialogue',

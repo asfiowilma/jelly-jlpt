@@ -46,19 +46,20 @@ QUnit.module('dialogue', function () {
   QUnit.test('dialogueView: marks, cast, pills, estimate', function (assert) {
     var u = withDialogue()[0], v = dialogueView(CATALOG.items[u.dialogue], u);
     var kinds = function (l) { return l.segs.filter(function (s) { return s.kind; }).map(function (s) { return s.kind + ':' + s.t; }).join(' '); };
-    assert.strictEqual(kinds(v.lines[0]), 'nw:わたし g:は g:です nw:せんせい g:です', 'new words dotted, grammar tokens, leading はじめまして not marked');
-    assert.strictEqual(kinds(v.lines[1]), 'br:お nw:なまえ g:は', 'bridge お only inside おなまえ');
-    assert.strictEqual(kinds(v.lines[3]), 'nw:さん g:は nw:学生 g:です br:ね', 'ruby block marked whole, ね is a bridge here');
-    assert.strictEqual(v.lines[3].segs.filter(function (s) { return s.t === '学生'; })[0].r, 'がくせい');
-    assert.ok(/br:しずかな/.test(kinds(v.lines[5])), 'multi-character bridge word');
-    assert.deepEqual(v.cast.map(function (c) { return c.initial; }), ['カ', 'サ'], 'initial chips: first character of the jp name');
+    assert.strictEqual(kinds(v.lines[0]), 'nw:わたし g:は g:です', 'new words dotted, grammar tokens, leading はじめまして and the name not marked');
+    assert.strictEqual(kinds(v.lines[3]), 'br:お nw:なまえ g:は', 'bridge お only inside おなまえ');
+    assert.strictEqual(kinds(v.lines[2]), 'nw:わたし g:は nw:学生 g:です', 'ruby block marked whole');
+    assert.strictEqual(v.lines[2].segs.filter(function (s) { return s.t === '学生'; })[0].r, 'がくせい');
+    assert.strictEqual(kinds(v.lines[5]), 'nw:さん g:は nw:せんせい g:です br:か', 'か is a bridge here');
+    assert.deepEqual(v.cast.map(function (c) { return c.initial; }), ['ル', 'サ'], 'initial chips: first character of the jp name');
     assert.deepEqual(v.cast.map(function (c) { return c.side; }), ['a', 'b'], 'first cast key is side a');
-    assert.deepEqual(v.lines.map(function (l) { return l.side; }), ['a', 'a', 'b', 'a', 'b', 'a', 'b', 'a'], 'bubble sides follow the speaker');
+    assert.deepEqual(v.lines.map(function (l) { return l.side; }), ['a', 'b', 'a', 'a', 'b', 'a', 'b', 'a', 'b'], 'bubble sides follow the speaker');
     assert.ok(v.pills.indexOf('私') >= 0 && v.pills.indexOf('X は Y です') >= 0, 'pills: new words + the pattern');
     assert.ok(v.seconds >= 10 && v.seconds <= 60, 'about ' + v.seconds + ' s');
     var u2 = withDialogue().filter(function (x) { return x.id === 'n5.u028'; })[0], v2 = dialogueView(CATALOG.items[u2.dialogue], u2);
     assert.ok(/nw:ぎゅうにゅう/.test(kinds(v2.lines[1])) && /nw:のみ/.test(kinds(v2.lines[1])), 'new words in the milk line');
     assert.ok(/br:を/.test(kinds(v2.lines[0])), 'を is a bridge in lesson ' + u2.id);
+    assert.ok(/br:ピーナッツ/.test(kinds(v2.lines[3])), 'multi-character bridge word');
     assert.deepEqual(v2.cast.map(function (c) { return c.initial + c.side; }), ['ヨa', 'アb'], 'two women: still a and b');
   });
 

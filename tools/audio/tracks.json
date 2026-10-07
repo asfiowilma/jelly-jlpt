@@ -3879,14 +3879,29 @@
    "lines": [
     {
      "role": "M",
-     "arch": "kakashi",
-     "text": "はじめまして。わたしはカカシです。せんせいです。",
-     "kana": "はじめまして。わたしわ　カカシです。せんせいです。",
-     "say": "はじめまして。わたしわカカシです。せんせいです。"
+     "arch": "lelouch",
+     "text": "はじめまして。わたしはルルーシュです。",
+     "kana": "はじめまして。わたしわ　ルルーシュです。",
+     "say": "はじめまして。わたしわルルーシュです。"
     },
     {
      "role": "M",
-     "arch": "kakashi",
+     "arch": "sasuke",
+     "tone": "quiet, curt, low energy",
+     "text": "……せんせいですか。",
+     "kana": "せんせいですか。",
+     "say": "せんせいですか。"
+    },
+    {
+     "role": "M",
+     "arch": "lelouch",
+     "text": "いいえ。わたしは学生です。",
+     "kana": "いいえ。わたしわ　がくせいです。",
+     "say": "いいえ。わたしわがくせいです。"
+    },
+    {
+     "role": "M",
+     "arch": "lelouch",
      "text": "おなまえは？",
      "kana": "おなまえわ？",
      "say": "おなまえわ？"
@@ -3901,42 +3916,34 @@
     },
     {
      "role": "M",
-     "arch": "kakashi",
-     "text": "サスケさんは学生ですね。",
-     "kana": "サスケさんわ　がくせいですね。",
-     "say": "サスケさんわがくせいですね。"
+     "arch": "lelouch",
+     "tone": "sly, playful",
+     "text": "サスケさんはせんせいですか。",
+     "kana": "サスケさんわ　せんせいですか。",
+     "say": "サスケさんわせんせいですか。"
     },
     {
      "role": "M",
      "arch": "sasuke",
      "tone": "quiet, curt, low energy",
-     "text": "……はい。",
-     "kana": "はい。",
-     "say": "はい。"
+     "text": "……学生です。",
+     "kana": "がくせいです。",
+     "say": "がくせいです。"
     },
     {
      "role": "M",
-     "arch": "kakashi",
-     "tone": "dry, amused, lazy",
-     "text": "しずかな人ですね。",
-     "kana": "しずかな　ひとですね。",
-     "say": "しずかなひとですね。"
+     "arch": "lelouch",
+     "text": "サスケさん、よろしくおねがいします。",
+     "kana": "サスケさん、よろしく　おねがいします。",
+     "say": "サスケさん、よろしくおねがいします。"
     },
     {
      "role": "M",
      "arch": "sasuke",
      "tone": "quiet, curt, low energy",
-     "text": "……よろしくおねがいします。",
-     "kana": "よろしく　おねがいします。",
-     "say": "よろしくおねがいします。"
-    },
-    {
-     "role": "M",
-     "arch": "kakashi",
-     "tone": "dry, amused, lazy",
-     "text": "はい、よろしく。",
-     "kana": "はい、よろしく。",
-     "say": "はい、よろしく。"
+     "text": "……ええ。よろしく。",
+     "kana": "ええ。よろしく。",
+     "say": "ええ。よろしく。"
     }
    ]
   },
