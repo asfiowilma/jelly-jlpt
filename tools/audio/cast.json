@@ -23,8 +23,8 @@
     "voice": "Native Japanese speaker, speaking clearly at a casual, easy pace. Clearly male boy about 12 with a slightly husky, mid-range pitch, NOT high, NOT feminine: a cool, cocky, mischievous voice, casual, with a hint of a sulk. Not breathy, no sighing." },
   "maomao": { "name": "Maomao", "jp": "マオマオ", "gender": "F", "role": "Pharmacist", "personality": "Dry, matter-of-fact, blunt, unimpressed.",
     "voice": "Native Japanese speaker, speaking clearly at a flat, even pace. Clearly female young woman in her late teens with a mid-range pitch, a dry, matter-of-fact, unimpressed voice, blunt and low-key, slightly nasal and plain, no cheerfulness. Not breathy, no sighing." },
-  "nami": { "name": "Nami", "jp": "ナミ", "gender": "F", "role": "Navigator", "personality": "Practical, quick, a bit sly, money-minded.",
-    "voice": "Native Japanese speaker, speaking clearly at a quick, confident pace. Clearly female young woman around 20 with a medium-high pitch, a sharp, practical and quick-witted voice, a bit sly and playful, businesslike and expressive. Not breathy, no sighing." },
+  "nami": { "name": "Nami", "jp": "ナミ", "gender": "F", "role": "Navigator", "personality": "Practical, quick, a bit sly, money-minded.", "rev": 2,
+    "voice": "Native Japanese speaker, speaking clearly at a quick, confident pace. Clearly female adult woman in her early 20s with a mid-low pitch, NOT high, NOT girlish, NOT childlike: a grown woman's voice, quick, confident and businesslike, a little sly, like someone closing a good deal. Firm and grounded, with a hint of a knowing smile. Not breathy, no sighing." },
   "sanji": { "name": "Sanji", "jp": "サンジ", "gender": "M", "role": "Cook", "personality": "Smooth, polite, dramatic gentleman, passionate about food.",
     "voice": "Native Japanese speaker, speaking clearly at a smooth, expressive pace. Clearly male adult man in his 20s with a mid-range pitch, a smooth, polite, suave voice, a gentleman with a dramatic, passionate streak, especially warm when talking about food. Not breathy, no sighing." }
 }

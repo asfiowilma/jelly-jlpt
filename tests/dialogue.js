@@ -86,7 +86,7 @@ QUnit.module('dialogue', function () {
     dialogues().forEach(function (it) {
       var s = listeningScript(it);
       assert.strictEqual(s.length, it.lines.length, it.id + ': one entry per line');
-      assert.ok(s.every(function (l, i) { return l.who === it.lines[i].speaker && l.speaker === it.cast[l.who].gender && l.text === dialogueSpeech(it.lines[i]) && !/[　\[|]/.test(l.text) && !('tone' in l); }), 'speech text, gender role, character id, no tone');
+      assert.ok(s.every(function (l, i) { return l.who === it.lines[i].speaker && l.speaker === it.cast[l.who].gender && l.text === dialogueSpeech(it.lines[i], it) && !/[　\[|]/.test(l.text) && !('tone' in l); }), 'speech text, gender role, character id, no tone');
       var slots = {};
       s.forEach(function (l) { slots[l.who] = l.slot; });
       var want = Object.keys(it.cast).map(function (k) { return it.cast[k].gender; }).map(function (g, i, a) { return a.indexOf(g) === i ? g : g + '2'; });
@@ -111,6 +111,34 @@ QUnit.module('dialogue', function () {
     assert.strictEqual(line.furigana, 'はは　です。', 'display text unchanged');
     dialogues().forEach(function (it) {
       it.lines.forEach(function (l) { assert.ok(!/　/.test(dialogueSpeech(l)), it.id + ': no full-width spaces'); });
+    });
+  });
+
+  QUnit.test('dialogueSpeech with the item: kana words in their normal kanji spelling at word boundaries; numbers, kana words and display untouched', function (assert) {
+    var it = { uses: ['v:午後|ごご', 'v:金曜日|きんようび', 'v:家|いえ', 'v:いいえ|いいえ', 'v:働く|はたらく', 'v:見る|みる', 'v:来る|くる', 'v:行く|いく',
+      'v:高い|たかい', 'v:名前|なまえ', 'v:何|なん', 'v:これ|これ', 'v:三日|みっか', 'v:五|ご', 'v:時|じ'] };
+    [['ごごは　はたらきます。', '午後は働きます。', 'ごごは: the noun in kanji, the particle は kept'],
+      ['[金|きん]ようびは？', '金曜日は？', 'a kana + kanji mix (金ようび) in full kanji'],
+      ['いいえ、いえです。', 'いいえ、家です。', 'いえ only at a word boundary, never inside いいえ'],
+      ['はたらきました。はたらきません。はたらいて　います。', '働きました。働きません。働いています。', 'a verb in ました / ません / て form'],
+      ['みて　ください。', '見てください。', 'an ichidan て form; ください stays kana'],
+      ['きのう　きました。こない。', 'きのう来ました。来ない。', '来る: き / こ stems; a word not in uses stays kana'],
+      ['[行|い]きます。', '行きます。', 'never a word right after a ruby block (no 行来ます)'],
+      ['たかくない。たかかった。', '高くない。高かった。', 'an i-adjective in くない / かった'],
+      ['これは　なんですか。', 'これは何ですか。', 'a word whose normal spelling is kana stays kana'],
+      ['おなまえは？', 'お名前は？', 'after a phrase-initial お prefix'],
+      ['みっか　ごご　[五|ご][時|じ]です。', 'みっか午後ごじです。', 'dates, numbers and counters stay as their kana']
+    ].forEach(function (c) { assert.strictEqual(dialogueSpeech({ furigana: c[0] }, it), c[1], c[2]); });
+    assert.strictEqual(dialogueSpeech({ furigana: 'ごごは　はたらきます。' }), 'ごごははたらきます。', 'without the item: nothing swapped');
+    assert.strictEqual(dialogueSpeech({ furigana: 'ごごは', say: 'ごごわ' }, it), 'ごごわ', 'say still wins');
+    dialogues().forEach(function (it) {
+      var before = JSON.stringify(it.lines);
+      it.lines.forEach(function (l) {
+        var s = dialogueSpeech(l, it);
+        assert.ok(s && !/[　\[|\]]/.test(s), it.id + ': ' + s + ': no full-width space, no ruby markup');
+      });
+      listeningScript(it);
+      assert.strictEqual(JSON.stringify(it.lines), before, it.id + ': display text unchanged');
     });
   });
 

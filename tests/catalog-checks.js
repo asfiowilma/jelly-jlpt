@@ -273,7 +273,7 @@ QUnit.module('catalog checks', function () {
     if (ids.length !== 2) err('cast has two characters, has ' + ids.length);
     ids.forEach(function (k) { if (!cast[k].name || !cast[k].jp || !/^[MF]$/.test(cast[k].gender) || !cast[k].role) err('cast ' + k + ' needs name, jp, gender M / F, role'); });
     if (lines.length < 6 || lines.length > 10) err('6-10 lines, has ' + lines.length);
-    if (lines.some(function (l) { return ids.indexOf(l.speaker) < 0 || !l.furigana || !l.en || l.tone !== undefined || (l.say !== undefined && (typeof l.say !== 'string' || !l.say)); })) err('every line needs a speaker from the cast, furigana, en; no tone (one voice per character); a say (when set) is a non-empty string');
+    if (lines.some(function (l) { return ids.indexOf(l.speaker) < 0 || !l.furigana || !l.en || l.tone !== undefined || (l.say !== undefined && (typeof l.say !== 'string' || !l.say)) || (l.take !== undefined && !(Number.isInteger(l.take) && l.take > 1)); })) err('every line needs a speaker from the cast, furigana, en; no tone (one voice per character); a say (when set) is a non-empty string; a take (when set) an integer above 1');
     else if (ids.some(function (k) { return !lines.some(function (l) { return l.speaker === k; }); })) err('two speakers talk');
     var bridge = it.bridge || [];
     if (bridge.length > 3) err('at most 3 bridge words');

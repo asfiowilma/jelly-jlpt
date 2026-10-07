@@ -1705,21 +1705,92 @@ function listeningFor(level, format) {
 // readingKana: a kanji reading as the voice should hear it ("た.べる" -> "たべる", "-ちゅう" -> "ちゅう").
 function readingKana(r) { return r.replace(/[.\-\s]/g, ''); }
 function speechText(s) { return furiganaParts(s).map(function (p) { return p.r || p.t; }).join(''); }
-// dialogueSpeech(line): what the voice says for a dialogue line (clips and the Web Speech fallback): line.say
-// when set (overrides everything), else the line as displayed: kanji kept (word boundaries, natural accent, particles
-// read from context), punctuation and …… kept, U+3000 phrase spaces removed. Exception: from a ruby block whose
-// kanji hold a numeral to the end of its phrase (U+3000 or punctuation), ruby blocks are spoken as their authored
-// kana ([九|く][時|じ] くじ, [一|いち]まん[三|さん]ぜん[円|えん]): numbers, counters, dates and times are where TTS
-// misreads. The display text (furigana) never changes.
+// dialogueSpeech(line, item?): what the voice says for a dialogue line (clips and the Web Speech fallback): line.say
+// when set (overrides everything), else natural adult Japanese: the line as displayed, with every word of the item's
+// `uses` that the learner sees in kana (or kana + kanji: [金|きん]ようび) written in its normal kanji spelling
+// (ごごは → 午後は, はたらきます → 働きます; a word the catalog spells in kana, これ, stays kana). Kanji
+// kept, particles and okurigana kana, punctuation and …… kept, U+3000 phrase spaces removed. A word is swapped only
+// at a word boundary (speechLeftOK / SPEECH_AFTER), longest first, and never across a ruby block it does not cover
+// whole. Numbers: from a ruby block whose kanji hold a numeral to the end of its phrase (U+3000 or punctuation), ruby
+// blocks are spoken as their authored kana and nothing is swapped ([九|く][時|じ] くじ, [一|いち]まん[三|さん]ぜん[円|えん]):
+// numbers, counters, dates and times are where TTS misreads. Without `item` no word is swapped. The display text
+// (furigana) never changes; the speech text is never shown, so it may hold kanji the learner has not learned.
 var NUMERAL_KANJI = /[一二三四五六七八九十百千万]/;
-function dialogueSpeech(l) {
-  if (l.say) return l.say.replace(/　/g, '');
-  var num = false;
-  return l.furigana.replace(/\[([^|\]]+)(?:\|[^|\]]*)+\]|[　、。，！？!?…「」]/g, function (m, kanji) {
-    if (!kanji) { num = false; return m === '　' ? '' : m; }
-    num = num || NUMERAL_KANJI.test(kanji);
-    return num ? speechText(m) : kanji;
+var SPEECH_SEP = /[　、。，！？!?…「」]/;
+// what may follow a swapped non-conjugating word: a particle, the copula, a name suffix
+var SPEECH_AFTER = /^(?:は|が|を|に|で|と|も|へ|の|や|か|よ|ね|な|だ|じゃ|から|まで|より|だけ|ごろ|ぐらい|くらい|さん|ちゃん|くん|さま|たち|しか)/;
+var SPEECH_NUMERAL_OK = /一緒|一番/; // hold a numeral kanji but are not numbers
+var MASU_ENDINGS = ['ます', 'ません', 'ました', 'ませんでした', 'ましょう', 'たい', 'たく', 'たかった', 'ながら', 'に'];
+var ADJ_I_ENDINGS = ['い', 'くない', 'くなかった', 'かった', 'くて', 'く', 'ければ', 'くありません', 'そう'];
+// speechWords(item): [{ kana, kanji, conj }] from the item's `uses` vocab, longest kana first. conj = a conjugated
+// form (verb, i-adjective) or a suru noun: whatever follows it is okurigana, so no SPEECH_AFTER check. Left out:
+// words spelled in kana anyway (これ, どこ, ください), bound morphemes (さん, 時, お), numbers and words holding a
+// numeral (三日, 一人: they stay as their kana).
+function speechWords(it) {
+  var out = [], add = function (kana, kanji, conj) { if (kana && kana !== kanji) out.push({ kana: kana, kanji: kanji, conj: conj }); };
+  (it && it.uses || []).forEach(function (id) {
+    var v = CATALOG.items[id];
+    if (!v || v.kind !== 'vocab' || !/[一-龯々]/.test(v.word) || isBound(v) || v.pos === 'number' ||
+      NUMERAL_KANJI.test(v.word) && !SPEECH_NUMERAL_OK.test(v.word)) return;
+    var w = v.word, r = v.reading, p = v.pos || '';
+    if (p === 'adj-i' && /い$/.test(w)) ADJ_I_ENDINGS.forEach(function (e) { add(r.slice(0, -1) + e, w.slice(0, -1) + e, true); });
+    else if (/^verb-(godan|ichidan|kuru)$/.test(p)) {
+      var s = p === 'verb-kuru' ? [w.slice(0, -1), r.slice(0, -2) + 'き'] : verbStem(w, r, p);
+      MASU_ENDINGS.forEach(function (e) { add(s[1] + e, s[0] + e, true); });
+      add(r, w, true);
+      ['て-form', 'た-form', 'ない-form', 'volitional'].forEach(function (f) {
+        var c = conjugate(w, r, f, p);
+        if (c) add(c.kana, c.kanji, true);
+        if (c && f === 'ない-form') ['なかった', 'なくて', 'ないで'].forEach(function (e) { add(c.kana.slice(0, -2) + e, c.kanji.slice(0, -2) + e, true); });
+      });
+    } else add(r, w, p === 'verb-suru'); // nouns, na-adjectives, adverbs; a suru noun (散歩) before します
   });
+  return out.sort(function (a, b) { return b.kana.length - a.kana.length; });
+}
+// speechLeftOK(cells, i): a word may start at cell i: the line or phrase start (after punctuation, U+3000, katakana),
+// right after の (この店, わたしの家) or after a phrase-initial お / ご prefix (おなまえ → お名前). Never right after
+// another kana or a ruby block (いえ inside いいえ, きます after [行|い]).
+function speechLeftOK(cells, i) {
+  var prev = cells[i - 1], isPlain = function (c) { return c && !c.r; };
+  if (!prev) return true;
+  if (!isPlain(prev)) return false;
+  if (!/[ぁ-ゖ]/.test(prev.t) || prev.t === 'の') return true;
+  return (prev.t === 'お' || prev.t === 'ご') && (i === 1 || isPlain(cells[i - 2]) && !/[ぁ-ゖ]/.test(cells[i - 2].t));
+}
+function dialogueSpeech(l, it) {
+  if (l.say) return l.say.replace(/　/g, '');
+  var cells = [];
+  furiganaParts(l.furigana).forEach(function (p) {
+    if (p.r) cells.push({ t: p.t, r: p.r });
+    else Array.from(p.t).forEach(function (c) { cells.push({ t: c }); });
+  });
+  var numeral = function (c) { return c && c.r && NUMERAL_KANJI.test(c.t); };
+  // match(i): the longest word whose kana spells cells i.. exactly (whole cells, at least one plain kana cell)
+  var words = speechWords(it), match = function (i) {
+    for (var w = 0; w < words.length; w++) {
+      var x = words[w], at = 0, j = i, kana = false;
+      while (at < x.kana.length && j < cells.length && !numeral(cells[j])) {
+        var rr = cells[j].r || cells[j].t;
+        if (x.kana.substr(at, rr.length) !== rr) break;
+        kana = kana || !cells[j].r; at += rr.length; j++;
+      }
+      if (at !== x.kana.length || !kana) continue;
+      var next = cells[j], rest = '';
+      for (var k = j; k < cells.length && !cells[k].r && /[ぁ-ゖ]/.test(cells[k].t); k++) rest += cells[k].t;
+      if (x.conj || !next || !next.r && !/[ぁ-ゖ]/.test(next.t) || SPEECH_AFTER.test(rest)) return { kanji: x.kanji, end: j };
+    }
+    return null;
+  };
+  var out = '', num = false, i = 0;
+  while (i < cells.length) {
+    var c = cells[i];
+    if (!c.r && SPEECH_SEP.test(c.t)) { num = false; out += c.t === '　' ? '' : c.t; i++; continue; }
+    num = num || numeral(c);
+    var m = !num && speechLeftOK(cells, i) && match(i);
+    if (m) { out += m.kanji; i = m.end; continue; }
+    out += num && c.r ? c.r : c.t; i++;
+  }
+  return out;
 }
 
 // listeningScript(item, order?): the whole play sequence [{ speaker, text }], options in
@@ -1734,7 +1805,8 @@ function listeningScript(it, order) {
     return it.lines.map(function (l, j) {
       var g = it.cast[l.speaker].gender;
       var rank = keys.filter(function (k) { return it.cast[k].gender === g; }).indexOf(l.speaker);
-      var o = { speaker: g, who: l.speaker, slot: rank > 0 ? g + '2' : g, text: dialogueSpeech(l) };
+      var o = { speaker: g, who: l.speaker, slot: rank > 0 ? g + '2' : g, text: dialogueSpeech(l, it) };
+      if (l.take > 1) o.take = l.take; // a re-render of the same text: part of the clip name (tools/audio/README.md)
       if (dc) o.clip = dc[j];
       return o;
     });

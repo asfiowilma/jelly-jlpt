@@ -4,9 +4,11 @@
  * Run: node tools/build-audio-manifest.js <rendered dir or its manifest.json>
  * Verifies every file exists in audio/ and that, for every line of tools/audio/tracks.json,
  * sha1(clipKey).slice(0,12) + '.mp3' equals the manifest entry. Exits 1 otherwise.
- * clipKey = role + '|' + (role === 'N' ? '' : archetype) + '|' + say, where say = the line's listeningScript text
+ * clipKey = role + '|' + (role === 'N' ? '' : archetype) + '|' + say [+ '#' + take], where say = the line's listeningScript text
  * with U+3000 spaces removed: the TTS input (the kana reading; a dialogue line's speech text, dialogueSpeech in lib.js).
- * Dialogue lines: role = the character's gender (M / F), archetype = the character id (tools/audio/cast.json).
+ * Dialogue lines: role = the character's gender (M / F), archetype = the character id (tools/audio/cast.json), or
+ * '<id>@<rev>' when the character's `rev` is above 1 (a revised voice prompt). `#<take>` is appended only when the line's
+ * `take` is above 1 (a re-render of the same text). '#' and '@' never occur in a say text or a character id, so names stay unambiguous.
  * Exports check(root, manifest, tracks?) -> error strings; run-tests.js passes tracks built from the
  * live listeningScript() so a stale tracks.json cannot hide a stale clip.
  */
@@ -16,13 +18,15 @@ const path = require("path");
 const crypto = require("crypto");
 
 const sayText = (kana) => kana.replace(/　/g, "");
-const clipKey = (role, archetype, say) => role + "|" + (role === "N" ? "" : archetype || "") + "|" + say;
+const clipKey = (role, archetype, say, take) => role + "|" + (role === "N" ? "" : archetype || "") + "|" + say + (take > 1 ? "#" + take : "");
+// charArch(id, cast): a dialogue character's archetype in the clipKey: the id, '<id>@<rev>' once its voice is revised (cast.json `rev` > 1)
+const charArch = (id, cast) => (cast[id] && cast[id].rev > 1 ? id + "@" + cast[id].rev : id);
 const clipName = (key) => crypto.createHash("sha1").update(key, "utf8").digest("hex").slice(0, 12) + ".mp3";
 
 // voice of a line: its own `arch` (a dialogue line: the character id), else the track's man / woman archetype
 const archOf = (t, l) => l.arch || (l.role === "M" ? t.man : t.woman);
 
-// tracks: [{ id, man, woman, lines: [{ role, say, arch? }] }]; defaults to tools/audio/tracks.json
+// tracks: [{ id, man, woman, lines: [{ role, say, arch?, take? }] }]; defaults to tools/audio/tracks.json
 function check(root, manifest, tracks) {
   const errors = [], hint = " (transcript edited without re-rendering? see tools/audio/README.md)";
   tracks = tracks || JSON.parse(fs.readFileSync(path.join(root, "tools", "audio", "tracks.json"), "utf8")).tracks;
@@ -30,7 +34,7 @@ function check(root, manifest, tracks) {
     const files = manifest.tracks[t.id];
     if (!files || files.length !== t.lines.length) { errors.push(t.id + ": manifest has " + (files ? files.length : 0) + " clips, track has " + t.lines.length + hint); return; }
     t.lines.forEach(function (l, i) {
-      const want = clipName(clipKey(l.role, archOf(t, l), l.say));
+      const want = clipName(clipKey(l.role, archOf(t, l), l.say, l.take));
       if (files[i] !== want) errors.push(t.id + " line " + i + ": manifest " + files[i] + ", expected " + want + hint);
       if (!fs.existsSync(path.join(root, "audio", files[i]))) errors.push(t.id + " line " + i + ": audio/" + files[i] + " missing");
     });
@@ -39,7 +43,7 @@ function check(root, manifest, tracks) {
   return errors;
 }
 
-module.exports = { archOf: archOf, check: check, clipKey: clipKey, clipName: clipName, sayText: sayText };
+module.exports = { archOf: archOf, charArch: charArch, check: check, clipKey: clipKey, clipName: clipName, sayText: sayText };
 
 if (require.main === module) {
   const root = path.resolve(__dirname, "..");

@@ -3,13 +3,14 @@
 `tracks.json` lists every N5 listening item as a flat play sequence, for the Colab TTS notebook
 that renders the audio. Each track has `lines` of `{ role, text, kana, say }`: `text` is the natural
 Japanese (kanji kept, full-width spaces removed, for reading only), `kana` the text the Web Speech
-fallback uses, and `say` = `kana` with full-width spaces removed: the text the clips are rendered from.
+fallback uses, and `say` = `kana` with full-width spaces removed: the text the clips are rendered from. A dialogue line may also carry
+`take` (a re-render, below).
 Exam tracks speak the kana reading, so the authored readings (何人, 四日, 九時...) decide the pronunciation;
-lesson dialogues speak their natural text (below), so for them `kana` and `say` hold that text.
+lesson dialogues speak natural full-kanji text (below), so for them `kana` and `say` hold that text.
 Role N is the narrator, M the man, F the woman. `man` and `woman` are the track's archetypes, or null when that voice is absent.
 
 A lesson dialogue (format `dialogue`) has no man / woman archetype (both null). Each line is voiced by its **character**
-(`cast.json`): `role` = the character's gender (M / F), `arch` = the character id (`kakashi`, `yor`...). One voice per character, no per-line tone.
+(`cast.json`): `role` = the character's gender (M / F), `arch` = the character id (`kakashi`, `yor`...), or `<id>@<rev>` once its voice is revised (below). One voice per character, no per-line tone.
 Any two characters work (man + man, woman + woman, man + woman). Non-dialogue tracks are unchanged.
 
 ## Characters (`cast.json`)
@@ -21,21 +22,31 @@ single preset Ono_Anna would sound alike. A dialogue item's `cast` must match `n
 The notebook locks ONE voice per character (a voice-design render of the fixed reference sentence, cloned by the Base model) and uses it for
 all their lines. The Base model takes no per-line instruction, so there is no per-line tone: delivery comes from punctuation (……, ！, ？).
 
-### Changing a voice
+### Changing a voice (`rev`) or re-rendering one clip (`take`)
+
+Nothing is deleted by hand: a change gets new clip names, the notebook renders what is missing, the manifest points at the new clips.
 
 1. In Colab, after the upload cell, run the **Tweak a voice** cell: set `CHAR` and `VOICE` (the new prompt), run, listen, repeat. It drops that
    character's cached voice and renders one sample line; nothing is written.
-2. Put the prompt you keep into that character's `voice` in `cast.json`, rerun `node tools/export-tracks.js`.
-3. Delete that character's rendered clips: clip names hold the character id, not the prompt, so old clips would be kept as they are. Delete
-   them from the notebook's output folder and, once shipped, from `audio/` and `audio/manifest.js` (find them by the character's `arch` in `tracks.json`), then re-render.
+2. Put the prompt you keep into that character's `voice` in `cast.json` and bump its optional integer `rev` (absent = 1; set 2, then 3...).
+   The clipKey's archetype becomes `<id>@<rev>` (e.g. `F|nami@2|...`), so every clip of that character gets a new name. The notebook voices
+   `<id>@<rev>` with `characters[<id>].voice`.
+3. `node tools/export-tracks.js`, render, ship as below. The old clips are no longer in the manifest; delete them from `audio/` whenever you like.
+
+One bad clip (drifted to another voice, decodes to nothing): give that line `take: 2` (then 3...) in `data/n5/listening.js`. The clipKey
+gets `#<take>` after the say text (`F|maomao|……そうですか。#2`), so only that clip is renamed and re-rendered; the spoken text is unchanged.
+`@` and `#` never occur in a character id or a say text, so the names stay unambiguous. A changed speech text renames its clip by itself.
 
 ### Speech text (dialogue lines only)
 
-A dialogue line is spoken from natural text, the way Japanese TTS reads best: `dialogueSpeech(line)` in `lib.js` (the same text Web Speech gets) is the
-display text with kanji kept (word boundaries, natural accent; は / へ / を read as particles from context), punctuation and `……` kept, U+3000 removed.
-From a ruby block whose kanji hold a numeral to the end of its phrase, ruby blocks are spoken as their authored kana (九時 くじ, 一万三千円
-いちまんさんぜんえん): numbers, counters, dates and times are where TTS misreads. A line's optional `say` overrides the whole text for anything else
-it gets wrong. The clipKey hashes this text, so clips, manifest and the audio-hash test agree. The notebook's **A/B text test** cell plays three lines as
+A dialogue line is spoken from natural adult Japanese in full kanji, the way Japanese TTS reads best (kana-only text gets misread: ごごは
+"gogo-ha", 金ようび "kane-youbi"). `dialogueSpeech(line, item)` in `lib.js` (the same text Web Speech gets) takes the display text and writes every
+`uses` vocab word the learner sees in kana or kana + kanji in its normal spelling (`ごごは　はたらきます。` → `午後は働きます。`, `[金|きん]ようび` →
+`金曜日`; verbs and i-adjectives as kanji stem + conjugated kana ending), only at word boundaries, longest first. Words spelled in kana in the
+catalog stay kana, words not in `uses` stay as written. Punctuation and `……` kept, U+3000 removed. From a ruby block whose kanji hold a numeral to
+the end of its phrase, ruby blocks are spoken as their authored kana (九時 くじ, 一万三千円 いちまんさんぜんえん) and nothing is swapped:
+numbers, counters, dates and times are where TTS misreads. A line's optional `say` overrides the whole text for anything the rule gets wrong.
+Full rule: `docs/dialogue-authoring.md`. The clipKey hashes this text, so clips, manifest and the audio-hash test agree. The notebook's **A/B text test** cell plays three lines as
 A (this text), B (display text with phrase spaces) and C (the old all-kana style) for comparison.
 Non-dialogue tracks keep the written kana (their rendered clips keep their names).
 
@@ -49,8 +60,8 @@ track with that voice to an archetype, with a one-line reason; written by readin
 The tool fails if such a track has no assignment or names an unknown archetype. New listening
 items need an entry in both (dialogues do not: they use `cast.json`).
 
-The notebook dedupes clips with `clipKey = role + '|' + (role === 'N' ? '' : archetype) + '|' + say`
-(archetype = the character id for a dialogue line), so identical lines across tracks render once. (Before the switch to `say` the key used `text`; lines
+The notebook dedupes clips with `clipKey = role + '|' + (role === 'N' ? '' : archetype) + '|' + say [+ '#' + take]`
+(archetype = the character id for a dialogue line, `<id>@<rev>` when its `rev` > 1; `#<take>` only when the line's `take` > 1), so identical lines across tracks render once. (Before the switch to `say` the key used `text`; lines
 written all in kana hash the same either way, so their clips were reused.)
 
 ## Voice decisions (locked)

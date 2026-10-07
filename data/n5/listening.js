@@ -13,8 +13,9 @@
 //               first key is the left speaker), lines [{ speaker <cast id>, furigana, en, say? }], bridge (max 3 words the
 //               unit has not taught: { text, gloss, ctx?, id? }), remixes (1-3 swaps for the lesson's Practice card:
 //               { scene, en, chunks (answer chunks + 1 distractor), answer, explain }; ungraded, not in the quiz),
-//               names, uses. The voice reads the display text (kanji kept, phrase spaces removed; numerals spoken
-//               from their ruby: dialogueSpeech in lib.js); `say` = optional speech override for a line it gets wrong.
+//               names, uses. The voice reads natural full-kanji text built from the line and `uses` (phrase spaces removed;
+//               numerals spoken from their ruby: dialogueSpeech in lib.js); `say` = optional speech override for a line it gets
+//               wrong; `take` = optional integer > 1 to re-render a line whose clip came out wrong (new clip name).
 //               Each character has one fixed voice (tools/audio/cast.json, tools/audio/README.md): no per-line tone,
 //               delivery comes from punctuation (……, ！, ？). The full guide is docs/dialogue-authoring.md.
 // Audio is pre-rendered TTS clips (audio/manifest.js; dialogues from their speech text, the other formats from the kana readings); the browser's
@@ -953,7 +954,7 @@ CATALOG.add([
       { speaker: 'lelouch', furigana: '[大学|だいがく]の　バスは　どれですか？', en: 'Which one is the university bus?' },
       { speaker: 'maomao', furigana: 'あれです。', en: 'That one.' },
       { speaker: 'lelouch', furigana: 'ありがとうございます。わたしは　[大学|だいがく]へ　[行|い]きます。[大学|だいがく]の　[学生|がくせい]です。', en: 'Thank you. I am going to the university. I am a university student.' },
-      { speaker: 'maomao', furigana: '……そうですか。', en: '...Is that so.' },
+      { speaker: 'maomao', furigana: '……そうですか。', en: '...Is that so.', take: 2 }, // take 2: the first render drifted to another voice
       { speaker: 'lelouch', furigana: '……かいしゃへ　[行|い]きますか？', en: '...Are you going to work?' },
       { speaker: 'maomao', furigana: 'いいえ。いえへ　かえります。', en: 'No. I am going home.' },
       { speaker: 'maomao', furigana: 'バス、[来|き]ますよ。', en: 'Your bus is coming.' }

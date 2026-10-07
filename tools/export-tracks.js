@@ -3,24 +3,25 @@
 // Run: node tools/export-tracks.js  ->  tools/audio/tracks.json + tools/audio/render-input.json
 //
 // clipKey rule (the notebook hashes it so identical lines across tracks render once):
-//   clipKey = role + '|' + (role === 'N' ? '' : archetype) + '|' + say
+//   clipKey = role + '|' + (role === 'N' ? '' : archetype) + '|' + say [+ '#' + take]
 // where role is N / M / F, archetype is the track's man / woman key (tracks.json `man` / `woman`;
 // the narrator is one fixed voice, no archetype). A dialogue line (format dialogue) is voiced by its character:
 // role = the character's gender (M / F), archetype = the character id (tools/audio/cast.json, per-line `arch`
-// in tracks.json), and say is the line's listeningScript text with U+3000 spaces removed: the TTS input.
+// in tracks.json; '<id>@<rev>' when the character's `rev` > 1), '#<take>' appended when the line's `take` > 1, and say is the line's listeningScript text with U+3000 spaces removed: the TTS input.
 // Non-dialogue lines: the kana reading, so the authored readings decide how each kanji is spoken.
-// Dialogue lines: the speech text (dialogueSpeech in lib.js: the display text, kanji kept, numerals from their
-// ruby, or the line's `say`), so `kana` holds that same text there. `text` (natural, kanji kept) is kept
+// Dialogue lines: the speech text (dialogueSpeech in lib.js: full-kanji natural text built from the line and the
+// item's `uses`, numerals from their ruby, or the line's `say`), so `kana` holds that same text there. `text` (natural, kanji kept) is kept
 // for reading the transcript only.
 // render-input.json (gitignored) is the one file the Colab notebook uploads:
 //   { tracks, manArchetypes, womanArchetypes, characters (cast.json), have: [clip names already in audio/] }
 const fs = require('fs'), path = require('path'), vm = require('vm');
-const { archOf, clipKey, clipName, sayText } = require('./build-audio-manifest.js');
+const { archOf, charArch, clipKey, clipName, sayText } = require('./build-audio-manifest.js');
 const root = path.join(__dirname, '..');
 const ctx = { localStorage: { getItem() { return null; }, setItem() {} }, document: {} };
 ctx.window = ctx;
 vm.createContext(ctx);
-['data/catalog.js', 'data/n5/listening.js', 'lib.js'].forEach(function (f) {
+// every data file: a dialogue's speech text swaps in the kanji spelling of its `uses` vocab (dialogueSpeech)
+['data/catalog.js'].concat(fs.readdirSync(path.join(root, 'data', 'n5')).sort().map(f => 'data/n5/' + f), ['lib.js']).forEach(function (f) {
   vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
 });
 const read = f => JSON.parse(fs.readFileSync(path.join(__dirname, 'audio', f), 'utf8'));
@@ -63,16 +64,16 @@ ctx.listeningFor('N5').forEach(function (it) {
   });
   const man = pick.M || null, woman = pick.F || null;
   tracks.push({ id: it.id, format: it.format, man, woman,
-    lines: nat.map((l, i) => ({ role: l.speaker, ...(kana[i].who ? { arch: kana[i].who } : {}),
-      text: l.text, kana: kana[i].text, say: sayText(kana[i].text) })) });
+    lines: nat.map((l, i) => ({ role: l.speaker, ...(kana[i].who ? { arch: charArch(kana[i].who, CAST) } : {}),
+      text: l.text, kana: kana[i].text, say: sayText(kana[i].text), ...(kana[i].take > 1 ? { take: kana[i].take } : {}) })) });
   tracks[tracks.length - 1].lines.forEach(function (l) {
     total++; allChars += l.say.length;
-    const key = clipKey(l.role, archOf(tracks[tracks.length - 1], l), l.say);
+    const key = clipKey(l.role, archOf(tracks[tracks.length - 1], l), l.say, l.take);
     if (!clips.has(key)) { clips.add(key); chars += l.say.length; }
   });
 });
 ['M', 'F'].forEach(r => Object.keys(A[r].assign).forEach(id => { if (!tracks.some(t => t.id === id)) errors.push(id + ': ' + r + ' assignment for unknown track'); }));
-Object.keys(CAST).forEach(id => { const c = CAST[id]; if (!c.name || !c.jp || !/^[MF]$/.test(c.gender) || !c.role || !c.personality || !c.voice) errors.push('cast.json ' + id + ': needs name, jp, gender M/F, role, personality, voice'); });
+Object.keys(CAST).forEach(id => { const c = CAST[id]; if (!c.name || !c.jp || !/^[MF]$/.test(c.gender) || !c.role || !c.personality || !c.voice || 'rev' in c && !(Number.isInteger(c.rev) && c.rev >= 1)) errors.push('cast.json ' + id + ': needs name, jp, gender M/F, role, personality, voice (rev: an integer >= 1)'); });
 if (errors.length) { console.error(errors.join('\n')); process.exit(1); }
 
 fs.writeFileSync(path.join(__dirname, 'audio', 'tracks.json'),

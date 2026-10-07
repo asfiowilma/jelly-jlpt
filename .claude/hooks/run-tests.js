@@ -1417,12 +1417,12 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     // On failure: a transcript or archetype changed without re-rendering. See tools/audio/README.md.
     // Hashes the live catalog (not tracks.json), so a stale export cannot hide a stale clip.
     var assign = function (f) { return JSON.parse(fs.readFileSync(path.join(projectDir, "tools", "audio", f), "utf8")); };
-    var man = assign("man-assignments.json"), woman = assign("woman-assignments.json");
+    var man = assign("man-assignments.json"), woman = assign("woman-assignments.json"), cast = assign("cast.json");
     // a dialogue has no clips until rendered (Web Speech fallback): skipped here while the manifest has no track for it
     var tracks = listeningFor("N5").filter(function (it) { return it.format !== "dialogue" || AUDIO_MANIFEST.tracks[it.id]; }).map(function (it) {
-      // a dialogue line is voiced by its character (arch = who); other tracks by the track's man / woman archetype
+      // a dialogue line is voiced by its character (arch = who, '<who>@<rev>' after a voice revision; take = a re-render); other tracks by the track's man / woman archetype
       return { id: it.id, man: (man[it.id] || {}).man || null, woman: (woman[it.id] || {}).woman || null,
-        lines: listeningScript(it).map(function (l) { return { role: l.speaker, arch: l.who, say: audioTool.sayText(l.text) }; }) };
+        lines: listeningScript(it).map(function (l) { return { role: l.speaker, arch: l.who && audioTool.charArch(l.who, cast), say: audioTool.sayText(l.text), take: l.take }; }) };
     });
     var errs = audioTool.check(projectDir, AUDIO_MANIFEST, tracks);
     a.ok(errs.length === 0, errs.length + " of " + tracks.reduce(function (n, t) { return n + t.lines.length; }, 0) +
