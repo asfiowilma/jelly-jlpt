@@ -1917,6 +1917,69 @@ function verbStem(word, reading, pos) {
   };
   return [cut(word), cut(reading)];
 }
+// dialogueForms(unit): the inflected pieces of every verb / い-adjective taught up to the unit, as strings found in a dialogue
+// line (kanji and kana spellings): { te, ta, nai: stems before て/で, た/だ, ない; dict: dictionary forms; adj: い-adjective stems }.
+// Grammar marks that need to know a verb ('@te' ...) read these; the unit's own new words are matched by dialogueNeedles.
+function dialogueForms(unit) {
+  var taught = taughtIds(unit), f = { te: [], ta: [], nai: [], dict: [], adj: [] };
+  var add = function (list, x) { if (x && list.indexOf(x) < 0) list.push(x); };
+  Object.keys(taught).forEach(function (id) {
+    var v = CATALOG.items[id];
+    if (!v || v.kind !== 'vocab') return;
+    if (/^verb/.test(v.pos || '')) {
+      add(f.dict, v.word); add(f.dict, v.reading);
+      [['て-form', 'te', 1], ['た-form', 'ta', 1], ['ない-form', 'nai', 2]].forEach(function (p) {
+        var c = conjugate(v.word, v.reading, p[0], v.pos);
+        if (!c) return;
+        [c.kanji, c.kana].forEach(function (x) { x = x.slice(0, -p[2]); if (x.length > 1 || !/^[ぁ-ん]$/.test(x) || x === 'し') add(f[p[1]], x); });
+      });
+    } else if (v.pos === 'adj-i' && v.reading !== 'いい' && v.reading !== 'よい') {
+      add(f.adj, v.word.slice(0, -1)); add(f.adj, v.reading.slice(0, -1));
+    }
+  });
+  Object.keys(f).forEach(function (k) { f[k].sort(function (a, b) { return b.length - a.length; }); });
+  return f;
+}
+var DLG_RE_SPECIAL = /[.*+?^$|()[\]{}\\]/g;
+function dlgAlt(list) { return '(?:' + list.map(function (x) { return x.replace(DLG_RE_SPECIAL, '\\$&'); }).join('|') + ')'; }
+// A grammar item's `hl` lists regex sources run on the line without its phrase spaces; the first capture group (else the whole
+// match) is marked. '@te' / '@ta' / '@nai' = the て(で) / た(だ) / ない after a verb taught so far, '@dict' = a dictionary form
+// ending its phrase, '@adjneg' = くない / かった / くなかった after a taught い-adjective. Without `hl`, the tokens of `ref` / `pattern`.
+function dialogueGrammarRes(g, forms) {
+  if (!g.hl) return null;
+  return g.hl.map(function (s) {
+    if (s === '@te') return forms.te.length ? dlgAlt(forms.te) + '([てで])' : null;
+    if (s === '@ta') return forms.ta.length ? dlgAlt(forms.ta) + '([ただ])' : null;
+    if (s === '@nai') return forms.nai.length ? dlgAlt(forms.nai) + '(ない)' : null;
+    if (s === '@dict') return forms.dict.length ? '(' + dlgAlt(forms.dict) + ')(?=[。！？、…]|$)' : null;
+    if (s === '@adjneg') return forms.adj.length ? dlgAlt(forms.adj) + '(くなかった|くない|かった)' : null;
+    return s;
+  }).filter(Boolean).map(function (s) { return new RegExp(s, 'g'); });
+}
+// A new word's needles: { n: the text to mark, ok?: what must follow, v, gloss }. Verbs: the dictionary form plus the stem before
+// ます / て / た / ない; い-adjectives: the word plus the stem before く / かっ. A stem is only a hit when its ending follows
+// (so the stem い of 居る is not the い of いつも); a short kana word only after a phrase break, a particle or a non-hiragana.
+function dialogueNeedles(v) {
+  var out = [], seen = {};
+  var gloss = v.reading + ' · ' + glossText(v);
+  var add = function (n, ok) {
+    if (!n || seen[n + '|' + (ok || '')]) return;
+    seen[n + '|' + (ok || '')] = true;
+    out.push({ n: n, ok: ok ? new RegExp('^(?:' + ok + ')') : null, v: v, gloss: gloss, pre: v.pos === 'prefix' });
+  };
+  add(v.word); add(v.reading);
+  if (/^verb/.test(v.pos || '')) {
+    verbStem(v.word, v.reading, v.pos).forEach(function (x) { add(x, 'ます|ませ|まし|たい|たく|ながら|に(?:行|来|いき|いく|き)'); });
+    [['て-form', 1], ['た-form', 1], ['ない-form', 2]].forEach(function (p) {
+      var c = conjugate(v.word, v.reading, p[0], v.pos);
+      if (!c) return;
+      [c.kanji, c.kana].forEach(function (x) { add(x.slice(0, -p[1]), x.slice(-p[1])); });
+    });
+  } else if (v.pos === 'adj-i' && v.reading !== 'いい' && v.reading !== 'よい') {
+    [v.word, v.reading].forEach(function (x) { if (x.length >= 3 || /[一-龥]/.test(x)) add(x.slice(0, -1), 'く|かっ'); });
+  }
+  return out;
+}
 // dialogueView(item, unit): { title, goal, scene, cast, lines, pills, seconds }.
 // lines[i] = { speaker, name, initial, en, segs: [{ t, r?, kind?, gloss? }] }. kind marks a seg:
 // 'br' = bridge (not taught yet), 'nw' = new this lesson (unit vocab), 'g' = grammar token.
@@ -1928,53 +1991,89 @@ var SET_PHRASES = ['はい', 'はじめまして', 'よろしく', 'おねがい
 // who share a dialogue share a slot (tests/dialogue.js checks it). A new pairing that collides: recolour here.
 var CAST_COLOR = { emilia: 1, nami: 2, gojo: 3, frieren: 3, hinata: 1, lelouch: 4, sasuke: 5, sanji: 4, sakura: 4, maomao: 5, killua: 2, anya: 4, kakashi: 5, yor: 1 };
 function dialogueView(it, unit) {
-  var vocab = (unit.vocab || []).map(function (v) {
-    var n = [v.word, v.reading];
-    if (/^verb/.test(v.pos || '')) n = verbStem(v.word, v.reading, v.pos);
-    return { v: v, needles: n.filter(function (x, i, a) { return x && a.indexOf(x) === i; }), gloss: v.reading + ' · ' + glossText(v) };
-  });
+  var vocab = (unit.vocab || []).map(function (v) { return { v: v, needles: dialogueNeedles(v) }; });
+  var forms = dialogueForms(unit);
   var grammar = (unit.grammar || []).map(function (g) {
     var toks = ((g.ref && g.ref.length) ? g.ref : g.pattern.replace(/[〜～…]|\([^)]*\)|[A-Za-z]+(-\S*)?/g, ' ').split(/\s+/))
       .join('/').replace(/[～〜]/g, '').split('/').map(function (x) { return x.trim(); }).filter(Boolean);
-    return { g: g, toks: toks, gloss: g.pattern + ' · ' + g.meaning };
+    return { g: g, toks: toks, res: dialogueGrammarRes(g, forms), gloss: g.pattern + ' · ' + g.meaning };
   });
   // longest first, so たべもの is not read as the たべ of 食べる
-  var needles = [].concat.apply([], vocab.map(function (x) { return x.needles.map(function (n) { return { n: n, v: x.v, gloss: x.gloss }; }); }))
+  var needles = [].concat.apply([], vocab.map(function (x) { return x.needles; }))
     .sort(function (a, b) { return b.n.length - a.n.length; });
+  // a particle that is also a vocab word (と) is the lesson's grammar mark, not a new word
+  var tokSet = {};
+  grammar.forEach(function (x) { if (!x.res) x.toks.forEach(function (t) { tokSet[t] = true; }); });
+  needles = needles.filter(function (x) { return !(tokSet[x.n] && x.n.length === 1); });
   var usedWords = {};
   var sideOf = function (id) { return Object.keys(it.cast).indexOf(id) === 0 ? 'a' : 'b'; }; // chip colour and bubble side, whoever the characters are
   var lines = it.lines.map(function (l, i) {
-    var parts = furiganaParts(l.furigana), plain = parts.map(function (p) { return p.t; }).join('');
-    // one cell per ruby block, one per plain character
-    var cells = [], at = [];
+    var parts = furiganaParts(l.furigana);
+    // one cell per ruby block, one per plain character. `plain` has no phrase spaces, so a mark can span "なって　いる";
+    // at[k] = the cell of its k-th character, gap[k] = a phrase space sat just before it
+    var cells = [], at = [], gap = [], plain = '', space = false;
     parts.forEach(function (p) {
-      if (p.r) { Array.from(p.t).forEach(function () { at.push(cells.length); }); cells.push({ t: p.t, r: p.r }); }
-      else Array.from(p.t).forEach(function (c) { at.push(cells.length); cells.push({ t: c }); });
+      if (p.r) {
+        Array.from(p.t).forEach(function () { at.push(cells.length); gap.push(space); space = false; });
+        plain += p.t; cells.push({ t: p.t, r: p.r });
+      } else Array.from(p.t).forEach(function (c) {
+        if (/[\s　]/.test(c)) space = true;
+        else { at.push(cells.length); gap.push(space); space = false; plain += c; }
+        cells.push({ t: c });
+      });
     });
-    // plain is indexed by UTF-16 unit; every char here is BMP, so offsets = cell offsets
+    // every char here is BMP, so string offsets = char offsets
     var claim = function (from, to, kind, gloss, word) {
       var ci = [], k;
       for (k = from; k < to; k++) if (ci.indexOf(at[k]) < 0) ci.push(at[k]);
-      if (ci.some(function (c) { return cells[c].kind; })) return;
+      if (!ci.length || ci.some(function (c) { return cells[c].kind; })) return;
       ci.forEach(function (c) { cells[c].kind = kind; cells[c].gloss = gloss; });
       if (word) usedWords[word] = true;
     };
-    var each = function (needle, fn) {
-      for (var p = plain.indexOf(needle); p >= 0; p = plain.indexOf(needle, p + 1)) fn(p);
+    // a word never spans a phrase space (じゃ　ありません is not the bridge じゃあ)
+    var whole = function (p, n) { for (var k = p + 1; k < p + n; k++) if (gap[k]) return false; return true; };
+    var each = function (needle, fn, ok) {
+      for (var p = plain.indexOf(needle); p >= 0; p = plain.indexOf(needle, p + 1)) if (whole(p, needle.length) && (!ok || ok(p))) fn(p);
     };
-    (it.bridge || []).forEach(function (b) {
-      each(b.ctx || b.text, function (p) {
+    // a bridge / unmark text is a whole word; its ctx may cross a phrase space
+    var inCtx = function (b, kind, gloss) {
+      for (var p = plain.indexOf(b.ctx || b.text); p >= 0; p = plain.indexOf(b.ctx || b.text, p + 1)) {
         var q = p + (b.ctx ? b.ctx.indexOf(b.text) : 0);
-        claim(q, q + b.text.length, 'br', b.text + ' · ' + b.gloss);
+        if (whole(q, b.text.length)) claim(q, q + b.text.length, kind, gloss);
+      }
+    };
+    (it.bridge || []).forEach(function (b) { inCtx(b, 'br', b.text + ' · ' + b.gloss); });
+    // `unmark` ({ text, ctx? } like bridge): a spelling that only looks like a new word here (風邪 for 風, 居る for 要る)
+    (it.unmark || []).forEach(function (b) { inCtx(b, '-'); });
+    needles.forEach(function (x) {
+      each(x.n, function (p) { claim(p, p + x.n.length, 'nw', x.gloss, x.v.id); }, function (p) {
+        if (x.ok && !x.ok.test(plain.slice(p + x.n.length))) return false;
+        if (x.pre || x.n.length > 2 || !/^[ぁ-ん]+$/.test(x.n)) return true;
+        var q = p + x.n.length, nx = plain[q];
+        return (p === 0 || gap[p] || !/[ぁ-ん]/.test(plain[p - 1]) || /[はがをにでへとのもやか]/.test(plain[p - 1])) &&
+          (nx === undefined || gap[q] || !/[ぁ-ん]/.test(nx) || /^(?:[はがをにでへとのもやかよね]|です|でし|ます|ませ|まし|だ|じゃ)/.test(plain.slice(q)) || !!x.ok);
       });
     });
-    needles.forEach(function (x) { each(x.n, function (p) { claim(p, p + x.n.length, 'nw', x.gloss, x.v.id); }); });
     var setAt = [];
-    SET_PHRASES.forEach(function (s) { each(s, function (p) { setAt.push([p, p + s.length]); }); });
+    SET_PHRASES.forEach(function (s) { each(s, function (p) { setAt.push([p, p + s.length]); }, function (p) { return p === 0 || gap[p] || !/[ぁ-ん]/.test(plain[p - 1]); }); });
+    var inSet = function (p, n) { return setAt.some(function (r) { return p < r[1] && p + n > r[0]; }); };
     grammar.forEach(function (x) {
+      if (x.res) {
+        x.res.forEach(function (re) {
+          re.lastIndex = 0;
+          for (var m = re.exec(plain); m; m = re.exec(plain)) {
+            // the し of ました / でした is not the stem of する
+            if (m[1] && m[0].length - m[1].length === 1 && m[0][0] === 'し' && /[まで]/.test(plain[m.index - 1] || '')) { re.lastIndex = m.index + 1; continue; }
+            var g1 = m[1] !== undefined ? m[1] : m[0], p = m.index + (m[1] !== undefined ? m[0].lastIndexOf(m[1]) : 0);
+            if (g1 && !inSet(p, g1.length)) claim(p, p + g1.length, 'g', x.gloss, x.g.id);
+            re.lastIndex = m.index + 1;
+          }
+        });
+        return;
+      }
       x.toks.forEach(function (n) {
         each(n, function (p) {
-          if (p > 0 && !setAt.some(function (r) { return p < r[1] && p + n.length > r[0]; })) claim(p, p + n.length, 'g', x.gloss, x.g.id);
+          if (p > 0 && !inSet(p, n.length)) claim(p, p + n.length, 'g', x.gloss, x.g.id);
         });
       });
     });
@@ -1984,6 +2083,7 @@ function dialogueView(it, unit) {
       if (last && !c.r && !last.r && last.kind === c.kind && last.gloss === c.gloss) last.t += c.t;
       else segs.push({ t: c.t, r: c.r, kind: c.kind, gloss: c.gloss });
     });
+    segs.forEach(function (sg) { if (sg.kind === '-') { sg.kind = undefined; sg.gloss = undefined; } });
     var who = it.cast[l.speaker];
     return { i: i, speaker: l.speaker, side: sideOf(l.speaker), color: CAST_COLOR[l.speaker] || 1, name: who.name, initial: Array.from(who.jp)[0], en: l.en, segs: segs };
   });

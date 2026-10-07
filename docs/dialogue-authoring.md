@@ -31,12 +31,17 @@ L({ id: 'l:n5-dlg-first-class', format: 'dialogue',          // l:<level>-dlg-<s
 | `cast` | Exactly two characters. Key = character id from `tools/audio/cast.json`. The first key is the left speaker (chip colour `a`), the second the right (`b`). Per entry: `name`, `jp` (same as cast.json; first character is the chip initial), `gender` M / F (same as cast.json), `role` (this scene's part, English, shown under the name). |
 | `lines[]` | 6-10 lines. `speaker` = a cast key, `furigana` = kana with `[漢字\|かな]` ruby and U+3000 between phrases, `en` = English of the line, `say` (optional speech override, below), `take` (optional integer > 1: re-render this line's clip, below). No `tone`: one voice per character. Both characters speak. |
 | `bridge[]` | At most 3 words the unit has not taught yet, each `{ text, gloss, ctx?, id? }`. `gloss` is mandatory. `ctx` = the surrounding text when the word is only a bridge inside it (お in おなまえ). `id` = the grammar / vocab id when it is a catalog item taught later (it must also be in `uses`). Shown with a dashed mark; the gloss strip explains it. |
+| `unmark[]` | Optional, `{ text, ctx? }` like a bridge: a spelling that only looks like one of the unit's new words here, so it gets no mark (かぜを ひく is 風邪, not the new 風; ている is not 要る). |
 | `remixes[]` | The Practice card's swaps (ungraded, not in the quiz): `scene`, `en` (the target in English), `chunks` (the answer chunks plus exactly 1 distractor, all distinct), `answer` (ordered chunks), `explain`. Every katakana word in the chunks is in `names`. A chunk holding a one-character bridge word (を) gets its gloss as a note automatically. |
 | `names` | Every spoken name, exactly as written (katakana), canon only; includes both cast `jp` values. The test has the allowed list (the 14 characters). Never invent a given or family name the original does not use in speech. |
 | `uses` | Every grammar point (`g:`), content word (`v:`) and kanji (`k:`) in the lines. Set phrases (はじめまして, よろしく, おねがいします, いただきます, ごちそうさま, ありがとう, すみません) are plain text, not in `uses`. |
 | `verified` | `true` only when every `uses` item is verified and the checks pass; otherwise `false` plus `notes` with the reason. |
 
 Dialogue text is hand-written for this project (`sources: ['own']`, set by `L()`). Wholesome scenes only; canon names only; no artwork.
+
+## Marks
+
+`dialogueView` (lib.js) marks, per line with the phrase spaces removed (so a pattern may span `なって　いる`): bridge words, then the unit's new words (dictionary form and the stem before ます / て / た / ない / く), then the unit's grammar. A grammar item without `hl` is marked by the tokens of its `ref` / `pattern`, which is fine for a particle (は, の, を) but wrong for anything inflected. Give those an `hl` in `data/n5/grammar.js`: regex sources, the first capture group (else the whole match) is marked, e.g. `g:naru` `['(く|に)(?=なっ|なる|なり)']`. `@te`, `@ta`, `@nai`, `@dict`, `@adjneg` match the て / た / ない / dictionary form / くない after a verb or い-adjective taught so far. `tests/dialogue.js` fails when a unit's grammar point has no mark in its dialogue.
 
 ## Rules the tests enforce
 

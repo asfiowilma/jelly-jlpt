@@ -92,6 +92,22 @@ QUnit.module('dialogue', function () {
     assert.ok(v2.lines.some(function (l) { return l.segs.some(function (s) { return s.kind === 'g' && /たべ?ます|ます/.test(s.t) && l.en; }); }), 'ます still marked outside set phrases');
   });
 
+  QUnit.test('dialogueView: every lesson grammar point is marked, く of くなる only before なる, spaced patterns match', function (assert) {
+    var kinds = function (l) { return l.segs.filter(function (s) { return s.kind; }).map(function (s) { return s.kind + ':' + s.t; }).join(' '); };
+    var byId = function (id) { var u = withDialogue().filter(function (x) { return x.id === id; })[0]; return dialogueView(CATALOG.items[u.dialogue], u); };
+    withDialogue().forEach(function (u) {
+      var v = dialogueView(CATALOG.items[u.dialogue], u);
+      (u.grammar || []).forEach(function (g) { assert.ok(v.pills.indexOf(g.pattern) >= 0, u.id + ': ' + g.pattern + ' is marked somewhere in the dialogue'); });
+    });
+    var v90 = byId('n5.u090');
+    assert.strictEqual(kinds(v90.lines[0]), 'nw:だんだん nw:くら g:く nw:なっ', 'the く before なって, not the く of くらい');
+    assert.strictEqual(kinds(v90.lines[4]), 'g:に nw:なっ', 'noun + に + なる');
+    assert.ok(!/g:/.test(kinds(v90.lines[6])) && !/g:/.test(kinds(v90.lines[8])), 'ひく / かえらなくちゃ: no く mark');
+    assert.strictEqual(kinds(v90.lines[6]), 'nw:かぜ'.replace('nw:かぜ', ''), 'かぜを ひく is 風邪, not the new word 風');
+    assert.strictEqual(kinds(byId('n5.u068').lines[0]), 'nw:はしっ g:ては g:いけません nw:あぶない', 'ては　いけません across a phrase space');
+    assert.ok(!/g:た/.test(kinds(byId('n5.u086').lines[0])), 'ました is not the plain た');
+  });
+
   QUnit.test('listeningScript: lines only, no narrator, speaker = the character gender, who / slot, text = dialogueSpeech; clips only when rendered', function (assert) {
     dialogues().forEach(function (it) {
       var s = listeningScript(it);

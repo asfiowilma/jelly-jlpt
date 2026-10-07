@@ -2506,6 +2506,7 @@ CATALOG.add([
       { speaker: 'emilia', furigana: 'わたしは　ひく！', en: 'Well, I do!' },
       { speaker: 'killua', furigana: 'わかった。かえる。', en: 'Okay. We’re going home.' }
     ],
+    unmark: [{ text: 'かぜ', ctx: 'かぜをひく' }, { text: 'かぜ', ctx: 'かぜはひか' }],
     remixes: [
       { scene: 'Emilia feels the wind.', en: 'The wind has got stronger too.',
         chunks: ['かぜも', 'つよく', 'なった。', 'つよい'], answer: ['かぜも', 'つよく', 'なった。'],
@@ -2803,6 +2804,7 @@ CATALOG.add([
       { text: 'やくしょ', gloss: 'やくしょ = the town office, city hall' },
       { text: 'ひみつ', gloss: 'ひみつ = a secret' }
     ],
+    unmark: [{ text: 'いる', ctx: 'でいるん' }],
     remixes: [
       { scene: 'Yor says where she works.', en: 'I work at the town office.',
         chunks: ['まちの', 'やくしょに', 'つとめて', 'います。', 'やくしょで'], answer: ['まちの', 'やくしょに', 'つとめて', 'います。'],
