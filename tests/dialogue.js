@@ -216,13 +216,10 @@ QUnit.module('dialogue', function () {
   });
 
   // A Practice swap is a remix: same scene, one detail swapped, a sentence the dialogue never says.
-  // TODO: remove when stages 63-104 are remixed (another branch): then check every stage.
-  var REMIX_CHECK_MAX_STAGE = 62;
   QUnit.test('Practice swaps never rebuild a dialogue line (answer not inside a line, en not a line en)', function (assert) {
     var norm = function (s) { return furiganaParts(s).map(function (p) { return p.r || p.t; }).join('').replace(/[\s　、。，．,.!?！？…・「」〜~-]/g, ''); };
     var bad = [];
     withDialogue().forEach(function (u) {
-      if (+u.id.slice(4) > REMIX_CHECK_MAX_STAGE) return;
       var it = CATALOG.items[u.dialogue], lines = it.lines.map(function (l) { return norm(l.furigana); });
       it.remixes.forEach(function (r, n) {
         var ans = norm(r.answer.join('')), w = u.id + ' swap ' + (n + 1) + ' ';
