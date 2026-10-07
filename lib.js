@@ -1705,6 +1705,17 @@ function listeningFor(level, format) {
 // readingKana: a kanji reading as the voice should hear it ("た.べる" -> "たべる", "-ちゅう" -> "ちゅう").
 function readingKana(r) { return r.replace(/[.\-\s]/g, ''); }
 function speechText(s) { return furiganaParts(s).map(function (p) { return p.r || p.t; }).join(''); }
+// particleSpeech(kana): the TTS reads kana as written, so the particles は / へ / を come out "ha" / "he" / "wo".
+// Rule: a は, へ or を that ends a phrase (before U+3000, punctuation or the end) is spoken わ / え / お.
+// こんにちは, こんばんは, では, には end a phrase the same way and are said わ too. A word ending in は / へ
+// at a phrase end (はは。) or a particle inside a phrase is wrong: give that line a `say` (dialogueSpeech).
+var PARTICLE_SOUND = { 'は': 'わ', 'へ': 'え', 'を': 'お' };
+function particleSpeech(s) {
+  return s.replace(/[はへを](?=[　\s、。，！？!?…」』）]|$)/g, function (c) { return PARTICLE_SOUND[c]; });
+}
+// dialogueSpeech(line): what the voice says for a dialogue line (no "……" pause marks): line.say (kana as
+// spoken, overrides the rule) or the particle rule on its reading. The display text (furigana) never changes.
+function dialogueSpeech(l) { return (l.say || particleSpeech(speechText(l.furigana))).replace(/…+/g, ''); }
 
 // listeningScript(item, order?): the whole play sequence [{ speaker, text }], options in
 // `order` (indexes into item.options). task / point: scene, question, dialogue, question again.
@@ -1718,7 +1729,7 @@ function listeningScript(it, order) {
     return it.lines.map(function (l, j) {
       var g = it.cast[l.speaker].gender;
       var rank = keys.filter(function (k) { return it.cast[k].gender === g; }).indexOf(l.speaker);
-      var o = { speaker: g, who: l.speaker, slot: rank > 0 ? g + '2' : g, text: speechText(l.furigana).replace(/…+/g, '') };
+      var o = { speaker: g, who: l.speaker, slot: rank > 0 ? g + '2' : g, text: dialogueSpeech(l) };
       if (l.tone) o.tone = l.tone;
       if (dc) o.clip = dc[j];
       return o;

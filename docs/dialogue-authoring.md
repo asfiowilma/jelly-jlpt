@@ -29,7 +29,7 @@ L({ id: 'l:n5-dlg-first-class', format: 'dialogue',          // l:<level>-dlg-<s
 | `id` | `l:<level>-dlg-<slug>`. New text = new id (clips and manifest are keyed per track). |
 | `title`, `goal`, `scene` | English, shown in the hero / opened panel. `goal` starts "You can ...". |
 | `cast` | Exactly two characters. Key = character id from `tools/audio/cast.json`. The first key is the left speaker (chip colour `a`), the second the right (`b`). Per entry: `name`, `jp` (same as cast.json; first character is the chip initial), `gender` M / F (same as cast.json), `role` (this scene's part, English, shown under the name). |
-| `lines[]` | 6-10 lines. `speaker` = a cast key, `furigana` = kana with `[漢字\|かな]` ruby and U+3000 between phrases, `en` = English of the line, `tone` (optional, below). Both characters speak. |
+| `lines[]` | 6-10 lines. `speaker` = a cast key, `furigana` = kana with `[漢字\|かな]` ruby and U+3000 between phrases, `en` = English of the line, `tone` (optional, below), `say` (optional speech override, below). Both characters speak. |
 | `bridge[]` | At most 3 words the unit has not taught yet, each `{ text, gloss, ctx?, id? }`. `gloss` is mandatory. `ctx` = the surrounding text when the word is only a bridge inside it (お in おなまえ). `id` = the grammar / vocab id when it is a catalog item taught later (it must also be in `uses`). Shown with a dashed mark; the gloss strip explains it. |
 | `remixes[]` | The Practice card's swaps (ungraded, not in the quiz): `scene`, `en` (the target in English), `chunks` (the answer chunks plus exactly 1 distractor, all distinct), `answer` (ordered chunks), `explain`. Every katakana word in the chunks is in `names`. A chunk holding a one-character bridge word (を) gets its gloss as a note automatically. |
 | `names` | Every spoken name, exactly as written (katakana), canon only; includes both cast `jp` values. The test has the allowed list (the 14 characters). Never invent a given or family name the original does not use in speech. |
@@ -58,6 +58,11 @@ character, reused in every dialogue. Pick the pair for the scene from `.scratch/
 
 A line's voice is its character (`role|<character id>|<kana reading>`). Any pairing works (man+man, woman+woman, man+woman). In the browser-voice fallback the second character of a gender gets
 another voice or a different pitch.
+
+Particles: the voice reads the speech text, not the display text. `dialogueSpeech(line)` (lib.js) turns a は / へ / を that ends a phrase
+(before U+3000, punctuation or the line end) into わ / え / お, so write particles at a phrase end (`わたしは　カカシです`, not `わたしはね`).
+A line the rule gets wrong (a word ending in は / へ at a phrase end, like `はは。`) takes `say`: its kana as spoken, used as is.
+`tests/dialogue.js` fails when a は / へ / を is left that is not inside a used word or a set phrase. The learner never sees `say`.
 
 `tone` is optional: a short English delivery hint ("quiet, curt, low energy", "dry, amused, lazy"), appended to the voice prompt at render time. It changes the clip name only when set.
 A line that starts with `……` starts with a pause marker (not spoken): put the curt delivery in `tone`. Use tones sparingly, only where the line differs from the character's usual manner.

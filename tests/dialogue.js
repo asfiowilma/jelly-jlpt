@@ -95,6 +95,34 @@ QUnit.module('dialogue', function () {
     });
   });
 
+  QUnit.test('particleSpeech: phrase-final は / へ / を are spoken わ / え / お, words keep their kana', function (assert) {
+    [['ははは　げんきです。', 'ははわ　げんきです。'], ['はなは　きれいです。', 'はなわ　きれいです。'], ['へやへ　いきます。', 'へやえ　いきます。'],
+      ['はい、そうです。', 'はい、そうです。'], ['こんにちは！', 'こんにちわ！'], ['こんばんは。', 'こんばんわ。'], ['それでは、また。', 'それでわ、また。'],
+      ['わたしは　がくせいです。', 'わたしわ　がくせいです。'], ['えきへ　いきます。', 'えきえ　いきます。'], ['パンを　たべます。', 'パンお　たべます。'],
+      ['がくせいでは　ありません。', 'がくせいでわ　ありません。'], ['まいにちは　いそがしいです。', 'まいにちわ　いそがしいです。'], ['がっこうには　いきません', 'がっこうにわ　いきません'],
+      ['おなまえは？', 'おなまえわ？'], ['ははです。', 'ははです。'], ['はじめまして。', 'はじめまして。'], ['へやは　ここです。', 'へやわ　ここです。']
+    ].forEach(function (c) { assert.strictEqual(particleSpeech(c[0]), c[1], c[0]); });
+    assert.strictEqual(dialogueSpeech({ furigana: '……[私|わたし]は　[七|なな]ひゃく[円|えん]です。' }), 'わたしわ　ななひゃくえんです。', 'ruby read, pause marks dropped');
+    assert.strictEqual(dialogueSpeech({ furigana: 'はは。', say: 'はは。' }), 'はは。', 'a line\'s say overrides the rule (word-final は at a phrase end)');
+  });
+
+  QUnit.test('dialogue speech: no particle は / へ / を left (every remaining は / へ sits in a used word or a set phrase)', function (assert) {
+    var SET = ['はじめまして', 'おはよう'], left = [];
+    dialogues().forEach(function (it) {
+      var words = SET.concat((it.uses || []).filter(function (id) { return /^v:/.test(id); }).map(function (id) {
+        var v = CATALOG.items[id], r = kataToHira(v.reading);
+        return /^(verb|adj-i)/.test(v.pos) ? r.slice(0, -1) : r; // inflected: the stem (はたらき-ます)
+      }));
+      listeningScript(it).forEach(function (l, j) {
+        if (it.lines[j].say) return; // spelled out by hand
+        var s = l.text.replace(/[\u3000\s]/g, ''), covered = {};
+        words.forEach(function (w) { for (var i = s.indexOf(w); i >= 0; i = s.indexOf(w, i + 1)) for (var k = i; k < i + w.length; k++) covered[k] = true; });
+        for (var i = 0; i < s.length; i++) if ((s[i] === 'を' || /[はへ]/.test(s[i]) && !covered[i])) left.push(it.id + ' line ' + (j + 1) + ': ' + s);
+      });
+    });
+    assert.deepEqual(left, [], 'add a `say` to a line the rule gets wrong (docs/dialogue-authoring.md)');
+  });
+
   QUnit.test('assignVoices: the second man / woman gets another voice or a different pitch', function (assert) {
     var ichiro = { name: 'Microsoft Ichiro - Japanese', lang: 'ja-JP', localService: true };
     var keita = { name: 'Microsoft Keita - Japanese', lang: 'ja-JP', localService: true };

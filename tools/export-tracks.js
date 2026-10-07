@@ -8,7 +8,8 @@
 // the narrator is one fixed voice, no archetype). A dialogue line (format dialogue) is voiced by its character:
 // role = the character's gender (M / F), archetype = the character id (tools/audio/cast.json, per-line `arch`
 // in tracks.json), and an optional per-line `tone` is appended: clipKey + '|' + tone (only when set),
-// and say is the line's kana reading (listeningScript text, U+3000 spaces removed): the TTS input,
+// and say is the line's kana reading (listeningScript text, U+3000 spaces removed; dialogue lines speak
+// phrase-final は / へ / を as わ / え / お, dialogueSpeech in lib.js): the TTS input,
 // so the authored readings decide how each kanji is spoken. `text` (natural, kanji kept) is kept
 // for reading the transcript only.
 // render-input.json (gitignored) is the one file the Colab notebook uploads:

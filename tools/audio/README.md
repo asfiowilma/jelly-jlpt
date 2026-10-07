@@ -26,6 +26,14 @@ A dialogue line may carry `tone`, a short English delivery hint ("quiet, curt, l
 (`role|char|say|tone`), so lines without one keep their names. No `|` in a tone. A line starting with 「……」 is a pause marker: the speech text drops the dots, so use `tone` for the curt, quiet delivery.
 Use a tone sparingly (each distinct tone is one more reference render): the character's `voice` already carries their usual manner.
 
+### Particles (dialogue lines only)
+
+The TTS reads kana as written, so the particles は / へ / を would come out "ha" / "he" / "wo". For a dialogue line, `kana` and `say`
+come from `dialogueSpeech(line)` in `lib.js` (the same text Web Speech gets): a は / へ / を that ends a phrase (before U+3000, punctuation
+or the line end) is spoken わ / え / お (こんにちは, では, には too); words keep their kana (はい, へや, はたらきます). A line the rule gets wrong
+carries `say` (kana as spoken), used as is. The clipKey hashes this text, so clips, manifest and the audio-hash test agree.
+Non-dialogue tracks keep the written kana (their rendered clips keep their names; ~287 phrase-final は / へ / を there are still read as written).
+
 Regenerate after any change to `data/n5/listening.js` or the archetype files:
 
     node tools/export-tracks.js
