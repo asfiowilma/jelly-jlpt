@@ -1346,33 +1346,30 @@ CATALOG.add([
 
   L({ id: 'l:n5-dlg-my-room', format: 'dialogue',
     title: 'My room', goal: 'You can say what there is in a room, and what there is not.',
-    scene: 'In the dorm, Emilia shows Hinata her tidy room. Hinata’s own room is a little different.',
-    cast: { emilia: { name: 'Emilia', jp: 'エミリア', gender: 'F', role: 'Classmate' }, hinata: { name: 'Hinata', jp: 'ヒナタ', gender: 'M', role: 'Classmate' } },
+    scene: 'Emilia shows little Anya her tidy room. Anya’s own room is a little different.',
+    cast: { emilia: { name: 'Emilia', jp: 'エミリア', gender: 'F', role: 'Host' }, anya: { name: 'Anya', jp: 'アーニャ', gender: 'F', role: 'Guest' } },
     lines: [
-      { speaker: 'emilia', furigana: 'ここは　わたしの　へやです。どうぞ、ヒナタさん。', en: 'This is my room. Come in, Hinata.' },
-      { speaker: 'hinata', furigana: 'つくえが　あります！　まども　あります！', en: 'There’s a desk! There’s a window too!' },
+      { speaker: 'emilia', furigana: 'ここは　わたしの　へやです。どうぞ、アーニャさん。', en: 'This is my room. Come in, Anya.' },
+      { speaker: 'anya', furigana: 'つくえが　ある！　まども　ある！', en: 'There’s a desk! There’s a window too!' },
       { speaker: 'emilia', furigana: 'ほんだなも　ありますよ。', en: 'There’s a bookshelf too.' },
-      { speaker: 'hinata', furigana: 'テレビは　ありますか？', en: 'Is there a TV?' },
+      { speaker: 'anya', furigana: 'テレビは　ある？', en: 'Is there a TV?' },
       { speaker: 'emilia', furigana: 'テレビは　ありません。', en: 'No, there’s no TV.' },
-      { speaker: 'hinata', furigana: 'わたしの　へやには　バレーボールが　あります！　つくえは　ないです！', en: 'In my room there’s a volleyball! There’s no desk!' },
+      { speaker: 'anya', furigana: 'アーニャの　へやには　テレビが　ある！　つくえは　ない！', en: 'Anya’s room has a TV! No desk!' },
       { speaker: 'emilia', furigana: 'べんきょうは？', en: 'And studying?' },
-      { speaker: 'hinata', furigana: 'エミリアさんの　つくえで！', en: 'At your desk, Emilia!' },
+      { speaker: 'anya', furigana: 'エミリアさんの　つくえで！', en: 'At your desk, Emilia!' },
       { speaker: 'emilia', furigana: 'はい、どうぞ。', en: 'Sure, go ahead.' }
-    ],
-    bridge: [
-      { text: 'バレーボール', gloss: 'バレーボール = volleyball' }
     ],
     remixes: [
       { scene: 'Emilia shows one more thing in her room.', en: 'There is a window too.',
         chunks: ['まども', 'あります。', 'います。'], answer: ['まども', 'あります。'],
         explain: 'Things take あります. います is for people and animals (next lesson), so a window never いる.' },
-      { scene: 'Hinata says what his room is missing.', en: 'There is no desk.',
-        chunks: ['つくえは', 'ありません。', 'つくえを'], answer: ['つくえは', 'ありません。'],
-        explain: 'With ある, the thing is marked by が or は, never を: つくえは ありません.' }
+      { scene: 'Anya says what her room is missing.', en: 'There is no desk!',
+        chunks: ['つくえは', 'ない！', 'つくえを'], answer: ['つくえは', 'ない！'],
+        explain: 'ない is the plain "there isn’t" (ありません). The thing is marked by が or は, never を: つくえは ない.' }
     ],
-    names: ['エミリア', 'ヒナタ'],
-    uses: ['g:ga-arimasu', 'g:ni', 'g:de', 'g:mo', 'g:no', 'g:yo', 'g:ka', 'g:wa-desu', 'v:私|わたし', 'v:ここ|ここ', 'v:部屋|へや', 'v:さん|さん', 'v:どうぞ|どうぞ', 'v:机|つくえ', 'v:ある|ある', 'v:窓|まど', 'v:本棚|ほんだな', 'v:テレビ|テレビ', 'v:ない|ない', 'v:勉強|べんきょう', 'v:はい|はい'],
-    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too. バレーボール is not on the N5 list: a bridge only.',
+    names: ['エミリア', 'アーニャ'],
+    uses: ['g:ga-arimasu', 'g:verb-groups-dict', 'g:ni', 'g:de', 'g:mo', 'g:no', 'g:yo', 'g:wa-desu', 'v:私|わたし', 'v:ここ|ここ', 'v:部屋|へや', 'v:さん|さん', 'v:どうぞ|どうぞ', 'v:机|つくえ', 'v:ある|ある', 'v:窓|まど', 'v:本棚|ほんだな', 'v:テレビ|テレビ', 'v:ない|ない', 'v:勉強|べんきょう', 'v:はい|はい'],
+    notes: 'uses v:はい|はい, which is unverified, so the dialogue is too.',
     verified: false }),
 
   L({ id: 'l:n5-dlg-where-pakkun', format: 'dialogue',
@@ -1447,7 +1444,7 @@ CATALOG.add([
       { speaker: 'sakura', furigana: '[何|なん][円|えん]ですか？', en: 'How many yen?' },
       { speaker: 'nami', furigana: '[九|きゅう]せん[円|えん]です！', en: '9,000 yen!' },
       { speaker: 'sakura', furigana: '……やすくないです。', en: '...That’s not cheap.' },
-      { speaker: 'nami', furigana: 'きのうは　やすかったですよ！', en: 'It was cheap yesterday!' }
+      { speaker: 'nami', furigana: 'きのうは　[高|たか]かったですよ！', en: 'Yesterday it was expensive!' }
     ],
     bridge: [
       { text: 'じゃあ', id: 'v:じゃあ|じゃあ', gloss: 'じゃあ = then, in that case (taught later)' }
@@ -1456,9 +1453,9 @@ CATALOG.add([
       { scene: 'Nami praises the new bag.', en: 'This bag is not expensive!',
         chunks: ['このかばんは', 'たかく', 'ないです！', 'たかい'], answer: ['このかばんは', 'たかく', 'ないです！'],
         explain: 'An い-adjective turns negative by changing い to く + ない: たかい → たかくない. たかい ないです is not Japanese.' },
-      { scene: 'Nami explains the price of the old bag.', en: 'Yesterday it was cheap!',
-        chunks: ['きのうは', 'やすかったです！', 'やすいでした！'], answer: ['きのうは', 'やすかったです！'],
-        explain: 'The past of an い-adjective changes い to かった: やすい → やすかった(です). やすいでした is a common mistake.' }
+      { scene: 'Nami insists the old bag is a bargain today.', en: 'Yesterday it was expensive!',
+        chunks: ['きのうは', 'たかかったです！', 'たかいでした！'], answer: ['きのうは', 'たかかったです！'],
+        explain: 'The past of an い-adjective changes い to かった: たかい → たかかった(です). たかいでした is a common mistake.' }
     ],
     names: ['ナミ', 'サクラ'],
     uses: ['g:adj-i', 'g:ka', 'g:yo', 'g:wa-desu', 'v:小さい|ちいさい', 'v:かばん|かばん', 'v:ある|ある', 'v:これ|これ', 'v:この|この', 'v:新しい|あたらしい', 'v:高い|たかい', 'v:一|いち', 'v:万|まん', 'v:円|えん', 'v:じゃあ|じゃあ', 'v:古い|ふるい', 'v:安い|やすい', 'v:何|なん', 'v:九|きゅう', 'v:千|せん', 'v:昨日|きのう', 'k:小', 'k:高', 'k:一', 'k:万', 'k:円', 'k:何', 'k:九'],
@@ -1685,11 +1682,11 @@ CATALOG.add([
       { speaker: 'killua', furigana: '[山|やま]。ゴンと　[山|やま]に　のぼりたい。', en: 'The mountains. I want to climb a mountain with Gon.' },
       { speaker: 'hinata', furigana: 'いいですね！　わたしは　うみで　およぎたいです！', en: 'Nice! I want to swim in the sea!' },
       { speaker: 'killua', furigana: 'うみは　あつい。[山|やま]で　やすみたい。', en: 'The sea is hot. I want to rest in the mountains.' },
-      { speaker: 'hinata', furigana: 'わたしは　[山|やま]の　しゃしんが　ほしいです！', en: 'I want a photo of the mountains!' },
-      { speaker: 'killua', furigana: 'しゃしん？　……チョコが　ほしい。', en: 'A photo? ...I want chocolate.' },
-      { speaker: 'hinata', furigana: 'いいですよ！', en: 'All right!' },
+      { speaker: 'hinata', furigana: '……わたしも　[山|やま]へ　[行|い]きたいです！', en: '...I want to go to the mountains too!' },
+      { speaker: 'killua', furigana: 'いいよ。チョコが　ほしい。', en: 'Sure. I want chocolate.' },
+      { speaker: 'hinata', furigana: 'チョコ？', en: 'Chocolate?' },
       { speaker: 'killua', furigana: '[山|やま]の　[上|うえ]で　[食|た]べたい。', en: 'I want to eat it on top of the mountain.' },
-      { speaker: 'hinata', furigana: '[山|やま]の　[上|うえ]の　しゃしんも　ほしいです！', en: 'I want a photo from the top too!' }
+      { speaker: 'hinata', furigana: 'いいですよ！　[山|やま]の　[上|うえ]で　いっしょに　[食|た]べましょう！', en: 'All right! Let’s eat it together on top of the mountain!' }
     ],
     bridge: [
       { text: 'チョコ', gloss: 'チョコ = chocolate' }
@@ -1703,7 +1700,7 @@ CATALOG.add([
         explain: 'と after a person means "with". ゴンを would make Gon the thing being climbed.' }
     ],
     names: ['ヒナタ', 'キルア', 'ゴン'],
-    uses: ['g:tai', 'g:ni-ikimasu', 'g:ni', 'g:de', 'g:to', 'g:no', 'g:mo', 'g:yo', 'g:ne', 'g:ka', 'g:wa-desu', 'v:夏休み|なつやすみ', 'v:さん|さん', 'v:どこ|どこ', 'v:行く|いく', 'v:山|やま', 'v:登る|のぼる', 'v:いい|いい', 'v:私|わたし', 'v:海|うみ', 'v:泳ぐ|およぐ', 'v:暑い|あつい', 'v:休む|やすむ', 'v:写真|しゃしん', 'v:欲しい|ほしい', 'v:上|うえ', 'v:食べる|たべる', 'k:行', 'k:山', 'k:上', 'k:食'],
+    uses: ['g:tai', 'g:ni-ikimasu', 'g:ni', 'g:de', 'g:to', 'g:no', 'g:mo', 'g:ga', 'g:yo', 'g:ne', 'g:ka', 'g:wa-desu', 'g:mashou', 'v:夏休み|なつやすみ', 'v:さん|さん', 'v:どこ|どこ', 'v:行く|いく', 'v:山|やま', 'v:登る|のぼる', 'v:いい|いい', 'v:私|わたし', 'v:海|うみ', 'v:泳ぐ|およぐ', 'v:暑い|あつい', 'v:休む|やすむ', 'v:欲しい|ほしい', 'v:上|うえ', 'v:食べる|たべる', 'v:一緒|いっしょ', 'k:行', 'k:山', 'k:上', 'k:食'],
     notes: 'チョコ is not on the N5 list: a bridge only.',
     verified: true }),
 
@@ -1750,19 +1747,19 @@ CATALOG.add([
       { speaker: 'lelouch', furigana: '……かいだんは？', en: '...And the stairs?' },
       { speaker: 'maomao', furigana: 'かいだんは　[入|い]りぐちの　となりです。', en: 'The stairs are next to the entrance.' },
       { speaker: 'lelouch', furigana: '……[出|で]ぐちは　どこですか？', en: '...Where is the exit?' },
-      { speaker: 'maomao', furigana: '[出|で]ぐちは　かいだんと　おなじ　ところです。', en: 'The exit is in the same place as the stairs.' },
-      { speaker: 'lelouch', furigana: '……かいだんで　[行|い]きます。', en: '...I will take the stairs.' }
+      { speaker: 'maomao', furigana: '[出|で]ぐちは　かいだんと　おなじ　ところです。……かえりますか？', en: 'The exit is in the same place as the stairs. ...Are you going home?' },
+      { speaker: 'lelouch', furigana: '……かいだんで　プールへ　[行|い]きます。', en: '...I will take the stairs to the pool.' }
     ],
     remixes: [
       { scene: 'Maomao tells Lelouch where the stairs are.', en: 'The stairs are next to the entrance.',
         chunks: ['かいだんは', 'いりぐちの', 'となりです。', 'いりぐちを'], answer: ['かいだんは', 'いりぐちの', 'となりです。'],
         explain: 'の joins the place to となり: いりぐちの となり = next to the entrance. を needs a verb.' },
-      { scene: 'Lelouch gives up on the pool and asks for the exit.', en: 'Where is the exit?',
+      { scene: 'Lelouch asks one more way, just in case.', en: 'Where is the exit?',
         chunks: ['でぐちは', 'どこですか？', 'どこですよ。'], answer: ['でぐちは', 'どこですか？'],
         explain: 'か makes the question. よ tells someone something, so it cannot end a question with どこ.' }
     ],
     names: ['マオマオ', 'ルルーシュ'],
-    uses: ['g:to', 'g:de', 'g:no', 'g:masu', 'g:ka', 'g:yo', 'g:wa-desu', 'v:プール|プール', 'v:どこ|どこ', 'v:この|この', 'v:建物|たてもの', 'v:上|うえ', 'v:エレベーター|エレベーター', 'v:あちら|あちら', 'v:階段|かいだん', 'v:入口|いりぐち', 'v:隣|となり', 'v:行く|いく', 'v:今日|きょう', 'v:休み|やすみ', 'v:出口|でぐち', 'v:同じ|おなじ', 'v:所|ところ', 'k:上', 'k:入', 'k:行', 'k:今', 'k:日', 'k:出'],
+    uses: ['g:to', 'g:de', 'g:no', 'g:masu', 'g:ka', 'g:yo', 'g:wa-desu', 'g:ni-ikimasu', 'v:帰る|かえる', 'v:プール|プール', 'v:どこ|どこ', 'v:この|この', 'v:建物|たてもの', 'v:上|うえ', 'v:エレベーター|エレベーター', 'v:あちら|あちら', 'v:階段|かいだん', 'v:入口|いりぐち', 'v:隣|となり', 'v:行く|いく', 'v:今日|きょう', 'v:休み|やすみ', 'v:出口|でぐち', 'v:同じ|おなじ', 'v:所|ところ', 'k:上', 'k:入', 'k:行', 'k:今', 'k:日', 'k:出'],
     notes: '入口 / 出口 are written 入りぐち / 出ぐち: 口 is taught later.',
     verified: true }),
 
@@ -1917,7 +1914,7 @@ CATALOG.add([
 
   L({ id: 'l:n5-dlg-may-i', format: 'dialogue',
     title: 'May I?', goal: 'You can ask for permission with 〜てもいいですか.',
-    scene: 'Lelouch steps into a small cafe where Sanji works, and asks before he does anything.',
+    scene: 'Lelouch steps into a small cafe where Sanji works, and asks before he does anything. Sanji always has matches on him.',
     cast: { sanji: { name: 'Sanji', jp: 'サンジ', gender: 'M', role: 'Waiter' }, lelouch: { name: 'Lelouch', jp: 'ルルーシュ', gender: 'M', role: 'Customer' } },
     lines: [
       { speaker: 'lelouch', furigana: 'すみません。[入|はい]っても　いいですか。', en: 'Excuse me. May I come in?' },
@@ -1928,8 +1925,8 @@ CATALOG.add([
       { speaker: 'sanji', furigana: 'コーヒーです。', en: 'Your coffee.' },
       { speaker: 'lelouch', furigana: 'きれいな　コーヒーですね。しゃしんを　とっても　いいですか。', en: 'What a beautiful coffee. May I take a photo?' },
       { speaker: 'sanji', furigana: 'どうぞ！　たくさん　とって　ください！', en: 'Go ahead! Take lots!' },
-      { speaker: 'sanji', furigana: '……ここで　たばこを　すっても　いいですか。', en: '...May I smoke here?' },
-      { speaker: 'lelouch', furigana: 'はいざらは　あちらですよ。', en: 'The ashtray is over there.' }
+      { speaker: 'lelouch', furigana: '……ここで　たばこを　すっても　いいですか。', en: '...May I smoke here?' },
+      { speaker: 'sanji', furigana: 'どうぞ。はいざらと　マッチです。', en: 'Go ahead. Here’s an ashtray and some matches.' }
     ],
     remixes: [
       { scene: 'Lelouch asks before he sits down.', en: 'May I sit here?',
@@ -1940,21 +1937,21 @@ CATALOG.add([
         explain: 'Permission is てもいいですか: とっても いいですか. とっては goes with いけません, "must not" (a later lesson).' }
     ],
     names: ['サンジ', 'ルルーシュ'],
-    uses: ['g:te-mo-ii', 'g:te-form', 'g:te-kudasai', 'g:ka', 'g:no', 'g:ni', 'g:ni-ikimasu', 'g:wo', 'g:wa-desu', 'g:de', 'g:yo', 'g:adj-na', 'g:ne', 'v:入る|はいる', 'v:いい|いい', 'v:ええ|ええ', 'v:こちら|こちら', 'v:どうぞ|どうぞ', 'v:あの|あの', 'v:窓|まど', 'v:テーブル|テーブル', 'v:座る|すわる', 'v:コーヒー|コーヒー', 'v:きれい|きれい', 'v:写真|しゃしん', 'v:撮る|とる', 'v:たくさん|たくさん', 'v:ください|ください', 'v:ここ|ここ', 'v:たばこ|たばこ', 'v:吸う|すう', 'v:灰皿|はいざら', 'v:あちら|あちら', 'k:入'],
+    uses: ['g:te-mo-ii', 'g:te-form', 'g:te-kudasai', 'g:ka', 'g:no', 'g:ni', 'g:ni-ikimasu', 'g:wo', 'g:wa-desu', 'g:de', 'g:yo', 'g:adj-na', 'g:ne', 'v:入る|はいる', 'v:いい|いい', 'v:ええ|ええ', 'v:こちら|こちら', 'v:どうぞ|どうぞ', 'v:あの|あの', 'v:窓|まど', 'v:テーブル|テーブル', 'v:座る|すわる', 'v:コーヒー|コーヒー', 'v:きれい|きれい', 'v:写真|しゃしん', 'v:撮る|とる', 'v:たくさん|たくさん', 'v:ください|ください', 'v:ここ|ここ', 'v:たばこ|たばこ', 'v:吸う|すう', 'v:灰皿|はいざら', 'g:to', 'v:マッチ|マッチ', 'k:入'],
     notes: 'uses v:ええ|ええ, which is unverified, so the dialogue is too.',
     verified: false }),
 
   L({ id: 'l:n5-dlg-factory-rules', format: 'dialogue',
     title: 'Rules on the tour', goal: 'You can say what is not allowed with 〜てはいけません.',
-    scene: 'Gojo guides a visitor, Sasuke, through a factory. Gojo has a bag of sweets in his hand.',
-    cast: { gojo: { name: 'Gojo', jp: 'ゴジョウ', gender: 'M', role: 'Guide' }, sasuke: { name: 'Sasuke', jp: 'サスケ', gender: 'M', role: 'Visitor' } },
+    scene: 'On a class trip to a factory, Gojo-sensei walks his student Sasuke through the rules. Gojo has a bag of sweets in his hand.',
+    cast: { gojo: { name: 'Gojo', jp: 'ゴジョウ', gender: 'M', role: 'Teacher' }, sasuke: { name: 'Sasuke', jp: 'サスケ', gender: 'M', role: 'Student' } },
     lines: [
       { speaker: 'gojo', furigana: 'サスケさん、ここで　はしっては　いけませんよ。あぶないですから。', en: 'Sasuke, you must not run here. It’s dangerous.' },
       { speaker: 'sasuke', furigana: '……はしって　いません。', en: '...I’m not running.' },
       { speaker: 'gojo', furigana: 'この　ドアは　おしては　いけません。ひいて　ください。', en: 'You must not push this door. Pull it, please.' },
       { speaker: 'sasuke', furigana: '……あの　でんきは？', en: '...And that light?' },
       { speaker: 'gojo', furigana: 'あの　でんきは　けしては　いけません。いつも　つけて　います。', en: 'You must not switch that light off. It is always on.' },
-      { speaker: 'sasuke', furigana: '……ゴジョウさん。ここで　[食|た]べては　いけません。', en: '...Gojo. You must not eat here.' },
+      { speaker: 'sasuke', furigana: '……ゴジョウ[先生|せんせい]。ここで　[食|た]べては　いけません。', en: '...Gojo-sensei. You must not eat here.' },
       { speaker: 'gojo', furigana: '……サスケさんも　[食|た]べますか？', en: '...Want some too, Sasuke?' },
       { speaker: 'sasuke', furigana: '……[食|た]べません。', en: '...I won’t.' }
     ],
@@ -1967,7 +1964,7 @@ CATALOG.add([
         explain: 'を marks the thing you switch off: でんきを けします. に is for a place or a time.' }
     ],
     names: ['ゴジョウ', 'サスケ'],
-    uses: ['g:te-wa-ikemasen', 'g:te-form', 'g:te-iru', 'g:te-kudasai', 'g:de', 'g:wa-desu', 'g:yo', 'g:kara', 'g:mo', 'g:ka', 'g:masen', 'g:masu', 'g:itsumo', 'v:さん|さん', 'v:ここ|ここ', 'v:走る|はしる', 'v:危ない|あぶない', 'v:この|この', 'v:ドア|ドア', 'v:押す|おす', 'v:引く|ひく', 'v:ください|ください', 'v:あの|あの', 'v:電気|でんき', 'v:消す|けす', 'v:いつも|いつも', 'v:つける|つける', 'v:食べる|たべる', 'k:食'],
+    uses: ['g:te-wa-ikemasen', 'g:te-form', 'g:te-iru', 'g:te-kudasai', 'g:de', 'g:wa-desu', 'g:yo', 'g:kara', 'g:mo', 'g:ka', 'g:masen', 'g:masu', 'g:itsumo', 'v:さん|さん', 'v:ここ|ここ', 'v:走る|はしる', 'v:危ない|あぶない', 'v:この|この', 'v:ドア|ドア', 'v:押す|おす', 'v:引く|ひく', 'v:ください|ください', 'v:あの|あの', 'v:電気|でんき', 'v:消す|けす', 'v:いつも|いつも', 'v:つける|つける', 'v:食べる|たべる', 'v:先生|せんせい', 'k:食', 'k:先', 'k:生'],
     verified: true }),
 
   L({ id: 'l:n5-dlg-morning-order', format: 'dialogue',
@@ -2069,7 +2066,8 @@ CATALOG.add([
       { speaker: 'yor', furigana: 'にくも　いれますか？', en: 'Do I put the meat in too?' },
       { speaker: 'sanji', furigana: 'いいえ、にくは　まだです。しょうゆも　まだですよ。', en: 'No, not the meat yet. Not the soy sauce yet, either.' },
       { speaker: 'yor', furigana: '……しょうゆは　もう　いれました。', en: '...I already put the soy sauce in.' },
-      { speaker: 'sanji', furigana: 'だいじょうぶです！　まだ　[六|ろく][時|じ]です。', en: 'It’s all right! It’s still only six.' }
+      { speaker: 'sanji', furigana: 'だいじょうぶです！　やさいは　まだ　たくさん　ありますよ。', en: 'It’s all right! There are still lots of vegetables.' },
+      { speaker: 'yor', furigana: '……もういちど　きります！', en: '...I’ll cut them again!' }
     ],
     remixes: [
       { scene: 'Yor asks before adding the soy sauce.', en: 'Do I put the soy sauce in too?',
@@ -2080,7 +2078,7 @@ CATALOG.add([
         explain: 'まだです alone means "not yet". もう needs a finished action, like もう いれました; もうです is not said.' }
     ],
     names: ['サンジ', 'ヨル'],
-    uses: ['g:mada', 'g:mou', 'g:mashou', 'g:te-form', 'g:te-kudasai', 'g:ga', 'g:wa-desu', 'g:wo', 'g:ni', 'g:mo', 'g:ka', 'g:yo', 'g:masu', 'g:mashita', 'g:totemo', 'v:さん|さん', 'v:一緒|いっしょ', 'v:晩御飯|ばんごはん', 'v:作る|つくる', 'v:私|わたし', 'v:料理|りょうり', 'v:下手|へた', 'v:大丈夫|だいじょうぶ', 'v:この|この', 'v:野菜|やさい', 'v:切る|きる', 'v:ください|ください', 'v:もう|もう', 'v:とても|とても', 'v:きれい|きれい', 'v:肉|にく', 'v:入れる|いれる', 'v:いいえ|いいえ', 'v:まだ|まだ', 'v:しょうゆ|しょうゆ', 'v:六|ろく', 'v:時|じ', 'k:六', 'k:時'],
+    uses: ['g:mada', 'g:mou', 'g:mashou', 'g:te-form', 'g:te-kudasai', 'g:ga', 'g:wa-desu', 'g:wo', 'g:ni', 'g:mo', 'g:ka', 'g:yo', 'g:masu', 'g:mashita', 'g:totemo', 'v:さん|さん', 'v:一緒|いっしょ', 'v:晩御飯|ばんごはん', 'v:作る|つくる', 'v:私|わたし', 'v:料理|りょうり', 'v:下手|へた', 'v:大丈夫|だいじょうぶ', 'v:この|この', 'v:野菜|やさい', 'v:切る|きる', 'v:ください|ください', 'v:もう|もう', 'v:とても|とても', 'v:きれい|きれい', 'v:肉|にく', 'v:入れる|いれる', 'v:いいえ|いいえ', 'v:まだ|まだ', 'v:しょうゆ|しょうゆ', 'v:たくさん|たくさん', 'v:ある|ある', 'v:もう一度|もういちど'],
     notes: 'uses v:いいえ|いいえ, which is unverified, so the dialogue is too.',
     verified: false }),
 
@@ -2094,9 +2092,10 @@ CATALOG.add([
       { speaker: 'gojo', furigana: 'おさらと　スプーンは？', en: 'And the plates and spoons?' },
       { speaker: 'killua', furigana: 'それも　まだ。', en: 'Not those either.' },
       { speaker: 'gojo', furigana: 'カップも　まだ　おいて　いませんか？', en: 'You haven’t put out the cups yet either?' },
-      { speaker: 'killua', furigana: 'テーブルには　チョコレートが　ある。[先生|せんせい]は？', en: 'There’s chocolate on the table. What about you?' },
-      { speaker: 'gojo', furigana: 'わたしは　かびんを　おきましたよ！', en: 'I put out the vase!' },
-      { speaker: 'killua', furigana: 'かびんは　[食|た]べない。', en: 'Nobody eats a vase.' }
+      { speaker: 'killua', furigana: '[先生|せんせい]は？　ばんごはんは？', en: 'What about you, sensei? Where’s dinner?' },
+      { speaker: 'gojo', furigana: '……まだ　つくって　いません。', en: '...I haven’t made it yet.' },
+      { speaker: 'killua', furigana: '……チョコレートを　[食|た]べる。', en: '...I’m eating chocolate.' },
+      { speaker: 'gojo', furigana: 'わたしも　[食|た]べます！', en: 'Me too!' }
     ],
     bridge: [
       { text: 'チョコレート', gloss: 'チョコレート = chocolate' }
@@ -2110,7 +2109,7 @@ CATALOG.add([
         explain: 'To ask "yet?", use もう with ました: もう おきましたか. まだ belongs in the "not yet" answer.' }
     ],
     names: ['ゴジョウ', 'キルア'],
-    uses: ['g:mada-te-imasen', 'g:mada', 'g:mou', 'g:te-iru', 'g:te-form', 'g:nai-form', 'g:mashita', 'g:wo', 'g:ni', 'g:to', 'g:mo', 'g:ga', 'g:yo', 'g:ka', 'v:さん|さん', 'v:もう|もう', 'v:ちゃわん|ちゃわん', 'v:テーブル|テーブル', 'v:置く|おく', 'v:まだ|まだ', 'v:お皿|おさら', 'v:スプーン|スプーン', 'v:それ|それ', 'v:カップ|カップ', 'v:ある|ある', 'v:先生|せんせい', 'v:私|わたし', 'v:花瓶|かびん', 'v:食べる|たべる', 'k:先', 'k:生', 'k:食'],
+    uses: ['g:mada-te-imasen', 'g:mada', 'g:mou', 'g:te-iru', 'g:te-form', 'g:nai-form', 'g:mashita', 'g:masu', 'g:wo', 'g:ni', 'g:to', 'g:mo', 'g:ka', 'v:さん|さん', 'v:もう|もう', 'v:ちゃわん|ちゃわん', 'v:テーブル|テーブル', 'v:置く|おく', 'v:まだ|まだ', 'v:お皿|おさら', 'v:スプーン|スプーン', 'v:それ|それ', 'v:カップ|カップ', 'v:先生|せんせい', 'v:晩御飯|ばんごはん', 'v:作る|つくる', 'v:私|わたし', 'v:食べる|たべる', 'k:先', 'k:生', 'k:食'],
     notes: 'チョコレート is not on the N5 list: a bridge only.',
     verified: true }),
 
@@ -2148,7 +2147,7 @@ CATALOG.add([
 
   L({ id: 'l:n5-dlg-post-office', format: 'dialogue',
     title: 'At the post office', goal: 'You can say what someone has to do with 〜なくてはいけません.',
-    scene: 'Sasuke brings a letter to the post office. Nami is at the counter, and she likes selling things.',
+    scene: 'Sasuke brings a letter to the post office. Nami is at the counter and tries upselling.',
     cast: { nami: { name: 'Nami', jp: 'ナミ', gender: 'F', role: 'Clerk' }, sasuke: { name: 'Sasuke', jp: 'サスケ', gender: 'M', role: 'Customer' } },
     lines: [
       { speaker: 'sasuke', furigana: '……この　てがみを　だしたいです。', en: '...I want to send this letter.' },
@@ -2174,28 +2173,28 @@ CATALOG.add([
 
   L({ id: 'l:n5-dlg-help-offer', format: 'dialogue',
     title: 'Shall I help?', goal: 'You can offer help with 〜ましょうか.',
-    scene: 'Midday at the office. Kakashi walks in and offers to help Maomao with everything.',
-    cast: { kakashi: { name: 'Kakashi', jp: 'カカシ', gender: 'M', role: 'Coworker' }, maomao: { name: 'Maomao', jp: 'マオマオ', gender: 'F', role: 'Coworker' } },
+    scene: 'Midday at the pharmacy. Sanji drops by and offers to help Maomao with everything.',
+    cast: { sanji: { name: 'Sanji', jp: 'サンジ', gender: 'M', role: 'Friend' }, maomao: { name: 'Maomao', jp: 'マオマオ', gender: 'F', role: 'Pharmacist' } },
     lines: [
-      { speaker: 'kakashi', furigana: 'その　かみを　はりましょうか。', en: 'Shall I put up that paper?' },
+      { speaker: 'sanji', furigana: 'マオマオさん、その　かみを　はりましょうか。', en: 'Maomao, shall I put up that paper for you?' },
       { speaker: 'maomao', furigana: '……もう　はりました。', en: '...I already did.' },
-      { speaker: 'kakashi', furigana: '……[万|まん][年|ねん]ひつを　かしましょうか。', en: '...Shall I lend you a fountain pen?' },
+      { speaker: 'sanji', furigana: 'わたしの　[万|まん][年|ねん]ひつを　かしましょうか。', en: 'Shall I lend you my fountain pen?' },
       { speaker: 'maomao', furigana: 'ペンは　ポケットに　あります。', en: 'I have a pen in my pocket.' },
-      { speaker: 'kakashi', furigana: '……おちゃを　いれましょうか。', en: '...Shall I make some tea?' },
-      { speaker: 'maomao', furigana: '……カカシさん、もう　ひるですよ。', en: '...Kakashi, it’s already noon.' },
-      { speaker: 'kakashi', furigana: '……ひるごはんを　かいましょうか。', en: '...Shall I buy lunch?' },
+      { speaker: 'sanji', furigana: 'おちゃを　いれましょうか。', en: 'Shall I make you some tea?' },
+      { speaker: 'maomao', furigana: '……サンジさん、もう　ひるですよ。', en: '...Sanji, it’s already noon.' },
+      { speaker: 'sanji', furigana: 'ひるごはんを　つくりましょうか！', en: 'Shall I make you lunch?' },
       { speaker: 'maomao', furigana: '……それは　おねがいします。', en: '...That one, yes please.' }
     ],
     remixes: [
-      { scene: 'Kakashi offers to put up the paper.', en: 'Shall I put up this paper?',
+      { scene: 'Sanji offers to put up the paper.', en: 'Shall I put up this paper?',
         chunks: ['この', 'かみを', 'はりましょうか。', 'はりましょう。'], answer: ['この', 'かみを', 'はりましょうか。'],
         explain: 'はりましょう is "let’s put it up" (both of us). ましょうか offers to do it for the other person: はりましょうか.' },
-      { scene: 'Kakashi offers tea.', en: 'Shall I make some tea?',
+      { scene: 'Sanji offers tea.', en: 'Shall I make some tea?',
         chunks: ['おちゃを', 'いれましょうか。', 'おちゃで'], answer: ['おちゃを', 'いれましょうか。'],
         explain: 'を marks the tea you make: おちゃを いれます. で would mark a place or a tool.' }
     ],
-    names: ['カカシ', 'マオマオ'],
-    uses: ['g:mashou-ka', 'g:wo', 'g:wa-desu', 'g:ni', 'g:ka', 'g:masu', 'g:mashita', 'g:mou', 'g:yo', 'v:さん|さん', 'v:その|その', 'v:紙|かみ', 'v:貼る|はる', 'v:もう|もう', 'v:万年筆|まんねんひつ', 'v:貸す|かす', 'v:ペン|ペン', 'v:ポケット|ポケット', 'v:ある|ある', 'v:お茶|おちゃ', 'v:入れる|いれる', 'v:昼|ひる', 'v:昼御飯|ひるごはん', 'v:買う|かう', 'v:それ|それ', 'k:万', 'k:年'],
+    names: ['サンジ', 'マオマオ'],
+    uses: ['g:mashou-ka', 'g:wo', 'g:wa-desu', 'g:ni', 'g:no', 'g:ka', 'g:masu', 'g:mashita', 'g:mou', 'g:yo', 'v:さん|さん', 'v:その|その', 'v:紙|かみ', 'v:貼る|はる', 'v:もう|もう', 'v:私|わたし', 'v:万年筆|まんねんひつ', 'v:貸す|かす', 'v:ペン|ペン', 'v:ポケット|ポケット', 'v:ある|ある', 'v:お茶|おちゃ', 'v:入れる|いれる', 'v:昼|ひる', 'v:昼御飯|ひるごはん', 'v:作る|つくる', 'v:それ|それ', 'k:万', 'k:年'],
     verified: true }),
 
   L({ id: 'l:n5-dlg-left-corner', format: 'dialogue',
@@ -2314,7 +2313,7 @@ CATALOG.add([
 
   L({ id: 'l:n5-dlg-sports-club', format: 'dialogue',
     title: 'Who is that?', goal: 'You can say who is good at what with 〜のが上手です.',
-    scene: 'At the sports club, Emilia and Sakura watch the others train. Sakura is slim and much stronger than she looks.',
+    scene: 'At the sports club, Emilia and Sakura watch the others train. Gojo-sensei is training too.',
     cast: { sakura: { name: 'Sakura', jp: 'サクラ', gender: 'F', role: 'Friend' }, emilia: { name: 'Emilia', jp: 'エミリア', gender: 'F', role: 'Friend' } },
     lines: [
       { speaker: 'emilia', furigana: 'サクラさんは　はしるのが　とても　じょうずです！', en: 'Sakura, you’re really good at running!' },
@@ -2322,10 +2321,10 @@ CATALOG.add([
       { speaker: 'emilia', furigana: 'あの　せが　[高|たか]い　[人|ひと]は？', en: 'Who’s that tall person?' },
       { speaker: 'sakura', furigana: 'サスケさんです。はしるのも　およぐのも　じょうずです。', en: 'That’s Sasuke. He’s good at running and at swimming.' },
       { speaker: 'emilia', furigana: 'あの　せが　ひくい　[人|ひと]は？', en: 'And that short person?' },
-      { speaker: 'sakura', furigana: 'ナルトさんです。[食|た]べるのが　はやいです。', en: 'That’s Naruto. He eats fast.' },
+      { speaker: 'sakura', furigana: 'ヒナタさんです。ちびですよ。ゆめは　ちいさな　きょじんです！', en: 'That’s Hinata. He’s a shorty. His dream is to be the Little Giant!', say: 'ヒナタさんです。ちびですよ。夢は小さな巨人です！' },
       { speaker: 'emilia', furigana: 'いちばん　つよい　[人|ひと]は　だれですか。', en: 'Who is the strongest?' },
-      { speaker: 'sakura', furigana: 'わたしです！', en: 'Me!' },
-      { speaker: 'emilia', furigana: 'サクラさんは　からだが　ほそいですよ？', en: 'But you’re so slim, Sakura?' },
+      { speaker: 'sakura', furigana: 'ゴジョウ[先生|せんせい]です！', en: 'Gojo-sensei!' },
+      { speaker: 'emilia', furigana: 'ゴジョウ[先生|せんせい]は　からだが　ほそいですよ？', en: 'But Gojo-sensei is so slim?' },
       { speaker: 'sakura', furigana: 'ほそい　[人|ひと]も　つよいですよ！', en: 'Slim people can be strong too!' }
     ],
     remixes: [
@@ -2336,8 +2335,14 @@ CATALOG.add([
         chunks: ['あの', 'せが', 'たかい', 'ひとは', 'サスケさんです。', 'せを'], answer: ['あの', 'せが', 'たかい', 'ひとは', 'サスケさんです。'],
         explain: 'せが たかい means "tall" (the height is high). を cannot go with an adjective like たかい.' }
     ],
-    names: ['サクラ', 'エミリア', 'サスケ', 'ナルト'],
-    uses: ['g:no-ga-jouzu', 'g:wa-desu', 'g:ga', 'g:yo', 'g:mo', 'g:ka', 'g:adj-i', 'g:totemo', 'v:さん|さん', 'v:走る|はしる', 'v:とても|とても', 'v:上手|じょうず', 'v:泳ぐ|およぐ', 'v:あの|あの', 'v:背|せ', 'v:高い|たかい', 'v:人|ひと', 'v:低い|ひくい', 'v:食べる|たべる', 'v:速い|はやい', 'v:いちばん|いちばん', 'v:強い|つよい', 'v:誰|だれ', 'v:私|わたし', 'v:体|からだ', 'v:細い|ほそい', 'k:高', 'k:人', 'k:食'],
+    bridge: [
+      { text: 'ちび', gloss: 'ちび = shorty, a small person (casual and teasing: only about a friend)' },
+      { text: 'ゆめ', gloss: 'ゆめ = dream' },
+      { text: 'ちいさな　きょじん', gloss: 'ちいさな きょじん (小さな巨人) = the Little Giant, the short volleyball star Hinata wants to be. ちいさな = small, きょじん = giant' }
+    ],
+    names: ['サクラ', 'エミリア', 'サスケ', 'ヒナタ', 'ゴジョウ'],
+    uses: ['g:no-ga-jouzu', 'g:wa-desu', 'g:ga', 'g:yo', 'g:mo', 'g:ka', 'g:adj-i', 'g:totemo', 'v:さん|さん', 'v:走る|はしる', 'v:とても|とても', 'v:上手|じょうず', 'v:泳ぐ|およぐ', 'v:あの|あの', 'v:背|せ', 'v:高い|たかい', 'v:人|ひと', 'v:低い|ひくい', 'v:いちばん|いちばん', 'v:強い|つよい', 'v:誰|だれ', 'v:先生|せんせい', 'v:体|からだ', 'v:細い|ほそい', 'k:高', 'k:人', 'k:先', 'k:生'],
+    notes: 'ちび, ゆめ and ちいさな きょじん (Hinata’s goal, the Little Giant) are bridges only: not taught at this stage.',
     verified: true }),
 
   L({ id: 'l:n5-dlg-karaoke', format: 'dialogue',
@@ -2345,26 +2350,26 @@ CATALOG.add([
     scene: 'An evening off at karaoke. Two teachers, Gojo and Kakashi, are not at work for once.',
     cast: { gojo: { name: 'Gojo', jp: 'ゴジョウ', gender: 'M', role: 'Friend' }, kakashi: { name: 'Kakashi', jp: 'カカシ', gender: 'M', role: 'Friend' } },
     lines: [
-      { speaker: 'gojo', furigana: 'きょうは　しごとが　ありません！　カカシさん、うたいましょう！', en: 'No work today! Kakashi, let’s sing!' },
+      { speaker: 'gojo', furigana: 'きょうは　しごとが　ありません！　カカシ[先生|せんせい]、うたいましょう！', en: 'No work today! Kakashi-sensei, let’s sing!' },
       { speaker: 'kakashi', furigana: '……わたしは　うたうのが　へたです。', en: '...I’m bad at singing.' },
       { speaker: 'gojo', furigana: 'わたしは　うたうのが　じょうずですよ！　[聞|き]いて　ください！', en: 'I’m good at singing! Listen!' },
       { speaker: 'kakashi', furigana: '……[大|おお]きな　こえです。', en: '...That’s a big voice.' },
-      { speaker: 'gojo', furigana: 'つぎは　カカシさんです！　この　あかい　ボタンを　おして　ください。', en: 'You’re next, Kakashi! Press this red button.' },
+      { speaker: 'gojo', furigana: 'つぎは　カカシ[先生|せんせい]です！　この　あかい　ボタンを　おして　ください。', en: 'You’re next, Kakashi-sensei! Press this red button.' },
       { speaker: 'kakashi', furigana: '……[小|ちい]さな　こえで　うたいます。', en: '...I’ll sing in a small voice.' },
       { speaker: 'gojo', furigana: 'ほんとうに　うたうのが　へたですね！', en: 'You really are bad at singing!' },
-      { speaker: 'kakashi', furigana: '……ゴジョウさんは　[聞|き]くのが　へたです。', en: '...And you’re bad at listening.' },
+      { speaker: 'kakashi', furigana: '……ゴジョウ[先生|せんせい]は　[聞|き]くのが　へたです。', en: '...And you’re bad at listening, Gojo-sensei.' },
       { speaker: 'gojo', furigana: 'いっしょに　うたいましょう！', en: 'Let’s sing together!' }
     ],
     remixes: [
       { scene: 'Kakashi says it once more.', en: 'I am bad at singing.',
         chunks: ['わたしは', 'うたうのが', 'へたです。', 'うたいのが'], answer: ['わたしは', 'うたうのが', 'へたです。'],
         explain: 'Before の the verb stays in the dictionary form: うたうの. うたい is only a stem and cannot take の.' },
-      { scene: 'Kakashi fires back at Gojo.', en: 'Gojo is bad at listening.',
-        chunks: ['ゴジョウさんは', 'きくのが', 'へたです。', 'きくのに'], answer: ['ゴジョウさんは', 'きくのが', 'へたです。'],
+      { scene: 'Kakashi fires back at Gojo.', en: 'Gojo-sensei is bad at listening.',
+        chunks: ['ゴジョウせんせいは', 'きくのが', 'へたです。', 'きくのに'], answer: ['ゴジョウせんせいは', 'きくのが', 'へたです。'],
         explain: 'へた takes が, like すき and じょうず: きくのが へたです. に does not go with へた here.' }
     ],
     names: ['ゴジョウ', 'カカシ'],
-    uses: ['g:no-ga-heta', 'g:no-ga-jouzu', 'g:ga', 'g:ga-arimasu', 'g:mashou', 'g:wa-desu', 'g:yo', 'g:te-kudasai', 'g:te-form', 'g:de', 'g:wo', 'g:ne', 'g:ni', 'g:masu', 'g:adj-i', 'v:さん|さん', 'v:今日|きょう', 'v:仕事|しごと', 'v:ある|ある', 'v:歌う|うたう', 'v:私|わたし', 'v:下手|へた', 'v:上手|じょうず', 'v:聞く|きく', 'v:ください|ください', 'v:大きな|おおきな', 'v:声|こえ', 'v:次|つぎ', 'v:この|この', 'v:赤い|あかい', 'v:ボタン|ボタン', 'v:押す|おす', 'v:小さな|ちいさな', 'v:ほんとう|ほんとう', 'v:一緒|いっしょ', 'k:聞', 'k:大', 'k:小'],
+    uses: ['g:no-ga-heta', 'g:no-ga-jouzu', 'g:ga', 'g:ga-arimasu', 'g:mashou', 'g:wa-desu', 'g:yo', 'g:te-kudasai', 'g:te-form', 'g:de', 'g:wo', 'g:ne', 'g:ni', 'g:masu', 'g:adj-i', 'v:今日|きょう', 'v:仕事|しごと', 'v:ある|ある', 'v:歌う|うたう', 'v:私|わたし', 'v:下手|へた', 'v:上手|じょうず', 'v:聞く|きく', 'v:ください|ください', 'v:大きな|おおきな', 'v:声|こえ', 'v:次|つぎ', 'v:この|この', 'v:赤い|あかい', 'v:ボタン|ボタン', 'v:押す|おす', 'v:小さな|ちいさな', 'v:ほんとう|ほんとう', 'v:一緒|いっしょ', 'v:先生|せんせい', 'k:聞', 'k:大', 'k:小', 'k:先', 'k:生'],
     verified: true })
 ]);
 }());
