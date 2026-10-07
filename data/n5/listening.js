@@ -1403,7 +1403,7 @@ CATALOG.add([
 
   L({ id: 'l:n5-dlg-house-tour', format: 'dialogue',
     title: 'Around the house', goal: 'You can name the rooms of a house and list things with と.',
-    scene: 'Anya plays tour guide and shows Yor around the house.',
+    scene: 'Anya plays tour guide, and Yor plays along as the guest.',
     cast: { yor: { name: 'Yor', jp: 'ヨル', gender: 'F', role: 'Mother' }, anya: { name: 'Anya', jp: 'アーニャ', gender: 'F', role: 'Child' } },
     lines: [
       { speaker: 'anya', furigana: 'ここ、げんかん！', en: 'This is the entrance!' },
@@ -1756,7 +1756,7 @@ CATALOG.add([
       { scene: 'Maomao tells Lelouch where the stairs are.', en: 'The stairs are next to the entrance.',
         chunks: ['かいだんは', 'いりぐちの', 'となりです。', 'いりぐちを'], answer: ['かいだんは', 'いりぐちの', 'となりです。'],
         explain: 'の joins the place to となり: いりぐちの となり = next to the entrance. を needs a verb.' },
-      { scene: 'Lelouch asks again on his way out.', en: 'Where is the exit?',
+      { scene: 'Lelouch gives up on the pool and asks for the exit.', en: 'Where is the exit?',
         chunks: ['でぐちは', 'どこですか？', 'どこですよ。'], answer: ['でぐちは', 'どこですか？'],
         explain: 'か makes the question. よ tells someone something, so it cannot end a question with どこ.' }
     ],
