@@ -121,7 +121,7 @@ QUnit.module('dialogue', function () {
     [['ごごは　はたらきます。', '午後は働きます。', 'ごごは: the noun in kanji, the particle は kept'],
       ['[金|きん]ようびは？', '金曜日は？', 'a kana + kanji mix (金ようび) in full kanji'],
       ['いいえ、いえです。', 'いいえ、いえです。', '家 stays kana (ambiguous: うち)'],
-      ['あしたも　いま　[上|うえ]に　います。', 'あしたもいまうえにいます。', 'ambiguous readings stay kana, in kana or in ruby (明日 あす, 今 こん, 上 かみ, 居る おる)'],
+      ['あしたも　いま　[上|うえ]に　います。', 'あしたも今うえにいます。', 'ambiguous readings stay kana, in kana or in ruby (明日 あす, 上 かみ, 居る おる); 今 alone reads いま, so it is spoken in kanji'],
       ['[何|なに]を？　[何|なん]ですか。', 'なにを？なんですか。', '何 spoken from its ruby'],
       ['はを　みがきます。ピーナッツは　かえります。', '歯をみがきます。ピーナッツはかえります。', 'a one-kana word only before a particle'],
       ['いくらですか？　ほんとうですか？', 'いくらですか？ほんとうですか？', 'no 行くら, no 本とう'],
