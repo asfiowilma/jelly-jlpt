@@ -73,7 +73,13 @@ and accent right. `dialogueSpeech(line, item)` in lib.js builds it from the line
   (三日, 一人) are never swapped. Words not in `uses` stay as written: no kanji is invented.
 - numbers: from a ruby block whose kanji hold a numeral (一二三四五六七八九十百千万) to the end of its phrase, the ruby blocks are spoken
   as their authored kana (`[九|く][時|じ]` → くじ, `[一|いち]まん[三|さん]ぜん[円|えん]` → いちまんさんぜんえん) and nothing is swapped:
-  numbers, counters, dates and times are where TTS misreads.
+  numbers, counters, dates and times are where TTS misreads. A counter in ruby right after a kana number counts too: `ろく[時|じ]` → ろくじ,
+  `なん[時|じ]`, `[何|なん][円|えん]` → なんえん (`SPEECH_COUNTER`, `SPEECH_KANA_NUMBER`).
+- ambiguous readings stay in their authored kana, whether the line has them in kana or as a ruby block (`SPEECH_KANA_KEEP`): 家 いえ (not うち),
+  明日 あした (not あす), 今 いま, 何 なに / なん, 昨夜 ゆうべ, 居る いる, 入る はいる, 入口 いりぐち, 開ける あける, 上 うえ, 下 した, 中 なか,
+  辺 へん, 角 かど, 所 ところ, 物 もの, 背 せ. A one-kana word (歯 は) is swapped only before a particle (`はを` → 歯を; `ピーナッツは` stays).
+  Kana words a shorter word would split (いくら, いくつ, ほんとう: `SPEECH_KANA_WORDS`) are never swapped into. Add to these lists when an
+  audit finds a new case; a one-off goes in `say`.
 - punctuation and `……` kept, the U+3000 phrase spaces removed. The display text never changes; the speech text is never shown, so kanji
   the learner has not learned yet are fine in it.
 

@@ -116,16 +116,24 @@ QUnit.module('dialogue', function () {
 
   QUnit.test('dialogueSpeech with the item: kana words in their normal kanji spelling at word boundaries; numbers, kana words and display untouched', function (assert) {
     var it = { uses: ['v:午後|ごご', 'v:金曜日|きんようび', 'v:家|いえ', 'v:いいえ|いいえ', 'v:働く|はたらく', 'v:見る|みる', 'v:来る|くる', 'v:行く|いく',
-      'v:高い|たかい', 'v:名前|なまえ', 'v:何|なん', 'v:これ|これ', 'v:三日|みっか', 'v:五|ご', 'v:時|じ'] };
+      'v:高い|たかい', 'v:名前|なまえ', 'v:何|なん', 'v:これ|これ', 'v:三日|みっか', 'v:五|ご', 'v:時|じ',
+      'v:明日|あした', 'v:今|いま', 'v:上|うえ', 'v:歯|は', 'v:本|ほん', 'v:居る|いる'] };
     [['ごごは　はたらきます。', '午後は働きます。', 'ごごは: the noun in kanji, the particle は kept'],
       ['[金|きん]ようびは？', '金曜日は？', 'a kana + kanji mix (金ようび) in full kanji'],
-      ['いいえ、いえです。', 'いいえ、家です。', 'いえ only at a word boundary, never inside いいえ'],
+      ['いいえ、いえです。', 'いいえ、いえです。', '家 stays kana (ambiguous: うち)'],
+      ['あしたも　いま　[上|うえ]に　います。', 'あしたもいまうえにいます。', 'ambiguous readings stay kana, in kana or in ruby (明日 あす, 今 こん, 上 かみ, 居る おる)'],
+      ['[何|なに]を？　[何|なん]ですか。', 'なにを？なんですか。', '何 spoken from its ruby'],
+      ['はを　みがきます。ピーナッツは　かえります。', '歯をみがきます。ピーナッツはかえります。', 'a one-kana word only before a particle'],
+      ['いくらですか？　ほんとうですか？', 'いくらですか？ほんとうですか？', 'no 行くら, no 本とう'],
+      ['ろく[時|じ]に　ろく[時|じ][半|はん]です。', 'ろくじにろくじはんです。', 'a counter after a kana number in its kana'],
+      ['さん[円|えん]？　[何|なん][円|えん]？', 'さんえん？なんえん？', 'a counter after a kana number or a kana 何'],
+      ['ゼロ[円|えん]、[本|ほん]', 'ゼロ円、本', 'a counter kanji after no kana number stays kanji'],
       ['はたらきました。はたらきません。はたらいて　います。', '働きました。働きません。働いています。', 'a verb in ました / ません / て form'],
       ['みて　ください。', '見てください。', 'an ichidan て form; ください stays kana'],
       ['きのう　きました。こない。', 'きのう来ました。来ない。', '来る: き / こ stems; a word not in uses stays kana'],
       ['[行|い]きます。', '行きます。', 'never a word right after a ruby block (no 行来ます)'],
       ['たかくない。たかかった。', '高くない。高かった。', 'an i-adjective in くない / かった'],
-      ['これは　なんですか。', 'これは何ですか。', 'a word whose normal spelling is kana stays kana'],
+      ['これは　なんですか。', 'これはなんですか。', 'a word whose normal spelling is kana stays kana; 何 is ambiguous (なに / なん)'],
       ['おなまえは？', 'お名前は？', 'after a phrase-initial お prefix'],
       ['みっか　ごご　[五|ご][時|じ]です。', 'みっか午後ごじです。', 'dates, numbers and counters stay as their kana']
     ].forEach(function (c) { assert.strictEqual(dialogueSpeech({ furigana: c[0] }, it), c[1], c[2]); });

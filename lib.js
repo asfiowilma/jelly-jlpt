@@ -1713,13 +1713,26 @@ function speechText(s) { return furiganaParts(s).map(function (p) { return p.r |
 // at a word boundary (speechLeftOK / SPEECH_AFTER), longest first, and never across a ruby block it does not cover
 // whole. Numbers: from a ruby block whose kanji hold a numeral to the end of its phrase (U+3000 or punctuation), ruby
 // blocks are spoken as their authored kana and nothing is swapped ([九|く][時|じ] くじ, [一|いち]まん[三|さん]ぜん[円|えん]):
-// numbers, counters, dates and times are where TTS misreads. Without `item` no word is swapped. The display text
+// numbers, counters, dates and times are where TTS misreads; a counter in ruby right after a kana number counts too
+// (ろく[時|じ] ろくじ). Words with an ambiguous kanji reading stay kana (SPEECH_KANA_KEEP). Without `item` no word is swapped. The display text
 // (furigana) never changes; the speech text is never shown, so it may hold kanji the learner has not learned.
 var NUMERAL_KANJI = /[一二三四五六七八九十百千万]/;
 var SPEECH_SEP = /[　、。，！？!?…「」]/;
 // what may follow a swapped non-conjugating word: a particle, the copula, a name suffix
 var SPEECH_AFTER = /^(?:は|が|を|に|で|と|も|へ|の|や|か|よ|ね|な|だ|じゃ|から|まで|より|だけ|ごろ|ぐらい|くらい|さん|ちゃん|くん|さま|たち|しか)/;
 var SPEECH_NUMERAL_OK = /一緒|一番/; // hold a numeral kanji but are not numbers
+// Ambiguous readings: words whose kanji a TTS may read another way stay in their authored kana, both when the line
+// has them in kana (never swapped) and as a ruby block ([家|いえ] spoken いえ). 家 (うち), 明日 (あす), 何 (なに / なん:
+// 何の), 今 (こん: いま　午前 spoken 今午前 reads こんごぜん), 昨夜 (さくや), 居る (おる; and いる is kana in normal text), 入る (いる: 入ります), 入口 (いりくち), 開ける
+// (ひらける), 上 / 下 / 中 (かみ / しも / じゅう: 上と下), 辺 (あたり), 角 (かく / つの), 所 (しょ), 物 (ぶつ), 背 (せい).
+// Kept as kanji, read reliably: 今日, 昨日, 上手, 下手, 人, 後ろ, 出口. Numbers (一人, 一日) are kana anyway.
+var SPEECH_KANA_KEEP = ['家|いえ', '明日|あした', '今|いま', '何|なに', '何|なん', '昨夜|ゆうべ', '居る|いる', '入る|はいる', '入口|いりぐち',
+  '開ける|あける', '上|うえ', '下|した', '中|なか', '辺|へん', '角|かど', '所|ところ', '物|もの', '背|せ'].map(function (e) { return e.split('|'); });
+// kana words a shorter word would split wrongly (いくら → 行くら, ほんとう → 本とう): nothing is swapped at their start
+var SPEECH_KANA_WORDS = /^(?:いくら|いくつ|ほんとう)/;
+// a kana number right before a counter in ruby (ろく[時|じ], さん[円|えん]): the counter is spoken as its kana too
+var SPEECH_COUNTER = /^[時分円日月年人枚本回階歳週間杯匹冊台番度個半]$/;
+var SPEECH_KANA_NUMBER = /(?:いち|いっ|に|さん|よん|よ|し|ご|ろく|ろっ|なな|しち|はち|はっ|きゅう|く|じゅう|じゅっ|じっ|ひゃく|びゃく|ぴゃく|せん|ぜん|まん|なん)$/;
 var MASU_ENDINGS = ['ます', 'ません', 'ました', 'ませんでした', 'ましょう', 'たい', 'たく', 'たかった', 'ながら', 'に'];
 var ADJ_I_ENDINGS = ['い', 'くない', 'くなかった', 'かった', 'くて', 'く', 'ければ', 'くありません', 'そう'];
 // speechWords(item): [{ kana, kanji, conj }] from the item's `uses` vocab, longest kana first. conj = a conjugated
@@ -1731,6 +1744,7 @@ function speechWords(it) {
   (it && it.uses || []).forEach(function (id) {
     var v = CATALOG.items[id];
     if (!v || v.kind !== 'vocab' || !/[一-龯々]/.test(v.word) || isBound(v) || v.pos === 'number' ||
+      SPEECH_KANA_KEEP.some(function (e) { return e[0] === v.word && e[1] === v.reading; }) ||
       NUMERAL_KANJI.test(v.word) && !SPEECH_NUMERAL_OK.test(v.word)) return;
     var w = v.word, r = v.reading, p = v.pos || '';
     if (p === 'adj-i' && /い$/.test(w)) ADJ_I_ENDINGS.forEach(function (e) { add(r.slice(0, -1) + e, w.slice(0, -1) + e, true); });
@@ -1766,7 +1780,13 @@ function dialogueSpeech(l, it) {
   });
   var numeral = function (c) { return c && c.r && NUMERAL_KANJI.test(c.t); };
   // match(i): the longest word whose kana spells cells i.. exactly (whole cells, at least one plain kana cell)
+  var kanaFrom = function (i) { // the run of plain hiragana from cell i
+    for (var s = '', k = i; k < cells.length && !cells[k].r && /[ぁ-ゖ]/.test(cells[k].t); k++) s += cells[k].t;
+    return s;
+  };
+  var keepRuby = function (c) { return SPEECH_KANA_KEEP.some(function (e) { return e[0].indexOf(c.t) === 0 && e[1].indexOf(c.r) === 0; }); };
   var words = speechWords(it), match = function (i) {
+    if (SPEECH_KANA_WORDS.test(kanaFrom(i))) return null;
     for (var w = 0; w < words.length; w++) {
       var x = words[w], at = 0, j = i, kana = false;
       while (at < x.kana.length && j < cells.length && !numeral(cells[j])) {
@@ -1775,8 +1795,9 @@ function dialogueSpeech(l, it) {
         kana = kana || !cells[j].r; at += rr.length; j++;
       }
       if (at !== x.kana.length || !kana) continue;
-      var next = cells[j], rest = '';
-      for (var k = j; k < cells.length && !cells[k].r && /[ぁ-ゖ]/.test(cells[k].t); k++) rest += cells[k].t;
+      var next = cells[j], rest = kanaFrom(j);
+      // a one-kana word (歯 は) only before a particle: alone it is the particle (ピーナッツは)
+      if (x.kana.length === 1 && !x.conj) { if (SPEECH_AFTER.test(rest)) return { kanji: x.kanji, end: j }; continue; }
       if (x.conj || !next || !next.r && !/[ぁ-ゖ]/.test(next.t) || SPEECH_AFTER.test(rest)) return { kanji: x.kanji, end: j };
     }
     return null;
@@ -1785,10 +1806,10 @@ function dialogueSpeech(l, it) {
   while (i < cells.length) {
     var c = cells[i];
     if (!c.r && SPEECH_SEP.test(c.t)) { num = false; out += c.t === '　' ? '' : c.t; i++; continue; }
-    num = num || numeral(c);
+    num = num || numeral(c) || !!c.r && SPEECH_COUNTER.test(c.t) && i > 0 && !SPEECH_SEP.test(cells[i - 1].t) && SPEECH_KANA_NUMBER.test(out);
     var m = !num && speechLeftOK(cells, i) && match(i);
     if (m) { out += m.kanji; i = m.end; continue; }
-    out += num && c.r ? c.r : c.t; i++;
+    out += c.r && (num || keepRuby(c)) ? c.r : c.t; i++;
   }
   return out;
 }
