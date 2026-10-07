@@ -1444,21 +1444,22 @@ CATALOG.add([
       { speaker: 'sakura', furigana: '[何|なん][円|えん]ですか？', en: 'How many yen?' },
       { speaker: 'nami', furigana: '[九|きゅう]せん[円|えん]です！', en: '9,000 yen!' },
       { speaker: 'sakura', furigana: '……やすくないです。', en: '...That’s not cheap.' },
-      { speaker: 'nami', furigana: 'きのうは　[高|たか]かったですよ！', en: 'Yesterday it was expensive!' }
+      { speaker: 'nami', furigana: 'きのうは　もっと　[高|たか]かったですよ！', en: 'It was even more expensive yesterday!' }
     ],
     bridge: [
-      { text: 'じゃあ', id: 'v:じゃあ|じゃあ', gloss: 'じゃあ = then, in that case (taught later)' }
+      { text: 'じゃあ', id: 'v:じゃあ|じゃあ', gloss: 'じゃあ = then, in that case (taught later)' },
+      { text: 'もっと', id: 'v:もっと|もっと', gloss: 'もっと = more, even more (taught later)' }
     ],
     remixes: [
       { scene: 'Nami praises the new bag.', en: 'This bag is not expensive!',
         chunks: ['このかばんは', 'たかく', 'ないです！', 'たかい'], answer: ['このかばんは', 'たかく', 'ないです！'],
         explain: 'An い-adjective turns negative by changing い to く + ない: たかい → たかくない. たかい ないです is not Japanese.' },
-      { scene: 'Nami insists the old bag is a bargain today.', en: 'Yesterday it was expensive!',
-        chunks: ['きのうは', 'たかかったです！', 'たかいでした！'], answer: ['きのうは', 'たかかったです！'],
+      { scene: 'Nami insists the old bag is a bargain today.', en: 'It was even more expensive yesterday!',
+        chunks: ['きのうは', 'もっと', 'たかかったです！', 'たかいでした！'], answer: ['きのうは', 'もっと', 'たかかったです！'],
         explain: 'The past of an い-adjective changes い to かった: たかい → たかかった(です). たかいでした is a common mistake.' }
     ],
     names: ['ナミ', 'サクラ'],
-    uses: ['g:adj-i', 'g:ka', 'g:yo', 'g:wa-desu', 'v:小さい|ちいさい', 'v:かばん|かばん', 'v:ある|ある', 'v:これ|これ', 'v:この|この', 'v:新しい|あたらしい', 'v:高い|たかい', 'v:一|いち', 'v:万|まん', 'v:円|えん', 'v:じゃあ|じゃあ', 'v:古い|ふるい', 'v:安い|やすい', 'v:何|なん', 'v:九|きゅう', 'v:千|せん', 'v:昨日|きのう', 'k:小', 'k:高', 'k:一', 'k:万', 'k:円', 'k:何', 'k:九'],
+    uses: ['g:adj-i', 'g:ka', 'g:yo', 'g:wa-desu', 'v:小さい|ちいさい', 'v:かばん|かばん', 'v:ある|ある', 'v:これ|これ', 'v:この|この', 'v:新しい|あたらしい', 'v:高い|たかい', 'v:一|いち', 'v:万|まん', 'v:円|えん', 'v:じゃあ|じゃあ', 'v:古い|ふるい', 'v:安い|やすい', 'v:何|なん', 'v:九|きゅう', 'v:千|せん', 'v:昨日|きのう', 'v:もっと|もっと', 'k:小', 'k:高', 'k:一', 'k:万', 'k:円', 'k:何', 'k:九'],
     notes: '千 stays in kana: the kanji is taught later.',
     verified: true }),
 
