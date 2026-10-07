@@ -31,6 +31,10 @@ text, prompt, seed) next to the clips. Every later session loads that file; the 
 from the input's `characters[<id>].voice`. A Review cell plays the new clips; a clip that still drifted is listed in `REDO` and rendered again
 from the same reference with another seed, under the same name (only before it ships). v2 stays for the exam and listening archetype tracks.
 
+The locked references live in the repo, `tools/audio/refs/<id>@<rev>.wav` + `.json`, one pair per character at its current rev (dev-only,
+never shipped; about 7 MB). The Drive / `/content` refs folder is only a working copy: in a new session, upload the pairs from
+`tools/audio/refs/` into the notebook's refs folder before rendering, and commit any newly saved pair back here.
+
 ### Changing a voice (`rev`) or re-rendering one clip (`take`)
 
 Nothing is deleted by hand: a change gets new clip names, the notebook renders what is missing, the manifest points at the new clips.
