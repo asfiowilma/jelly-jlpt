@@ -21,6 +21,7 @@ function DialoguePractice(props) {
   var check = function () {
     var ok = answerIsRight(ex, picks);
     setRes(ok ? 'ok' : 'bad');
+    if (ok) playSfx('correct'); // no sound on a miss: practice is ungraded
     if (ok && last) { setDone(true); saveDialogState(unit.id, { practiced: true }); }
   };
   var again = function () {
