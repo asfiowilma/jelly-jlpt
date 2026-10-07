@@ -43,6 +43,16 @@ Dialogue text is hand-written for this project (`sources: ['own']`, set by `L()`
 
 `dialogueView` (lib.js) marks, per line with the phrase spaces removed (so a pattern may span `なって　いる`): bridge words, then the unit's new words (dictionary form and the stem before ます / て / た / ない / く), then the unit's grammar. A grammar item without `hl` is marked by the tokens of its `ref` / `pattern`, which is fine for a particle (は, の, を) but wrong for anything inflected. Give those an `hl` in `data/n5/grammar.js`: regex sources, the first capture group (else the whole match) is marked, e.g. `g:naru` `['(く|に)(?=なっ|なる|なり)']`. `@te`, `@ta`, `@nai`, `@dict`, `@adjneg` match the て / た / ない / dictionary form / くない after a verb or い-adjective taught so far. `tests/dialogue.js` fails when a unit's grammar point has no mark in its dialogue.
 
+## Practice swaps are remixes
+
+A swap is the same scene with ONE detail swapped (another person, item, place, time, number or choice), so the learner builds a sentence
+the dialogue never says, and it uses the stage's grammar point. Never rebuild a line word for word, or nearly (a merged question + answer,
+a trimmed phrase, one particle or name changed). Only words taught by that stage or the dialogue's bridges; the distractor is a real word
+or a wrong form the stage teaches against, swapping one-for-one with an answer chunk. Stage 34 (ません), the line `わたしは　にちようびは　はたらきません。`:
+bad `にちようびは　はたらきません。` (the line, trimmed); good "Maomao keeps Saturdays free too" `わたしは　どようびも　はたらきません。`
+(distractor `はたらきます。`). `tests/dialogue.js` fails when a swap's answer (ruby read as kana, spaces and punctuation dropped) sits
+inside a line, or its `en` is a line's `en`.
+
 ## Rules the tests enforce
 
 `tests/catalog-checks.js` (`dialogueErrors`, `ownTextErrors`) and `tests/dialogue.js`:

@@ -215,6 +215,24 @@ QUnit.module('dialogue', function () {
     });
   });
 
+  // A Practice swap is a remix: same scene, one detail swapped, a sentence the dialogue never says.
+  // TODO: remove when stages 63-104 are remixed (another branch): then check every stage.
+  var REMIX_CHECK_MAX_STAGE = 62;
+  QUnit.test('Practice swaps never rebuild a dialogue line (answer not inside a line, en not a line en)', function (assert) {
+    var norm = function (s) { return furiganaParts(s).map(function (p) { return p.r || p.t; }).join('').replace(/[\s　、。，．,.!?！？…・「」〜~-]/g, ''); };
+    var bad = [];
+    withDialogue().forEach(function (u) {
+      if (+u.id.slice(4) > REMIX_CHECK_MAX_STAGE) return;
+      var it = CATALOG.items[u.dialogue], lines = it.lines.map(function (l) { return norm(l.furigana); });
+      it.remixes.forEach(function (r, n) {
+        var ans = norm(r.answer.join('')), w = u.id + ' swap ' + (n + 1) + ' ';
+        lines.forEach(function (l, i) { if (l.indexOf(ans) >= 0) bad.push(w + 'answer is inside line ' + (i + 1)); });
+        it.lines.forEach(function (l, i) { if (l.en.trim() === r.en.trim()) bad.push(w + 'en is the en of line ' + (i + 1)); });
+      });
+    });
+    assert.deepEqual(bad, []);
+  });
+
   QUnit.test('dialogState: open / heard per unit, device-only (not in the synced device keys)', function (assert) {
     assert.ok(DEVICE_PREF_KEYS.indexOf(DIALOGS_KEY) < 0, 'not a synced pref');
     // the headless runner's localStorage is a no-op (run-tests.js plays the persistence through DialogueSection): skip there
