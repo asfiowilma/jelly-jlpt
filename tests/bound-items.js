@@ -24,9 +24,9 @@ QUnit.module('bound morphemes and homograph readings', function () {
     return buildUnits(PLAN, CATALOG).filter(function (u) { return (u.vocab || []).some(function (x) { return x.id === id; }); })[0];
   };
 
-  QUnit.test('the 30 N5 suffixes / prefixes / counters each have ≥ 2 well-formed contexts', function (assert) {
+  QUnit.test('every suffix / prefix / counter (32 at N5) has ≥ 2 well-formed contexts', function (assert) {
     var bs = bound();
-    assert.equal(bs.length, 30, '30 bound items');
+    assert.equal(bs.filter(function (b) { return b.level === 'N5'; }).length, 32, '32 N5 bound items (分 and 週間 became counters, N5 r1 T4)');
     bs.forEach(function (b) {
       var cs = boundContexts(b);
       assert.ok(cs.length >= 2 && cs.length === (b.contexts || []).length, b.id + ': ' + cs.length + ' contexts, all parse');
@@ -43,12 +43,12 @@ QUnit.module('bound morphemes and homograph readings', function () {
     });
   });
 
-  QUnit.test('20 builds of every N5 unit: a bound item is only asked in context, never offered bare', function (assert) {
+  QUnit.test('20 builds of every planned unit: a bound item is only asked in context, never offered bare', function (assert) {
     var standalone = {}, bareOption = 0, asked = 0, ex1 = null;
     var glosses = {};
     bound().forEach(function (b) { glosses[glossText(b)] = b.id; });
     withSeed(40, function () {
-      buildUnits(PLAN, CATALOG).filter(function (u) { return u.level === 'N5'; }).forEach(function (u) {
+      buildUnits(PLAN, CATALOG).forEach(function (u) {
         for (var r = 0; r < 20; r++) buildExercises(u).forEach(function (ex) {
           if (isBound(ex.item)) {
             asked++;
@@ -105,13 +105,29 @@ QUnit.module('bound morphemes and homograph readings', function () {
         assert.equal(g.options[g.correct], '階 (かい)');
         assert.ok(g.parts.some(function (p) { return p.t === GAP_BLANK; }) && /floor/.test(g.note), 'blank + English');
         assert.equal(new Set(g.options).size, 4, 'four distinct options');
-        var t = by.ctxRead.make();
+        // 階 is not one of the N5 kanji: never shown bare (N5 r1 vocab T6). Typed: 階 carries its plain reading かい,
+        // the compound's own reading (さんがい) is still asked; no MC reading (its options would be the ruby).
+        var t = by.ctxRead.make(), kai = t.parts.filter(function (p) { return p.t === '階'; })[0];
+        assert.ok(kai && kai.r === 'かい', t.question + ': 階 with ruby かい');
         assert.ok(t.answers.indexOf('さんがい') >= 0 || t.answers.indexOf('にかい') >= 0 || t.answers.indexOf('いっかい') >= 0, t.question + ' → ' + t.answers.join('/'));
-        if (t.question === '三階') assert.ok(answerIsRight(t, 'さんかい') && answerIsRight(t, 'さんがい'), '三階: both readings JMdict lists');
-        assert.notOk(t.parts.some(function (p) { return p.t.indexOf('階') >= 0 && p.r; }), 'no ruby on the asked morpheme');
-        var m = by.ctxReadMc.make();
+        assert.notOk(answerLeaks(t), 'no leak');
+        assert.strictEqual(by.ctxReadMc.make(), null, '階: no MC reading');
+      }
+    });
+    var sankai = boundContexts(item).filter(function (c) { return c.word === '三階'; })[0];
+    assert.ok(sankai && sankai.answers.indexOf('さんかい') >= 0 && sankai.answers.indexOf('さんがい') >= 0, '三階: both readings JMdict lists');
+    // a counter whose kanji is taught (人 にん): typed and MC reading of the compound, no ruby on the morpheme
+    var nin = v('v:人|にん'), late = buildUnits(PLAN, CATALOG).filter(function (x) { return x.level === 'N5'; }).slice(-1)[0];
+    var nb = {};
+    formsFor(nin, quizContext(late)).forEach(function (fm) { nb[fm.name] = fm; });
+    withSeed(3, function () {
+      for (var i = 0; i < 10; i++) {
+        var t = nb.ctxRead.make();
+        assert.ok(t && /にん$/.test(t.answers[0]), t && t.question + ' → ' + t.answers.join('/'));
+        assert.notOk(t.parts.some(function (p) { return p.t.indexOf('人') >= 0 && p.r; }), 'no ruby on the asked morpheme');
+        var m = nb.ctxReadMc.make();
         if (m) {
-          var bc = boundContexts(item).filter(function (c) { return c.word === m.question; })[0];
+          var bc = boundContexts(nin).filter(function (c) { return c.word === m.question; })[0];
           m.options.forEach(function (o, k) { if (k !== m.correct) assert.ok(bc.answers.indexOf(o) < 0, 'MC distractor ' + o + ' is not a valid reading'); });
         }
       }
@@ -178,5 +194,17 @@ QUnit.module('near-synonym typed meaning (コップ / カップ)', function () {
     assert.equal(t && t.word, 'カップ', 'cup → retry');
     assert.ok(/カップ/.test(otherMeaningNote(ex, t)));
     assert.equal(otherMeaning(ex, 'tumbler'), null, 'own meaning is right');
+  });
+  QUnit.test('a compound read with a sound change explains it on the answer (N5 r1 newbie N1: 三杯)', function (assert) {
+    var ctx = function (id, w) { var v = CATALOG.items[id]; return [v, boundContexts(v).filter(function (b) { return b.word === w; })[0]]; };
+    var a = ctx('v:杯|はい', '三杯'), b = ctx('v:杯|はい', '二杯'), c = ctx('v:回|かい', '三回'), d = ctx('v:時|じ', '九時');
+    assert.strictEqual(soundChange(a[0], a[1]), 'Sound change: 三 (さん) + 杯 (はい) is read さんばい.');
+    assert.strictEqual(soundChange(b[0], b[1]), undefined, 'にはい: no change');
+    assert.strictEqual(soundChange(c[0], c[1]), undefined, 'さんかい: no change');
+    assert.strictEqual(soundChange(d[0], d[1]), undefined, 'くじ: 九 is also く, a reading choice');
+    var u = buildUnits(PLAN, CATALOG).filter(function (x) { return (x.vocab || []).some(function (v) { return v.id === 'v:杯|はい'; }); })[0], ctx2 = quizContext(u);
+    var forms = formsFor(CATALOG.items['v:杯|はい'], ctx2).filter(function (f) { return f.name === 'ctxRead'; })[0], seen = false;
+    for (var i = 0; i < 30 && !seen; i++) { var ex = forms.make(); if (ex && ex.question === '三杯') { seen = true; assert.ok(/さんばい/.test(ex.explain), ex.explain); } }
+    assert.ok(seen, '三杯 asked');
   });
 });

@@ -91,6 +91,11 @@ function StatsView(props) {
   var cells = studyHeatmap(logs, today, 52);
   var ce = React.createElement;
   var mocksTaken = Store.snapshot().mocks || [];
+  // The trend shows one level against its own pass line: the learner's level (props.level), else
+  // the level of the latest attempt (snapshot is newest first).
+  var mockLv = function (m) { var x = CATALOG.items[m.mockId]; return x ? x.level : 'N5'; };
+  var trendLv = mocksTaken.some(function (m) { return mockLv(m) === props.level; }) ? props.level : mocksTaken.length ? mockLv(mocksTaken[0]) : 'N5';
+  var trendMocks = mocksTaken.filter(function (m) { return mockLv(m) === trendLv; });
   var dayOf = function (i) { var d = new Date(now); return new Date(d.getFullYear(), d.getMonth(), d.getDate() + i); };
 
   // Shared tooltip: follows the pointer over any [data-tip]; on keyboard focus
@@ -244,7 +249,7 @@ function StatsView(props) {
   return ce("div", { className: "stats", onPointerMove: onMove, onPointerLeave: hideTip, onFocus: onFocus, onBlur: hideTip },
     kpis,
     ce("div", { className: "two" }, forecast, maturity),
-    mocksTaken.length > 0 && card("Mock exams", mocksTaken.length + (mocksTaken.length === 1 ? " attempt" : " attempts"), ce(MockTrend, { trend: mockTrend(mocksTaken, 'N5') })),
+    trendMocks.length > 0 && card("Mock exams" + (trendLv !== 'N5' ? " · " + trendLv : ""), trendMocks.length + (trendMocks.length === 1 ? " attempt" : " attempts"), ce(MockTrend, { trend: mockTrend(trendMocks, trendLv) })),
     heat,
     ce("div", { ref: tipRef, className: "chart-tip", role: "tooltip", 'aria-hidden': "true" }));
 }

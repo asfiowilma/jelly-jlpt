@@ -253,6 +253,7 @@ var UI_STRINGS = {
   cred_react:        { en: 'UI library',        ja: 'UIライブラリ' },
   cred_pouchdb:      { en: 'local storage and sync', ja: 'ローカル保存と同期' },
   cred_edrdg:        { en: 'readings, meanings and stroke counts checked against JMdict and KANJIDIC while writing the course (no files shipped)', ja: '読み・意味・画数の確認（ファイルは含みません）' },
+  cred_wiktionary:   { en: 'kanji stroke counts and readings cross-checked while writing the course (no text shipped)', ja: '漢字の画数・読みの確認（本文は含みません）' },
   cred_by:           { en: 'by',                ja: '作成：' },
   set_sent_credits:  { en: 'Sentence credits',  ja: '例文のクレジット' },
   set_sent_credits_n: { en: '{n} Tatoeba sentences', ja: 'Tatoeba例文{n}件' },
@@ -455,14 +456,15 @@ function useQuizBusy(active) {
   }, [active]);
 }
 // UI_JA_READY: the ja strings are placeholder drafts awaiting a native review. Until then
-// Settings offers no Japanese choice and a stored 'ja' pref behaves like 'auto'.
+// Settings offers no Japanese choice, a stored 'ja' pref behaves like 'auto', and the N4+
+// learned-kanji rule (uiJaShown) shows no Japanese string either: the UI stays English.
 var UI_JA_READY = false;
 function t(key, level) {
   var s = UI_STRINGS[key];
   if (!s) return key;
   if (window._uiLang === 'en') return s.en;
   if (window._uiLang === 'ja' && UI_JA_READY) return s.ja;
-  return uiJaShown(s.ja, level, window._learnedKanji || {}) ? s.ja : s.en;
+  return UI_JA_READY && uiJaShown(s.ja, level, window._learnedKanji || {}) ? s.ja : s.en;
 }
 // tRuby: t() as a React node — a JA label with an `rt` reading gets ruby
 // furigana when `furigana` is on (same pref UnitView uses, see furiganaOn).
@@ -470,6 +472,13 @@ function tRuby(key, level, furigana) {
   var s = UI_STRINGS[key], label = t(key, level);
   if (!s || !s.rt || !furigana || label !== s.ja) return label;
   return React.createElement('ruby', null, s.ja, React.createElement('rt', null, s.rt));
+}
+// rubyNodes(s, show): learner text with [漢字|かな] markup (tips, grammar notes) → React nodes, ruby over
+// the kanji when show (the furigana pref) is not false, else the plain kanji (N5 r1 newbie N5).
+function rubyNodes(s, show) {
+  return furiganaParts(s || '').map(function (p, i) {
+    return p.r && show !== false ? React.createElement('ruby', { key: i }, p.t, React.createElement('rt', null, p.r)) : p.t;
+  });
 }
 
 // ── Icons (navbar / settings) ────────────────────────────────────────────────

@@ -20,6 +20,17 @@ QUnit.module('pickDistractors', function () {
     });
   });
 
+  QUnit.test('meaning MC: no two wrong meanings share a sense word (N5 r2 newbie N2: "however / but" and "but / however")', function (assert) {
+    var pool = catalogOf('vocab'), bad = [];
+    ['v:しかし|しかし', 'v:でも|でも', 'v:じゃあ|じゃあ', 'v:嫌|いや', 'v:ええ|ええ'].map(I).filter(Boolean).forEach(function (v) {
+      each(function () {
+        var d = pickDistractors(v, pool, 'gloss', 3, { level: 'N5' });
+        d.forEach(function (a, i) { d.forEach(function (b, j) { if (j > i && sharesSense(a, b)) bad.push(v.id + ': ' + a + ' ~ ' + b); }); });
+      });
+    });
+    assert.deepEqual(bad.slice(0, 5), []);
+  });
+
   QUnit.test('P1-13 reading MC: the answer is not the unique "centre" of its options', function (assert) {
     var pool = catalogOf('vocab'), n = 0, centre = 0;
     pool.filter(function (v) { return !v.alt && hasKanji(v.word); }).slice(0, 150).forEach(function (v) {
@@ -95,7 +106,8 @@ QUnit.module('pickDistractors', function () {
   QUnit.test('taught items come first once there are ≥15; fewer: widened with untaught same-level items (ticket 43)', function (assert) {
     var pool = catalogOf('vocab');
     var t = I('v:食べる|たべる');
-    var verbs = pool.filter(function (v) { return /^verb/.test(v.pos) && v !== t && !sharesSense(glossText(v), glossText(t)); });
+    // same level as t: an N5 unit's taught set holds N5 items only
+    var verbs = pool.filter(function (v) { return /^verb/.test(v.pos) && v.level === t.level && v !== t && !sharesSense(glossText(v), glossText(t)); });
     var many = {}, few = {};
     verbs.slice(0, DISTRACTOR_MIN_POOL).forEach(function (v) { many[v.id] = true; });
     verbs.slice(0, 3).forEach(function (v) { few[v.id] = true; });

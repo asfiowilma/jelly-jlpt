@@ -9,8 +9,11 @@ QUnit.module('prep guide', function () {
   };
   var marks = function (s) { return (s.match(/\*\*/g) || []).length; };
 
+  // Each planned level ends with the same 7-unit block: 4 section preps, mock 1, the fix-up drill, mock 2.
+  var ofLevel = function (lv) { return guided.filter(function (u) { return u.level === lv; }); };
+
   QUnit.test('every prep and mock unit has a guide that survives buildUnits', function (assert) {
-    assert.equal(guided.length, 7, 'u106-u112');
+    PLAN.forEach(function (p) { assert.equal(ofLevel(p.level).length, 7, p.level + ': 7 guided units (N5 u106-u112)'); });
     guided.forEach(function (u) {
       var g = u.guide;
       assert.ok(g && g.lead && g.kinds.length && g.kindsLabel, u.id);
@@ -27,13 +30,19 @@ QUnit.module('prep guide', function () {
     });
   });
 
-  QUnit.test('mock kinds carry minutes, prep kinds do not; the parts sum to 90', function (assert) {
+  QUnit.test('mock kinds carry minutes, prep kinds do not; the parts sum to the level\'s test (N5 90, N4 115)', function (assert) {
     guided.forEach(function (u) {
       u.guide.kinds.forEach(function (k) { assert.equal(typeof k.min, u.kind === 'mock' ? 'number' : 'undefined', u.id); });
       if (u.kind === 'mock') assert.ok(u.guide.rules.length > 0, u.id + ' rules');
     });
-    var m = guided.filter(function (u) { return u.id === 'n5.u110'; })[0];
-    assert.equal(m.guide.kinds.reduce(function (n, k) { return n + k.min; }, 0), 90);
+    PLAN.forEach(function (p) {
+      var m = ofLevel(p.level).filter(function (u) { return u.kind === 'mock'; })[0];
+      var total = mockMinutes(p.level).reduce(function (a, b) { return a + b; }, 0);
+      assert.equal(m.guide.kinds.reduce(function (n, k) { return n + k.min; }, 0), total, m.id + ': ' + total + ' min');
+      assert.deepEqual(m.guide.kinds.map(function (k) { return k.min; }), mockMinutes(p.level), m.id + ' part minutes');
+    });
+    assert.equal(mockMinutes('N5').reduce(function (a, b) { return a + b; }, 0), 90);
+    assert.equal(mockMinutes('N4').reduce(function (a, b) { return a + b; }, 0), 115);
   });
 
   QUnit.test('** markers are balanced; at most one highlight per trap and in time', function (assert) {
@@ -46,7 +55,7 @@ QUnit.module('prep guide', function () {
 
   QUnit.test('part and glance: prep stages 1-4 only, part 0-2', function (assert) {
     guided.forEach(function (u) {
-      var g = u.guide, lit = ['n5.u106', 'n5.u107', 'n5.u108', 'n5.u109'].indexOf(u.id) >= 0;
+      var g = u.guide, lit = ofLevel(u.level).indexOf(u) < 4; // the four section preps (N5 u106-u109)
       assert.equal(g.part != null, lit, u.id + ' part');
       assert.equal(!!g.glance, lit, u.id + ' glance');
       if (lit) assert.ok(g.part >= 0 && g.part <= 2, u.id + ' range');

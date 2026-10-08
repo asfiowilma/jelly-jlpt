@@ -3,10 +3,18 @@
 // Teaching order (audit P1-1, docs/adr/0002): sentences shown or asked in a lesson use only items
 // (by `uses`) taught by that lesson.
 QUnit.module('teaching order', function () {
-  var lessons = function () { return buildUnits(PLAN, CATALOG).filter(function (u) { return u.level === 'N5' && u.kind === 'lesson'; }); };
+  var lessons = function () { return buildUnits(PLAN, CATALOG).filter(function (u) { return u.kind === 'lesson'; }); }; // every planned level
   // later(s, known): s.uses not taught yet; another spelling (alt) counts with the one the plan teaches
   var later = function (s, known) {
     return (s.uses || []).filter(function (id) { var it = CATALOG.items[id]; return !known[id] && !(it && it.alt && known[it.alt]); });
+  };
+
+  // Words the course never teaches, so no `uses` id can hold them back (N5 r1 newbie N3/N6: 彼 in shown
+  // examples and graded stems). Independent of lib.js OFF_CATALOG; a sentence holding one is never shown.
+  var NOT_TAUGHT = ['彼', '彼女', 'ビール', '人形', '親切', '本当に', '経験', '象', '出発', '失礼', '動物園'];
+  // a word a later level teaches is in that sentence's uses, so later() holds it back instead
+  var offWord = function (s) {
+    return NOT_TAUGHT.filter(function (w) { return (s.jp || '').indexOf(w) >= 0 && !(s.uses || []).some(function (id) { return id.indexOf('v:' + w + '|') === 0; }); });
   };
 
   QUnit.test('every lesson grammar point has 3 examples using nothing taught later', function (assert) {
@@ -14,7 +22,7 @@ QUnit.module('teaching order', function () {
     lessons().forEach(function (u) {
       var known = taughtIds(u);
       (u.grammar || []).forEach(function (g) {
-        var clean = (g.examples || []).filter(function (id) { return !later(CATALOG.items[id], known).length; });
+        var clean = (g.examples || []).filter(function (id) { return !later(CATALOG.items[id], known).length && !offWord(CATALOG.items[id]).length; });
         if (clean.length < 3) short.push(u.id + ' ' + g.id + ' ' + clean.length);
       });
     });
@@ -38,6 +46,22 @@ QUnit.module('teaching order', function () {
     assert.deepEqual(bad, [], 'shown examples not the cleanest');
   });
 
+  QUnit.test('shown lesson sentences (grammar box and Example sentences) use only taught items and no non-catalog word', function (assert) {
+    var bad = [], n = 0;
+    lessons().forEach(function (u) {
+      var known = taughtIds(u), shown = unitExamples(u);
+      (u.grammar || []).forEach(function (g) { shown = shown.concat(lessonExamples(g, u)); });
+      shown.forEach(function (s) {
+        n++;
+        var why = later(s, known).concat(offWord(s));
+        if (why.length) bad.push(u.id + ' ' + s.id + ' ' + why.join(','));
+      });
+    });
+    assert.ok(n > 250, n + ' shown sentences');
+    assert.deepEqual(bad, [], 'shown sentences with a later-taught or non-catalog word');
+    assert.ok(untaughtCount({ jp: '彼は学生です。', uses: [] }, {}) > 0, 'a non-catalog word counts as untaught');
+  });
+
   // Ratchet (audit P1-1 after-measurement: 0 of 201 shown examples and 0 of 137 sentence questions in 5
   // builds leaked; before: 60 / 201 and 144 / 226). Raise only with a reason in docs/adr/0002.
   var LEAK_SHARE_MAX = 0, EARLY_UNITS = ['n5.u019', 'n5.u020', 'n5.u028', 'n5.u030', 'n5.u031'];
@@ -57,6 +81,35 @@ QUnit.module('teaching order', function () {
     assert.ok(n > 250, n + ' examples and sentence questions');
     assert.ok(leaks.length <= LEAK_SHARE_MAX * n, leaks.length + ' leak(s): ' + leaks.slice(0, 10).join(', '));
     assert.deepEqual(leaks.filter(function (l) { return EARLY_UNITS.indexOf(l.split(' ')[0]) >= 0; }), [], 'early grammar units: none');
+  });
+
+  // `uses` must name the conjugation a sentence shows, else untaughtCount cannot hold it back (N5 r1 grammar
+  // T1/T2: 働いてる, 食べなかった, 話した shown before their form was taught). Conservative detectors: a hit
+  // needs one id of the form's family in `uses`. ponytail: regexes miss a bare connective て (歩いて学校へ) and
+  // casual てる / てます; those were added by hand. Exclusions keep とても, じゃない, くない, 少ない, ふたり out.
+  var TE = ['g:te-form', 'g:te-iru', 'g:te-kudasai', 'g:te-kara', 'g:te-mo-ii', 'g:te-wa-ikemasen', 'g:mada-te-imasen',
+    'g:nai-de-kudasai', 'g:nakute-wa-ikenai', 'g:nakute-wa-naranai', 'g:nakucha-ikenai'];
+  var FORM_DETECTORS = [
+    ['g:wo', /を/, ['g:wo']], // N5 r1 newbie N5: コーヒーを飲みます shown in u028, を taught in u036
+    ['g:te-form', /(?<!と)(?:て|(?<=[いん])で)(?:い[るまたな]|ください|から|もいい|はいけ)/, TE],
+    ['g:te-iru', /(?<!と)(?:て|(?<=[いん])で)い(?:る|ます|ました|ません|た|な)/, ['g:te-iru', 'g:mada-te-imasen']],
+    ['g:ta-form', /(?<![あふまわ])(?:た|(?<=[いん])だ)(?:こと|り|ら|ほう)|(?<![まで])した(?=[。、？！よねのけ]|$)|(?<![かだ])った(?=[。、？！よねのけ]|$)|(?<=[べめれけせてね見来寝])た(?=[。、？！よねのけ])/,
+      ['g:ta-form', 'g:ta-koto-ga-aru', 'g:tari-tari', 'g:hou-ga-ii']],
+    ['g:nai-form', /(?<![くゃはすぶ少危汚])(?<!きた)(?<!つまら)(?:ない|なかった)/,
+      ['g:nai-form', 'g:nai-de-kudasai', 'g:nakute-wa-ikenai', 'g:nakute-wa-naranai', 'g:nakucha-ikenai', 'g:mada-te-imasen', 'g:ta-koto-ga-aru', 'g:ta-form', 'v:ない|ない']]
+  ];
+  QUnit.test('every N5 sentence lists the て / た / ない form it shows in `uses`', function (assert) {
+    var miss = [];
+    catalogOf('sentence').filter(function (s) { return s.level === 'N5'; }).forEach(function (s) {
+      FORM_DETECTORS.forEach(function (d) {
+        if (d[1].test(s.jp) && !d[2].some(function (id) { return (s.uses || []).indexOf(id) >= 0; })) miss.push(d[0] + ' ' + s.id + ' ' + s.jp);
+      });
+    });
+    assert.deepEqual(miss, [], 'sentences showing a form their uses omit');
+    [['待っています。', 1], ['とてもいいです。', -1], ['学生じゃない。', -1], ['行ったことがある。', 2], ['食べなかった。', 3], ['話した。', 2], ['でした。', -1]].forEach(function (c) {
+      var hit = FORM_DETECTORS.slice(1).map(function (d, i) { return d[1].test(c[0]) ? i : -1; }).filter(function (i) { return i >= 0; });
+      assert.ok(c[1] < 0 ? !hit.length : hit.indexOf(c[1]) >= 0, c[0] + ' → ' + hit.join(','));
+    });
   });
 
   // Quiz questions: a sentence form never uses an item taught after the unit. makeQuestion's last
@@ -83,22 +136,25 @@ QUnit.module('teaching order', function () {
     assert.deepEqual(quizSentences([a, b], { taught: known, leakOk: true }).map(function (s) { return s.id; }), ['b', 'a'], 'leakOk: cleanest first');
   });
 
-  QUnit.test('5 builds of every N5 lesson: no sentence question uses an item taught later', function (assert) {
-    var rnd = Math.random, bad = [], sent = 0, fallback = [];
+  // reviews too, and every sentence form: gap, ★ order (chunked sentences: N5 r1 newbie, a より ★ item in u048 / u053)
+  QUnit.test('5 builds of every planned lesson and review: no sentence question uses an item taught later', function (assert) {
+    var rnd = Math.random, bad = [], sent = 0, fallback = [], orders = 0;
     Math.random = seeded(11);
     try {
-      lessons().forEach(function (u) {
+      buildUnits(PLAN, CATALOG).filter(function (u) { return u.kind === 'lesson' || u.kind === 'review'; }).forEach(function (u) {
         var known = taughtIds(u);
         for (var r = 0; r < 5; r++) buildExercises(u).forEach(function (ex) {
           if (ex.leaky && LEAK_FALLBACK_OK.indexOf(u.id + ' ' + ex.itemId) < 0) fallback.push(u.id + ' ' + ex.itemId);
           var s = ex.sentence && CATALOG.items[ex.sentence];
           if (!s || s.kind !== 'sentence') return;
           sent++;
-          if (later(s, known).length && !ex.leaky) bad.push(u.id + ' ' + ex.form + ' ' + s.id);
+          if (ex.type === 'order') orders++;
+          if ((later(s, known).length || offWord(s).length) && !ex.leaky) bad.push(u.id + ' ' + ex.form + ' ' + s.id);
         });
       });
     } finally { Math.random = rnd; }
     assert.ok(sent > 50, sent + ' sentence-based questions');
+    assert.ok(orders > 20, orders + ' ★ order questions');
     assert.deepEqual(bad, [], 'sentences with later-taught items');
     assert.deepEqual(fallback, [], 'leaky fallback outside LEAK_FALLBACK_OK');
   });

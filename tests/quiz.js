@@ -30,7 +30,13 @@ QUnit.module('quiz difficulty model', {
 
   QUnit.test('Q29 counts (maximums since ticket 43): kana 10, N5 12, N4 14, N3+ 16, review 20; raised to cover every item, max 30', function (assert) {
     assert.strictEqual(quizLength({ kind: 'kana', level: 'N5' }, 5), 10);
-    assert.strictEqual(quizLength({ kind: 'kana', level: 'N5' }, 21), 21);
+    assert.strictEqual(quizLength({ kind: 'kana', level: 'N5' }, 18), 18);
+    assert.strictEqual(quizLength({ kind: 'kana', level: 'N5' }, 25), KANA_QUIZ_MAX, 'a kana stage stops at 22 (N5 r1 newbie N1)');
+    assert.ok(KANA_QUIZ_MAX <= 22);
+    buildUnits(PLAN, CATALOG).filter(function (u) { return u.kind === 'kana'; }).forEach(function (u) {
+      var items = quizItems(u), n = quizSize(u, items);
+      if (n > Math.max(KANA_QUIZ_MAX, u.kana.length + items.length - u.kana.length)) assert.ok(false, u.id + ': ' + n + ' questions, over the kana cap and more than reading each new kana once + each word\'s meaning needs (u017)');
+    });
     assert.strictEqual(quizLength({ kind: 'lesson', level: 'N5' }, 3), 12);
     assert.strictEqual(quizLength({ kind: 'lesson', level: 'N5' }, 14), 14);
     assert.strictEqual(quizLength({ kind: 'lesson', level: 'N4' }, 3), 14);
@@ -146,7 +152,8 @@ QUnit.module('quiz difficulty model', {
   QUnit.test('every gap question in the N5 plan has exactly one surface that fits', function (assert) {
     var n = 0;
     this.units.filter(function (u) { return u.kind === 'lesson'; }).forEach(function (u) {
-      for (var r = 0; r < 4; r++) buildExercises(u).filter(function (e) { return e.form === 'gap'; }).forEach(function (e) {
+      // 8 builds: te-iru / te-kudasai gaps are gone (N5 r1 grammar T3), so 4 builds sometimes drew only ~10
+      for (var r = 0; r < 8; r++) buildExercises(u).filter(function (e) { return e.form === 'gap'; }).forEach(function (e) {
         n++;
         var g = CATALOG.items[e.itemId];
         e.options.forEach(function (o, i) {
@@ -171,7 +178,10 @@ QUnit.module('quiz difficulty model', {
     assert.ok(answerIsRight(ask('高'), 'こう') && answerIsRight(ask('高'), 'たか'), '高 こう / たか');
     assert.ok(answerIsRight(ask('行'), 'おこなう'), '行 extra kun おこなう');
     assert.ok(answerIsRight(ask('日'), 'じつ'), '日 extra on じつ');
-    catalogOf('kanji').forEach(function (k) {
+    // every kanji a unit teaches (a level with no plan yet has no kanji question to ask)
+    var taughtKanji = catalogOf('kanji').filter(function (k) { return units.some(function (x) { return (x.kanji || []).indexOf(k) >= 0; }); });
+    assert.ok(taughtKanji.length >= 79, taughtKanji.length + ' taught kanji');
+    taughtKanji.forEach(function (k) {
       var e = ask(k.char);
       kanjiValidReadings(k).forEach(function (r) { if (!answerIsRight(e, r)) assert.ok(false, k.char + ' rejects ' + r); });
     });

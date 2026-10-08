@@ -28,6 +28,16 @@ QUnit.module('srsDueCards', function () {
     };
     assert.equal(srsDueCards(cards).length, 3);
   });
+
+  QUnit.test('at most KANA_DUE_MAX kana cards are due, most overdue first; words are never capped (N5 r1 newbie N7)', function (assert) {
+    var now = Date.now(), cards = {};
+    for (var i = 0; i < 107; i++) cards['k' + i] = { id: 'k' + i, type: 'kana', due: now - 1000 - i };
+    for (var j = 0; j < 23; j++) cards['v' + j] = { id: 'v' + j, type: 'vocab', due: now - 1000 };
+    var due = srsDueCards(cards), kana = due.filter(function (c) { return c.type === 'kana'; });
+    assert.equal(kana.length, KANA_DUE_MAX);
+    assert.equal(due.length - kana.length, 23, 'every due word');
+    assert.ok(kana.every(function (c) { return +c.id.slice(1) >= 107 - KANA_DUE_MAX; }), 'the most overdue kana');
+  });
 });
 
 

@@ -86,7 +86,7 @@ QUnit.module('kana unit words (ticket 42)', function () {
   });
 
   QUnit.test('word questions: the five kana-word forms only, kana only, options readable, one right answer', function (assert) {
-    var forms = {};
+    var forms = {}, picks = 0, centre = 0;
     withSeed(3, function () {
       kanaUnits().concat(kanaReviews()).forEach(function (u) {
         var learned = learnedKana(u), taught = taughtIds(u);
@@ -106,6 +106,12 @@ QUnit.module('kana unit words (ticket 42)', function () {
             if (!answerIsRight(e, typeKana(e.question)) || answerIsRight(e, typeKana(e.question + 'a'))) assert.ok(false, tag + ': typing the shown romaji must spell the word, nothing else');
             if (!kanaReadable(e.answers[0], learned)) assert.ok(false, tag + ': answer uses unlearned kana');
           }
+          if (e.form === 'romajiPick') { // N5 r2 vocab T2: the one option nearest all others was the answer 95%
+            var sum = e.options.map(function (o) { return e.options.reduce(function (t, x) { return t + editDistance(o, x); }, 0); });
+            var min = Math.min.apply(null, sum);
+            picks++;
+            if (sum[e.correct] === min && sum.filter(function (x) { return x === min; }).length === 1) centre++;
+          }
           if (e.form === 'romajiPick' || e.form === 'wordMc') {
             e.options.forEach(function (o) { if (!kanaReadable(o, learned)) assert.ok(false, tag + ': option ' + o + ' uses unlearned kana'); });
           }
@@ -122,6 +128,7 @@ QUnit.module('kana unit words (ticket 42)', function () {
       });
     });
     assert.deepEqual(Object.keys(forms).sort(), ['kanaSpell', 'meaningMc', 'romajiPick', 'romajiType', 'wordMc']);
+    assert.ok(centre / picks <= 0.3, 'romajiPick answer is the unique centre option ' + centre + '/' + picks);
   });
 
   QUnit.test('split pass mark (ticket 44): ≥85% on reading AND ≥80% on meanings', function (assert) {

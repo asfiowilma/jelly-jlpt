@@ -65,7 +65,10 @@ QUnit.module('listening', function () {
 
   QUnit.test('counts by format and listenQuestion', function (assert) {
     assert.deepEqual(['task', 'point', 'utterance', 'quick'].map(function (f) { return listeningFor('N5', f).length; }), [19, 17, 15, 24]);
-    assert.strictEqual(listeningFor('N4').length, 0, 'none at N4 yet');
+    assert.deepEqual(['task', 'point', 'utterance', 'quick'].map(function (f) { return listeningFor('N4', f).length; }), [26, 24, 16, 24], 'N4');
+    PLAN.forEach(function (p) { // every planned level has listening items of each format (mocks and prep need them)
+      ['task', 'point', 'utterance', 'quick'].forEach(function (f) { assert.ok(listeningFor(p.level, f).length > 0, p.level + ' ' + f + ' items'); });
+    });
     var it = listeningFor('N5', 'point')[0];
     var ex = listenQuestion(it, {});
     assert.strictEqual(ex.type, 'listen_dialog');
@@ -170,7 +173,8 @@ QUnit.module('listening', function () {
     var bad = [];
     listeningFor('N5').filter(function (it) { return it.format !== 'dialogue'; }).forEach(function (it) { // dialogues have their own check (tests/dialogue.js)
       var files = AUDIO_MANIFEST.tracks[it.id], q = listenQuestion(it, {});
-      if (!files) { bad.push(it.id + ': no track'); return; }
+      // a renamed or new item waits for its render: AUDIO_STALE_OK=1 (Node runner only, see run-tests.js) lets it fall back to speech
+      if (!files) { if (!(typeof process !== 'undefined' && process.env.AUDIO_STALE_OK === '1')) bad.push(it.id + ': no track'); return; }
       if (q.script.length !== files.length) bad.push(it.id + ': ' + q.script.length + ' lines, ' + files.length + ' clips');
       if (!q.script.every(function (l, j) { return l.clip === files[j]; })) bad.push(it.id + ': script clips differ from manifest order');
       if (q.spokenOptions && !q.optionSpeech.every(function (o, i) { return o.clip === q.script[q.script.length - 2 * (q.optionSpeech.length - i) + 1].clip; })) bad.push(it.id + ': optionSpeech clip');
@@ -199,8 +203,9 @@ QUnit.module('listening', function () {
       items.forEach(function (it) { n[it.answer]++; });
       return Math.max.apply(null, n) / items.length;
     };
-    ['task', 'point', 'utterance', 'quick'].forEach(function (f) {
-      var items = listeningFor('N5', f);
+    [].concat.apply([], LEVELS.map(function (lv) { return ['task', 'point', 'utterance', 'quick'].map(function (f) { return [lv, f]; }); })).forEach(function (lf) {
+      var f = lf[0] + ' ' + lf[1], items = listeningFor(lf[0], lf[1]);
+      if (!items.length) return;
       assert.ok(share(items) <= 0.45, f + ': top slot ' + Math.round(100 * share(items)) + '%');
       var longest = items.filter(function (it) {
         var l = it.options.map(len), mx = Math.max.apply(null, l);

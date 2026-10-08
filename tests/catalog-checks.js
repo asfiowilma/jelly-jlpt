@@ -15,7 +15,8 @@ QUnit.module('catalog checks', function () {
   // ponytail: no lower bound — kanji/grammar run out long before vocab does.
   // Lower bound (guide − 25%) for vocab only: 59 grammar points over 74 lessons means some
   // lessons carry no grammar, and kanji run out before vocab does.
-  var LOAD_GUIDE = { N5: { vocab: 8, kanji: 2, grammar: 1 } };
+  // N4 keeps the N5 guide (about 8 vocab / 2 kanji / 1 grammar per lesson, ±25%).
+  var LOAD_GUIDE = { N5: { vocab: 8, kanji: 2, grammar: 1 }, N4: { vocab: 8, kanji: 2, grammar: 1 } };
   var REQUIRED = { vocab: ['word', 'reading', 'pos'], kanji: ['char'], grammar: ['pattern', 'meaning'], sentence: ['jp', 'en'],
     passage: ['furigana', 'jp', 'en', 'format'], listening: ['format', 'en', 'explain'], kana: ['char', 'romaji', 'script', 'group'], mondai: ['type', 'en'], mock: ['format', 'title'] };
   var CHUNK_PUNCT_RE = /[、。？！?!\s「」]/;
@@ -33,6 +34,7 @@ QUnit.module('catalog checks', function () {
     if (it.kind === 'kanji') return jp.indexOf(it.char) >= 0;
     if (it.kind === 'vocab') {
       if (jp.indexOf(it.word) >= 0 || jp.indexOf(it.reading) >= 0) return true;
+      if ((it.altSpell || []).some(function (w) { return jp.indexOf(w) >= 0; })) return true; // its other JMdict spelling: 本当 for ほんとう
       if (it.reading === 'する') return /し[てたまな]|さ[せれ]/.test(jp); // irregular: して, しました, しない, させる
       if (!/^(verb|adj-i)/.test(it.pos || '')) return false;
       return [it.word, it.reading].some(function (w) {
@@ -66,6 +68,12 @@ QUnit.module('catalog checks', function () {
     if (levelRank(it.level) < 0) err('level ' + it.level);
     if (!nonEmptyStrings(it.sources)) err('no sources');
     if (typeof it.verified !== 'boolean') err('verified not boolean');
+    // Learner text where the kanji is often the point (引く / 弾く): every kanji carries [漢字|かな] ruby, since the
+    // tip shows before any quiz (N5 r1 newbie N5). N5 only until N4 ships its notes. A vocab notes field is authoring-only.
+    if (it.level === 'N5') ({ vocab: ['tip'], grammar: ['notes', 'formation'] }[it.kind] || []).forEach(function (f) {
+      var bare = typeof it[f] === 'string' && it[f].replace(/\[([^|\]]+)\|([^\]]+)\]/g, '').match(/[一-鿿㐀-䶿々]/g);
+      if (bare) err(f + ': kanji without ruby: ' + bare.join(''));
+    });
     // own passages / listening scripts are verified by their own rule (map Q1): see ownTextErrors
     if (it.verified && nonEmptyStrings(it.sources) && it.kind !== 'passage' && it.kind !== 'listening') {
       var distinct = it.sources.filter(function (s, i, a) { return a.indexOf(s) === i; });
@@ -133,7 +141,12 @@ QUnit.module('catalog checks', function () {
         if (typeof it.jp !== 'string' || !it.underline || it.jp.indexOf(it.underline) < 0) err('underline not in jp');
         if (!answerOk(it)) err('needs 4 distinct options + answer index');
         else if (it.options.indexOf(it.jp) >= 0) err('the sentence itself is an option');
-        else usesErrors(it.uses, it.jp + it.options[it.answer], items, err); // the word and its paraphrase
+        else usesErrors(it.uses, it.jp + furiganaText(it.options[it.answer]), items, err); // the word and its paraphrase (N4 options carry ruby)
+      } else if (it.type === 'youhou') { // 用法 (N4+): the word + 4 sentences, options[answer] uses it right
+        if (levelRank(it.level) < 1) err('用法 is an N4+ mondai');
+        if (typeof it.word !== 'string' || !it.word) err('needs the word');
+        if (!answerOk(it)) err('needs 4 distinct options + answer index');
+        else usesErrors(it.uses, furiganaText(it.word + it.options[it.answer]), items, err); // the word may be inflected in the options
       } else if (it.type === 'bunshou') {
         var marks = (it.text || '').match(/［\d+］/g) || [], blanks = it.blanks || [];
         if (!blanks.length || marks.join() !== blanks.map(function (_, i) { return '［' + (i + 1) + '］'; }).join()) err('blanks ［1］… must match blanks[] in order');
@@ -153,7 +166,12 @@ QUnit.module('catalog checks', function () {
 
   // ── Reading passages (ticket 15) ──────────────────────────────────────────
   // Per format: questions wanted, length of jp in characters (whitespace not counted).
-  var PASSAGE_FORMATS = { short: { q: 1, len: [50, 160] }, mid: { q: 2, len: [180, 360] }, info: { q: 1, len: [90, 300] } };
+  // Per level (n4-format.md §3.2): N4 texts are about 100-200 / 450 / 400 characters, mid has 3
+  // questions and info 2. ponytail: N4 ranges are the guideline ±~25%; tune once real N4 passages exist.
+  var PASSAGE_FORMATS = {
+    N5: { short: { q: 1, len: [50, 160] }, mid: { q: 2, len: [180, 360] }, info: { q: 1, len: [90, 300] } },
+    N4: { short: { q: 1, len: [80, 260] }, mid: { q: 3, len: [340, 580] }, info: { q: 2, len: [280, 520] } }
+  };
   var RUBY_RE = /\[([^|\]]+)\|([^\]]*)\]/g;
   function stripRuby(s) { return s.replace(RUBY_RE, '$1'); }
   // A kanji's readings in hiragana: on, kun stems and full kun (た.べる → た, たべる), extra.
@@ -170,7 +188,7 @@ QUnit.module('catalog checks', function () {
   function passageErrors(it, items) {
     var e = [];
     function err(msg) { e.push(it.id + ': ' + msg); }
-    var f = PASSAGE_FORMATS[it.format];
+    var f = levelTable(PASSAGE_FORMATS, it.level)[it.format];
     if (!/^p:n[1-5]-[a-z0-9-]+$/.test(it.id)) err('id not p:<level>-<slug>');
     if (!f) return [it.id + ': format ' + it.format];
     if (stripRuby(it.furigana) !== it.jp) err('jp ≠ furigana text');
@@ -385,17 +403,19 @@ QUnit.module('catalog checks', function () {
 
   // planErrors(plan, items): per-unit rules for the shipped plan (items = catalog items).
   //   lessons: no placeholder titles; vocab within guide ±25%, kanji / grammar ≤ guide +25%;
-  //            a kanji only at or after a lesson teaching a word written with it.
+  //            a kanji only at or after a lesson teaching a word written with it (a lower level's words
+  //            count: 明 in N5 明日; a kanji no catalog word uses, like 京 at N4, may go anywhere).
   //   kana units (ticket 42): 2–5 taught words (vocab) spelled in kana of the unit's script, up to 5
   //            practice words, ≥3 words in all; every word readable with the kana (and marks っ ー)
   //            learned so far.
   //   reviews: list no items; at most 6 lessons between reviews. Nothing taught twice.
   function planErrors(plan, items) {
     items = items || CATALOG.items;
-    var e = [], taught = {};
-    plan.forEach(function (lp) {
+    var e = [], taught = {}, written = ''; // words taught so far, every level (lowest first)
+    var anyWord = Object.keys(items).map(function (k) { return items[k]; }).filter(function (it) { return it.kind === 'vocab'; }).map(function (it) { return it.word; }).join(' ');
+    plan.slice().sort(function (a, b) { return levelRank(a.level) - levelRank(b.level); }).forEach(function (lp) {
       var guide = LOAD_GUIDE[lp.level];
-      var learned = {}, written = '', lessons = 0;
+      var learned = {}, lessons = 0;
       lp.units.forEach(function (u) {
         if (u.kind === 'review') {
           Object.keys(UNIT_REF_FIELDS).forEach(function (f) { if ((u[f] || []).length) e.push(u.id + ': review unit lists ' + f); });
@@ -438,7 +458,7 @@ QUnit.module('catalog checks', function () {
         }
         (u.vocab || []).forEach(function (id) { if (items[id]) written += items[id].word + ' '; });
         (u.kanji || []).forEach(function (id) {
-          if (items[id] && written.indexOf(items[id].char) < 0) e.push(u.id + ': kanji ' + items[id].char + ' before any word written with it');
+          if (items[id] && written.indexOf(items[id].char) < 0 && anyWord.indexOf(items[id].char) >= 0) e.push(u.id + ': kanji ' + items[id].char + ' before any word written with it');
         });
         if (u.kind === 'lesson' && guide) {
           ['vocab', 'kanji', 'grammar'].forEach(function (f) {
@@ -496,6 +516,7 @@ QUnit.module('catalog checks', function () {
   QUnit.test('shipped catalog levels match the reference lists (tools/ref)', function (assert) {
     if (typeof REF === 'undefined') { assert.ok(true, 'skipped: REF is loaded by run-tests.js only'); return; }
     assert.ok(REF.N5 && REF.N5.vocab.length > 500, 'N5 ref list loaded');
+    PLAN.forEach(function (p) { assert.ok(REF[p.level] && REF[p.level].vocab.length > 0, p.level + ' (planned) has a ref list'); });
     assert.deepEqual(refErrors(CATALOG.items, REF), []);
   });
 
@@ -587,6 +608,12 @@ QUnit.module('catalog checks', function () {
     assert.ok(/match blanks/.test(errsFor(with_(bs, { uses: [], text: '本［2］読み［1］。' }))), 'blank order');
     assert.ok(/blank 2/.test(errsFor(with_(bs, { uses: [], blanks: [bs.blanks[0], { options: ['ます'], answer: 0 }] }))), 'blank options');
     assert.ok(/type/.test(errsFor(with_(bs, { type: 'nope' }))), 'type');
+    var yh = { id: 'm:z', kind: 'mondai', type: 'youhou', level: 'N4', word: 'るす', options: ['るすにする。', 'るすをたべる。', 'るすがはしる。', 'るすでねる。'], answer: 0,
+      en: 'x', uses: [], sources: ['own'], verified: false };
+    assert.strictEqual(errsFor(yh), '');
+    assert.ok(/N4\+/.test(errsFor(with_(yh, { level: 'N5' }))), '用法 starts at N4');
+    assert.ok(/the word/.test(errsFor(with_(yh, { word: '' }))), 'word required');
+    assert.ok(/4 distinct/.test(errsFor(with_(yh, { options: ['a', 'b', 'c'] }))), 'four sentences');
   });
 
   QUnit.test('item checks: grammar examples', function (assert) {

@@ -4,9 +4,9 @@
 // (by the unit or earlier). Words with an untaught kanji (隣 となり) keep meaning / kana forms.
 QUnit.module('no reading question for untaught kanji', function () {
   var READING_FORMS = { readingType: 1, readingMc: 1, kanjiYomi: 1 };
-  var units = function () { return buildUnits(PLAN, CATALOG).filter(function (u) { return u.level === 'N5'; }); };
+  var units = function () { return buildUnits(PLAN, CATALOG); }; // every planned level
 
-  QUnit.test('every N5 unit: reading forms only for fully taught kanji words', function (assert) {
+  QUnit.test('every planned unit: reading forms only for fully taught kanji words', function (assert) {
     var bad = [], n = 0, tonari = 0;
     units().forEach(function (u) {
       if (u.kind === 'prep' || u.kind === 'mock') return;
@@ -59,7 +59,7 @@ QUnit.module('displayWord hides untaught kanji', function () {
 
 // No untaught kanji as an option or stem of a vocab question (靴 was shown as a kanji option in its lesson).
 QUnit.module('no untaught kanji in quiz options', function () {
-  var units = function () { return buildUnits(PLAN, CATALOG).filter(function (u) { return u.level === 'N5' && u.kind !== 'prep' && u.kind !== 'mock'; }); };
+  var units = function () { return buildUnits(PLAN, CATALOG).filter(function (u) { return u.kind !== 'prep' && u.kind !== 'mock'; }); };
   var untaught = function (text, tk) { return Array.from(String(text || '')).filter(function (c) { return hasKanji(c) && !tk[c]; }); };
   // intentional kanji: 表記 and underlined-reading forms, kanji-kind questions
   var KANJI_FORMS = { hyouki: 1, kanjiYomi: 1, kanjiReadType: 1, kanjiMeanType: 1, kanjiReadMc: 1, kanjiMeanMc: 1 };

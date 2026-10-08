@@ -94,22 +94,45 @@ QUnit.module('typed English answers', function () {
     assert.deepEqual(acceptedAnswers({ answers: ['にほんじん', 'にっぽんじん'] }), ['にほんじん', 'にっぽんじん']);
   });
 
-  QUnit.test('P1-12 no accept entry is the primary gloss of another taught word of the same kind', function (assert) {
-    // same pos family only: 降る "to rain" vs 雨 "rain" names the action, not the noun
+  QUnit.test('P1-12 no accept entry is a gloss of another taught word of the same kind', function (assert) {
+    // same pos family only: 降る "to rain" vs 雨 "rain" names the action, not the noun. Every gloss, not only
+    // the first: N5 r1 T5 found 40 entries (洗う "to clean" = 掃除's second gloss) the primary-only check missed.
+    // SHARED: a textbook answer two words really share; nearSynonyms keeps the pair apart in every quiz.
+    var SHARED = { 'v:元気|げんき': ['fine'], 'v:大丈夫|だいじょうぶ': ['fine'] };
     var taught = {};
     allUnits().forEach(function (u) { Object.assign(taught, taughtIds(u)); });
-    var vs = catalogOf('vocab').filter(function (v) { return taught[v.id] && !v.alt; }), primary = {};
-    vs.forEach(function (v) { (primary[normEn(v.gloss[0])] = primary[normEn(v.gloss[0])] || []).push(v); });
+    var vs = catalogOf('vocab').filter(function (v) { return taught[v.id] && !v.alt; }), meant = {};
+    // enForms: a gloss read with its bracket dropped and kept, as typed: それ "that (one)" means "that one" (N5 r2 vocab T1)
+    vs.forEach(function (v) { v.gloss.forEach(function (g) { enForms(g).forEach(function (k) { (meant[k] = meant[k] || []).push(v); }); }); });
     vs.forEach(function (v) {
       (v.accept || []).forEach(function (a) {
-        (primary[normEn(a)] || []).forEach(function (x) {
-          if (x !== v && x.word !== v.word && posFamily(x.pos) === posFamily(v.pos)) assert.ok(false, v.id + ' accepts "' + a + '", the meaning of ' + x.id);
+        [].concat.apply([], enForms(a).map(function (k) { return meant[k] || []; })).forEach(function (x) {
+          if (x === v || x.word === v.word) return;
+          if (!nearSynonyms(v, x)) assert.ok(false, v.id + ' accepts "' + a + '" but is an option against ' + x.id);
+          var same = x.gloss.some(function (g) { return normEn(g) === normEn(a); }); // the strict shared-meaning list keeps its first key
+          if (same && posFamily(x.pos) === posFamily(v.pos) && (SHARED[v.id] || []).indexOf(a) < 0) assert.ok(false, v.id + ' accepts "' + a + '", the meaning of ' + x.id);
         });
       });
+    });
+    ['v:元気|げんき', 'v:大丈夫|だいじょうぶ'].forEach(function (id) {
+      var v = CATALOG.items[id], x = CATALOG.items['v:結構|けっこう'];
+      assert.notOk(pickDistractors(x, catalogOf('vocab'), 'word', 40).some(function (w) { return w === v.word; }), id + ' is never a wrong option for 結構 "fine"');
     });
     ['v:兄|あに', 'v:弟|おとうと', 'v:姉|あね', 'v:妹|いもうと'].forEach(function (id) {
       var acc = (CATALOG.items[id].accept || []).map(normEn);
       assert.ok(acc.indexOf('brother') < 0 && acc.indexOf('sister') < 0, id + ': bare brother / sister never tests older vs younger');
     });
+  });
+  QUnit.test('natural answers built from a gloss in brackets pass; the bracketed word alone does not (N5 r1 newbie N2)', function (assert) {
+    var ok = function (id, typed) { var v = CATALOG.items[id]; return checkTyping(typed, meaningAnswers(v.gloss).concat(v.accept || []), englishPool()); };
+    ['ask a favour', 'ask a favor', 'ask favour', 'order food', 'ask'].forEach(function (t) { assert.ok(ok('v:頼む|たのむ', t), 'たのむ: ' + t); });
+    ['take time', 'cost money', 'take'].forEach(function (t) { assert.ok(ok('v:かかる|かかる', t), 'かかる: ' + t); });
+    assert.ok(ok('v:そう|そう', "that's right"), "そう: that's right");
+    assert.notOk(ok('v:かかる|かかる', 'time'), 'かかる: time alone');
+    assert.notOk(ok('v:頼む|たのむ', 'food'), 'たのむ: food alone');
+    assert.strictEqual(normEn('the cost of a meal'), 'cost of meal', 'articles go anywhere');
+    var u = buildUnits(PLAN, CATALOG).filter(function (x) { return (x.vocab || []).some(function (v) { return v.id === 'v:人|ひと'; }); })[0];
+    var ex = formsFor(CATALOG.items['v:人|ひと'], quizContext(u)).filter(function (f) { return f.name === 'meaningType'; })[0].make();
+    assert.ok(otherMeaning(ex, 'person from'), '人: the じん meaning is a retry, not a miss');
   });
 });

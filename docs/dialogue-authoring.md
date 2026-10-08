@@ -1,7 +1,7 @@
 # Lesson dialogue authoring guide
 
 A lesson unit may carry one short dialogue (6-10 lines, two characters) shown above its vocabulary, with a Practice card of 1-3 swaps.
-It is a listening catalog item of `format: 'dialogue'` in `data/n5/listening.js`. It is not a test format: no question, options or answer,
+It is a listening catalog item of `format: 'dialogue'` in `data/<lvl>/listening.js` (N5 and N4 so far). It is not a test format: no question, options or answer,
 no SRS card, nothing scored. Two shipped examples: `l:n5-dlg-first-class` (Stage 19, `n5.u019`) and `l:n5-dlg-forger-table` (Stage 28, `n5.u028`).
 
 ## Item shape
@@ -41,7 +41,7 @@ Dialogue text is hand-written for this project (`sources: ['own']`, set by `L()`
 
 ## Marks
 
-`dialogueView` (lib.js) marks, per line with the phrase spaces removed (so a pattern may span `なって　いる`): bridge words, then the unit's new words (dictionary form and the stem before ます / て / た / ない / く), then the unit's grammar. A grammar item without `hl` is marked by the tokens of its `ref` / `pattern`, which is fine for a particle (は, の, を) but wrong for anything inflected. Give those an `hl` in `data/n5/grammar.js`: regex sources, the first capture group (else the whole match) is marked, e.g. `g:naru` `['(く|に)(?=なっ|なる|なり)']`. `@te`, `@ta`, `@nai`, `@dict`, `@adjneg` match the て / た / ない / dictionary form / くない after a verb or い-adjective taught so far. `tests/dialogue.js` fails when a unit's grammar point has no mark in its dialogue.
+`dialogueView` (lib.js) marks, per line with the phrase spaces removed (so a pattern may span `なって　いる`): bridge words, then the unit's new words (dictionary form and the stem before ます / て / た / ない / く), then the unit's grammar. A grammar mark replaces the mark of a unit word spelled like the point (a word whose spelling or reading is in the point's `pattern`, `ref` or `formation`: それに, 予定, 間, ございます), so the point is still marked when the lesson also teaches the word. A grammar item without `hl` is marked by the tokens of its `ref` / `pattern`, which is fine for a particle (は, の, を) but wrong for anything inflected. Give those an `hl` in `data/<lvl>/grammar.js`: regex sources, the first capture group (else the whole match) is marked, e.g. `g:naru` `['(く|に)(?=なっ|なる|なり)']`. `@te`, `@ta`, `@nai`, `@dict`, `@adjneg` match the て / た / ない / dictionary form / くない after a verb or い-adjective taught so far. `tests/dialogue.js` fails when a unit's grammar point has no mark in its dialogue.
 
 ## Practice swaps are remixes
 
@@ -106,15 +106,15 @@ the clipKey gets `#<take>`, so the clip has a new name and the notebook renders 
 
 No per-line tone: each character has one locked voice (their `voice` prompt in `cast.json` carries their usual delivery: Sasuke quiet and curt, Gojo teasing,
 Frieren flat). Delivery within a line comes from punctuation only: `……` (hesitation), `！`, `？`. To change how a character sounds, edit their prompt
-(tune it in `render-notebook-v3.ipynb`, which saves the approved voice reference and prints the lines to paste) and bump their `rev` in `cast.json` (absent = 1; set 2, then 3...): the clipKey's archetype
+(tune it in `render-notebook-v5.ipynb` section 5, `TUNE = "<id>"`, which saves the approved voice reference and prints the lines to paste) and bump their `rev` in `cast.json` (absent = 1; set 2, then 3...): the clipKey's archetype
 becomes `<id>@<rev>`, so all their clips get new names and re-render. Delete nothing: see `tools/audio/README.md`.
 
 ## Adding a dialogue
 
-1. Write the item in `data/n5/listening.js` (the dialogue block at the end). Check what the unit and earlier units taught: `taughtIds(unit)` (see `tests/dialogue.js`).
-2. `tools/author-plan.js`: add `"<lesson title>": "l:n5-dlg-<slug>"` to `DIALOGUES`, then `node tools/author-plan.js` (regenerates `data/n5/plan.js`).
+1. Write the item in `data/<lvl>/listening.js` (the dialogue block at the end; ids `l:<lvl>-dlg-<slug>`). Check what the unit and earlier units taught: `taughtIds(unit)` (see `tests/dialogue.js`).
+2. `tools/plan-<lvl>.js`: add `"<lesson title>": "l:<lvl>-dlg-<slug>"` to `DIALOGUES` (keyed by the lesson row's title), then `node tools/author-plan.js <LVL>` (regenerates `data/<lvl>/plan.js`).
 3. `node tools/export-tracks.js`: fails on an unknown character or a gender mismatch; prints how many clips need rendering. Writes `tools/audio/tracks.json` and the gitignored `render-input.json`.
-4. Render the missing clips in Colab (`tools/audio/render-notebook-v3.ipynb`, one character at a time from its saved voice reference): upload `render-input.json`, render each character the table lists, then the Manifest and Zip cells download `jelly-audio-new.zip`.
+4. Render the missing clips in Colab with `tools/audio/render-notebook-v5.ipynb` (T4 GPU, Run all): it renders every missing clip of every level, dialogue characters and exam voices, from saved references, and resumes after a disconnect. First session: upload `tools/audio/refs/` and `render-input.json` when asked. The last section downloads `jelly-audio-new.zip`. Steps: `tools/audio/README.md` "Rendering with v5".
 5. Unzip, copy the mp3s into `audio/`, `node tools/build-audio-manifest.js <rendered dir>` (verifies every clip name and file, writes `audio/manifest.js`).
 6. `node tools/build-sw.js`, then `CLAUDE_PROJECT_DIR=$(pwd) node .claude/hooks/run-tests.js`. Commit `sw.js` with the change.
 

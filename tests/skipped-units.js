@@ -2,7 +2,7 @@
 
 // Ticket 38: unit:<id> docs may carry skipped:true (done by placement, not by a quiz pass).
 QUnit.module('skipped units', function () {
-  var UNITS_ = buildUnits(PLAN, CATALOG);
+  var UNITS_ = buildUnits(PLAN, CATALOG).filter(liveUnit); // the shipped levels, as the app sees them
   function fakeLs() { var d = {}; return { get: function (k) { return d[k] || null; }, set: function (k, v) { d[k] = String(v); } }; }
   function newStore() { return createStore({ ls: fakeLs(), openBackend: function () { return Promise.resolve(memoryBackend()); } }); }
   var T = new Date(2026, 5, 1, 12).getTime();

@@ -266,5 +266,329 @@
   "l:n5-shop-sunday": {
     "woman": "professional",
     "why": "shop staff giving opening hours"
+  },
+  "l:n4-meeting-prep-first": {
+    "woman": "adult",
+    "why": "office colleague asking for help"
+  },
+  "l:n4-new-tenant-mailbox": {
+    "woman": "mother",
+    "why": "landlady explaining the house rules"
+  },
+  "l:n4-clinic-after-visit": {
+    "woman": "adult",
+    "why": "office worker seeing a doctor"
+  },
+  "l:n4-airport-taxi": {
+    "woman": "adult",
+    "why": "traveller in a hurry for a flight"
+  },
+  "l:n4-get-well-gift": {
+    "woman": "adult",
+    "why": "office colleague"
+  },
+  "l:n4-report-last-page": {
+    "woman": "professional",
+    "why": "university teacher"
+  },
+  "l:n4-cooking-class-water": {
+    "woman": "professional",
+    "why": "cooking-class teacher"
+  },
+  "l:n4-parcel-by-air": {
+    "woman": "adult",
+    "why": "customer sending a parcel to her sister"
+  },
+  "l:n4-room-booking-change": {
+    "woman": "adult",
+    "why": "office colleague"
+  },
+  "l:n4-library-card-expired": {
+    "woman": "professional",
+    "why": "library counter staff"
+  },
+  "l:n4-concert-bank-first": {
+    "woman": "lively",
+    "why": "young friend planning a concert"
+  },
+  "l:n4-hotel-bags-first": {
+    "woman": "adult",
+    "why": "hotel guest"
+  },
+  "l:n4-fever-medicine-on-way": {
+    "woman": "mother",
+    "why": "mother with a sick child"
+  },
+  "l:n4-hike-what-to-bring": {
+    "woman": "professional",
+    "why": "teacher briefing students"
+  },
+  "l:n4-moving-day-boxes": {
+    "woman": "lively",
+    "why": "female university student moving house"
+  },
+  "l:n4-first-day-papers": {
+    "woman": "professional",
+    "why": "staff member running the first day"
+  },
+  "l:n4-laptop-repair-or-new": {
+    "woman": "adult",
+    "why": "customer who uses a computer for work"
+  },
+  "l:n4-temple-bus-up": {
+    "woman": "lively",
+    "why": "young tourist asking the way"
+  },
+  "l:n4-handout-early-start": {
+    "woman": "adult",
+    "why": "office worker with a family dinner"
+  },
+  "l:n4-pool-sign-in": {
+    "woman": "professional",
+    "why": "pool reception staff"
+  },
+  "l:n4-presentation-practice": {
+    "woman": "lively",
+    "why": "female student sharing a presentation"
+  },
+  "l:n4-lunch-before-gas": {
+    "woman": "lively",
+    "why": "passenger chatting casually"
+  },
+  "l:n4-aircon-leave-key": {
+    "woman": "adult",
+    "why": "tenant who works days"
+  },
+  "l:n4-gloves-for-grandma": {
+    "woman": "adult",
+    "why": "customer buying a gift for her grandmother"
+  },
+  "l:n4-trip-ticket-only": {
+    "woman": "adult",
+    "why": "colleague booking the trip"
+  },
+  "l:n4-cat-sitting-water": {
+    "woman": "lively",
+    "why": "friend going on a trip"
+  },
+  "l:n4-dentist-next-visit": {
+    "woman": "professional",
+    "why": "dental reception staff"
+  },
+  "l:n4-table-for-five": {
+    "woman": "professional",
+    "why": "restaurant staff on the phone"
+  },
+  "l:n4-why-quit-tennis": {
+    "woman": "lively",
+    "why": "friend who quit tennis after an injury"
+  },
+  "l:n4-left-on-train": {
+    "woman": "professional",
+    "why": "station staff"
+  },
+  "l:n4-farewell-party-recital": {
+    "woman": "adult",
+    "why": "office colleague"
+  },
+  "l:n4-apartment-sea-view": {
+    "woman": "lively",
+    "why": "young woman who just moved"
+  },
+  "l:n4-trip-flight-delay": {
+    "woman": "adult",
+    "why": "colleague back from a trip"
+  },
+  "l:n4-hospital-pick-up-wife": {
+    "woman": "adult",
+    "why": "office colleague"
+  },
+  "l:n4-bookshop-holiday-hours": {
+    "woman": "adult",
+    "why": "customer asking opening hours"
+  },
+  "l:n4-job-change-abroad": {
+    "woman": "adult",
+    "why": "woman who changed jobs"
+  },
+  "l:n4-son-broke-clock": {
+    "woman": "mother",
+    "why": "mother talking about her son"
+  },
+  "l:n4-hotel-room-noisy": {
+    "woman": "adult",
+    "why": "hotel guest complaining"
+  },
+  "l:n4-test-moved-tuesday": {
+    "woman": "professional",
+    "why": "teacher announcing a test date"
+  },
+  "l:n4-bag-birthday-discount": {
+    "woman": "lively",
+    "why": "young woman showing a new bag"
+  },
+  "l:n4-scolded-message": {
+    "woman": "adult",
+    "why": "office colleague"
+  },
+  "l:n4-birthday-wish-watch": {
+    "woman": "lively",
+    "why": "partner choosing a gift"
+  },
+  "l:n4-why-learn-japanese": {
+    "woman": "lively",
+    "why": "university student who loves manga"
+  },
+  "l:n4-meeting-floor-moved": {
+    "woman": "adult",
+    "why": "office colleague"
+  },
+  "l:n4-cherry-blossom-weather": {
+    "woman": "lively",
+    "why": "friend checking the forecast"
+  },
+  "l:n4-who-picks-up-yui": {
+    "woman": "mother",
+    "why": "mother arranging a school pick-up"
+  },
+  "l:n4-station-meeting-grandpa": {
+    "woman": "lively",
+    "why": "friend chatting casually"
+  },
+  "l:n4-piano-once-a-week": {
+    "woman": "lively",
+    "why": "woman who takes piano lessons"
+  },
+  "l:n4-after-graduation-plan": {
+    "woman": "adult",
+    "why": "older acquaintance asking politely"
+  },
+  "l:n4-late-for-meeting": {
+    "woman": "adult",
+    "why": "office worker late for a meeting"
+  },
+  "l:n4-gift-wrapping": {
+    "woman": "lively",
+    "why": "young shopper buying a gift"
+  },
+  "l:n4-thanks-moving-help": {
+    "woman": "lively",
+    "why": "thanking a friend casually"
+  },
+  "l:n4-broke-friends-umbrella": {
+    "woman": "lively",
+    "why": "apologising to a friend casually"
+  },
+  "l:n4-no-more-thank-you": {
+    "woman": "lively",
+    "why": "young guest at a friend's home"
+  },
+  "l:n4-message-call-back": {
+    "woman": "adult",
+    "why": "business caller leaving a message"
+  },
+  "l:n4-ask-heater-on": {
+    "woman": "lively",
+    "why": "casual request to a friend"
+  },
+  "l:n4-after-dinner-host": {
+    "woman": "lively",
+    "why": "guest thanking after dinner"
+  },
+  "l:n4-leaving-first": {
+    "woman": "adult",
+    "why": "colleague replying at work"
+  },
+  "l:n4-check-these-papers": {
+    "woman": "adult",
+    "why": "office worker asking politely"
+  },
+  "l:n4-if-it-rains": {
+    "woman": "lively",
+    "why": "friend replying casually"
+  },
+  "l:n4-party-next-week": {
+    "woman": "lively",
+    "why": "friend asking about a party"
+  },
+  "l:n4-cold-better": {
+    "woman": "adult",
+    "why": "colleague who was ill"
+  },
+  "l:n4-carry-for-you": {
+    "woman": "adult",
+    "why": "adult accepting help"
+  },
+  "l:n4-who-made-cake": {
+    "woman": "lively",
+    "why": "friend praising a cake"
+  },
+  "l:n4-homework-handed-in": {
+    "woman": "lively",
+    "why": "classmate"
+  },
+  "l:n4-is-the-teacher-in": {
+    "woman": "professional",
+    "why": "school staff"
+  },
+  "l:n4-how-was-the-film": {
+    "woman": "lively",
+    "why": "friend asking about a film"
+  },
+  "l:n4-open-the-window": {
+    "woman": "adult",
+    "why": "adult offering politely"
+  },
+  "l:n4-getting-hungry": {
+    "woman": "lively",
+    "why": "friend replying casually"
+  },
+  "l:n4-borrow-your-pen": {
+    "woman": "lively",
+    "why": "classmate asking for a pen"
+  },
+  "l:n4-train-was-late": {
+    "woman": "adult",
+    "why": "woman who waited an hour"
+  },
+  "l:n4-sorry-to-keep-you": {
+    "woman": "adult",
+    "why": "adult arriving late"
+  },
+  "l:n4-please-have-cake": {
+    "woman": "mother",
+    "why": "host offering cake"
+  },
+  "l:n4-may-i-smoke": {
+    "woman": "professional",
+    "why": "staff refusing politely"
+  },
+  "l:n4-done-by-tomorrow": {
+    "woman": "adult",
+    "why": "office worker"
+  },
+  "l:n4-what-to-drink": {
+    "woman": "professional",
+    "why": "waiting staff"
+  },
+  "l:n4-used-to-life-here": {
+    "woman": "adult",
+    "why": "foreign resident"
+  },
+  "l:n4-nice-bag-where": {
+    "woman": "lively",
+    "why": "friend admiring a bag"
+  },
+  "l:n4-help-me-tomorrow": {
+    "woman": "lively",
+    "why": "friend asking for moving help"
+  },
+  "l:n4-lend-after-reading": {
+    "woman": "lively",
+    "why": "friend replying casually"
+  },
+  "l:n4-long-time-no-see": {
+    "woman": "adult",
+    "why": "adult acquaintance greeting politely"
   }
 }

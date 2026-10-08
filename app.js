@@ -3,7 +3,7 @@
 // Navbar view tabs (label = UI_STRINGS key, icon = ICONS key in app-helpers.js)
 // Catalog + plan → ordered unit list, once at load (data/*.js are loaded before lib.js).
 var PLAN_CHECK = validatePlan(PLAN, CATALOG);
-var UNITS = PLAN_CHECK.valid ? buildUnits(PLAN, CATALOG) : [];
+var UNITS = PLAN_CHECK.valid ? buildUnits(PLAN, CATALOG).filter(liveUnit) : []; // levels with ready: false stay hidden (liveUnit)
 
 // ── Unit completion + new-card cap (ticket 35, Q28/Q31/Q34) ─────────────────
 // Store writes, then 'store-changed' so App re-reads the snapshot.
@@ -652,6 +652,7 @@ function App() {
     }
   }) : view === 'achievements' ? React.createElement(AchievementsView, { level: level }) : view === 'stats' ? React.createElement(StatsView, {
     cards: srsCards,
+    level: level,
     onReview: function () { setView('review'); }
   }) : view === 'units' ? /*#__PURE__*/React.createElement(Overview, {
     units: UNITS,
@@ -666,7 +667,7 @@ function App() {
     setUnit: function setUnit(i) { openStage(i, 'units'); },
     onDiagnostic: function () { setView('diagnostic'); }
   }) : view === 'diagnostic' ? React.createElement(MockExam, {
-    mock: CATALOG.items[DIAGNOSTIC_MOCK],
+    mock: CATALOG.items[diagnosticMockId(level)],
     showFurigana: showFurigana,
     onClose: function () { setView('units'); }
   }) : React.createElement(React.Fragment, null, React.createElement("button", {

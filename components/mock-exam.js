@@ -1,8 +1,8 @@
 "use strict";
 
 // MockExam (ticket 18, Q37-Q39): one fixed mock (data/<lvl>/mocks.js) sat like the real test.
-// Three parts in order, each with its own clock (mockSections: 20 / 40 / 30 min for a full N5
-// mock); a finished or timed-out part can't be reopened. Inside a part: answer in any order,
+// Three parts in order, each with its own clock from the mock's level (mockSections: 20 / 40 / 30
+// min for a full N5 mock, 25 / 55 / 35 for N4); a finished or timed-out part can't be reopened. Inside a part: answer in any order,
 // change answers, flag questions to come back to. Listening: play + one replay, options heard
 // only for utterance / quick. No feedback until the end; then an estimated scaled score with the
 // real pass rules (mockEstimate) as a score slip (jelly ring, one section table), a heat grid of the
@@ -21,10 +21,11 @@ var OFFICIAL_SAMPLES_URL = 'https://www.jlpt.jp/e/samples/sampleindex.html';
 var OFFICIAL_SCORING_URL = 'https://www.jlpt.jp/e/faq/'; // section 5: scaled scores (item response theory)
 
 // Question type (mondai) → [name with furigana markup, English helper], in test order (results grid).
-var MONDAI_ORDER = ['kanjiYomi', 'hyouki', 'bunmyaku', 'iikae', 'gap', 'order', 'bunshou', 'short', 'mid', 'info', 'task', 'point', 'utterance', 'quick'];
+var MONDAI_ORDER = ['kanjiYomi', 'hyouki', 'bunmyaku', 'iikae', 'youhou', 'gap', 'order', 'bunshou', 'short', 'mid', 'info', 'task', 'point', 'utterance', 'quick'];
 var MONDAI_NAMES = {
   kanjiYomi: ['[漢字|かんじ][読|よ]み', 'Kanji reading'], hyouki: ['[表記|ひょうき]', 'Writing the word'],
   bunmyaku: ['[文脈規定|ぶんみゃくきてい]', 'Word in context'], iikae: ['[言|い]い[換|か]え[類義|るいぎ]', 'Same meaning'],
+  youhou: ['[用法|ようほう]', 'Word usage'],
   gap: ['[文|ぶん]の[文法|ぶんぽう]1', 'Grammar: fill the blank'], order: ['[文|ぶん]の[文法|ぶんぽう]2', 'Grammar: order ★'],
   bunshou: ['[文章|ぶんしょう]の[文法|ぶんぽう]', 'Grammar in a text'],
   short: ['[内容理解|ないようりかい]（[短文|たんぶん]）', 'Short passages'], mid: ['[内容理解|ないようりかい]（[中文|ちゅうぶん]）', 'Medium passages'],
@@ -241,7 +242,7 @@ function MockExam(props) {
   // ── results ───────────────────────────────────────────────────────────────
   if (phase === 'results') {
     var practice = mockIsPractice(allMocks, result);
-    var r = result, est = r.estimate, rule = JLPT_PASS[mock.level], out = mockOutlook(r.parts, mock.level), ringLen = 2 * Math.PI * 46;
+    var r = result, est = r.estimate, rule = levelTable(JLPT_PASS, mock.level), out = mockOutlook(r.parts, mock.level), ringLen = 2 * Math.PI * 46;
     var tone = { likely: 'pass', borderline: 'warn', unlikely: 'fail' }[out.verdict];
     var vcls = { likely: 'ok', borderline: 'warn', unlikely: 'bad' }[out.verdict];
     var furi = furiganaOn(Store.snapshot().furiganaPref, mock.level);
@@ -293,8 +294,8 @@ function MockExam(props) {
             ce("div", null, ce("span", { className: "mr-total" }, est.total), " ", ce("span", { className: "mr-muted" }, "/ 180")),
             ce("p", { className: "mr-small mr-muted" }, "Likely range " + range(out.total) + ". ",
               out.verdict === 'likely' ? "Even the low end clears the pass mark and both section minimums."
-                : out.verdict === 'borderline' ? "The range crosses a pass mark. A longer test or another attempt would tell you more."
-                : "Even the high end misses the total or a section minimum."))),
+                : out.verdict === 'borderline' ? "The range crosses " + out.marks.join(' and ') + ". A longer test or another attempt would tell you more."
+                : "Even the high end misses " + out.marks.join(' and ') + "."))),
         practice && ce("p", { className: "mr-small mr-muted" }, "You have sat this mock before, so the questions are known. This attempt is practice and does not change your headline estimate", (function () { var f = mockHeadline(allMocks, mock.id); return f ? " (first attempt: " + f.estimate.total + " / 180)." : "."; })()),
         ce("table", { className: "mr-slip" },
           ce("caption", { className: "mr-sr" }, "Estimated scores by section"),

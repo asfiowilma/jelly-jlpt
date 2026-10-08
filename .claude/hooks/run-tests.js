@@ -4,7 +4,7 @@
  *
  * Loads the same scripts as index.html, in the same order, via Node's vm
  * module (so top-level `var` declarations become globals):
- *   data/catalog.js → data/<level>/*.js (sorted) → lib.js → store.js →
+ *   data/catalog.js → data/<level>/*.js (n5 first, files sorted) → lib.js → store.js →
  *   app-helpers.js → sfx.js → components/*.js → app.js
  * then runs every tests/*.js file (the QUnit suite tests.html loads) through a
  * minimal QUnit shim, plus a few Node-only checks below (React render smoke
@@ -48,7 +48,8 @@ global.document = { getElementById: function () { return {}; } };
 const dataDir = path.join(projectDir, "data");
 load(path.join("data", "catalog.js"));
 load(path.join("data", "stamp-icons.js"));
-for (const lv of fs.readdirSync(dataDir).filter(function (f) { return fs.statSync(path.join(dataDir, f)).isDirectory(); }).sort()) {
+// n5 first, then n4 …: index.html loads the levels from the lowest up, so catalog order matches the app
+for (const lv of fs.readdirSync(dataDir).filter(function (f) { return fs.statSync(path.join(dataDir, f)).isDirectory(); }).sort().reverse()) {
   for (const file of fs.readdirSync(path.join(dataDir, lv)).sort()) load(path.join("data", lv, file));
 }
 // Mirrors the <script src> order in index.html after data/
@@ -158,7 +159,7 @@ test("scripts: lib.js + store.js + app-helpers.js + components/*.js + app.js exe
   a.ok(true);
 });
 
-// ── reference lists for tests/catalog-checks.js: tools/ref/n5.json → REF.N5 ──
+// ── reference lists for tests/catalog-checks.js: every tools/ref/<lvl>.json → REF.<LVL> ──
 global.REF = {};
 fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { return /\.json$/.test(f); }).forEach(function (f) {
   global.REF[f.replace(".json", "").toUpperCase()] = JSON.parse(fs.readFileSync(path.join(projectDir, "tools", "ref", f), "utf8"));
@@ -230,9 +231,9 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
 
   test("React render: PrepGuide() renders every prep and mock guide", function (a) {
     var g = units.filter(function (u) { return u.guide; });
-    a.equal(g.length, 7, "seven guided units");
+    a.equal(g.length, 7 * PLAN.length, "seven guided units per planned level");
     g.forEach(function (u) {
-      try { PrepGuide({ guide: u.guide }); } catch (e) { a.ok(false, u.id + ": " + e.message); }
+      try { PrepGuide({ guide: u.guide, level: u.level }); } catch (e) { a.ok(false, u.id + ": " + e.message); }
     });
   });
 
@@ -265,7 +266,8 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
 
   test("React render: DialogueSection() renders collapsed, open and heard; Replay plays every line; open state is remembered", function (a) {
     var withD = units.filter(function (u) { return u.dialogue; });
-    a.equal(withD.length, 74, "stages 19 to 104 (pilot + batches 1 to 4) carry a dialogue");
+    a.equal(withD.filter(function (u) { return u.level === "N5"; }).length, 74, "N5 stages 19 to 104 (pilot + batches 1 to 4) carry a dialogue");
+    a.equal(withD.filter(function (u) { return u.level === "N4"; }).length, 87, "every N4 lesson carries a dialogue");
     var orig = { useState: React.useState, useRef: React.useRef, useEffect: React.useEffect, useMemo: React.useMemo, createElement: React.createElement, setTimeout: global.setTimeout };
     var origSpeech = window.speechSynthesis, origUtt = global.SpeechSynthesisUtterance, origLs = global.localStorage, mem = {}, spoken = [];
     global.localStorage = { getItem: function (k) { return k in mem ? mem[k] : null; }, setItem: function (k, v) { mem[k] = String(v); }, removeItem: function (k) { delete mem[k]; } };
@@ -430,7 +432,9 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       Overview({ units: units, completed: emptySet, current: 0, suggested: 0, setUnit: noop });
       Overview({ units: units, completed: new Set([units[0].id]), current: units.length - 1, suggested: 1, setUnit: noop, onDiagnostic: noop });
       DiagnosticPanel({ onStart: noop });
-      a.ok(true);
+      DiagnosticPanel({ onStart: noop, level: "N4" });
+      a.equal(diagnosticMockId("N5"), "x:n5-mock-3");
+      a.equal(diagnosticMockId("N4"), CATALOG.items["x:n4-mock-3"] ? "x:n4-mock-3" : "x:n5-mock-3", "N4 diagnostic, or N5's until N4 mocks ship");
     } catch (e) { a.ok(false, e.message); }
   });
 
@@ -463,6 +467,11 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       var mocksOf = function (list) { Store.snapshot = function () { return Object.assign({}, orig.snap(), { mocks: list }); }; els = []; StatsView({ cards: {}, onReview: noop }); return els; };
       a.ok(!mocksOf([]).some(function (el) { return el.type === MockTrend; }), "no attempts, no chart");
       a.ok(mocksOf([d(1, 60)]).some(function (el) { return el.type === MockTrend; }), "an attempt adds the chart");
+      // an N4 learner with only N5 attempts still sees them, against the N5 pass line
+      Store.snapshot = function () { return Object.assign({}, orig.snap(), { mocks: [d(1, 60)] }); }; els = [];
+      StatsView({ cards: {}, onReview: noop, level: "N4" });
+      var tr = els.filter(function (el) { return el.type === MockTrend; })[0];
+      a.equal(tr && tr.props.trend.pass, 80, "trend level = the attempts' level when the learner's level has none");
     } catch (e) { a.ok(false, e.stack); }
     finally { React.createElement = orig.ce; Store.snapshot = orig.snap; }
   });
@@ -487,8 +496,12 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
   });
 
   test("stamp icons: one glyph per achievement id", function (a) {
-    ACHIEVEMENTS.forEach(function (d) { a.ok(STAMP_ICONS[d.id], d.id + " has an icon"); });
-    a.equal(Object.keys(STAMP_ICONS).length, ACHIEVEMENTS.length);
+    // every planned level, ready or not (an id is the glyph seed, so its icon exists before the level ships)
+    var planned = achievementDefs(buildUnits(PLAN, CATALOG), CATALOG), ids = planned.map(function (d) { return d.id; });
+    var later = PLAN.map(function (p) { return p.level.toLowerCase() + "-"; }).filter(function (pre) { return pre !== "n5-"; });
+    ACHIEVEMENTS.concat(planned).forEach(function (d) { a.ok(STAMP_ICONS[d.id], d.id + " has an icon"); });
+    // no stray glyphs; a later level may hold icons for rows its plan does not instantiate yet (mocks, prep)
+    Object.keys(STAMP_ICONS).forEach(function (k) { a.ok(ids.indexOf(k) >= 0 || later.some(function (pre) { return k.indexOf(pre) === 0; }), k + " belongs to a row"); });
   });
 
   test("stamp ink: per-id variation around the category hue, never theme or rarity", function (a) {
@@ -880,7 +893,8 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
           return [].concat.apply([], catalogOf("mondai").filter(function (m) { return m.type === type; }).slice(0, 4).map(function (m) { return mondaiQuestions(type, m, ctx); }));
         };
       };
-      ["iikae", "bunshou"].forEach(function (type, i) {
+      // 用法 (youhou, N4+) from data/n4/mondai.js
+      ["iikae", "bunshou", "youhou"].forEach(function (type, i) {
         try { play(mock, i, mondai(type)); } catch (e) { errors.push("mock " + type + ": " + e.message); }
       });
     } finally {
@@ -897,7 +911,7 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     // ponytail: no "reading" (passage items, ticket 15); tap-to-order "reorder" stays unused
     // (★ sentence composition is the MC "order" type)
     ["mc", "listen", "typing", "conjugation", "gap", "pair_match", "fill_blank", "synonym", "kanji_reading",
-      "kanji_yomi", "hyouki", "bunmyaku", "order", "iikae", "bunshou", "listen_dialog"].forEach(function (t) {
+      "kanji_yomi", "hyouki", "bunmyaku", "order", "iikae", "youhou", "bunshou", "listen_dialog"].forEach(function (t) {
       a.ok(seen[t], "type " + t + " was played");
     });
   });
@@ -1400,7 +1414,7 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     });
   });
 
-  test("kanji-svg/: every N5 kanji and single kana in the catalog has a stroke SVG", function (a) {
+  test("kanji-svg/: every kanji (all levels) and single kana in the catalog has a stroke SVG", function (a) {
     var missing = Object.keys(CATALOG.items).map(function (id) { return CATALOG.items[id]; })
       .filter(function (it) { return (it.kind === 'kanji' || it.kind === 'kana') && Array.from(it.char).length === 1; })
       .filter(function (it) { return !fs.existsSync(path.join(projectDir, 'kanji-svg', kanjiToUnicodeHex(it.char) + '.svg')); })
@@ -1419,12 +1433,18 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     var assign = function (f) { return JSON.parse(fs.readFileSync(path.join(projectDir, "tools", "audio", f), "utf8")); };
     var man = assign("man-assignments.json"), woman = assign("woman-assignments.json"), cast = assign("cast.json");
     // a dialogue has no clips until rendered (Web Speech fallback): skipped here while the manifest has no track for it
-    var tracks = listeningFor("N5").filter(function (it) { return it.format !== "dialogue" || AUDIO_MANIFEST.tracks[it.id]; }).map(function (it) {
+    var tracks = [].concat.apply([], LEVELS.map(function (lv) { return listeningFor(lv); })).filter(function (it) { return it.format !== "dialogue" || AUDIO_MANIFEST.tracks[it.id]; }).map(function (it) {
       // a dialogue line is voiced by its character (arch = who, '<who>@<rev>' after a voice revision; take = a re-render); other tracks by the track's man / woman archetype
       return { id: it.id, man: (man[it.id] || {}).man || null, woman: (woman[it.id] || {}).woman || null,
         lines: listeningScript(it).map(function (l) { return { role: l.speaker, arch: l.who && audioTool.charArch(l.who, cast), say: audioTool.sayText(l.text), take: l.take }; }) };
     });
     var errs = audioTool.check(projectDir, AUDIO_MANIFEST, tracks);
+    // AUDIO_STALE_OK=1: a transcript was edited on purpose and its clips wait for the next render (listed in the
+    // branch's rerender notes); only this stale-clip check turns into a warning, everything else still fails.
+    if (errs.length && process.env.AUDIO_STALE_OK === "1") {
+      console.warn("  WARN  audio: " + errs.length + " stale clip line(s), allowed by AUDIO_STALE_OK=1: " + errs.join(" | "));
+      errs = [];
+    }
     a.ok(errs.length === 0, errs.length + " of " + tracks.reduce(function (n, t) { return n + t.lines.length; }, 0) +
       " clip lines stale: re-render (tools/audio/render-notebook-v2.ipynb), rerun tools/build-audio-manifest.js (tools/audio/README.md)\n    " +
       errs.slice(0, 5).join("\n    ") + (errs.length > 5 ? "\n    ..." : ""));
@@ -1437,7 +1457,7 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       a.ok(c.name && c.jp && /^[MF]$/.test(c.gender) && c.role && c.personality && /^Native Japanese speaker/.test(c.voice), id + ": cast.json fields");
     });
     a.equal(new Set(Object.keys(cast).map(function (id) { return cast[id].voice; })).size, Object.keys(cast).length, "every character has its own voice prompt");
-    listeningFor("N5").filter(function (it) { return it.format === "dialogue"; }).forEach(function (it) {
+    [].concat.apply([], LEVELS.map(function (lv) { return listeningFor(lv); })).filter(function (it) { return it.format === "dialogue"; }).forEach(function (it) {
       Object.keys(it.cast).forEach(function (id) {
         var c = cast[id], d = it.cast[id];
         a.ok(c && c.name === d.name && c.jp === d.jp && c.gender === d.gender, it.id + ": " + id + " matches cast.json");

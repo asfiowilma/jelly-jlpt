@@ -9,7 +9,8 @@ QUnit.module('dialogue', function () {
 
   QUnit.test('plan: unit.dialogue resolves to a dialogue item, lesson units only, each dialogue used once', function (assert) {
     var us = withDialogue();
-    assert.deepEqual(us.map(function (u) { return u.id; }), ['n5.u019', 'n5.u020', 'n5.u021', 'n5.u022', 'n5.u023', 'n5.u024', 'n5.u026', 'n5.u027', 'n5.u028', 'n5.u029', 'n5.u030', 'n5.u031', 'n5.u033', 'n5.u034', 'n5.u035', 'n5.u036', 'n5.u037', 'n5.u038', 'n5.u040', 'n5.u041', 'n5.u042', 'n5.u043', 'n5.u044', 'n5.u045', 'n5.u047', 'n5.u048', 'n5.u049', 'n5.u050', 'n5.u051', 'n5.u052', 'n5.u054', 'n5.u055', 'n5.u056', 'n5.u057', 'n5.u058', 'n5.u059', 'n5.u061', 'n5.u062', 'n5.u063', 'n5.u064', 'n5.u065', 'n5.u066', 'n5.u068', 'n5.u069', 'n5.u070', 'n5.u071', 'n5.u072', 'n5.u073', 'n5.u075', 'n5.u076', 'n5.u077', 'n5.u078', 'n5.u079', 'n5.u080', 'n5.u082', 'n5.u083', 'n5.u084', 'n5.u085', 'n5.u086', 'n5.u087', 'n5.u089', 'n5.u090', 'n5.u091', 'n5.u092', 'n5.u093', 'n5.u094', 'n5.u096', 'n5.u097', 'n5.u098', 'n5.u099', 'n5.u100', 'n5.u101', 'n5.u103', 'n5.u104'], 'the lessons that carry a dialogue (stages 19 to 104, batches 1 to 4)');
+    // the exact N5 list; later levels are covered by the generic checks below
+    assert.deepEqual(us.filter(function (u) { return u.level === 'N5'; }).map(function (u) { return u.id; }), ['n5.u019', 'n5.u020', 'n5.u021', 'n5.u022', 'n5.u023', 'n5.u024', 'n5.u026', 'n5.u027', 'n5.u028', 'n5.u029', 'n5.u030', 'n5.u031', 'n5.u033', 'n5.u034', 'n5.u035', 'n5.u036', 'n5.u037', 'n5.u038', 'n5.u040', 'n5.u041', 'n5.u042', 'n5.u043', 'n5.u044', 'n5.u045', 'n5.u047', 'n5.u048', 'n5.u049', 'n5.u050', 'n5.u051', 'n5.u052', 'n5.u054', 'n5.u055', 'n5.u056', 'n5.u057', 'n5.u058', 'n5.u059', 'n5.u061', 'n5.u062', 'n5.u063', 'n5.u064', 'n5.u065', 'n5.u066', 'n5.u068', 'n5.u069', 'n5.u070', 'n5.u071', 'n5.u072', 'n5.u073', 'n5.u075', 'n5.u076', 'n5.u077', 'n5.u078', 'n5.u079', 'n5.u080', 'n5.u082', 'n5.u083', 'n5.u084', 'n5.u085', 'n5.u086', 'n5.u087', 'n5.u089', 'n5.u090', 'n5.u091', 'n5.u092', 'n5.u093', 'n5.u094', 'n5.u096', 'n5.u097', 'n5.u098', 'n5.u099', 'n5.u100', 'n5.u101', 'n5.u103', 'n5.u104'], 'the lessons that carry a dialogue (stages 19 to 104, batches 1 to 4)');
     assert.ok(us.every(function (u) { return u.kind === 'lesson' && CATALOG.items[u.dialogue].format === 'dialogue'; }));
     assert.deepEqual(us.map(function (u) { return u.dialogue; }).sort(), dialogues().map(function (d) { return d.id; }).sort(), 'every dialogue is in a unit');
     var bad = function (id, set) {
@@ -64,7 +65,9 @@ QUnit.module('dialogue', function () {
     assert.deepEqual(v.cast.map(function (c) { return c.initial; }), ['ル', 'サ'], 'initial chips: first character of the jp name');
     assert.deepEqual(v.cast.map(function (c) { return c.side; }), ['a', 'b'], 'first cast key is side a');
     assert.deepEqual(v.lines.map(function (l) { return l.side; }), ['a', 'b', 'a', 'a', 'b', 'a', 'b', 'a', 'b'], 'bubble sides follow the speaker');
-    assert.ok(v.pills.indexOf('私') >= 0 && v.pills.indexOf('X は Y です') >= 0, 'pills: new words + the pattern');
+    assert.ok(v.pills.indexOf('わたし') >= 0 && v.pills.indexOf('X は Y です') >= 0, 'pills: new words + the pattern');
+    assert.ok(v.pills.indexOf('私') < 0, 'pills: a word whose kanji is untaught in kana, like the vocabulary table (N5 r1 newbie N2)');
+    assert.strictEqual(v.pillRuby[v.pills.indexOf('学生')], 'がくせい', 'pills: taught kanji carry their reading');
     assert.ok(v.seconds >= 10 && v.seconds <= 60, 'about ' + v.seconds + ' s');
     var u2 = withDialogue().filter(function (x) { return x.id === 'n5.u028'; })[0], v2 = dialogueView(CATALOG.items[u2.dialogue], u2);
     assert.ok(/nw:ぎゅうにゅう/.test(kinds(v2.lines[1])) && /nw:のみ/.test(kinds(v2.lines[1])), 'new words in the milk line');
@@ -106,6 +109,16 @@ QUnit.module('dialogue', function () {
     assert.strictEqual(kinds(v90.lines[6]), 'nw:かぜ'.replace('nw:かぜ', ''), 'かぜを ひく is 風邪, not the new word 風');
     assert.strictEqual(kinds(byId('n5.u068').lines[0]), 'nw:はしっ g:ては g:いけません nw:あぶない', 'ては　いけません across a phrase space');
     assert.ok(!/g:た/.test(kinds(byId('n5.u086').lines[0])), 'ました is not the plain た');
+  });
+
+  QUnit.test('dialogueView: the grammar point wins over a unit word spelled the same (それに), other words keep their mark', function (assert) {
+    var u = units().filter(function (x) { return x.id === 'n4.u015'; })[0];
+    assert.ok(u.vocab.some(function (v) { return v.reading === 'それに'; }) && u.grammar.some(function (g) { return g.id === 'g:sore-ni'; }), 'n4.u015 teaches both');
+    var it = { cast: { sasuke: { name: 'Sasuke', jp: 'サスケ' }, sakura: { name: 'Sakura', jp: 'サクラ' } },
+      lines: [{ speaker: 'sasuke', furigana: 'へやは　ひろいです。それに、やはり　しずかです。', en: 'x' }, { speaker: 'sakura', furigana: 'いいね。', en: 'y' }] };
+    var v = dialogueView(it, u), kinds = v.lines[0].segs.filter(function (s) { return s.kind; }).map(function (s) { return s.kind + ':' + s.t; }).join(' ');
+    assert.strictEqual(kinds, 'g:それに nw:やはり');
+    assert.ok(v.pills.indexOf('やはり') >= 0 && v.pills.indexOf('それに') >= 0, 'pills: the word that kept its mark, and the point');
   });
 
   QUnit.test('listeningScript: lines only, no narrator, speaker = the character gender, who / slot, text = dialogueSpeech; clips only when rendered', function (assert) {

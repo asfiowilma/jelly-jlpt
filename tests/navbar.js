@@ -14,8 +14,24 @@ QUnit.module('navbar', function () {
     });
   });
 
-  QUnit.test('t(): N5 all English; N4+ by learned kanji; catalog-less kanji English', function (assert) {
-    var prev = window._uiLang, prevK = window._learnedKanji;
+  QUnit.test('t(): no Japanese UI string at any level until the ja strings are reviewed (UI_JA_READY)', function (assert) {
+    var prev = window._uiLang, prevK = window._learnedKanji, ready = UI_JA_READY;
+    assert.strictEqual(UI_JA_READY, false, 'ja strings still await a native review: flip this assert with the review');
+    window._uiLang = 'auto'; window._learnedKanji = { '今': true, '日': true, '統': true, '計': true };
+    LEVELS.forEach(function (lv) {
+      Object.keys(UI_STRINGS).forEach(function (k) {
+        if (t(k, lv) !== UI_STRINGS[k].en) assert.ok(false, lv + ' ' + k + ' shows ' + t(k, lv));
+      });
+    });
+    assert.equal(t('unit_label', 'N4'), 'Stage', 'N4 kana-only string stays English');
+    assert.equal(t('view_today', 'N4'), 'Today', 'N4 learned-kanji string stays English');
+    UI_JA_READY = ready;
+    window._uiLang = prev; window._learnedKanji = prevK;
+  });
+
+  QUnit.test('t() once reviewed: N5 all English; N4+ by learned kanji; catalog-less kanji English', function (assert) {
+    var prev = window._uiLang, prevK = window._learnedKanji, ready = UI_JA_READY;
+    UI_JA_READY = true;
     window._uiLang = 'auto'; window._learnedKanji = { '今': true, '日': true };
     assert.equal(t('unit_label', 'N5'), 'Stage', 'N5 kana-only string stays English');
     assert.equal(t('view_today', 'N5'), 'Today', 'N5 kanji string stays English');
@@ -28,6 +44,7 @@ QUnit.module('navbar', function () {
     window._learnedKanji = {};
     assert.equal(t('view_stats', 'N1'), 'Stats', 'not learned (e.g. not in catalog) → en');
     assert.equal(t('nope_key', 'N1'), 'nope_key', 'unknown key → key');
+    UI_JA_READY = ready;
     window._uiLang = prev; window._learnedKanji = prevK;
   });
 
@@ -54,13 +71,15 @@ QUnit.module('navbar', function () {
   });
 
   QUnit.test('tRuby: plain string unless JA kanji label with furigana on', function (assert) {
-    var prev = window._uiLang, prevK = window._learnedKanji; window._uiLang = 'auto'; window._learnedKanji = { '今': true, '日': true };
+    var prev = window._uiLang, prevK = window._learnedKanji, ready = UI_JA_READY; window._uiLang = 'auto'; window._learnedKanji = { '今': true, '日': true };
+    UI_JA_READY = true; // the ja path, as it will run after the review
     assert.equal(tRuby('view_today', 'N5', true), 'Today');
     assert.equal(tRuby('view_today', 'N4', false), '今日');
     if (typeof React !== 'undefined') { // tests.html doesn't load React
       assert.equal(typeof tRuby('view_today', 'N4', true), 'object', 'ruby element');
     }
     assert.equal(tRuby('unit_label', 'N4', true), 'ステージ', 'no rt → plain t()');
+    UI_JA_READY = ready;
     window._uiLang = prev; window._learnedKanji = prevK;
   });
 

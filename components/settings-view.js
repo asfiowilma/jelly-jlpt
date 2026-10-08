@@ -239,6 +239,7 @@ var CREDITS = [
   { name: 'Tanos (Jonathan Waller)', url: 'https://www.tanos.co.uk/jlpt/', key: 'cred_tanos', license: 'CC BY', licenseUrl: 'https://creativecommons.org/licenses/by/' }, // ponytail: site states CC BY without a version
   { name: 'Tatoeba', url: 'https://tatoeba.org/', key: 'cred_tatoeba', license: 'CC BY 2.0 FR', licenseUrl: 'https://creativecommons.org/licenses/by/2.0/fr/' },
   { name: 'EDRDG (JMdict, KANJIDIC)', url: 'https://www.edrdg.org/', key: 'cred_edrdg', license: 'CC BY-SA 4.0', licenseUrl: 'https://www.edrdg.org/edrdg/licence.html' },
+  { name: 'Wiktionary', url: 'https://en.wiktionary.org/', key: 'cred_wiktionary', license: 'CC BY-SA 4.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/' },
   { name: 'elzup/jlpt-word-list', url: 'https://github.com/elzup/jlpt-word-list', key: 'cred_wordlist', license: 'MIT', licenseUrl: 'https://github.com/elzup/jlpt-word-list/blob/master/LICENSE' },
   { name: 'Kenney (Music Jingles, Interface Sounds)', url: 'https://kenney.nl/assets', key: 'cred_kenney', license: 'CC0', licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/' },
   { name: 'Qwen3-TTS (Alibaba Qwen team)', url: 'https://github.com/QwenLM/Qwen3-TTS', key: 'cred_qwen3tts', license: 'Apache 2.0', licenseUrl: 'https://github.com/QwenLM/Qwen3-TTS/blob/main/LICENSE' },

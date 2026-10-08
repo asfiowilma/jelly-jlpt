@@ -2,11 +2,16 @@
 
 // Roadmap ticket 37: one-stage question builder for the placement test.
 QUnit.module('placementQuestions', function () {
-  var stages = function () { return buildUnits(PLAN, CATALOG).filter(function (u) { return u.kind === 'kana' || u.kind === 'lesson'; }); };
+  var stages = function () { return buildUnits(PLAN, CATALOG).filter(liveUnit).filter(function (u) { return u.kind === 'kana' || u.kind === 'lesson'; }); }; // the shipped levels, as the app sees them
 
   QUnit.test('every teaching stage yields 2 + 1 distinct questions, no leaks, no single letters', function (assert) {
-    var list = stages(), bad = [];
-    assert.strictEqual(list.length, 90, '90 N5 teaching stages');
+    // every planned level, live or not: ready: false keeps N4 out of the app's placement, not out of this check
+    var list = buildUnits(PLAN, CATALOG).filter(function (u) { return u.kind === 'kana' || u.kind === 'lesson'; }), bad = [];
+    PLAN.forEach(function (p) {
+      var n = list.filter(function (u) { return u.level === p.level; }).length;
+      if (p.level === 'N5') assert.strictEqual(n, 90, '90 N5 teaching stages');
+      else assert.ok(n > 0, n + ' ' + p.level + ' teaching stages');
+    });
     list.forEach(function (u) {
       for (var run = 0; run < 5; run++) { // random forms: repeat
         var a = placementQuestions(u, 2, []), b = placementQuestions(u, 1, a.map(function (q) { return q.itemId; }));
@@ -34,7 +39,7 @@ QUnit.module('placementQuestions', function () {
   });
 
   QUnit.test('review / prep / mock units give nothing', function (assert) {
-    buildUnits(PLAN, CATALOG).filter(function (u) { return u.kind !== 'kana' && u.kind !== 'lesson'; }).forEach(function (u) {
+    buildUnits(PLAN, CATALOG).filter(liveUnit).filter(function (u) { return u.kind !== 'kana' && u.kind !== 'lesson'; }).forEach(function (u) {
       assert.strictEqual(placementQuestions(u, 2, []).length, 0, u.id);
     });
   });

@@ -73,7 +73,7 @@ function Exercises(_ref9) {
   var _voice = React.useState(function () { return jaVoiceStatus(false); }), voiceStatus = _voice[0], setVoiceStatus = _voice[1];
   var stopRef = React.useRef(null);
   // Timed quizzes (ticket 18, Q36): lesson reviews (mini-mocks) and prep drills run against a clock
-  // at real N5 pacing (quizSeconds); when it runs out, every unanswered question counts as wrong.
+  // at the real pacing of the unit's level (quizSeconds); when it runs out, every unanswered question counts as wrong.
   var timed = isTimedQuiz(unit);
   var _dl = React.useState(null), deadline = _dl[0], setDeadline = _dl[1];
   var _to = React.useState(false), timedOut = _to[0], setTimedOut = _to[1];
@@ -148,7 +148,7 @@ function Exercises(_ref9) {
     setDone(false);
     setLeaving(false);
     setTimedOut(false);
-    setDeadline(timed ? Date.now() + quizSeconds(nextExs) * 1000 : null);
+    setDeadline(timed ? Date.now() + quizSeconds(nextExs, unit.level) * 1000 : null);
     finishedRef.current = false;
     setStarted(true);
     onStart && onStart();
@@ -187,7 +187,7 @@ function Exercises(_ref9) {
         h("div", { className: "chips" },
           h("span", { className: "chip" }, exs.length, " questions"),
           h("span", { className: "chip" }, "Pass mark ", needPct),
-          timed && h("span", { className: "chip" }, "Timed · ", clock(quizSeconds(exs)))),
+          timed && h("span", { className: "chip" }, "Timed · ", clock(quizSeconds(exs, unit.level)))),
         h("p", { className: "note" }, passed ? "A retake uses new questions. Your stage stays complete."
           : timed ? "Like the real test: unanswered questions count as wrong when time runs out." : "Opens full screen. Esc leaves.")),
       h("button", { className: "qz-cta" + (passed ? " quiet" : "") + " quiz-start-btn", onClick: function () { launch(exs); } },

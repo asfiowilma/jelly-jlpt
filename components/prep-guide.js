@@ -4,7 +4,8 @@
 // or the parts (stepper, when kinds carry `min`), then time / rules.
 // Strings may hold **word** (highlight) and [漢字|かんじ] furigana (lib.js furiganaParts; plain text when
 // furigana is off). Never innerHTML.
-var PG_PARTS = [['Vocabulary', 20], ['Grammar + reading', 40], ['Listening', 30]];
+// Part minutes come from the unit's level (mockMinutes: N5 20 / 40 / 30, N4 25 / 55 / 35).
+var PG_PARTS = ['Vocabulary', 'Grammar + reading', 'Listening'];
 
 // pgText(text, furi, tag): **marked** pieces wrapped in <tag> (default mark), furigana inside each piece.
 function pgText(text, furi, tag) {
@@ -27,13 +28,13 @@ function PrepGuide(props) {
   var row = function (cls, label, text) {
     return h('p', { className: 'pg-pt ' + cls }, h('b', null, label), tx(text));
   };
-  var p = g.part;
+  var p = g.part, mins = mockMinutes(props.level);
   return h('div', { className: 'pg' },
     p != null && h('div', { className: 'pg-glance' },
       h('div', { className: 'pg-bars', role: 'img',
-        'aria-label': 'Part ' + (p + 1) + ' of 3: ' + PG_PARTS[p][0] + ', ' + PG_PARTS[p][1] + ' minutes' },
+        'aria-label': 'Part ' + (p + 1) + ' of 3: ' + PG_PARTS[p] + ', ' + mins[p] + ' minutes' },
         PG_PARTS.map(function (x, i) {
-          return h('div', { key: i, className: i === p ? 'on' : null }, x[0] + ' · ' + x[1]);
+          return h('div', { key: i, className: i === p ? 'on' : null }, x + ' · ' + mins[i]);
         })),
       g.glance && h('p', null, g.partJp && [h('span', { key: 'j', className: 'pg-partjp jp' }, tx(g.partJp)), ' · '], tx(g.glance, 'b'))),
     section(g.kindsLabel, 'pg-kinds', h('ol', { className: 'pg-list ' + (stepper ? 'pg-step' : 'pg-rail') }, g.kinds.map(function (k, i) {

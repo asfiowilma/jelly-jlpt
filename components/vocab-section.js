@@ -13,9 +13,22 @@ var VOCAB_GROUPS = [
   { key: 'noun', label: 'vocab_nouns', test: function (p) { return /^(noun|pronoun|number|counter)$/.test(p); } }
 ];
 
-function posChip(pos) {
-  return pos === 'adj-i' ? 'i-adj' : pos === 'adj-na' ? 'na-adj' : pos.replace(/^verb-/, '');
-}
+// Word-type chip: one name per verb group everywhere (る-verb / う-verb, as the grammar notes and
+// Genki), never the catalog's godan / ichidan; POS_HELP is its hover text (N5 r1 newbie N4).
+var POS_CHIP = { 'verb-godan': 'う-verb', 'verb-ichidan': 'る-verb', 'verb-suru': 'irregular verb', 'verb-kuru': 'irregular verb',
+  'adj-i': 'い-adjective', 'adj-na': 'な-adjective', prenoun: 'before a noun' };
+var POS_HELP = {
+  'う-verb': 'Verb group: the last u-sound changes (のむ → のみます, のまない). Stage 30 shows how to tell the groups apart.',
+  'る-verb': 'Verb group: ends in いる or える, and る just drops (たべる → たべます, たべない).',
+  'irregular verb': 'する and くる (and words built on する) change in their own way.',
+  'い-adjective': 'A describing word that ends in い and changes its ending (たかい → たかくない).',
+  'な-adjective': 'A describing word that takes な before a noun (しずかな へや).',
+  'before a noun': 'A word that only goes before a noun (この, その, あの, どの).',
+  counter: 'A word added to a number to count things (三まい, 二ひき).',
+  suffix: 'A word part that goes after another word (〜さん, 〜じん).',
+  prefix: 'A word part that goes before another word (お〜, ご〜).'
+};
+function posChip(pos) { return POS_CHIP[pos] || pos; }
 
 // vocabGroups(vocab, lv): items by part of speech; anything unmatched lands in "other".
 function vocabGroups(vocab, lv) {
@@ -63,7 +76,7 @@ function VocabSection(props) {
       ? cover(v.id + ':m', t('vocab_meaning', lv))
       : React.createElement("span", { className: "vocab-cell vocab-meaning" }, glossText(v),
         v.usage && React.createElement("span", { className: "vocab-usage", lang: "ja" }, v.usage),
-        React.createElement("span", { className: "pos-chip" }, posChip(v.pos)));
+        React.createElement("span", { className: "pos-chip", title: POS_HELP[posChip(v.pos)] }, posChip(v.pos)));
     return React.createElement("li", { key: v.id, className: "vocab-row" },
       React.createElement("div", { className: "vocab-jp jp" }, displayWord(v, tk)),
       React.createElement("div", { className: "vocab-col-reading" }, readingCell),
@@ -74,7 +87,7 @@ function VocabSection(props) {
       }, "🔊"),
       v.tip && (!practice || rev[v.id + ':m']) && React.createElement("div", { className: "vocab-tip" },
         React.createElement("div", { className: "vocab-tip-label" }, icon('bulb'), t('vocab_tip', lv)),
-        React.createElement("p", null, v.tip)));
+        React.createElement("p", null, rubyNodes(v.tip, props.showFurigana))));
   };
 
   var groups = vocabGroups(vocab, lv);

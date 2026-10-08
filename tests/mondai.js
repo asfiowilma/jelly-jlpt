@@ -81,7 +81,19 @@ QUnit.module('exam-format questions (mondai)', function () {
         if (!hasKanji(o)) assert.ok(false, v.id + ' option without kanji ' + o);
       });
       Array.from(v.word).forEach(function (ch) { if (hasKanji(ch) && !ex.ctx.taughtKanji[ch]) assert.ok(false, v.id + ' kanji ' + ch + ' not taught'); });
+      ex.options.forEach(function (o) {
+        Array.from(o).forEach(function (ch) { // a catalog kanji swapped in comes from the word's level or below
+          var k = CATALOG.items['k:' + ch];
+          if (k && v.word.indexOf(ch) < 0 && levelRank(k.level) > levelRank(v.level)) assert.ok(false, v.id + ' option ' + o + ' holds ' + k.level + ' kanji ' + ch);
+        });
+      });
     });
+    // N5 r2 vocab T3: when the answer is the only option in taught kanji, it is found by elimination
+    var tell = exs.filter(function (ex) {
+      var ok = ex.options.map(function (o) { return Array.from(o).every(function (ch) { return !hasKanji(ch) || ex.ctx.taughtKanji[ch]; }); });
+      return ok[ex.correct] && ok.filter(Boolean).length === 1;
+    }).length;
+    assert.ok(tell / exs.length <= 0.3, 'answer the only all-taught option ' + tell + '/' + exs.length);
   });
 
   QUnit.test('文脈規定 (bunmyaku): catalog sentence with the word blanked, same-POS options, one sense fits', function (assert) {
@@ -107,8 +119,10 @@ QUnit.module('exam-format questions (mondai)', function () {
     var chunked = catalogOf('sentence').filter(function (s) { return s.chunks; });
     assert.ok(chunked.length >= 40, chunked.length + ' chunked sentences');
     var taught = taughtIds(buildUnits(PLAN, CATALOG).slice(-1)[0]);
+    // a level with no plan yet (N4 before its plan ships) teaches nothing, so its ★ sentences are not checked here
+    var planned = PLAN.map(function (lp) { return lp.level; });
     chunked.forEach(function (s) {
-      if (!s.uses.some(function (id) { return /^g:/.test(id) && taught[id]; })) assert.ok(false, s.id + ' uses no taught grammar point (never asked)');
+      if (planned.indexOf(s.level) >= 0 && !s.uses.some(function (id) { return /^g:/.test(id) && taught[id]; })) assert.ok(false, s.id + ' uses no taught grammar point (never asked)');
     });
     var exs = [].concat.apply([], chunked.map(function (s) { return [1, 2, 3, 4, 5, 6].map(function () { return orderQuestion(s, {}); }); }));
     exs.forEach(function (ex) {
@@ -122,14 +136,35 @@ QUnit.module('exam-format questions (mondai)', function () {
     });
   });
 
-  QUnit.test('言い換え類義 (iikae) + 文章の文法 (bunshou) via mondaiQuestions', function (assert) {
+  QUnit.test('用法 (youhou, N4+): the word shown, four sentences, fixed order in a mock', function (assert) {
     var u = lessons().slice(-1)[0], ctx = quizContext(u);
+    var m = { id: 'm:test-youhou', kind: 'mondai', type: 'youhou', level: 'N4', word: '[留守|るす]', answer: 1, en: 'x',
+      options: ['[留守|るす]を[食|た]べる。', '[留守|るす]のときに[電話|でんわ]があった。', '[留守|るす]が[走|はし]る。', '[留守|るす]で[寝|ね]る。'] };
+    var q = mondaiQuestions('youhou', m, ctx)[0];
+    assert.strictEqual(q.type, 'youhou');
+    assert.strictEqual(q.question, '留守');
+    assert.strictEqual(q.options[q.correct], '留守のときに電話があった。', 'plain text options');
+    assert.strictEqual(q.optionParts.length, 4, 'furigana parts per option');
+    assert.strictEqual(q.form, 'youhou');
+    var fixed = youhouQuestion(m, {}, [3, 2, 1, 0]);
+    assert.strictEqual(fixed.correct, 2, 'authored order kept');
+    assert.strictEqual(MONDAI.youhou.no, 5);
+  });
+
+  QUnit.test('言い換え類義 (iikae) + 用法 (youhou) + 文章の文法 (bunshou) via mondaiQuestions', function (assert) {
+    var u = lessons().slice(-1)[0], ctx = quizContext(u);
+    var bare = function (o) { return furiganaParts(o).map(function (p) { return p.t; }).join(''); };
+    // N5 r1 exam T1: an option (or a 用法 word) never prints a kanji the learner has not been taught without its reading
+    var noBareKanji = function (m, partsList) {
+      partsList.forEach(function (ps) { ps.forEach(function (p) { if (!p.r && Array.from(p.t).some(function (c) { return hasKanji(c) && !ctx.taughtKanji[c]; })) assert.ok(false, m.id + ' bare kanji ' + p.t); }); });
+    };
     var ik = catalogOf('mondai').filter(function (m) { return m.type === 'iikae'; });
     assert.ok(ik.length >= 15, ik.length + ' iikae items');
     ik.forEach(function (m) {
       var q = mondaiQuestions('iikae', m, ctx);
       assert.strictEqual(q.length, 1);
-      assert.strictEqual(q[0].options[q[0].correct], m.options[m.answer], m.id);
+      assert.strictEqual(q[0].options[q[0].correct], bare(m.options[m.answer]), m.id);
+      noBareKanji(m, q[0].optionParts); // N4 options carry ruby; N5 ones are kana-only
       assert.strictEqual(underlined(q[0])[0].t, m.underline);
       assert.strictEqual(q[0].itemId, m.id);
     });
@@ -139,11 +174,20 @@ QUnit.module('exam-format questions (mondai)', function () {
       var qs = mondaiQuestions('bunshou', m, ctx);
       assert.strictEqual(qs.length, m.blanks.length, m.id + ' one question per blank');
       qs.forEach(function (q, i) {
-        assert.strictEqual(q.options[q.correct], m.blanks[i].options[m.blanks[i].answer]);
+        assert.strictEqual(q.options[q.correct], bare(m.blanks[i].options[m.blanks[i].answer]));
+        noBareKanji(m, q.optionParts);
         var hot = q.passageParts.filter(function (p) { return p.u; });
         assert.strictEqual(hot.length, 1, 'current blank marked');
         assert.ok(hot[0].t.indexOf(String(i + 1)) >= 0);
       });
+    });
+    var yh = catalogOf('mondai').filter(function (m) { return m.type === 'youhou'; });
+    assert.ok(yh.length >= 10, yh.length + ' youhou items');
+    yh.forEach(function (m) {
+      var q = mondaiQuestions('youhou', m, ctx)[0];
+      assert.strictEqual(q.options[q.correct], bare(m.options[m.answer]), m.id);
+      assert.strictEqual(q.question, bare(m.word), m.id + ' word as text, its ruby in parts');
+      noBareKanji(m, [q.parts].concat(q.optionParts));
     });
     assert.deepEqual(mondaiQuestions('kanjiYomi', CATALOG.items['v:学校|がっこう'], ctx).map(function (q) { return q.type; }), ['kanji_yomi'], 'item-based types too');
     assert.ok(MONDAI.order && MONDAI.order.no === 2 && MONDAI.hyouki.section === 'moji-goi', 'mondai table');

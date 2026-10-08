@@ -9,28 +9,49 @@ QUnit.module('mock exams', function () {
   // what a fixed question refers to, for "no item twice" checks
   var qKey = function (q) { return [q.m, q.s || q.f || q.item || q.p || q.l, q.w || q.blank || q.q || ''].join(' '); };
 
-  QUnit.test('every mock follows its blueprint: questions per mondai, 3 sections, real N5 timing', function (assert) {
-    assert.deepEqual(mocks().map(function (m) { return m.id + ' ' + m.format; }), ['x:n5-mock-1 full', 'x:n5-mock-2 full', 'x:n5-mock-3 diagnostic']);
+  // Official section minutes (jlpt.jp/e/guideline/testsections.html, since 2020).
+  var OFFICIAL_MINUTES = { N5: [20, 40, 30], N4: [25, 55, 35] };
+  var mockLevels = function () { return LEVELS.filter(function (lv) { return mocks().some(function (m) { return m.level === lv; }); }); };
+
+  QUnit.test('pace × blueprint gives the official minutes at every level with a pace table', function (assert) {
+    Object.keys(OFFICIAL_MINUTES).forEach(function (lv) {
+      assert.deepEqual(mockMinutes(lv), OFFICIAL_MINUTES[lv], lv);
+      assert.ok(MOCK_PACE[lv] && MOCK_BLUEPRINT[lv] && JLPT_PASS[lv], lv + ' has pace, blueprint and pass rule');
+    });
+    assert.deepEqual(mockWeights('N4'), { vocab: 28, grammar: 21, reading: 8 }, 'N4 scoring weights');
+    assert.strictEqual(levelTable(MOCK_PACE, 'N2'), MOCK_PACE.N4, 'a level without a table uses the nearest easier one');
+    assert.strictEqual(levelTable(MOCK_PACE, undefined), MOCK_PACE.N5, 'no level = N5');
+  });
+
+  QUnit.test('every mock follows its blueprint: questions per mondai, 3 sections, the level\'s real timing', function (assert) {
+    assert.ok(mockLevels().indexOf('N5') >= 0, 'N5 has mocks');
+    mockLevels().forEach(function (lv) {
+      var l = lv.toLowerCase();
+      assert.deepEqual(mocks().filter(function (m) { return m.level === lv; }).map(function (m) { return m.id + ' ' + m.format; }),
+        ['x:' + l + '-mock-1 full', 'x:' + l + '-mock-2 full', 'x:' + l + '-mock-3 diagnostic'], lv + ' mocks');
+      var full = mockSections(CATALOG.items['x:' + l + '-mock-1']).map(function (s) { return s.seconds / 60; });
+      assert.deepEqual(full, OFFICIAL_MINUTES[lv], lv + ' full mock: ' + OFFICIAL_MINUTES[lv].join(' / ') + ' minutes');
+      var diag = mockSections(CATALOG.items['x:' + l + '-mock-3']);
+      assert.ok(diag.every(function (s, i) { return s.seconds < full[i] * 60 && s.seconds > full[i] * 20; }), lv + ' diagnostic: about half the time');
+    });
     mocks().forEach(function (m) {
-      var bp = MOCK_BLUEPRINT[m.format];
+      var bp = MOCK_BLUEPRINT[m.level][m.format];
       MOCK_SECTIONS.forEach(function (s) {
         var got = {};
         m.sections[s.key].forEach(function (q) { var k = mondaiKey(q); got[k] = (got[k] || 0) + 1; });
         assert.deepEqual(got, bp[s.key], m.id + ' ' + s.key);
       });
     });
-    var full = mockSections(CATALOG.items['x:n5-mock-1']).map(function (s) { return s.seconds / 60; });
-    assert.deepEqual(full, [20, 40, 30], 'full mock: 20 / 40 / 30 minutes');
-    var diag = mockSections(CATALOG.items['x:n5-mock-3']);
-    assert.ok(diag.every(function (s, i) { return s.seconds < full[i] * 60 && s.seconds > full[i] * 20; }), 'diagnostic: about half the time');
   });
 
-  QUnit.test('every reference exists, is N5 and of the right kind; nothing twice in a mock', function (assert) {
+  // Passages, listening items and authored mondai belong to the mock's level; words and sentences
+  // may come from an easier level (an N4 test still uses N5 words).
+  QUnit.test('every reference exists, fits the mock\'s level and is of the right kind; nothing twice in a mock', function (assert) {
     var errs = [];
     var need = function (m, id, kind) {
       var it = CATALOG.items[id];
       if (!it || it.kind !== kind) errs.push(m.id + ': ' + id + ' is not a ' + kind);
-      else if (it.level !== 'N5') errs.push(m.id + ': ' + id + ' is ' + it.level);
+      else if (kind === 'vocab' || kind === 'sentence' ? levelRank(it.level) > levelRank(m.level) : it.level !== m.level) errs.push(m.id + ': ' + id + ' is ' + it.level);
     };
     mocks().forEach(function (m) {
       var seen = {};
@@ -82,7 +103,7 @@ QUnit.module('mock exams', function () {
           if (q.w) {
             var sen = CATALOG.items[q.s], w = CATALOG.items[q.w];
             if (!wordSpan(furiganaParts(sen.furigana || sen.jp), w.word, w.reading)) e(m, q, 'word not once in the sentence with its reading');
-            if (!Array.from(w.word).filter(hasKanji).every(function (c) { return CATALOG.items['k:' + c] && CATALOG.items['k:' + c].level === 'N5'; })) e(m, q, 'tests a non-N5 kanji');
+            if (!Array.from(w.word).filter(hasKanji).every(function (c) { return CATALOG.items['k:' + c] && levelRank(CATALOG.items['k:' + c].level) <= levelRank(m.level); })) e(m, q, 'tests a kanji above ' + m.level);
             var same = catalogOf('vocab').filter(function (v) { return q.m === 'kanjiYomi' ? v.word === w.word : kataToHira(v.reading) === kataToHira(w.reading); })
               .map(function (v) { return q.m === 'kanjiYomi' ? kataToHira(v.reading) : v.word; });
             var right = q.m === 'kanjiYomi' ? kataToHira(w.reading) : w.word;
@@ -121,6 +142,18 @@ QUnit.module('mock exams', function () {
   // A later stem must not print the word an earlier 読み / 表記 question asks for.
   // ponytail: substring match, no tokenizer; so single-kanji spellings and 1-2 kana readings are skipped
   // (人, き, いま sit inside other words everywhere). Add a tokenizer if short answers need guarding.
+  // N5 r1 newbie N3: the diagnostic printed 彼はあまり本を読まない. A stem sentence holding a word the
+  // course never teaches (lib.js OFF_CATALOG) is a leak on a graded test.
+  QUnit.test('no mock stem sentence holds a word the course never teaches', function (assert) {
+    var bad = [];
+    mocks().forEach(function (m) {
+      ['vocab', 'grammar'].forEach(function (k) {
+        m.sections[k].forEach(function (q, i) { var s = q.s && CATALOG.items[q.s]; if (s && offCatalog(s)) bad.push(m.id + ' ' + k + ' Q' + (i + 1) + ' ' + s.jp); });
+      });
+    });
+    assert.deepEqual(bad, []);
+  });
+
   QUnit.test('no tested word shows up in another question of the same mock', function (assert) {
     var errs = [], shown = function (parts) { return (parts || []).map(function (p) { return p.t + (p.r || ''); }).join(''); };
     mocks().forEach(function (m) {
@@ -141,6 +174,44 @@ QUnit.module('mock exams', function () {
     assert.deepEqual(errs, []);
   });
 
+  // N5 r1 exam T2: the learner moves freely inside a part, so a kanji a 表記 question asks for must not be
+  // printed in an earlier question of the same section (名前 in Q3 gave away 前 in Q10). Char level: the
+  // short spellings the test above skips are exactly the ones at risk.
+  QUnit.test('no 表記 answer kanji is printed in an earlier question of its section', function (assert) {
+    var errs = [];
+    mocks().forEach(function (m) {
+      mockSections(m).forEach(function (s) {
+        s.questions.forEach(function (ex, i) {
+          var q = m.sections[s.key][i];
+          if (q.m !== 'hyouki') return;
+          var ks = Array.from(CATALOG.items[q.w].word).filter(hasKanji);
+          s.questions.slice(0, i).forEach(function (b, bi) {
+            var stem = (b.parts || []).concat(b.passageParts || []).map(function (p) { return p.t; }).join('') + (b.optionParts ? '' : (b.options || []).join(''));
+            ks.forEach(function (k) { if (stem.indexOf(k) >= 0) errs.push(m.id + ' ' + s.key + ' Q' + (i + 1) + ' ' + k + ' shown in Q' + (bi + 1)); });
+          });
+        });
+      });
+    });
+    assert.deepEqual(errs, []);
+  });
+
+  // N5 r1 exam T3: with every fake one sound off the key, the key was the option the other three orbit
+  // (smallest total edit distance) in 56% of the authored 漢字読み items. Square fakes (two one-edit fakes plus
+  // both edits) tie all four; the generated drill already does this (squareFakes).
+  QUnit.test('漢字読み: the key is the unique "centre" option in at most 35% of mock items', function (assert) {
+    var n = 0, centre = 0;
+    mocks().forEach(function (m) {
+      m.sections.vocab.filter(function (q) { return q.m === 'kanjiYomi'; }).forEach(function (q) {
+        var d = q.o.map(function (o) { return q.o.reduce(function (s, p) { return s + editDistance(o, p); }, 0); });
+        var min = Math.min.apply(null, d);
+        n++;
+        if (d[q.a] === min && d.filter(function (x) { return x === min; }).length === 1) centre++;
+      });
+    });
+    assert.ok(n >= 18, n + ' 漢字読み items');
+    assert.ok(centre / n <= 0.35, centre + ' / ' + n + ' keys are the centre');
+  });
+
   QUnit.test('every full mock has a katakana 表記 item: hiragana shown, wrong katakana as distractors', function (assert) {
     var words = {};
     catalogOf('vocab').forEach(function (v) { words[v.word] = true; });
@@ -148,7 +219,7 @@ QUnit.module('mock exams', function () {
       var qs = m.sections.vocab.filter(function (q) { return q.m === 'hyouki' && !hasKanji(CATALOG.items[q.w].word); });
       assert.ok(qs.length >= 1, m.id + ' has a katakana hyouki');
       qs.forEach(function (q) {
-        var ex = mockQuestion(q, levelKanji('N5')), u = ex.parts.filter(function (p) { return p.u; })[0];
+        var ex = mockQuestion(q, levelKanji(m.level)), u = ex.parts.filter(function (p) { return p.u; })[0];
         assert.ok(/^[ぁ-ゖー]+$/.test(u.t), m.id + ' underline in hiragana: ' + u.t);
         q.o.forEach(function (o, i) {
           assert.ok(/^[ァ-ヶー]+$/.test(o), m.id + ' katakana option ' + o);
@@ -184,6 +255,23 @@ QUnit.module('mock exams', function () {
     assert.deepEqual([edge.lkr, edge.listening, edge.total, edge.passed], [42, 42, 84, true], 'over every mark passes');
     var under = mockEstimate(p(0.4, 0.4, 0.4, 0.5));
     assert.deepEqual([under.lkr, under.listening, under.total, under.passed], [48, 30, 78, false], 'total under 80 fails');
+    assert.deepEqual(mockEstimate(p(0.4, 0.4, 0.4, 0.5), 'N5'), under, 'level N5 = the default');
+  });
+
+  QUnit.test('mockEstimate / mockOutlook / mockTrend at N4: weights 28 / 21 / 8, pass mark 90', function (assert) {
+    var p = function (v, g, r, l) { return { vocab: v, grammar: g, reading: r, listening: l }; };
+    assert.strictEqual(mockEstimate(p(1, 0, 0, 0), 'N4').lkr, Math.round(120 * 28 / 57), 'vocab weight 28 of 57');
+    assert.strictEqual(mockEstimate(p(0, 0, 1, 0), 'N4').lkr, Math.round(120 * 8 / 57), 'reading weight 8 of 57');
+    var edge = mockEstimate(p(0.5, 0.5, 0.5, 0.6), 'N4');
+    assert.deepEqual([edge.total, edge.passed], [96, true], '96 passes N4');
+    var n5pass = mockEstimate(p(0.45, 0.45, 0.45, 0.45), 'N4');
+    assert.deepEqual([n5pass.total, n5pass.passed], [81, false], '81 would pass N5 but not N4 (90)');
+    assert.ok(mockEstimate(p(0.45, 0.45, 0.45, 0.45), 'N5').passed);
+    var parts = function (v, g, r, l) { return { vocab: v, grammar: g, reading: r, listening: l }; };
+    assert.strictEqual(mockOutlook(parts([14, 14], [10, 10], [8, 8], [14, 14]), 'N4').verdict, 'likely');
+    var half = mockOutlook(parts([7, 14], [5, 10], [4, 8], [7, 14]), 'N4');
+    assert.notStrictEqual(half.verdict, 'likely', 'half right is not a likely N4 pass (90 of 180)');
+    assert.strictEqual(mockTrend([], 'N4').pass, 90, 'N4 pass line');
   });
 
   // ── range + verdict (ticket 48, research: .scratch/roadmap/research/jlpt-scoring.md §6) ──
@@ -218,6 +306,11 @@ QUnit.module('mock exams', function () {
     // not likely on the low end of a section minimum, but not out either: borderline
     var wobble = mockOutlook(parts([100, 100], [100, 100], [100, 100], [3, 11]), 'N5');
     assert.strictEqual(wobble.verdict, 'borderline', 'lower listening bound under 19, upper above it');
+    // N5 r1 newbie N15: the headline names the mark that decides
+    assert.deepEqual(wobble.marks, ['the listening minimum of 19'], 'borderline names only the crossed mark');
+    assert.deepEqual(noListening.marks, ['the listening minimum of 19'], 'unlikely names the missed minimum');
+    assert.deepEqual(perfect.marks, []);
+    assert.ok(none.marks.length === 3, none.marks.join());
   });
 
   // ── attempts + trend (ticket 49): mock docs are write-once, so "practice" is derived from takenAt order ──
@@ -275,6 +368,9 @@ QUnit.module('mock exams', function () {
     var ex = function (type, form) { return { type: type, form: form }; };
     assert.strictEqual(quizSeconds([ex('kanji_yomi', 'kanjiYomi'), ex('gap', 'gap'), ex('reading', 'reading'), ex('listen_dialog', 'listening'), ex('typing', 'meaningType')]),
       Math.round(1200 / 21 * 2 + 60 + 276 + 75));
+    assert.strictEqual(quizSeconds([ex('kanji_yomi', 'kanjiYomi'), ex('gap', 'gap'), ex('reading', 'reading'), ex('listen_dialog', 'listening')], 'N4'),
+      Math.round(1500 / 28 + 60 + 255 + 75), 'N4 pace');
+    assert.strictEqual(quizSeconds([ex('youhou', 'youhou')], 'N4'), Math.round(1500 / 28), '用法 at the vocabulary pace');
     assert.strictEqual(quizSeconds([Object.assign(ex('gap', 'gap'), { requeue: true })]), 0, 're-asked questions add no time');
     assert.deepEqual(timeUpResults([1, 2, 3, 4], [true]), [true, false, false, false], 'unanswered = wrong');
     var s = scoreQuiz('review', [{}, {}, {}, {}], timeUpResults([1, 2, 3, 4], [true]));
@@ -292,7 +388,32 @@ QUnit.module('mock exams', function () {
       });
     });
     var mocksUnits = allUnits().filter(function (u) { return u.kind === 'mock'; });
-    assert.deepEqual(mocksUnits.map(function (u) { return u.mock; }), ['x:n5-mock-1', 'x:n5-mock-2'], 'the two full mocks are plan units');
+    var want = [].concat.apply([], PLAN.map(function (p) { var l = p.level.toLowerCase(); return ['x:' + l + '-mock-1', 'x:' + l + '-mock-2']; }));
+    assert.deepEqual(mocksUnits.map(function (u) { return u.mock; }), want, 'the two full mocks of each planned level are plan units');
+  });
+
+  // N5 r1 newbie N6: u106 Q3 printed つくえの上に本やノートがあります, Q8 asked ノート; 父 was the key twice.
+  QUnit.test('prep drills, 10 seeded builds: no key shows in another question, no sentence or 表記 kanji twice', function (assert) {
+    var rnd = Math.random, x = 7, bad = [];
+    Math.random = function () { x = (x * 1664525 + 1013904223) % 4294967296; return x / 4294967296; };
+    var stem = function (ex) { return (ex.parts || ex.passageParts || []).map(function (p) { return p.t + (p.r || ''); }).join('') + (typeof ex.question === 'string' ? ex.question : ''); };
+    try {
+      allUnits().filter(function (u) { return u.kind === 'prep' && u.level === 'N5'; }).forEach(function (u) {
+        for (var r = 0; r < 10; r++) {
+          var exs = prepDrill(u), sents = {};
+          exs.forEach(function (ex, i) {
+            if (ex.sentence) { if (sents[ex.sentence]) bad.push(u.id + ' sentence twice ' + ex.sentence); sents[ex.sentence] = 1; }
+            var key = ex.options[ex.correct];
+            var ks = ex.form === 'hyouki' ? key.split('').filter(function (c) { return /[\u4e00-\u9faf]/.test(c); }) : key.length > 1 ? [key] : [];
+            exs.forEach(function (o, j) {
+              if (j === i || (o.passageParts && o.passageParts === ex.passageParts)) return;
+              ks.forEach(function (k) { if (stem(o).indexOf(k) >= 0 && !(o.passageParts && j > i)) bad.push(u.id + ' Q' + (i + 1) + ' key ' + k + ' in Q' + (j + 1)); });
+            });
+          });
+        }
+      });
+    } finally { Math.random = rnd; }
+    assert.deepEqual(bad.filter(function (b, i) { return bad.indexOf(b) === i; }), []);
   });
 
   QUnit.test('mockSteps: start and between screens show three steps with the right state and copy', function (assert) {

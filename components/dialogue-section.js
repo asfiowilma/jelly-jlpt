@@ -109,7 +109,10 @@ function DialogueSection(props) {
           return h('div', { key: i, className: 'dlg-cast' }, chip(c.side, c.initial, undefined, c.color), h('div', null, h('b', null, c.name), h('span', null, c.role)));
         }),
         h('div', { className: 'dlg-label dlg-youuse' }, 'You will use'),
-        h('div', { className: 'dlg-pills' }, view.pills.map(function (w, i) { return h('span', { key: i }, w); }))));
+        h('div', { className: 'dlg-pills' }, view.pills.map(function (w, i) {
+          var r = view.pillRuby[i];
+          return h('span', { key: i }, r && showFurigana ? h('ruby', null, w, h('rt', null, r)) : w);
+        }))));
   };
 
   var opened = function () {

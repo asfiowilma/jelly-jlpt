@@ -20,7 +20,9 @@ QUnit.module('catalog + plan', function () {
 
   QUnit.test('reading passages: lookup by format, review questions keep the right answer', function (assert) {
     assert.deepEqual(['short', 'mid', 'info'].map(function (f) { return passagesFor('N5', f).length; }), [20, 8, 8], '20 short / 8 mid / 8 info');
-    assert.strictEqual(passagesFor('N4').length, 0, 'none at N4 yet');
+    PLAN.forEach(function (p) { // every planned level has passages of each format (mocks and prep need them)
+      ['short', 'mid', 'info'].forEach(function (f) { assert.ok(passagesFor(p.level, f).length > 0, p.level + ' ' + f + ' passages'); });
+    });
     var rev = allUnits().filter(function (u) { return u.passages && u.passages.length; })[0];
     var p = CATALOG.items[rev.passages[0]];
     var exs = readingExercises(rev, { '学': true, '生': true });

@@ -2,7 +2,7 @@
 
 // Roadmap ticket 36: placement engine (binary search + spot-checks) over the real N5 plan.
 QUnit.module('placement engine', function () {
-  var units = function () { return buildUnits(PLAN, CATALOG); };
+  var units = function () { return buildUnits(PLAN, CATALOG).filter(liveUnit); }; // the shipped levels, as the app sees them
   var seeded = function (seed) { var x = seed; return function () { x = (x * 1664525 + 1013904223) % 4294967296; return x / 4294967296; }; };
   var right = function (q) { return q.options && typeof q.correct === 'number' ? q.correct : q.answers[0]; };
   var wrong = function (q) { return q.options && typeof q.correct === 'number' ? (q.correct + 1) % q.options.length : 'zzz'; };

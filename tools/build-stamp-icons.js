@@ -4,19 +4,25 @@
 //
 //   node tools/build-stamp-icons.js     # needs network, writes data/stamp-icons.js
 //
-// Template ids are instantiated for n5. When a level or achievement is added, add its id
-// to IDS and rerun. Ids are the seed: never rename one after ship (identicon would change).
+// Level template ids (LEVEL_IDS, <lv>-…) are instantiated for every level in LEVELS, plus that
+// level's own rows (LEVEL_EXTRA: N5 kana, N4 extras). When a level ships, add it to LEVELS; a new
+// achievement goes in LEVEL_IDS, LEVEL_EXTRA or IDS. Then rerun. Ids are the seed: never rename one
+// after ship (identicon would change).
 const fs = require('fs');
 const path = require('path');
 
-const IDS = `n5-all-lessons n5-all-reviews n5-prep n5-clear n5-quiz-sweep n5-diagnostic n5-mock-sat n5-mock-pass
-n5-mock-pass-all n5-mock-honors n5-mock-perfect n5-mock-balanced n5-vocab-mature n5-kanji-mature n5-grammar-mature
-n5-all-mature n5-hiragana n5-katakana hiragana-mastered katakana-mastered first-steps units-10 units-25 units-50
+const LEVELS = ['n5', 'n4'];
+const LEVEL_IDS = `all-lessons all-reviews prep clear quiz-sweep diagnostic mock-sat mock-pass
+mock-pass-all mock-honors mock-perfect mock-balanced vocab-mature kanji-mature grammar-mature
+all-mature`.split(/\s+/);
+const LEVEL_EXTRA = { n5: ['hiragana', 'katakana'], n4: 'first keigo voice conditionals giving mock-ears diag-first speedrun'.split(' ') };
+const IDS = [].concat(...LEVELS.map(function (lv) { return LEVEL_IDS.concat(LEVEL_EXTRA[lv] || []).map(function (id) { return lv + '-' + id; }); }),
+  `hiragana-mastered katakana-mastered first-steps units-10 units-25 units-50
 units-100 hiragana-blitz completionist streak-4 streak-7 streak-30 streak-100 streak-365 study-days-30 study-days-100
 study-days-200 double-feature hat-trick binge comeback early-bird night-owl new-year first-quiz first-perfect
 perfect-10 perfect-50 ippatsu redemption-arc mock-sittings-5 mock-sittings-15 first-review reviews-100 reviews-1000
 reviews-5000 review-day-50 review-day-100 mature-1 mature-100 mature-500 interval-365 import-first import-proved
-kanji-mature-25 kanji-mature-50`.split(/\s+/);
+kanji-mature-25 kanji-mature-50`.split(/\s+/));
 
 // Every <path ... d="..."> in the SVG; attribute order varies (fill before or after d).
 function pathData(svg) {

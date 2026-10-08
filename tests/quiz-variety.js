@@ -153,3 +153,33 @@ QUnit.module('quiz variety (ticket 43)', {
     });
   });
 });
+
+// N5 r1 newbie (u041-u080 N4, u081-u112 N19): lesson grammar was quizzed by matching the English gloss
+// to the printed pattern. A point is now made (gap, ★ order, conjugation) whenever such a question fits.
+// 10 seeded builds of every N5 lesson: 25% made before, 42% after; the rest have no gap or ★ form yet.
+QUnit.module('grammar is made, not matched', function () {
+  QUnit.test('10 seeded builds: the label match only when no gap / ★ / conjugation fits; made share at the ratchet', function (assert) {
+    var rnd = Math.random, x = 3, tot = 0, made = 0, bad = [];
+    Math.random = function () { x = (x * 1664525 + 1013904223) % 4294967296; return x / 4294967296; };
+    try {
+      buildUnits(PLAN, CATALOG).filter(function (u) { return u.level === 'N5' && u.kind === 'lesson' && (u.grammar || []).length; }).forEach(function (u) {
+        var ctx = quizContext(u), can = {};
+        u.grammar.forEach(function (g) {
+          can[g.id] = formsFor(g, ctx).some(function (fm) {
+            if (fm.name === 'patternMc') return false;
+            for (var i = 0; i < 5; i++) { var ex = fm.make(); if (ex && !answerLeaks(Object.assign(ex, { item: g }))) return true; }
+            return false;
+          });
+        });
+        for (var r = 0; r < 10; r++) buildExercises(u).forEach(function (ex) {
+          if (!ex.item || ex.item.kind !== 'grammar') return;
+          tot++;
+          if (ex.form !== 'patternMc') made++;
+          else if (can[ex.item.id]) bad.push(u.id + ' ' + ex.item.id);
+        });
+      });
+    } finally { Math.random = rnd; }
+    assert.deepEqual(bad.filter(function (b, i) { return bad.indexOf(b) === i; }), [], 'label match although a made form fits');
+    assert.ok(made / tot >= 0.4, Math.round(made / tot * 100) + '% of ' + tot + ' lesson grammar questions made');
+  });
+});

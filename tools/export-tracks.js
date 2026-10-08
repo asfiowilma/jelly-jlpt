@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Export every N5 listening item as a flat track list for the TTS notebook.
+// Export every listening item of every level (N5 first, LEVELS order) as a flat track list for the TTS notebook.
 // Run: node tools/export-tracks.js  ->  tools/audio/tracks.json + tools/audio/render-input.json
 //
 // clipKey rule (the notebook hashes it so identical lines across tracks render once):
@@ -20,8 +20,9 @@ const root = path.join(__dirname, '..');
 const ctx = { localStorage: { getItem() { return null; }, setItem() {} }, document: {} };
 ctx.window = ctx;
 vm.createContext(ctx);
-// every data file: a dialogue's speech text swaps in the kanji spelling of its `uses` vocab (dialogueSpeech)
-['data/catalog.js'].concat(fs.readdirSync(path.join(root, 'data', 'n5')).sort().map(f => 'data/n5/' + f), ['lib.js']).forEach(function (f) {
+// every data file of every level: a dialogue's speech text swaps in the kanji spelling of its `uses` vocab (dialogueSpeech)
+const levelDirs = fs.readdirSync(path.join(root, 'data')).filter(d => fs.statSync(path.join(root, 'data', d)).isDirectory()).sort();
+['data/catalog.js'].concat(...levelDirs.map(d => fs.readdirSync(path.join(root, 'data', d)).sort().map(f => 'data/' + d + '/' + f)), ['lib.js']).forEach(function (f) {
   vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
 });
 const read = f => JSON.parse(fs.readFileSync(path.join(__dirname, 'audio', f), 'utf8'));
@@ -44,7 +45,7 @@ function naturalScript(it) {
 
 const tracks = [], clips = new Set(), errors = [];
 let total = 0, chars = 0, allChars = 0;
-ctx.listeningFor('N5').forEach(function (it) {
+[].concat(...ctx.LEVELS.map(lv => ctx.listeningFor(lv))).forEach(function (it) { // N5 tracks first: the file stays stable as levels are added
   const kana = ctx.listeningScript(it), nat = naturalScript(it);
   if (kana.length !== nat.length || kana.some((l, i) => l.speaker !== nat[i].speaker))
     throw new Error(it.id + ': natural sequence does not match listeningScript');

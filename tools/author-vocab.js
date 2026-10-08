@@ -1,10 +1,11 @@
 #!/usr/bin/env node
-// Build data/n5/vocab.js from the N5 reference list + hand-written overrides +
+// Build data/<lvl>/vocab.js from a level's reference list + hand-written overrides +
 // a JMdict cross-check via the Jisho API (ticket 12).
 //
-//   node tools/author-vocab.js <jisho-cache dir> --fetch   # fill the cache (~1 req/s, skips cached)
-//   node tools/author-vocab.js <jisho-cache dir>           # write data/n5/vocab.js, print a summary
+//   node tools/author-vocab.js <jisho-cache dir> --fetch [--level N4]   # fill the cache (~1 req/s, skips cached)
+//   node tools/author-vocab.js <jisho-cache dir> [--level N4]           # write data/<lvl>/vocab.js, print a summary
 //
+// --level picks the ref, overrides, research list and output below (default N5; shown for N5).
 // Inputs:
 //   tools/ref/n5.json            one item per distinct word|reading (array entries = one item per
 //                                alternative, minus overrides.skip)
@@ -16,8 +17,11 @@
 //                                items, pos suffix/prefix/counter: [furigana compound, English, extra readings?],
 //                                the morpheme its own [kanji|reading] block or plain kana at the end/start;
 //                                quizzes ask these items only inside a context, ticket 40), alsoRead
-//                                (other readings of the same word, accepted when typed: 明日 あす; each must be
-//                                a reading of this word in the cached JMdict entry, else the build fails)
+//                                (other JMdict readings of the same spelling, accepted when typed and never a
+//                                reading-MC fake: 明日 あす, 三つ みつ, 先 さっき; each must be a reading of this
+//                                spelling in the cached JMdict lookup, else the build fails), altSpell (other JMdict
+//                                spellings of the same word, accepted in "type the Japanese": ご飯 for 御飯; checked
+//                                the same way)
 //   D:/…/.scratch/content-audit/research/data/vocab-n5.json  list sources (tanos/elzup) per row
 //   <cache>/<keyword>.json       raw Jisho responses (JMdict-based, CC BY-SA: used only as a check,
 //                                nothing from it is copied into the output except pos labels)
@@ -27,14 +31,18 @@
 "use strict";
 const fs = require("fs");
 const path = require("path");
+const { vocabEntry } = require("./build-ref.js");
 
 const root = path.resolve(__dirname, "..");
-const [cacheDir, flag] = process.argv.slice(2);
-if (!cacheDir) { console.error("usage: node tools/author-vocab.js <jisho-cache dir> [--fetch]"); process.exit(2); }
-const RESEARCH = path.resolve(cacheDir, "..", "vocab-n5.json"); // cache sits next to the research lists
+const args = process.argv.slice(2);
+const cacheDir = args[0], flag = args.indexOf("--fetch") > 0 ? "--fetch" : null;
+const LEVEL = (args.indexOf("--level") > 0 && args[args.indexOf("--level") + 1] || "N5").toUpperCase(), lvl = LEVEL.toLowerCase();
+if (!cacheDir || cacheDir[0] === "-") { console.error("usage: node tools/author-vocab.js <jisho-cache dir> [--fetch] [--level N4]"); process.exit(2); }
+const RESEARCH = path.resolve(cacheDir, "..", "vocab-" + lvl + ".json"); // cache sits next to the research lists
 
-const ref = JSON.parse(fs.readFileSync(path.join(__dirname, "ref", "n5.json"), "utf8")).vocab;
-const ov = JSON.parse(fs.readFileSync(path.join(__dirname, "n5-vocab-overrides.json"), "utf8"));
+const ref = JSON.parse(fs.readFileSync(path.join(__dirname, "ref", lvl + ".json"), "utf8")).vocab;
+const ovFile = path.join(__dirname, lvl + "-vocab-overrides.json");
+const ov = fs.existsSync(ovFile) ? JSON.parse(fs.readFileSync(ovFile, "utf8")) : { skip: {}, items: {} }; // a new level: every key is reported missing
 const KANA = /^[ぁ-ゖァ-ヺー]+$/;
 
 // Distinct item keys in ref order.
@@ -89,9 +97,9 @@ const STOP = new Set(["to", "a", "an", "the", "of", "be", "is", "in", "on", "at"
 const words = function (s) { return s.toLowerCase().replace(/\([^)]*\)/g, " ").split(/[^a-z0-9]+/).filter(function (w) { return w && !STOP.has(w); })
   .map(function (w) { return w.length > 4 ? w.replace(/(ing|ed|es|e|s)$/, "") : w; }); }; // ponytail: crude stem (dislike/disliking)
 
-const listSources = {};
-JSON.parse(fs.readFileSync(RESEARCH, "utf8")).forEach(function (row, i) {
-  [].concat(ref[i]).forEach(function (k) { listSources[k] = Array.from(new Set((listSources[k] || []).concat(row.sources))); });
+const listSources = {}; // research rows → ref keys, with build-ref's fixes (rows it skips map to keys no item has)
+JSON.parse(fs.readFileSync(RESEARCH, "utf8")).forEach(function (row) {
+  [].concat(vocabEntry(row)).forEach(function (k) { listSources[k] = Array.from(new Set((listSources[k] || []).concat(row.sources))); });
 });
 
 function check(k, o) {
@@ -121,7 +129,9 @@ function check(k, o) {
   const pos = o.pos || best.pos[0];
   if (!best.pos.length) return { pos: pos, reason: "Jisho gives no pos for this entry" };
   if (!pos) return { reason: "JMdict pos not mappable" };
-  if (best.pos.indexOf(pos) < 0) return { pos: pos, reason: "JMdict pos is " + best.pos.join("/") + ", not " + pos };
+  // JMdict files some counters as plain nouns (分 ふん, 週間): their numeral compounds are checked below
+  const posOk = best.pos.indexOf(pos) >= 0 || (pos === "counter" && best.pos.indexOf("noun") >= 0);
+  if (!posOk) return { pos: pos, reason: "JMdict pos is " + best.pos.join("/") + ", not " + pos };
   if (!best.glossOk) return { pos: pos, reason: "gloss shares no word with the JMdict senses (needs a manual read)" };
   // VERBOSE=1: one line per verified item (key, pos, JMdict entry, its pos, first sense) for review.
   if (process.env.VERBOSE) console.log([k, pos, best.e.slug, best.pos.join("/"), best.e.senses[0].english_definitions.slice(0, 3).join("; ")].join("\t"));
@@ -134,20 +144,22 @@ keys.forEach(function (k) {
   if (!o || !o.gloss || !o.tags) { missing.push(k); return; }
   const [w, r] = split(k);
   const c = check(k, o);
-  const it = { id: "v:" + k, kind: "vocab", level: "N5", word: w, reading: r, gloss: o.gloss, pos: c.pos || o.pos || "noun", tags: o.tags,
+  const it = { id: "v:" + k, kind: "vocab", level: LEVEL, word: w, reading: r, gloss: o.gloss, pos: c.pos || o.pos || "noun", tags: o.tags,
     sources: (listSources[k] || ["tanos"]).concat(c.ok ? ["jmdict"] : []), verified: !!c.ok };
   const notes = [o.notes, c.ok ? null : "unverified: " + c.reason].filter(Boolean).join(" ");
   if (o.accept) it.accept = o.accept;
   if (o.contexts) it.contexts = o.contexts.map(function (c) { const x = { f: c[0], en: c[1] }; if (c[2]) x.alt = c[2]; return x; });
   if (o.usage) it.usage = o.usage;
   if (o.tip) it.tip = o.tip; // learner-facing note, shown under the word in the lesson (notes stay authoring-only)
-  if (o.alsoRead) {
+  if (o.alsoRead || o.altSpell) {
     const file = cacheFile(queryOf(k)), data = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")).data : [];
-    const same = data.filter(function (e) { return e.japanese.some(function (j) { return j.word === w && j.reading === r; }); });
-    o.alsoRead.forEach(function (x) {
-      if (!same.some(function (e) { return e.japanese.some(function (j) { return j.word === w && j.reading === x; }); })) { console.error(k + ": alsoRead " + x + " is not a JMdict reading"); process.exit(1); }
-    });
-    it.alsoRead = o.alsoRead;
+    // any entry of the lookup: 先 さっき and 時 どき are other JMdict words spelled the same (a typed reading
+    // that is right for the spelling is never marked wrong, and never offered as a fake, ticket 40 B9.2)
+    const inJm = function (word, reading) { return data.some(function (e) { return e.japanese.some(function (j) { return j.word === word && j.reading === reading; }); }); };
+    (o.alsoRead || []).forEach(function (x) { if (!inJm(w, x)) { console.error(k + ": alsoRead " + x + " is not a JMdict reading of " + w); process.exit(1); } });
+    (o.altSpell || []).forEach(function (x) { if (!inJm(x, r)) { console.error(k + ": altSpell " + x + " is not a JMdict spelling of " + r); process.exit(1); } });
+    if (o.alsoRead) it.alsoRead = o.alsoRead;
+    if (o.altSpell) it.altSpell = o.altSpell;
   }
   if (notes) it.notes = notes;
   if (o.alt) it.alt = "v:" + o.alt; // duplicate spelling: not taught, covered by the alt item (ticket 34)
@@ -156,11 +168,12 @@ keys.forEach(function (k) {
 });
 if (missing.length) { console.error(missing.length + " keys without gloss/tags in overrides:\n  " + missing.join("\n  ")); process.exit(1); }
 
-const header = '"use strict";\n\n// N5 vocabulary (ticket 12). Generated by tools/author-vocab.js from tools/ref/n5.json\n' +
-  "// (Tanos list, credit tanos.co.uk; elzup/jlpt-word-list, MIT) + tools/n5-vocab-overrides.json\n" +
+const header = '"use strict";\n\n// ' + LEVEL + " vocabulary" + (LEVEL === "N5" ? " (ticket 12)" : "") + ". Generated by tools/author-vocab.js from tools/ref/" + lvl + ".json\n" +
+  "// (Tanos list, credit tanos.co.uk; elzup/jlpt-word-list, MIT) + tools/" + lvl + "-vocab-overrides.json\n" +
   "// (glosses and tags written for this project). verified:true = word, reading and pos\n" +
   "// confirmed against JMdict (EDRDG, via jisho.org). Do not edit by hand; edit the overrides.\n";
-fs.writeFileSync(path.join(root, "data", "n5", "vocab.js"), header + "CATALOG.add([\n" +
+fs.mkdirSync(path.join(root, "data", lvl), { recursive: true });
+fs.writeFileSync(path.join(root, "data", lvl, "vocab.js"), header + "CATALOG.add([\n" +
   out.map(function (it) { return "  " + JSON.stringify(it); }).join(",\n") + "\n]);\n");
 const count = function (f) { const m = {}; out.forEach(function (it) { [].concat(it[f]).forEach(function (x) { m[x] = (m[x] || 0) + 1; }); }); return m; };
 console.log(JSON.stringify({ items: out.length, verified: out.filter(function (i) { return i.verified; }).length, unverified: reasons, pos: count("pos"), tags: count("tags") }, null, 1));

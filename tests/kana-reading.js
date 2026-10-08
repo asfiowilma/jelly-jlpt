@@ -72,7 +72,9 @@ QUnit.module('kana reading through words (ticket 44)', function () {
 
   QUnit.test('single-kana questions: ≤20% per stage where words allow, ≤20% overall, none in reviews', function (assert) {
     // u009 (ひゃ, びゃ, ぴゃ, みゃ…), u016 / u017 (katakana yōon): hardly a word holds them, even at N3
-    var SPARSE = ['n5.u009', 'n5.u016', 'n5.u017'], tot = { w: 0, s: 0 };
+    // u011 (first katakana rows): エ オ サ ソ are in no word before ン (u013), and the stage quiz stops at
+    // KANA_QUIZ_MAX (N5 r1 newbie N1), so 4 singles are 4 of 17 reads; the overall share below still holds
+    var SPARSE = ['n5.u009', 'n5.u011', 'n5.u016', 'n5.u017'], tot = { w: 0, s: 0 };
     var share = function (x) { return x.s / (x.s + x.w); };
     withSeed(9, function () {
       kanaStages().forEach(function (u) {

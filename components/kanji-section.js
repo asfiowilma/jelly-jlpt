@@ -73,8 +73,9 @@ function KanjiSection(props) {
   };
   var meaning = function (k) { return React.createElement("div", { className: "kj-meaning" }, k.meaning.join(" · ")); };
   var readings = function (k) {
-    var kunExtra = (k.extra || []).filter(function (r) { return r.indexOf('.') >= 0; });
-    var onExtra = (k.extra || []).filter(function (r) { return r.indexOf('.') < 0; });
+    // on readings are katakana, kun hiragana (間: あいだ, ま are kun, N5 r1 newbie N10)
+    var onExtra = (k.extra || []).filter(function (r) { return /^[゠-ヿ]/.test(r); });
+    var kunExtra = (k.extra || []).filter(function (r) { return onExtra.indexOf(r) < 0; });
     var line = function (tag, main, extra) {
       return main.length + extra.length > 0 && React.createElement("div", { className: "kj-rd" },
         React.createElement("span", { className: "kj-tag " + tag }, tag),

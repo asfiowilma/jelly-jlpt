@@ -108,16 +108,39 @@ QUnit.module('buildExercises', {
     assert.ok(true);
   });
 
-  QUnit.test('N5 lessons teaching a conjugation form ask for that form of one of their verbs', function (assert) {
-    ['g:te-form', 'g:nai-form', 'g:ta-form'].forEach(function (gid) {
+  QUnit.test('lessons teaching a conjugation form (every planned level) ask for that form of one of their words', function (assert) {
+    var gids = [];
+    buildUnits(PLAN, CATALOG).forEach(function (x) {
+      if (x.kind === 'lesson') x.grammar.forEach(function (g) { if (g.conjForm && gids.indexOf(g.id) < 0) gids.push(g.id); });
+    });
+    ['g:te-form', 'g:nai-form', 'g:ta-form'].forEach(function (gid) { assert.ok(gids.indexOf(gid) >= 0, 'N5 ' + gid + ' taught'); });
+    gids.forEach(function (gid) {
       var u = buildUnits(PLAN, CATALOG).filter(function (x) {
         return x.kind === 'lesson' && x.grammar.some(function (g) { return g.id === gid; });
       })[0];
+      var forms = u.grammar.map(function (g) { return g.conjForm; }).filter(Boolean);
       var ex = null;
-      for (var i = 0; i < 10 && !ex; i++) ex = buildExercises(u).filter(function (e) { return e.type === 'conjugation'; })[0] || null;
-      assert.ok(ex && ex.targetForm === CATALOG.items[gid].conjForm, gid + ' → ' + (ex && ex.targetForm));
+      for (var i = 0; i < 20 && !ex; i++) ex = buildExercises(u).filter(function (e) { return e.type === 'conjugation'; })[0] || null;
+      assert.ok(ex && forms.indexOf(ex.targetForm) >= 0, gid + ' → ' + (ex && ex.targetForm));
       var v = ex && CATALOG.items[ex.conjItem];
-      assert.ok(v && checkTyping(conjugate(v.word, v.reading, ex.targetForm, v.pos).kana, ex.answers), gid + ': answer for ' + (v && v.word));
+      assert.ok(v && checkTyping(conjugateItem(v, ex.targetForm).kana, ex.answers), gid + ': answer for ' + (v && v.word));
+    });
+  });
+
+  QUnit.test('from N4 a conjForm unit quizzes its adjectives too (conjugateAdj); N5 stays verb-only', function (assert) {
+    var u = buildUnits(PLAN, CATALOG).filter(function (x) {
+      return x.kind === 'lesson' && x.grammar.length && x.vocab.some(function (v) { return v.pos === 'adj-i'; });
+    })[0];
+    var adj = u.vocab.filter(function (v) { return v.pos === 'adj-i'; })[0];
+    assert.deepEqual(quizContext(u).adjs, [], 'N5: no adjective conjugation');
+    ['くて-form', 'ば-form', 'なくて-form'].forEach(function (form) {
+      var n4 = Object.assign({}, u, { level: 'N4', grammar: [Object.assign({}, u.grammar[0], { conjForm: form })] });
+      var ctx = quizContext(n4);
+      assert.ok(ctx.adjs.indexOf(adj) >= 0, form + ': the unit adjective is a candidate');
+      var ex = formsFor(adj, ctx).filter(function (f) { return f.name === 'conj'; })[0].make();
+      assert.ok(ex && ex.answers.indexOf(conjugateAdj(adj.word, adj.reading, form, 'adj-i').kana) >= 0, form + ' ' + adj.word + ' → ' + (ex && ex.answers));
+      var gx = formsFor(n4.grammar[0], ctx).filter(function (f) { return f.name === 'conj'; })[0].make();
+      assert.ok(gx && gx.targetForm === form, form + ': the grammar point asks it');
     });
   });
 

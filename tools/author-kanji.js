@@ -1,34 +1,44 @@
 #!/usr/bin/env node
-// Build data/n5/kanji.js from the N5 kanji list + hand-written overrides, checked
+// Build data/<lvl>/kanji.js from a level's kanji list + hand-written overrides, checked
 // against KANJIDIC and Wiktionary (ticket 13).
 //
-//   node tools/author-kanji.js <wiktionary-cache dir> --fetch   # fill the cache (~1 req/s, skips cached)
-//   node tools/author-kanji.js <wiktionary-cache dir>           # write data/n5/kanji.js, print a summary
-//   VERBOSE=1 … one line per kanji; VERBOSE=2 … also how each N5 word splits into readings
+//   node tools/author-kanji.js <wiktionary-cache dir> --fetch [--level N4]   # fill the cache (~1 req/s, skips cached)
+//   node tools/author-kanji.js <wiktionary-cache dir> [--level N4]           # write data/<lvl>/kanji.js, print a summary
+//   VERBOSE=1 … one line per kanji; VERBOSE=2 … also how each word splits into readings
 //
+// --level picks the ref, overrides, research list and output below (default N5; shown for N5).
 // Inputs:
 //   tools/ref/n5.json               the 79 N5 kanji (Tanos list)
 //   tools/n5-kanji-overrides.json   per kanji: meaning (own words, required), optional accept (extra
 //                                   English answers for the typed meaning question), extra
-//                                   (≤2 common readings no N5 word uses), notes, and special =
+//                                   (≤2 common readings no N5 word uses; they become on/kun when no
+//                                   word uses the kanji at all), notes, and special =
 //                                   N5 words read as a whole (jukujikun: 今日 きょう) with the reason
-//   data/n5/vocab.js                N5 words: which readings a learner needs, and `words`
+//   data/n5/vocab.js                N5 words: which readings a learner needs, and `words`. A higher
+//                                   level also loads every lower level's vocab (an N4 kanji's words
+//                                   and readings come from N4 and N5 words); only its own kanji are written
 //   <cache>/../kanji-n5.json        Tanos meaning + KANJIDIC fields (via kanji-data; CC BY-SA, EDRDG)
 //   <cache>/<kanji>.json            raw en.wiktionary wikitext (CC BY-SA)
+//   kanji-svg/<hex>.svg             KanjiVG stroke SVGs, one <path> per stroke (node tools/build-strokes.js --fetch)
 // No bulk import: on/kun are exactly the readings N5 words use, extra is picked by hand. Nothing
 // is copied from KANJIDIC or Wiktionary but readings and the stroke count (facts, kept only when
 // sources agree); meanings are written in the overrides.
 // verified:true = every reading is in ≥2 of KANJIDIC / Wiktionary / a JMdict-verified N5 word,
-// both give the same stroke count, and the meaning shares a word with Tanos/KANJIDIC's (same
+// two of KANJIDIC / Wiktionary / KanjiVG give the same stroke count (Wiktionary counts the
+// traditional radical forms, 近 8 for 辶, so KanjiVG's Japanese count breaks a tie), and the meaning shares a word with Tanos/KANJIDIC's (same
 // wording, so one source) and with Wiktionary's (or the override says meaningOk after a read).
 "use strict";
 const fs = require("fs");
 const path = require("path");
 
 const root = path.resolve(__dirname, "..");
-const [cacheDir, flag] = process.argv.slice(2);
-if (!cacheDir) { console.error("usage: node tools/author-kanji.js <wiktionary-cache dir> [--fetch]"); process.exit(2); }
-const chars = JSON.parse(fs.readFileSync(path.join(__dirname, "ref", "n5.json"), "utf8")).kanji;
+const args = process.argv.slice(2);
+const cacheDir = args[0], flag = args.indexOf("--fetch") > 0 ? "--fetch" : null;
+const LEVEL = (args.indexOf("--level") > 0 && args[args.indexOf("--level") + 1] || "N5").toUpperCase(), lvl = LEVEL.toLowerCase();
+if (!cacheDir || cacheDir[0] === "-") { console.error("usage: node tools/author-kanji.js <wiktionary-cache dir> [--fetch] [--level N4]"); process.exit(2); }
+const ORDER = ["N5", "N4", "N3", "N2", "N1"];
+const vocabLevels = ORDER.slice(0, ORDER.indexOf(LEVEL) + 1); // this level's words and every lower level's
+const chars = JSON.parse(fs.readFileSync(path.join(__dirname, "ref", lvl + ".json"), "utf8")).kanji;
 const cacheFile = function (c) { return path.join(cacheDir, c + ".json"); };
 
 if (flag === "--fetch") {
@@ -55,7 +65,7 @@ const bare = function (r) { return hira(r).replace(/^-|-$/g, ""); }; // "-び" �
 const isKata = function (r) { return /^[ァ-ヺー]+$/.test(r); };
 
 const kd = {};
-JSON.parse(fs.readFileSync(path.resolve(cacheDir, "..", "kanji-n5.json"), "utf8")).forEach(function (k) { kd[k.kanji] = k; });
+JSON.parse(fs.readFileSync(path.resolve(cacheDir, "..", "kanji-" + lvl + ".json"), "utf8")).forEach(function (k) { kd[k.kanji] = k; });
 
 // Wiktionary: every {{ja-readings}} block in the Japanese section (etymology splits them; goon/
 // kanon/toon/soon/kanyoon = on, kun = kun, nanori skipped) + the Han char template's sn= strokes.
@@ -92,7 +102,7 @@ function has(list, r) {
   return list.some(function (y) { y = bare(y); return y === x || (!isKata(r) && y.replace(".", "") === x.replace(".", "")); });
 }
 
-// ── which readings N5 words use ─────────────────────────────────────────────
+// ── which readings the level's words (and lower levels') use ────────────────
 const VOICE = { か: "が", き: "ぎ", く: "ぐ", け: "げ", こ: "ご", さ: "ざ", し: "じ", す: "ず", せ: "ぜ", そ: "ぞ", た: "だ", ち: "ぢ", つ: "づ", て: "で", と: "ど", は: "ば", ひ: "び", ふ: "ぶ", へ: "べ", ほ: "ぼ" };
 const SEMI = { は: "ぱ", ひ: "ぴ", ふ: "ぷ", へ: "ぺ", ほ: "ぽ" };
 // Surface forms of a reading inside a word: as is, rendaku (voiced first kana), and sokuon
@@ -120,8 +130,8 @@ chars.forEach(function (c) {
   CAND[c] = out;
 });
 
-// Split word|reading: kana match literally, 々 repeats the previous kanji, a non-N5 kanji takes
-// 1–4 kana, an N5 kanji takes one of its candidates. Returns [[char, candidate], ...] or null.
+// Split word|reading: kana match literally, 々 repeats the previous kanji, a kanji of another level
+// takes 1–4 kana, one of this level takes one of its candidates. Returns [[char, candidate], ...] or null.
 function align(word, reading) {
   const w = Array.from(word);
   function go(i, j, acc) {
@@ -147,12 +157,13 @@ function align(word, reading) {
   return go(0, 0, []);
 }
 
-const ov = JSON.parse(fs.readFileSync(path.join(__dirname, "n5-kanji-overrides.json"), "utf8"));
+const ovFile = path.join(__dirname, lvl + "-kanji-overrides.json");
+const ov = fs.existsSync(ovFile) ? JSON.parse(fs.readFileSync(ovFile, "utf8")) : { items: {} }; // a new level: every kanji is reported missing
 const vocab = [];
 global.CATALOG = { add: function (a) { vocab.push.apply(vocab, a); } };
-require(path.join(root, "data", "n5", "vocab.js"));
+vocabLevels.forEach(function (l) { require(path.join(root, "data", l.toLowerCase(), "vocab.js")); });
 
-const used = {}, jm = {}, n = {}, wordsOf = {}, unaligned = []; // jm: readings shown by a JMdict-verified N5 word; n: word count per char+reading
+const used = {}, jm = {}, n = {}, wordsOf = {}, unaligned = []; // jm: readings shown by a JMdict-verified word; n: word count per char+reading
 chars.forEach(function (c) { used[c] = []; jm[c] = []; wordsOf[c] = []; });
 vocab.forEach(function (v) {
   const here = chars.filter(function (c) { return v.word.indexOf(c) >= 0; });
@@ -167,7 +178,7 @@ vocab.forEach(function (v) {
     if (v.verified && jm[p[0]].indexOf(p[1].key) < 0) jm[p[0]].push(p[1].key);
   });
 });
-if (unaligned.length) { console.error(unaligned.length + " N5 words don't split into their kanji's readings; add them to an override's `special`:\n  " + unaligned.join("\n  ")); process.exit(1); }
+if (unaligned.length) { console.error(unaligned.length + " words don't split into their " + LEVEL + " kanji's readings; add them to an override's `special`:\n  " + unaligned.join("\n  ")); process.exit(1); }
 
 // ── build ────────────────────────────────────────────────────────────────────
 const STOP = new Set(["a", "an", "the", "of", "to", "for", "counter", "and", "or"]);
@@ -178,12 +189,16 @@ const out = [], problems = [], missing = [];
 chars.forEach(function (c) {
   const o = ov.items[c];
   if (!o || !o.meaning) { missing.push(c); return; }
-  const k = kd[c], w = W[c], extra = o.extra || [];
+  const k = kd[c], w = W[c];
+  let extra = o.extra || [];
   // A bare kun stem that another taught kun already shows is dropped (ひと beside ひと.つ);
   // most-used reading first.
-  const core = used[c].filter(function (r) {
+  let core = used[c].filter(function (r) {
     return isKata(r) || r.indexOf(".") >= 0 || !used[c].some(function (x) { return x !== r && x.split(".")[0] === r; });
   }).sort(function (a, b) { return n[c + b] - n[c + a]; });
+  // No word splits into this kanji (京: 東京 is no vocab item; 田: only 田舎, read whole): its
+  // readings are the extra ones, so reading questions and cards still have an answer.
+  if (!core.length) { core = extra; extra = []; }
   const why = [], cited = new Set(["tanos"]);
   core.concat(extra).forEach(function (r) {
     const src = [];
@@ -197,9 +212,12 @@ chars.forEach(function (c) {
   const mine = o.meaning.join(" ");
   if (!overlap(mine, k.tanos_meaning + " " + k.meanings.join(" "))) why.push("meaning shares no word with Tanos/KANJIDIC");
   if (!overlap(mine, w.defs) && !o.meaningOk) why.push("meaning shares no word with Wiktionary");
-  const strokes = k.strokes && k.strokes === w.strokes ? k.strokes : null;
-  if (!strokes) why.push("stroke count: KANJIDIC " + k.strokes + ", Wiktionary " + w.strokes);
-  const it = { id: "k:" + c, kind: "kanji", level: "N5", char: c,
+  const svg = path.join(root, "kanji-svg", c.codePointAt(0).toString(16).padStart(5, "0") + ".svg");
+  const kvg = fs.existsSync(svg) ? (fs.readFileSync(svg, "utf8").match(/<path\b/g) || []).length : null;
+  const counts = [k.strokes, w.strokes, kvg];
+  const strokes = counts.find(function (x, i) { return x && counts.indexOf(x, i + 1) > i; }) || null; // any two agree
+  if (!strokes) why.push("stroke count: KANJIDIC " + k.strokes + ", Wiktionary " + w.strokes + ", KanjiVG " + kvg);
+  const it = { id: "k:" + c, kind: "kanji", level: LEVEL, char: c,
     on: core.filter(isKata), kun: core.filter(function (r) { return !isKata(r); }), meaning: o.meaning };
   if (o.accept) it.accept = o.accept;
   if (extra.length) it.extra = extra;
@@ -214,13 +232,16 @@ chars.forEach(function (c) {
 });
 if (missing.length) { console.error(missing.length + " kanji without a meaning in overrides: " + missing.join(" ")); process.exit(1); }
 
-const header = '"use strict";\n\n// N5 kanji (ticket 13). Generated by tools/author-kanji.js from tools/ref/n5.json (Tanos list,\n' +
-  "// credit tanos.co.uk) + tools/n5-kanji-overrides.json (meanings written for this project).\n" +
-  "// on/kun = the readings the N5 words in data/n5/vocab.js use; extra = ≤2 more common ones;\n" +
-  "// words = N5 vocab containing the kanji. verified:true = each reading in ≥2 of KANJIDIC\n" +
-  "// (EDRDG, CC BY-SA 4.0), en.wiktionary and a JMdict-verified N5 word; stroke count agreed by\n" +
-  "// KANJIDIC and Wiktionary. Do not edit by hand; edit the overrides.\n";
-fs.writeFileSync(path.join(root, "data", "n5", "kanji.js"), header + "CATALOG.add([\n" +
+const WORDS = vocabLevels.length > 1 ? vocabLevels.join("+") + " words in data/*/vocab.js" : "N5 words in data/n5/vocab.js";
+const header = '"use strict";\n\n// ' + LEVEL + " kanji" + (LEVEL === "N5" ? " (ticket 13)" : "") + ". Generated by tools/author-kanji.js from tools/ref/" + lvl + ".json (Tanos list,\n" +
+  "// credit tanos.co.uk) + tools/" + lvl + "-kanji-overrides.json (meanings written for this project).\n" +
+  "// on/kun = the readings the " + WORDS + " use (the extra ones when\n" +
+  "// no word uses the kanji); extra = ≤2 more common ones;\n" +
+  "// words = " + vocabLevels.join("+") + " vocab containing the kanji. verified:true = each reading in ≥2 of KANJIDIC\n" +
+  "// (EDRDG, CC BY-SA 4.0), en.wiktionary and a JMdict-verified " + vocabLevels.join("/") + " word; stroke count agreed by\n" +
+  "// two of KANJIDIC, Wiktionary and KanjiVG (Wiktionary counts traditional radical forms). Do not edit by hand; edit the overrides.\n";
+fs.mkdirSync(path.join(root, "data", lvl), { recursive: true });
+fs.writeFileSync(path.join(root, "data", lvl, "kanji.js"), header + "CATALOG.add([\n" +
   out.map(function (it) { return "  " + JSON.stringify(it); }).join(",\n") + "\n]);\n");
 console.log(JSON.stringify({ kanji: out.length, verified: out.filter(function (i) { return i.verified; }).length }));
 problems.forEach(function (p) { console.log("  " + p); });

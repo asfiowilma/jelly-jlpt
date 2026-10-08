@@ -61,26 +61,8 @@ function UnitView(props) {
     if (!g.ref && alts.length && alts[0] !== g.pattern) toks = alts.map(function (a) { return a.replace(/^[〜～]/, "").split(/[\s(]/)[0]; }).filter(function (x) { return x.length > 1; });
     return toks.map(function (x) { return x.trim(); }).filter(Boolean).sort(function (a, b) { return b.length - a.length; });
   };
-  // Lesson units: up to 3 more sentences using this unit's words / kanji (alt spellings count),
-  // most matches first, skipping the grammar examples shown above.
-  var examples = [];
-  if (unit.kind === 'lesson') {
-    var shown = {}, weight = {};
-    unit.grammar.forEach(function (g) { grammarExamples(g).forEach(function (s) { shown[s.id] = true; }); });
-    unit.vocab.forEach(function (v) { weight[v.id] = 2; });
-    unit.kanji.forEach(function (k) { weight[k.id] = 1; });
-    catalogOf('vocab').forEach(function (v) { if (v.alt && weight[v.alt]) weight[v.id] = 2; });
-    // only sentences whose grammar is taught by this unit or earlier
-    // then fewest words / kanji taught later (lessonExamples' rule), then most matches
-    var later = {}, known = taughtIds(unit);
-    units.slice(unit.index + 1).forEach(function (u) { (u.grammar || []).forEach(function (g) { if (u.kind === 'lesson') later[g.id] = true; }); });
-    examples = catalogOf('sentence').filter(function (s) {
-      return !(s.uses || []).some(function (id) { return later[id]; });
-    }).map(function (s) {
-      return { s: s, w: (s.uses || []).reduce(function (n, id) { return n + (weight[id] || 0); }, 0), n: untaughtCount(s, known) };
-    }).filter(function (x) { return x.w > 0 && !shown[x.s.id]; })
-      .sort(function (a, b) { return a.n - b.n || b.w - a.w; }).slice(0, 3).map(function (x) { return x.s; });
-  }
+  // Lesson units: up to 3 more sentences using this unit's words / kanji (lib.js unitExamples)
+  var examples = unitExamples(unit);
   var practice = unit.practice || [];
   // lesson note box; lessons with a dialogue show it right after the dialogue
   var noteAfterDialogue = unit.kind === 'lesson' && !!unit.dialogue;
@@ -109,13 +91,13 @@ function UnitView(props) {
         unit.guide && React.createElement('aside', { className: 'unit-note', 'aria-label': t('guide_label', lv) },
           React.createElement('div', { className: 'unit-note-label' }, icon('bulb'), t('guide_label', lv)),
           React.createElement('h3', { className: 'unit-note-head' }, pgText(unit.guide.lead, showFurigana))),
-        unit.guide && React.createElement(PrepGuide, { guide: unit.guide, showFurigana: showFurigana }),
+        unit.guide && React.createElement(PrepGuide, { guide: unit.guide, level: unit.level, showFurigana: showFurigana }),
         unit.notes && !noteAfterDialogue && noteBox(),
         unit.kana.length > 0 && React.createElement(KanaSection, { key: 'kana:' + unit.id, unit: unit }),
         unit.dialogue && unit.kind === 'lesson' && React.createElement(DialogueSection, {
           key: 'dlg:' + unit.id, unit: unit, showFurigana: showFurigana, toggleFurigana: toggleFurigana }),
         unit.notes && noteAfterDialogue && noteBox(),
-        unit.vocab.length > 0 && React.createElement(VocabSection, { key: 'vocab:' + unit.id, unit: unit }),
+        unit.vocab.length > 0 && React.createElement(VocabSection, { key: 'vocab:' + unit.id, unit: unit, showFurigana: showFurigana }),
         // kana units: read-only practice words (no card, not quizzed), shown in kana
         practice.length > 0 && section(t('section_read', lv), React.createElement("ul", { className: "vocab-list read-list" }, practice.map(function (v) {
           return React.createElement("li", { key: v.id, className: "vocab-row" },
@@ -134,10 +116,10 @@ function UnitView(props) {
           // for a list in the main column
           var alts = g.pattern.split("/");
           if (!alts.every(function (a) { return /^[〜～]/.test(a); })) alts = [g.pattern];
-          var longForm = g.formation && g.formation.length > 70;
+          var longForm = g.formation && speechText(g.formation).length > 70; // ruby markup not counted
           var toks = grammarMarks(g, alts);
           var build = g.formation && React.createElement("div", { className: "grammar-form" },
-            React.createElement("b", null, t('grammar_build', lv)), g.formation);
+            React.createElement("b", null, t('grammar_build', lv)), rubyNodes(g.formation, showFurigana));
           return React.createElement(React.Fragment, { key: g.id }, section(t('section_grammar', lv),
             React.createElement("div", { className: "grammar-card" },
               React.createElement("div", { className: "grammar-rail" },
@@ -149,8 +131,8 @@ function UnitView(props) {
               React.createElement("div", { className: "grammar-main" },
                 longForm && React.createElement("div", { className: "grammar-form grammar-steps" },
                   React.createElement("b", null, t('grammar_build', lv)),
-                  React.createElement("ul", null, g.formation.split("; ").map(function (x, i) { return React.createElement("li", { key: i }, x); }))),
-                g.notes && React.createElement("p", { className: "grammar-notes" }, g.notes),
+                  React.createElement("ul", null, g.formation.split("; ").map(function (x, i) { return React.createElement("li", { key: i }, rubyNodes(x, showFurigana)); }))),
+                g.notes && React.createElement("p", { className: "grammar-notes" }, rubyNodes(g.notes, showFurigana)),
                 React.createElement("div", { className: "grammar-examples" }, grammarExamples(g).map(function (s) { return sentence(s, toks); }))))));
         }),
         examples.length > 0 && section(t('section_examples', lv), React.createElement("div", { className: "example-list" }, examples.map(exampleCard))),

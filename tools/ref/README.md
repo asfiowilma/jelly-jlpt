@@ -1,21 +1,23 @@
 # Reference lists (test fixture)
 
-`n5.json` lists which vocabulary (`word|reading`), kanji and grammar point names
-belong to JLPT N5. `tests/catalog-checks.js` uses it to check catalog levels,
+`<level>.json` (`n5.json`, `n4.json`) lists which vocabulary (`word|reading`), kanji and
+grammar point names belong to that JLPT level. `tests/catalog-checks.js` uses it to check catalog levels,
 and `tools/coverage.js` uses it for the coverage report. It is a dev fixture;
 the app never loads it.
 
 Regenerate from the dev-only research lists (`.scratch/content-audit/research/data`):
 
 ```bash
-node tools/build-ref.js .scratch/content-audit/research/data N5
+node tools/build-ref.js .scratch/content-audit/research/data N5 N4
 ```
 
 `build-ref.js` fixes a few known list errors on the way (`VOCAB_FIXES`: the 明い
 typo, おじいさん filed under 伯父/叔父, readings with する glued on, the truncated
-ラジオカセ, and others). Each fix is commented there.
+ラジオカセ, and others). Each fix is commented there. `VOCAB_SKIP` drops rows that repeat
+another row or are grammar patterns filed as words. A word already on a lower level's list
+is left out of the higher level (the lowest level wins), so build N5 before N4.
 
-`data/n5/vocab.js` is generated from this list by `tools/author-vocab.js` (see its header).
+`data/<level>/vocab.js` is generated from this list by `tools/author-vocab.js --level <level>` (see its header).
 
 ## Credits
 

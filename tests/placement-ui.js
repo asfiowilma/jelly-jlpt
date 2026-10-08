@@ -2,7 +2,7 @@
 
 // Roadmap ticket 39: pure helpers behind the welcome screen and the placement result screen.
 QUnit.module('placement UI helpers', function () {
-  var units = function () { return buildUnits(PLAN, CATALOG); };
+  var units = function () { return buildUnits(PLAN, CATALOG).filter(liveUnit); }; // the shipped levels, as the app sees them
   var teaching = function (us) { return us.filter(function (u) { return u.kind === 'kana' || u.kind === 'lesson'; }); };
 
   QUnit.test('progressIsEmpty: only unit / card / log / mock docs count', function (assert) {
