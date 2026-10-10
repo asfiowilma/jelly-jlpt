@@ -243,6 +243,7 @@ function MockExam(props) {
   if (phase === 'results') {
     var practice = mockIsPractice(allMocks, result);
     var r = result, est = r.estimate, rule = levelTable(JLPT_PASS, mock.level), out = mockOutlook(r.parts, mock.level), ringLen = 2 * Math.PI * 46;
+    var secOk = est.lkr >= rule.lkr && est.listening >= rule.listening;
     var tone = { likely: 'pass', borderline: 'warn', unlikely: 'fail' }[out.verdict];
     var vcls = { likely: 'ok', borderline: 'warn', unlikely: 'bad' }[out.verdict];
     var furi = furiganaOn(Store.snapshot().furiganaPref, mock.level);
@@ -295,7 +296,7 @@ function MockExam(props) {
             ce("p", { className: "mr-small mr-muted" }, "Likely range " + range(out.total) + ". ",
               out.verdict === 'likely' ? "Even the low end clears the pass mark and both section minimums."
                 : out.verdict === 'borderline' ? "The range crosses " + out.marks.join(' and ') + ". A longer test or another attempt would tell you more."
-                : "Even the high end misses " + out.marks.join(' and ') + "."))),
+                : (out.total[1] < rule.total || out.lkr[1] < rule.lkr || out.listening[1] < rule.listening ? "Even the high end misses " : "Your score misses ") + out.marks.join(' and ') + "."))),
         practice && ce("p", { className: "mr-small mr-muted" }, "You have sat this mock before, so the questions are known. This attempt is practice and does not change your headline estimate", (function () { var f = mockHeadline(allMocks, mock.id); return f ? " (first attempt: " + f.estimate.total + " / 180)." : "."; })()),
         ce("table", { className: "mr-slip" },
           ce("caption", { className: "mr-sr" }, "Estimated scores by section"),
@@ -311,7 +312,8 @@ function MockExam(props) {
               ce("td", { className: "mr-n mr-small mr-muted mr-hide-s" }, range(out.listening) + " · min " + rule.listening, mark(est.listening >= rule.listening))),
             subRow("Listening", r.parts.listening),
             ce("tr", { className: "mr-tot" },
-              ce("th", { scope: "row", colSpan: 2 }, "Total · pass mark " + rule.total, mark(est.total >= rule.total)),
+              // a pass needs the total AND both section minimums (N5 r2 newbie N4: green total next to a failed section)
+              ce("th", { scope: "row", colSpan: 2 }, "Total · pass mark " + rule.total + (est.total >= rule.total && !secOk ? " (a section minimum is missed)" : ""), mark(est.total >= rule.total && secOk)),
               ce("td", { className: "mr-n" }, est.total),
               ce("td", { className: "mr-n mr-small mr-muted mr-hide-s" }, range(out.total))))),
         ce("div", { className: "mr-actions" },

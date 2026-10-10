@@ -169,4 +169,17 @@ QUnit.module('conjugate', function () {
     assert.notStrictEqual(cut.note, wear.note, 'each names its own meaning');
     assert.strictEqual(eat.note, undefined, 'no twin, no note');
   });
+  QUnit.test('a form the verb never takes (conjSkip) is never asked (N4 r1 grammar T4: 決まろう, 空かれる)', function (assert) {
+    var it = function (id) { return CATALOG.items[id]; };
+    assert.strictEqual(conjugateItem(it('v:決まる|きまる'), 'volitional'), null, '決まろう');
+    assert.strictEqual(conjugateItem(it('v:空く|あく'), 'passive'), null, '空かれる');
+    assert.strictEqual(conjugateItem(it('v:込む|こむ'), 'causative'), null, '込ませる');
+    assert.strictEqual(conjugateItem(it('v:決まる|きまる'), 'て-form').kana, 'きまって', 'plain forms stay');
+    assert.ok(conjugateItem(it('v:降る|ふる'), 'passive'), '雨に降られる (suffering passive) stays');
+    var odd = /^(過ぎよう|決まろう|鳴ろう|見つかろう|空かれる|込まれる|込ませる)$/; // kanji spellings: なろう (なる become) is fine
+    buildUnits(PLAN, CATALOG).filter(function (u) { return u.level === 'N4' && (u.grammar || []).some(function (g) { return g.conjForm; }); }).forEach(function (u) {
+      var g = u.grammar.filter(function (x) { return x.conjForm; })[0], f = formsFor(g, quizContext(u)).filter(function (x) { return x.name === 'conj'; })[0];
+      for (var i = 0; i < 15; i++) { var ex = f.make(); if (ex) ex.answers.forEach(function (a) { assert.notOk(odd.test(a), u.id + ': ' + a); }); }
+    });
+  });
 });

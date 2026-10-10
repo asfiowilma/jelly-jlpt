@@ -21,7 +21,8 @@
 //                                reading-MC fake: 明日 あす, 三つ みつ, 先 さっき; each must be a reading of this
 //                                spelling in the cached JMdict lookup, else the build fails), altSpell (other JMdict
 //                                spellings of the same word, accepted in "type the Japanese": ご飯 for 御飯; checked
-//                                the same way)
+//                                the same way), conjSkip (conjugation forms the verb never takes in real use, so
+//                                no quiz asks them: non-volitional 決まる has no 決まろう / 決まれ; N4 r1 grammar T4)
 //   D:/…/.scratch/content-audit/research/data/vocab-n5.json  list sources (tanos/elzup) per row
 //   <cache>/<keyword>.json       raw Jisho responses (JMdict-based, CC BY-SA: used only as a check,
 //                                nothing from it is copied into the output except pos labels)
@@ -44,6 +45,8 @@ const ref = JSON.parse(fs.readFileSync(path.join(__dirname, "ref", lvl + ".json"
 const ovFile = path.join(__dirname, lvl + "-vocab-overrides.json");
 const ov = fs.existsSync(ovFile) ? JSON.parse(fs.readFileSync(ovFile, "utf8")) : { skip: {}, items: {} }; // a new level: every key is reported missing
 const KANA = /^[ぁ-ゖァ-ヺー]+$/;
+// lib.js CONJ_FORMS: the forms a `conjSkip` may name
+const CONJ_SKIP_FORMS = ["potential", "passive", "causative", "volitional", "imperative", "causative-passive"];
 
 // Distinct item keys in ref order.
 const keys = [];
@@ -160,6 +163,10 @@ keys.forEach(function (k) {
     (o.altSpell || []).forEach(function (x) { if (!inJm(x, r)) { console.error(k + ": altSpell " + x + " is not a JMdict spelling of " + r); process.exit(1); } });
     if (o.alsoRead) it.alsoRead = o.alsoRead;
     if (o.altSpell) it.altSpell = o.altSpell;
+  }
+  if (o.conjSkip) { // conjugation forms the word never takes (non-volitional 決まる: no 決まろう); lib.js conjugateItem skips them
+    o.conjSkip.forEach(function (f) { if (CONJ_SKIP_FORMS.indexOf(f) < 0) { console.error(k + ": conjSkip " + f + " is not a conjugation form"); process.exit(1); } });
+    it.conjSkip = o.conjSkip;
   }
   if (notes) it.notes = notes;
   if (o.alt) it.alt = "v:" + o.alt; // duplicate spelling: not taught, covered by the alt item (ticket 34)

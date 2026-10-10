@@ -52,7 +52,9 @@ function DialoguePractice(props) {
       return h('button', { key: k, className: 'qz-tile' + (picks.indexOf(k) >= 0 ? ' used' : ''), disabled: locked || picks.indexOf(k) >= 0,
         onClick: function () { setPicks(picks.concat([k])); setRes(null); } }, item);
     })),
-    res && h('p', { className: 'dlg-pr-why ' + res, role: 'status' }, res === 'ok' ? '✓ ' : 'Not quite. ', ex.explain),
+    // the right pieces in another order: say so, not the explanation of the wrong piece (N4 r1 newbie2 N2)
+    res && h('p', { className: 'dlg-pr-why ' + res, role: 'status' }, res === 'ok' ? '✓ ' : 'Not quite. ',
+      res === 'bad' && picks.every(function (k) { return (ex.pieces || []).indexOf(ex.items[k]) >= 0; }) ? 'The pieces are right; try another order. ' : '', ex.explain),
     h('div', { className: 'dlg-pr-acts' },
       !locked && h('button', { className: 'dlg-play', disabled: picks.length !== ex.need, onClick: check }, 'Check'),
       !locked && h('button', { className: 'dlg-ghost', disabled: !picks.length, onClick: function () { setPicks([]); setRes(null); } }, 'Reset'),

@@ -159,7 +159,12 @@ function qzKit(h, ex, st) {
       !ex.passageParts && (ex.question || ex.parts) && h("div", {
         key: "q", className: sentence ? "qz-sent" : "qz-big" + exBigClass(q), lang: "ja"
       }, ex.parts ? partsEl(ex.parts) : ex.question),
-      ex.note && h("p", { key: "n", className: "qz-gloss" }, ex.note),
+      ex.note && (!ex.noteLater || revealed || st.showEarly) && h("p", { key: "n", className: "qz-gloss" }, ex.note),
+      ex.note && ex.noteLater && !revealed && !st.showEarly && h("p", { key: "n", className: "qz-hint", lang: "en" },
+        "On the test there is no English. ", h("button", { className: "link-btn", onClick: st.onEarly }, "Stuck? Show the English")),
+      // N5 r2b newbie N13: ★ was never explained
+      ex.type === 'order' && !revealed && h("p", { key: "how", className: "qz-hint", lang: "en" },
+        "Put the four pieces in the blanks in an order that makes a sentence, then pick the piece that lands on ★."),
       ex.type === 'order' && revealed && ex.sentence && CATALOG.items[ex.sentence] &&
         h("p", { key: "solved", className: "qz-solved", lang: "ja" }, CATALOG.items[ex.sentence].jp)];
   };
@@ -199,7 +204,7 @@ function qzKit(h, ex, st) {
             h("button", {
               className: optClass(i), lang: "ja", disabled: revealed, 'aria-pressed': !revealed && pick === i,
               'aria-label': !revealed ? "Choose reply " + (i + 1) : undefined, onClick: function () { st.onPick(i); }
-            }, h("kbd", null, i + 1), h("span", null, revealed ? partsEl(ex.optionParts[i]) : "Reply " + (i + 1))));
+            }, h("kbd", null, i + 1), h("span", null, revealed || st.showEarly ? partsEl(ex.optionParts[i]) : "Reply " + (i + 1)))); // transcript asked for: replies too (N5 r2 newbie N1)
         })), !revealed && (pick === null || pick === undefined) && h("p", { key: "hint", className: "qz-hint", lang: "en" }, st.replyHint || "The replies show after you answer.")]
         : optionsList();
       return { wide: false, main: [promptEl,
@@ -219,8 +224,12 @@ function qzKit(h, ex, st) {
         (revealed || st.showEarly) && transcript(), list] };
     }
     // Choice (mc, gap, ★ order, iikae …), a single audio clip (listen), or a reading passage
-    var sound = ex.type === 'listen' && h("div", { key: "player", className: "qz-player" },
-      h("button", { className: "qz-play", 'aria-label': "Listen to audio", onClick: function () { speak(ex.audio); } }, icon('speaker')));
+    // browser speech only: with no Japanese voice say so, and show what was said once answered (N5 r2 newbie N4)
+    var sound = ex.type === 'listen' && [h("div", { key: "player", className: "qz-player" },
+      h("button", { className: "qz-play", 'aria-label': "Listen to audio", onClick: function () { speak(ex.audio); } }, icon('speaker'))),
+      st.voiceStatus === 'none' && !revealed && h("div", { key: "warn", className: "qz-warn", role: "status" },
+        "This browser has no Japanese voice, so the audio may be silent. Pick your best guess; the word shows after you answer."),
+      revealed && h("p", { key: "said", className: "qz-solved", lang: "ja" }, ex.audio)];
     if (ex.type === 'reading') {
       return { wide: true, main: h("div", { className: "qz-split" },
         h("div", null, promptEl, h("div", { className: "qz-passage", lang: "ja" }, rubyEls(ex.passage))),

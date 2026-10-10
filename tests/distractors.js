@@ -258,4 +258,10 @@ QUnit.module('buildExercises distractors', {
     assert.ok(km, 'kanji meaning MC');
     assert.strictEqual(km.options[km.correct], CATALOG.items['k:' + km.question].meaning.join(', '));
   });
+
+  QUnit.test('ko-so-a-do words are near synonyms of each other only', function (assert) {
+    var w = function (word) { return { id: 'v:' + word, word: word }; };
+    assert.ok(nearSynonyms(w('その'), w('あれ')));
+    assert.ok(!nearSynonyms(w('その'), w('いぬ')));
+  });
 });

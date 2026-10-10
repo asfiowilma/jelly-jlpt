@@ -60,6 +60,17 @@ QUnit.module('quiz answer leaks', function () {
     assert.deepEqual(found, {}, 'leaks by type/form: ' + JSON.stringify(examples));
   });
 
+  // N5 r2 grammar T3: patternMc shows the meaning as the prompt, so it must not quote the label's words
+  QUnit.test('grammar meaning never names its own pattern (English word or romaji of its kana)', function (assert) {
+    catalogOf('grammar').filter(function (g) { return g.level === 'N5'; }).forEach(function (g) {
+      var m = g.meaning.toLowerCase();
+      var rom = (g.pattern.match(/[ぁ-ん]+/g) || []).map(function (k) { return kanaToRomaji(k); })
+        .filter(function (r) { return r.length >= 2 && new RegExp('\\b' + r + '\\b').test(m); });
+      var en = (g.pattern.match(/[A-Za-z]{4,}/g) || []).filter(function (w) { return m.indexOf(w.toLowerCase()) >= 0; });
+      assert.deepEqual(rom.concat(en), [], g.id + ': ' + g.meaning);
+    });
+  });
+
   QUnit.test('the oracle catches a leak (negative)', function (assert) {
     var v = CATALOG.items['v:あなた|あなた'];
     assert.ok(leaks({ type: 'mc', prompt: 'Which word means "you (あなた)"?', question: '', options: ['あなた', 'はい'], correct: 0, item: v }), 'answer in prompt');

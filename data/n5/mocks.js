@@ -23,7 +23,7 @@ CATALOG.add([
       {"m":"kanjiYomi","s":"s:tatoeba:152388","w":"v:外国|がいこく","o":["かいこく","がいこく","かいごく","がいごく"],"a":1},
       {"m":"kanjiYomi","s":"s:tatoeba:10901611","w":"v:名前|なまえ","o":["なあまえ","なまい","なまえ","なあまい"],"a":2},
       {"m":"kanjiYomi","s":"s:tatoeba:10901910","w":"v:今年|ことし","o":["こんとし","ことじ","こんとじ","ことし"],"a":3},
-      {"m":"kanjiYomi","s":"s:tatoeba:189557","w":"v:雨|あめ","o":["ああめ","あま","あめ","ああま"],"a":2},
+      {"m":"kanjiYomi","s":"s:tatoeba:189557","w":"v:雨|あめ","o":["ああめ","あみ","あめ","ああみ"],"a":2},
       {"m":"kanjiYomi","s":"s:tatoeba:9528358","w":"v:電車|でんしゃ","o":["てんしゃ","でんしゃ","てんじゃ","でんじゃ"],"a":1},
       {"m":"kanjiYomi","s":"s:tatoeba:80128","w":"v:木|き","o":["ぎ","きい","ぎい","き"],"a":3},
       {"m":"hyouki","s":"s:tatoeba:123124","w":"v:二人|ふたり","o":["二人","二入","二八","二大"],"a":0},
@@ -93,7 +93,7 @@ CATALOG.add([
       ]
     },
     uses: ["g:wo","g:to","g:kara","g:deshou","g:mo","g:te-kara","g:te-wa-ikemasen","g:ni-iku","g:ga","g:te-kudasai","g:mashou","g:masen-ka","v:テレビ|テレビ","v:コーヒー|コーヒー","v:電気|でんき","v:友達|ともだち","v:山|やま","v:行く|いく","v:高い|たかい","v:雨|あめ","v:見る|みる","v:パン|パン","v:コート|コート","v:着る|きる","k:電","k:気","k:行","k:友","k:日","k:山","k:高","k:雨","k:見"],
-    sources: ['own'], verified: false },
+    sources: ['own'], verified: false, notes: 'One source (own writing), so not verified.' },
   { id: "x:n5-mock-2", kind: 'mock', level: 'N5', format: "full", title: "N5 mock exam 2",
     sections: {
      vocab: [
@@ -127,8 +127,8 @@ CATALOG.add([
       {"m":"gap","f":"わたしは　まだ　ひるごはんを　[食|た]べて（　）。","o":["ください","から","いません","まで"],"a":2,"en":"I haven't had lunch yet.","explain":"まだ + 〜ていません = not yet."},
       {"m":"gap","f":"あの　みせの　パンは　とても　おいしかった（　）。","o":["ます","です","ません","でした"],"a":1,"en":"The bread at that shop was very good.","explain":"The past of an い-adjective is おいしかったです; でした is never added to an い-adjective."},
       {"m":"gap","f":"わたしは　およぐ（　）が　すきです。","o":["で","を","に","の"],"a":3,"en":"I like swimming.","explain":"Dictionary form + のがすき: の turns the verb into \"swimming\"."},
-      {"m":"gap","f":"[山川|やまかわ]さんは　いま　でんわを　かけて（　）。","o":["います","ました","たい","ない"],"a":0,"en":"Mr. Yamakawa is making a phone call now.","explain":"いま + て-form + いる: an action going on now."},
-      {"m":"gap","f":"きのう　デパートで　くつ（　）かばんを　かいました。","o":["や","を","が","で"],"a":0,"en":"Yesterday I bought shoes, a bag and so on at the department store.","explain":"Listing things: AやB."},
+      {"m":"gap","f":"[山川|やまかわ]さんは　いま　でんわを　かけて（　）。","o":["います","です","でした","たい"],"a":0,"en":"Mr. Yamakawa is making a phone call now.","explain":"いま + て-form + いる: an action going on now."},
+      {"m":"gap","f":"[雨|あめ]が　やんで、そらが　あかる（　）　なりました。","o":["く","に","で","な"],"a":0,"en":"The rain stopped and the sky became bright.","explain":"An い-adjective drops い and takes く before なる: あかるくなる (become bright)."},
       {"m":"order","s":"s:own:n5-order-akai-kasa","star":1,"o":[1,0,3,2]},
       {"m":"order","s":"s:own:n5-order-boushi","star":2,"o":[2,3,0,1]},
       {"m":"order","s":"s:own:n5-order-umi","star":2,"o":[3,2,1,0]},
@@ -170,13 +170,13 @@ CATALOG.add([
       {"m":"listening","l":"l:n5-which-notebook"}
       ]
     },
-    uses: ["g:de","g:te-kudasai","g:hou-ga-ii","g:mada-te-imasen","g:adj-i","g:no-ga-suki","g:te-iru","g:ya","v:バス|バス","v:行く|いく","v:一|いち","v:日|にち","v:三|さん","v:九|く","v:時|じ","v:食べる|たべる","v:パン|パン","v:デパート|デパート","v:川|かわ","v:五|ご","v:ズボン|ズボン","k:川","k:五","k:行","k:一","k:日","k:三","k:九","k:時","k:食","k:山"], names: ["山川|やまかわ"],
-    sources: ['own'], verified: false },
+    uses: ["g:de","g:te-kudasai","g:hou-ga-ii","g:mada-te-imasen","g:adj-i","g:no-ga-suki","g:te-iru","g:ya","v:バス|バス","v:行く|いく","v:一|いち","v:日|にち","v:三|さん","v:九|く","v:時|じ","v:食べる|たべる","v:パン|パン","v:川|かわ","v:五|ご","v:ズボン|ズボン","k:雨","k:川","k:五","k:行","k:一","k:日","k:三","k:九","k:時","k:食","k:山"], names: ["山川|やまかわ"],
+    sources: ['own'], verified: false, notes: 'One source (own writing), so not verified.' },
   { id: "x:n5-mock-3", kind: 'mock', level: 'N5', format: "diagnostic", title: "N5 diagnostic test",
     sections: {
      vocab: [
       {"m":"kanjiYomi","s":"s:own:n5-ne","w":"v:天気|てんき","o":["でんき","てんぎ","でんぎ","てんき"],"a":3},
-      {"m":"kanjiYomi","s":"s:own:n5-no-ga-heta-ryouri","w":"v:父|ちち","o":["ちち","あに","はは","あね"],"a":0},
+      {"m":"kanjiYomi","s":"s:own:n5-no-ga-heta-ryouri","w":"v:父|ちち","o":["ちち","ちぢ","ちっち","ちっぢ"],"a":0},
       {"m":"kanjiYomi","s":"s:tatoeba:9231680","w":"v:電話|でんわ","o":["でんわ","てんわ","でんは","てんは"],"a":0},
       {"m":"kanjiYomi","s":"s:tatoeba:2143385","w":"v:大きい|おおきい","o":["おきい","おおきい","おぎい","おおぎい"],"a":1},
       {"m":"hyouki","s":"s:own:n5-ya-pan","w":"v:上|うえ","o":["工","土","上","士"],"a":2},
@@ -184,7 +184,7 @@ CATALOG.add([
       {"m":"hyouki","s":"s:tatoeba:172298","w":"v:時|じ","o":["持","待","時","特"],"a":2},
       {"m":"bunmyaku","f":"きのうは　[雨|あめ]でしたから、かさを（　）[出|で]かけました。","o":["はいて","さして","きて","かぶって"],"a":1,"en":"It rained yesterday, so I went out with my umbrella up.","explain":"An umbrella is held up: かさをさす. かぶる is for hats, はく for shoes and trousers, きる for clothes."},
       {"m":"bunmyaku","f":"わたしは　コーヒーが（　）ですから、のみません。","o":["げんき","すき","じょうず","きらい"],"a":3,"en":"I don't like coffee, so I don't drink it.","explain":"Not drinking it follows from disliking it (きらい); すき would be a reason to drink it."},
-      {"m":"bunmyaku","f":"さむいですから、セーターを（　）ください。","o":["きて","しめて","はいて","かぶって"],"a":0,"en":"It's cold, so please put on a sweater.","explain":"Clothes for the top half are put on with きる; はく is for shoes and trousers, かぶる for hats."},
+      {"m":"bunmyaku","f":"ごはんの　まえに、てを（　）ください。","o":["あらって","かって","たべて","あびて"],"a":0,"en":"Please wash your hands before the meal.","explain":"Hands are washed: てをあらう. かう (buy), たべる (eat) and あびる (take a shower) don't fit て."},
       {"m":"iikae","item":"m:n5-iikae-shokudou","o":[0,1,2,3]},
       {"m":"iikae","item":"m:n5-iikae-heta","o":[1,0,3,2]}
       ],
@@ -218,6 +218,6 @@ CATALOG.add([
       {"m":"listening","l":"l:n5-close-door"}
       ]
     },
-    uses: ["g:ni","g:no","g:masen-ka","g:nai-de-kudasai","g:adj-na","v:七|しち","v:時|じ","v:本|ほん","v:見る|みる","v:雨|あめ","v:出かける|でかける","v:コーヒー|コーヒー","v:セーター|セーター","k:雨","k:出","k:七","k:時","k:本","k:山","k:川","k:見"], names: ["山川|やまかわ"],
-    sources: ['own'], verified: false }
+    uses: ["g:ni","g:no","g:masen-ka","g:nai-de-kudasai","g:adj-na","v:七|しち","v:時|じ","v:本|ほん","v:見る|みる","v:雨|あめ","v:出かける|でかける","v:コーヒー|コーヒー","k:雨","k:出","k:七","k:時","k:本","k:山","k:川","k:見"], names: ["山川|やまかわ"],
+    sources: ['own'], verified: false, notes: 'One source (own writing), so not verified.' }
 ]);

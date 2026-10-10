@@ -195,6 +195,26 @@ QUnit.module('near-synonym typed meaning (コップ / カップ)', function () {
     assert.ok(/カップ/.test(otherMeaningNote(ex, t)));
     assert.equal(otherMeaning(ex, 'tumbler'), null, 'own meaning is right');
   });
+  QUnit.test('the ruby of a typed compound reading never spells the answer (N4 r1 vocab T1: 二倍, 田中様, 健君)', function (assert) {
+    var asked = 0;
+    buildUnits(PLAN, CATALOG).filter(function (u) { return u.kind === 'lesson'; }).forEach(function (u) {
+      (u.vocab || []).filter(isBound).forEach(function (v) {
+        var f = formsFor(v, quizContext(u)).filter(function (x) { return x.name === 'ctxRead'; })[0];
+        var rnd = Math.random, x = 5;
+        Math.random = function () { x = (x * 1664525 + 1013904223) % 4294967296; return x / 4294967296; };
+        try {
+          for (var i = 0; i < 10; i++) {
+            var ex = f && f.make();
+            if (!ex) continue;
+            asked++;
+            assert.notOk(rubySpells(ex.parts, ex.answers), u.id + ' ' + ex.question + ': ruby reads ' + ex.answers[0]);
+          }
+        } finally { Math.random = rnd; }
+      });
+    });
+    assert.ok(asked > 200, asked + ' typed compound readings checked');
+    assert.ok(/ruby/.test(answerLeaks({ type: 'typing', prompt: 'Type the reading', answers: ['にばい'], parts: [{ t: '二', r: 'に' }, { t: '倍', r: 'ばい' }] }) || ''), 'answerLeaks reads the ruby');
+  });
   QUnit.test('a compound read with a sound change explains it on the answer (N5 r1 newbie N1: 三杯)', function (assert) {
     var ctx = function (id, w) { var v = CATALOG.items[id]; return [v, boundContexts(v).filter(function (b) { return b.word === w; })[0]]; };
     var a = ctx('v:杯|はい', '三杯'), b = ctx('v:杯|はい', '二杯'), c = ctx('v:回|かい', '三回'), d = ctx('v:時|じ', '九時');

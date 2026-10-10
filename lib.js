@@ -232,6 +232,27 @@ function glossText(v) { return v.gloss.join(' / '); }
 // noteParts(notes): a unit note → { head, body[] } for the lesson note box. head = the first
 // sentence of the first paragraph; the rest of that paragraph is split into sentences, later
 // paragraphs (prep/mock notes: one per line) stay whole. "e.g." / "i.e." / "etc." don't end a sentence.
+// noteIds(s): learner text with internal grammar ids (g:te-form) written as the point's label (〜て), so no raw
+// id shows (N4 r1 newbie N1); the label's first form, without its bracketed gloss.
+function noteIds(s) {
+  return String(s || '').replace(/\bg:[a-z0-9-]+/g, function (id) {
+    var g = CATALOG.items[id];
+    return g && g.pattern ? g.pattern.split('/')[0].replace(/\s*\([^)]*\)\s*$/, '').trim() : id;
+  });
+}
+// splitTop(s, sep): s split at sep outside brackets, so "Plain form (dictionary; ない) + noun; N + の" keeps the
+// bracket whole (N4 r1 newbie N2: the BUILD list broke rows inside （…）).
+function splitTop(s, sep) {
+  var out = [''], depth = 0;
+  for (var i = 0; i < s.length; i++) {
+    var c = s.charAt(i);
+    if ('([（［'.indexOf(c) >= 0) depth++;
+    else if (')]）］'.indexOf(c) >= 0) depth = Math.max(0, depth - 1);
+    if (!depth && s.substr(i, sep.length) === sep) { out.push(''); i += sep.length - 1; continue; }
+    out[out.length - 1] += c;
+  }
+  return out;
+}
 function noteParts(notes) {
   var paras = String(notes || '').split('\n').map(function (p) { return p.trim(); }).filter(Boolean);
   if (!paras.length) return { head: '', body: [] };
@@ -327,7 +348,10 @@ function conjugateAdj(word, reading, form, pos) {
   return out;
 }
 // conjugateItem(v, form): a catalog vocab item in that form; adjectives through conjugateAdj.
+// A form the word does not take in real use (conjSkip, authored per vocab item: 決まろう, 空かれる; N4 r1
+// grammar T4) is null, so no quiz asks it.
 function conjugateItem(v, form) {
+  if ((v.conjSkip || []).indexOf(form) >= 0) return null;
   return /^adj-(i|na)$/.test(v.pos || '') ? conjugateAdj(v.word, v.reading, form, v.pos) : conjugate(v.word, v.reading, form, v.pos);
 }
 
@@ -570,8 +594,11 @@ function sameShown(text) {
   }
   return _shownIndex[key(text || '')] || [];
 }
+// ko-so-a-do words all gloss as "this"/"that"/"here"..., which SENSE_STOPWORDS hides: one per option set
+var KOSOADO = ' この その あの どの これ それ あれ どれ ここ そこ あそこ どこ こちら そちら あちら どちら こっち そっち あっち どっち ';
+var inKosoado = function (x) { return !!x.word && KOSOADO.indexOf(' ' + x.word + ' ') >= 0; };
 function nearSynonyms(a, b) {
-  return !!a && !!b && a.id !== b.id && (NEAR_SYNONYMS.some(function (s) { return s.indexOf(a.id) >= 0 && s.indexOf(b.id) >= 0; }) || acceptOverlap(a, b));
+  return !!a && !!b && a.id !== b.id && ((inKosoado(a) && inKosoado(b)) || NEAR_SYNONYMS.some(function (s) { return s.indexOf(a.id) >= 0 && s.indexOf(b.id) >= 0; }) || acceptOverlap(a, b));
 }
 
 // Kanji learners mix up by shape, and kanji that share a category. Only pairs
@@ -587,10 +614,44 @@ function sameSet(sets, a, b) {
 // Grammar points learners confuse (ids). Pairs with the same meaning (から/ので,
 // けど/けれども) drop out via sharesSense while the prompt is the meaning.
 var GRAMMAR_CONFUSABLES = [['g:wa-desu', 'g:ga', 'g:mo'], ['g:de', 'g:ni', 'g:ni-ikimasu', 'g:wo', 'g:to', 'g:made'],
-  ['g:kara', 'g:node', 'g:te-kara', 'g:made'], ['g:te-mo-ii', 'g:te-wa-ikemasen', 'g:nai-de-kudasai', 'g:nakute-wa-ikenai',
+  ['g:kara', 'g:node', 'g:made'], ['g:te-mo-ii', 'g:te-wa-ikemasen', 'g:nai-de-kudasai', 'g:nakute-wa-ikenai',
   'g:nakute-wa-naranai', 'g:nakucha-ikenai'], ['g:mashou', 'g:masen-ka', 'g:mashou-ka'], ['g:mada', 'g:mou', 'g:mada-te-imasen'],
   ['g:kedo', 'g:keredomo', 'g:ga'], ['g:ya', 'g:to', 'g:ka-ka'], ['g:hou-ga-ii', 'g:hou-ga-yori'], ['g:tai', 'g:tsumori'],
-  ['g:no-ga-suki', 'g:no-ga-jouzu', 'g:no-ga-heta'], ['g:ne', 'g:yo', 'g:ka'], ['g:te-iru', 'g:te-kudasai', 'g:te-kara']];
+  ['g:no-ga-suki', 'g:no-ga-jouzu', 'g:no-ga-heta'], ['g:ne', 'g:yo', 'g:ka'], ['g:te-iru', 'g:te-kudasai']];
+// N4 families (N4 r1 grammar T1): the contrasts the exam's 文法形式の判断 tests. They apply only when the asked point is
+// N4 or above (confusableSets), so N5 quizzes stay as they were. Every stem they make was read by hand for a second fit
+// (.scratch/n4-launch/fix/r1/gaplist.js): a wrong option may be grammatical only where the English note rules it out
+// (as in 文脈規定); the fits found are the N4 entries of GAP_INTERCHANGEABLE / GAP_ANSWER_BLOCKS below.
+var GRAMMAR_CONFUSABLES_N4 = [
+  ['g:tara', 'g:ba', 'g:to-conditional', 'g:nara', 'g:te-mo'],
+  ['g:te-mo', 'g:noni', 'g:kedo', 'g:node', 'g:kara'],
+  ['g:te-aru', 'g:te-oku', 'g:te-iru', 'g:te-shimau', 'g:te-miru', 'g:te-iku', 'g:te-kuru', 'g:te-ita'],
+  ['g:te-ageru', 'g:te-kureru', 'g:te-morau', 'g:te-hoshii'],
+  ['g:sou-da-looks', 'g:sou-da-hearsay', 'g:you-da', 'g:mitai', 'g:kamo-shirenai', 'g:hazu', 'g:no-you-na'],
+  ['g:hazu', 'g:hazu-ga-nai', 'g:yotei-da', 'g:tsumori', 'g:kamo-shirenai'],
+  ['g:nakute', 'g:nai-de', 'g:nakute-mo-ii', 'g:te-adj-noun'],
+  ['g:shi', 'g:nado', 'g:dake-de', 'g:te-adj-noun'],
+  ['g:nagara', 'g:te-iru-aida-ni', 'g:made-ni', 'g:ato-de', 'g:goro', 'g:mae-ni', 'g:te-kara'],
+  ['g:yasui', 'g:nikui', 'g:kata', 'g:sugiru'],
+  ['g:ga-hoshii', 'g:te-hoshii', 'g:tagaru', 'g:tai'],
+  ['g:tte', 'g:to-iu', 'g:to-iu-koto', 'g:koto'],
+  ['g:kana-kashira', 'g:ja-nai-ka', 'g:ne', 'g:yo'],
+  ['g:tara-dou', 'g:to-ii', 'g:ba-yokatta', 'g:hou-ga-ii'],
+  ['g:ku-ni-suru', 'g:naru'],
+  ['g:number-mo', 'g:dake', 'g:goro'],
+  ['g:nasai', 'g:te-kudasai', 'g:tai', 'g:nagara'],
+  ['g:ga-suru', 'g:sa', 'g:te-yokatta', 'g:te-sumimasen', 'g:te-kurete-arigatou'],
+  ['g:gozaimasu', 'g:itasu', 'g:o-suru']
+];
+// Sets whose options differ by the form they attach to (降っ（たら）: ば needs 降れ, と 降る), so a shared meaning word
+// ("if", "want") does not make them fit the same blank: the meaning check is skipped inside one of these.
+var GAP_FORM_SETS = [['g:tara', 'g:ba', 'g:to-conditional', 'g:nara', 'g:te-mo'], ['g:ga-hoshii', 'g:te-hoshii', 'g:tagaru', 'g:tai'],
+  ['g:tara-dou', 'g:to-ii', 'g:ba-yokatta']];
+// confusableSets(g): the confusable sets that hold grammar point g (the N4 ones from N4 on).
+function confusableSets(g) {
+  var sets = levelRank(g.level) >= 1 ? GRAMMAR_CONFUSABLES.concat(GRAMMAR_CONFUSABLES_N4) : GRAMMAR_CONFUSABLES;
+  return sets.filter(function (set) { return set.indexOf(g.id) >= 0; });
+}
 
 function hiraToKata(s) { return s.replace(/[ぁ-ゖ]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) + 0x60); }); }
 // kanjiValidReadings: every reading of k in hiragana, incl. extra (okurigana glued) and the bare
@@ -723,10 +784,11 @@ var DISTRACTOR_RULES = {
     }
   },
   pattern: { // grammar meaning → pattern
+    taughtFirst: 1, // from this level rank on: taught points before untaught ones, no untaught widening (N4 r1 grammar T2)
     texts: function (it) { return [it.pattern]; },
     reject: function (c, t) { return sharesSense(c.it.meaning, t.meaning); },
     score: function (c, t) {
-      return [!GRAMMAR_CONFUSABLES.some(function (s) { return s.indexOf(c.it.id) >= 0 && s.indexOf(t.id) >= 0; }), !c.taught];
+      return [!confusableSets(t).some(function (s) { return s.indexOf(c.it.id) >= 0; }), !c.taught];
     }
   }
 };
@@ -767,7 +829,8 @@ function pickDistractors(target, pool, field, n, opts) {
   // DISTRACTOR_MIN_POOL, so the same few words aren't the only wrong options (ticket 43).
   var taughtN = {}, extra = [];
   ok.forEach(function (c) { if (c.taught && c.it !== target && !+rule.score(c, target, ans)[0]) taughtN[c.it.id] = true; }); // of the right kind
-  var room = DISTRACTOR_MIN_POOL - Object.keys(taughtN).length;
+  var tf = !!rule.taughtFirst && lv >= rule.taughtFirst;
+  var room = tf ? 0 : DISTRACTOR_MIN_POOL - Object.keys(taughtN).length;
   if (room > 0) {
     ok.filter(function (c) { return !c.taught && levelRank(c.it.level || opts.level) === lv; }).map(function (c) {
       return { c: c, s: [rule.score(c, target, ans)[0]] }; // ok is shuffled and sort is stable: random within a tie
@@ -778,7 +841,7 @@ function pickDistractors(target, pool, field, n, opts) {
   }
   var scored = ok.map(function (c) {
     var l = levelRank(c.it.level || opts.level);
-    return { text: c.text, s: [lv < 0 || l < 0 ? 0 : Math.abs(l - lv)].concat(rule.score(c, target, ans)) };
+    return { text: c.text, s: (tf ? [!c.taught] : []).concat([lv < 0 || l < 0 ? 0 : Math.abs(l - lv)], rule.score(c, target, ans)) };
   });
   scored.sort(function (a, b) { return cmpTuple(a.s, b.s); });
   var out = [], gloss = field === 'gloss';
@@ -871,6 +934,14 @@ function quizFurigana(parts, taughtKanji, tested) {
   });
 }
 
+// patternParts(pattern, taughtKanji): a grammar label as furigana parts, ruby (from the item's
+// patternFuri) kept on untaught kanji only.
+var _patternFuri = null;
+function patternParts(pattern, taughtKanji) {
+  if (!_patternFuri) { _patternFuri = {}; catalogOf('grammar').forEach(function (g) { if (g.patternFuri) _patternFuri[g.pattern] = g.patternFuri; }); }
+  return quizFurigana(furiganaParts(_patternFuri[pattern] || pattern), taughtKanji, '');
+}
+
 // ── Sentence gap (Q30) ──────────────────────────────────────────────────────
 var GAP_BLANK = '（　）';
 // gapSurfaces(g): the pattern's written forms ('〜に/へ (行く・来る・帰る)' → に, へ);
@@ -883,10 +954,25 @@ function gapSurfaces(g) {
 // gapParts(parts, surface): furigana parts with the first occurrence of surface
 // blanked, or null when it isn't there. A one-kana surface skips です/でし/ます-
 // style hits (で of です). ponytail: first fitting hit only.
-function gapParts(parts, surface) {
+function gapParts(parts, surface, hl) {
   var text = parts.map(function (p) { return p.t; }).join(''), at = -1, from = 0;
+  if (hl >= 0) return spliceParts(parts, hl, hl + surface.length, [{ t: GAP_BLANK }]);
   while ((at = text.indexOf(surface, from)) >= 0 && surface.length === 1 && 'すし'.indexOf(text.charAt(at + 1)) >= 0) from = at + 1;
   return at < 0 ? null : spliceParts(parts, at, at + surface.length, [{ t: GAP_BLANK }]);
+}
+// hlAt(g, parts, surface): where the point's own highlight (g.hl, first capture group) starts on surface in the
+// sentence, else -1: the blank then sits on the grammar, not on the same kana inside a word (おい（し）い, N4 r1 grammar T1).
+function hlAt(g, parts, surface) {
+  var text = parts.map(function (p) { return p.t; }).join('');
+  for (var i = 0; i < (g.hl || []).length; i++) {
+    var re, m;
+    try { re = new RegExp(g.hl[i], 'gd'); } catch (e) { continue; }
+    while ((m = re.exec(text))) {
+      if (m.indices && m.indices[1] && text.indexOf(surface, m.indices[1][0]) === m.indices[1][0]) return m.indices[1][0];
+      if (!m[0]) re.lastIndex++;
+    }
+  }
+  return -1;
 }
 // sliceParts(parts, a, b): the furigana parts covering text offsets [a, b); a ruby
 // block only partly inside loses its ruby.
@@ -920,10 +1006,32 @@ var GAP_INTERCHANGEABLE = [['g:kedo', 'g:keredomo', 'g:ga'], ['g:kara', 'g:node'
   'g:nakute-wa-ikenai', 'g:nakute-wa-naranai', 'g:nakucha-ikenai'], ['g:no-ga-suki', 'g:no-ga-jouzu', 'g:no-ga-heta'],
   ['g:mou', 'g:mada', 'g:mada-te-imasen'], ['g:de', 'g:wo'],
   // N5 r1 grammar T3: a sentence-final て-stem takes both (待っている。/ 待ってください。)
-  ['g:te-iru', 'g:te-kudasai']];
+  ['g:te-iru', 'g:te-kudasai'],
+  // N5 r3 grammar T1: コーヒー（は）おいしいです also takes が
+  ['g:wa-desu', 'g:ga']];
 // One way only: から as "from" fits where まで does (７時から / ７時まで), まで never fits for から "because".
 // N5 r1 grammar T3: トム（と）メアリー also parses with に (spoke to Tom), 駅（まで）歩きます with で (walk at the station)
-var GAP_ANSWER_BLOCKS = { 'g:made': ['g:kara', 'g:de', 'g:wo'], 'g:to': ['g:ni', 'g:ni-ikimasu'] }; // 駅を歩きます (path を) too
+var GAP_ANSWER_BLOCKS = { 'g:made': ['g:kara', 'g:de', 'g:wo'], 'g:to': ['g:ni', 'g:ni-ikimasu'], 'g:ka': ['g:ne'] }; // 駅を歩きます (path を) too
+// N4 r1 grammar T1, read by hand over every N4 stem: same-meaning fits (always apart) …
+GAP_INTERCHANGEABLE = GAP_INTERCHANGEABLE.concat([
+  ['g:mitai', 'g:you-da', 'g:kamo-shirenai'], // この犬、病気（みたい / かもしれない）: both a guess
+  ['g:koto', 'g:to-iu-koto'],                 // 本を読む（こと / ということ）は大切です
+  ['g:hazu', 'g:yotei-da'],                   // バスは九時に着く（はずです / よていです）
+  ['g:to-conditional', 'g:nara']]);           // ボタンをおす（と / なら）、
+// … and one-way fits: the key's stems also take these
+Object.assign(GAP_ANSWER_BLOCKS, {
+  'g:te-adj-noun': ['g:dake-de'],                         // 病気（だけで）学校を休みました
+  'g:te-hoshii': ['g:te-morau'],                          // あなたに歌って（もらう）
+  'g:mitai': ['g:sou-da-looks', 'g:sou-da-hearsay'],      // 楽しかった（そうだ）ね
+  'g:te-oku': ['g:te-iru'],                               // 目を開けて（いる）のよ
+  'g:te-miru': ['g:te-oku', 'g:te-iru'],                  // 考えて（おく / いる）よ
+  'g:te-kuru': ['g:te-oku'],                              // 車を借りて（おく）よ
+  'g:nakute-mo-ii': ['g:nai-de'],                         // 急が（ないで）よ
+  'g:ja-nai-ka': ['g:yo', 'g:ne'],                        // だから言った（よ / ね）
+  'g:ba': ['g:tara', 'g:te-mo'],                          // 飲め（たら / ても）: potential + たら
+  'g:to-ii': ['g:hou-ga-ii'],                             // ここにカンマを入れる（ほうがいい）ですよ
+  'g:hazu': ['g:mitai']                                   // バスはすぐ来る（みたい）
+});
 // gapClash(a, b): grammar ids a and b share a GAP_INTERCHANGEABLE set.
 function gapClash(a, b) {
   return a === b || GAP_INTERCHANGEABLE.some(function (set) { return set.indexOf(a) >= 0 && set.indexOf(b) >= 0; });
@@ -955,7 +1063,7 @@ function sentencesUsing(id) {
 // A sentence holding a word the course never teaches (OFF_CATALOG: 彼 "he", ビール; no id to put in
 // `uses`) counts one more, so it is never shown in a lesson nor asked (N5 r1 newbie N3/N6).
 // ponytail: a hand list of the non-catalog words the N5 review found; extend it when an audit finds more.
-var OFF_CATALOG = /彼女|彼|ビール|人形|親切|本当に|経験|象|出発|失礼|動物園|草|夕食|学ば/;
+var OFF_CATALOG = /彼女|彼|ビール|人形|親切|本当に|経験|象|出発|失礼|動物園|草|夕食|学ば|いちご/;
 function untaughtCount(s, known) {
   return (s.uses || []).filter(function (u) { var it = CATALOG.items[u]; return !known[u] && !(it && it.alt && known[it.alt]); }).length +
     (offCatalog(s) ? 1 : 0);
@@ -972,14 +1080,20 @@ function byUntaught(sents, known) {
 }
 // quizSentences(sents, ctx): the sentences a quiz question may use, random order: only those using
 // nothing taught later; with ctx.leakOk (makeQuestion's last resort) all, fewest untaught first.
+// A sentence a mock asks is never asked by a lesson, review or drill, so the mock stays unseen (N5 r2
+// exam T1: mock-1 今年 kanjiYomi was the same question as review u095's). Shown lesson examples keep it.
+var _mockSents = null; // ponytail: built once, the catalog is fixed after load
 function quizSentences(sents, ctx) {
-  sents = rndShuffle(sents);
+  if (!_mockSents) _mockSents = mockItemIds();
+  sents = rndShuffle(sents.filter(function (s) { return !_mockSents[s.id]; }));
   return ctx.leakOk ? byUntaught(sents, ctx.taught) : sents.filter(function (s) { return !untaughtCount(s, ctx.taught); });
 }
 // lessonExamples(g, unit): the grammar point's examples shown in a lesson, at most 3, cleanest first.
 function lessonExamples(g, unit) {
   var ex = (g.examples || []).map(function (id) { return CATALOG.items[id]; }).filter(Boolean);
-  return byUntaught(ex, taughtIds(unit)).slice(0, 3);
+  var mk = levelRank(unit.level) >= 1 ? _mockSents || (_mockSents = mockItemIds()) : {}; // N4+: a mock's sentence only when nothing else is left (N4 r1 exam T4)
+  var known = taughtIds(unit);
+  return byUntaught(ex, known).sort(function (a, b) { return untaughtCount(a, known) - untaughtCount(b, known) || !!mk[a.id] - !!mk[b.id]; }).slice(0, 3);
 }
 // unitExamples(unit): a lesson's "Example sentences" section: up to 3 more sentences using its
 // words / kanji (alt spellings count), most matches first, skipping the grammar examples shown above.
@@ -991,7 +1105,8 @@ function unitExamples(unit) {
   (unit.vocab || []).forEach(function (v) { weight[v.id] = 2; });
   (unit.kanji || []).forEach(function (k) { weight[k.id] = 1; });
   catalogOf('vocab').forEach(function (v) { if (v.alt && weight[v.alt]) weight[v.id] = 2; });
-  return catalogOf('sentence').filter(function (s) { return !shown[s.id] && !untaughtCount(s, known); })
+  var mk = levelRank(unit.level) >= 1 ? _mockSents || (_mockSents = mockItemIds()) : {}; // N4+: a mock's sentences stay unseen (N4 r1 exam T4)
+  return catalogOf('sentence').filter(function (s) { return !shown[s.id] && !mk[s.id] && !untaughtCount(s, known); })
     .map(function (s) { return { s: s, w: (s.uses || []).reduce(function (n, id) { return n + (weight[id] || 0); }, 0) }; })
     .filter(function (x) { return x.w > 0; })
     .sort(function (a, b) { return b.w - a.w; }).slice(0, 3).map(function (x) { return x.s; });
@@ -1011,6 +1126,15 @@ function wordSpan(raw, word, reading) {
     rd += p.r || p.t.slice(Math.max(0, at - s), end - s);
   });
   return ok && kataToHira(rd) === kataToHira(reading) ? { at: at, end: end } : null;
+}
+// insideLonger(text, span, w): another catalog spelling holding w's word covers the span in text (子 in 子ども).
+var _spellings = null; // ponytail: built once, the catalog is fixed after load
+function insideLonger(text, sp, w) {
+  if (!_spellings) _spellings = [].concat.apply([], catalogOf('vocab').map(function (x) { return [x.word].concat(x.altSpell || []); }));
+  return _spellings.some(function (s) {
+    var k = s.indexOf(w.word);
+    return s.length > w.word.length && k >= 0 && text.substr(sp.at - k, s.length) === s;
+  });
 }
 // allKanjiTaught(word, taughtKanji): every kanji in word has been taught.
 function allKanjiTaught(w, taughtKanji) {
@@ -1215,7 +1339,8 @@ function quizContext(unit) {
 var BOUND_POS = { suffix: true, prefix: true, counter: true };
 function isBound(it) { return !!it && it.kind === 'vocab' && !!BOUND_POS[it.pos]; }
 // Same meaning in the same slot: never distractors for each other (三回 = 三度, "three times").
-var BOUND_SYNONYMS = [['v:回|かい', 'v:度|ど']];
+var BOUND_SYNONYMS = [['v:回|かい', 'v:度|ど'],
+  ['v:以上|いじょう', 'v:すぎ|すぎ', 'v:ごろ|ごろ'], ['v:以下|いか', 'v:以内|いない', 'v:前|まえ', 'v:ごろ|ごろ']]; // 十八歳（すぎ / ごろ）reads too (N4 r1 newbie N9)
 var NUMERAL_HOST = /^[〇一二三四五六七八九十百千万]+$/;
 // boundContext(v, c): context { f (furigana), en, alt? } → { parts, at, end (the morpheme), word,
 // reading, host, answers (reading + alt), en }; null when the morpheme isn't its own block at the
@@ -1283,10 +1408,14 @@ function boundForms(v, ctx, f, typing) {
     }),
     // A morpheme kanji not taught yet (側, 匹, 階) is never shown bare (N5 r1 T6): it carries its plain reading
     // as ruby (匹 ひき), so the question still asks the compound with its sound change (三匹 さんびき).
+    // N4 r1 vocab T1: that ruby plus a taught (or rubied) host spells the whole answer (二倍 に+ばい, 田中様): only a
+    // context whose reading still differs from the ruby (a sound change: 三匹 さんびき) is asked; else no typed reading.
     f('ctxRead', true, function () {
-      var bc = hasKanji(v.word) && pick();
+      if (!hasKanji(v.word)) return null;
+      var partsOf = function (bc) { return allKanjiTaught(v.word, ctx.taughtKanji) ? shown(bc) : spliceParts(shown(bc), bc.at, bc.end, [{ t: v.word, r: kataToHira(v.reading) }]); };
+      var bc = rndShuffle(bcs.filter(function (c) { var p = partsOf(c); return p && !rubySpells(p, c.answers); }))[0];
       if (!bc) return null;
-      var parts = allKanjiTaught(v.word, ctx.taughtKanji) ? shown(bc) : spliceParts(shown(bc), bc.at, bc.end, [{ t: v.word, r: kataToHira(v.reading) }]);
+      var parts = partsOf(bc);
       return typing('Type the reading of this word in hiragana:', bc.word, bc.answers, 'hiragana…',
         Object.assign({ parts: parts, note: bc.en, speech: bc.reading, explain: soundChange(v, bc) }, KANA_INPUT));
     }),
@@ -1346,6 +1475,8 @@ function formsFor(item, ctx) {
     var sents = quizSentences(sentencesUsing(w.id), ctx);
     for (var i = 0; i < sents.length; i++) {
       var raw = furiganaParts(sents[i].furigana || sents[i].jp), sp = wordSpan(raw, w.word, w.reading);
+      // from N4 on, never part of a longer word (子 inside 子ども: （　）どものとき, N4 r1 exam T5)
+      if (sp && rank >= 1 && insideLonger(sents[i].jp, sp, w)) sp = null;
       var ex = sp && make(sents[i], raw, sp);
       if (ex) return ex;
     }
@@ -1357,6 +1488,8 @@ function formsFor(item, ctx) {
     var d = spellingFakes(w, ctx.taughtKanji).slice(0, 3);
     return d.length < 3 ? null : inSentence(w, function (s, raw, sp) {
       var parts = spliceParts(quizFurigana(raw, ctx.taughtKanji, w.word), sp.at, sp.end, [{ t: w.reading, u: true }]);
+      // the rest of the sentence must not print the word's kanji (【いく】か行かないか, N5 r2 exam T5)
+      if (parts && parts.some(function (p) { return !p.u && Array.from(w.word).some(function (c) { return hasKanji(c) && p.t.indexOf(c) >= 0; }); })) return null;
       var opts = rndShuffle([w.word].concat(d));
       return { type: 'hyouki', prompt: 'How is the underlined word written?', question: s.jp, parts: parts, options: opts,
         correct: opts.indexOf(w.word), sentence: s.id, word: w.id };
@@ -1449,7 +1582,11 @@ function formsFor(item, ctx) {
     var twins = catalogOf('vocab').filter(function (x) { return x.id !== v.id && !x.alt && !isBound(x) && shownWord(x) === shownWord(v); });
     var twinPool = twins.length ? ctx.vPool.filter(function (x) { return twins.indexOf(x) < 0; }) : ctx.vPool;
     // a bound item spelled the same (人 じん "person from") is never asked alone, but its meaning is a retry too (N5 r1 newbie N14)
-    var twinMeanings = twins.concat(catalogOf('vocab').filter(function (x) { return x.id !== v.id && !x.alt && isBound(x) && x.word === v.word; }))
+    // and a word shown in kana is also every other word read that way (つく: 着く "arrive"; し: 四 "four"; N4 r1 newbie3 N2)
+    var kanaShown = !hasKanji(shownWord(v));
+    var twinMeanings = twins.concat(catalogOf('vocab').filter(function (x) {
+      return x.id !== v.id && !x.alt && twins.indexOf(x) < 0 && (isBound(x) && x.word === v.word || kanaShown && kataToHira(x.reading) === kataToHira(v.reading));
+    }))
       .map(function (x) { return { word: x.word, answers: meaningAnswers(x.gloss).concat(x.accept || []) }; });
     // near-synonyms (コップ / カップ): "cup" is the other word's meaning, so say so instead of a bare miss
     catalogOf('vocab').filter(function (x) { return nearSynonyms(x, v); }).forEach(function (x) {
@@ -1466,7 +1603,8 @@ function formsFor(item, ctx) {
       }),
       f('enToJp', true, function () {
         // only when no other taught word shares a sense (else two right answers)
-        var clash = ctx.vPool.some(function (x) { return x !== v && ctx.taught[x.id] && x.word !== v.word && !isBound(x) && (sharesSense(glossText(x), glossText(v)) || nearSynonyms(x, v)); });
+        var clash = ctx.vPool.some(function (x) { return x !== v && ctx.taught[x.id] && x.word !== v.word && !isBound(x) && (sharesSense(glossText(x), glossText(v)) || nearSynonyms(x, v)); }) ||
+          (!kanjiWord && Array.from(v.reading).length === 1); // one kana (あ "ah / oh"): ああ, あっ fit too (N4 r1 newbie3 N2)
         // other spellings are right too: the catalog's alt partners (椅子 for いす) and altSpell (ご飯 for 御飯)
         var spelt = catalogOf('vocab').filter(function (x) { return x.alt === v.id; }).map(function (x) { return x.word; }).concat(v.altSpell || []);
         var ans = [v.reading, kataToHira(v.reading), v.word].concat(alsoRight, spelt).filter(function (a, i, arr) { return arr.indexOf(a) === i; });
@@ -1552,25 +1690,40 @@ function formsFor(item, ctx) {
     var g = item;
     var gForms = [
       f('patternMc', false, function () {
-        return mc(rank >= 2 ? 'fill_blank' : 'mc', 'Choose the correct grammar pattern:', g.meaning, 'pattern', ctx.gPool);
+        var ex = mc(rank >= 2 ? 'fill_blank' : 'mc', 'Choose the correct grammar pattern:', g.meaning, 'pattern', ctx.gPool);
+        // ruby on untaught kanji in a label (〜のが好き before 好 is taught; N5 r2 vocab T4)
+        return ex && Object.assign(ex, { optionParts: ex.options.map(function (o) { return patternParts(o, ctx.taughtKanji); }) });
       }),
       f('gap', false, function () {
         var sents = quizSentences((g.examples || []).map(function (id) { return CATALOG.items[id]; }).filter(Boolean), ctx);
-        var surfaces = gapSurfaces(g);
+        // g.gap: { fill: [wrong fills] }, authored per point and checked against its examples (N5 r2
+        // grammar T2: 29 points could only be matched to a label); its keys replace the pattern's surfaces
+        var surfaces = g.gap ? Object.keys(g.gap) : gapSurfaces(g);
         for (var i = 0; i < sents.length; i++) {
           var s = sents[i], base = quizFurigana(furiganaParts(s.furigana || s.jp), ctx.taughtKanji, '');
           for (var j = 0; j < surfaces.length; j++) {
-            var parts = gapParts(base, surfaces[j]);
+            var parts = gapParts(base, surfaces[j], levelRank(g.level) >= 1 ? hlAt(g, base, surfaces[j]) : -1);
             if (!parts) continue;
             var ans = surfaces[j];
             // distractors: confusables, no two from one GAP_INTERCHANGEABLE set (answer included)
             var ids = [g.id], d = [];
-            rndShuffle([].concat.apply([], GRAMMAR_CONFUSABLES.filter(function (set) { return set.indexOf(g.id) >= 0; }))).forEach(function (id) {
+            // from N4 on, taught points first (N4 r1 grammar T2); the sort is stable, so random within a tier
+            var conf = rndShuffle([].concat.apply([], confusableSets(g)));
+            if (levelRank(g.level) >= 1) conf.sort(function (a, b) { return !ctx.taught[a] - !ctx.taught[b]; });
+            conf.forEach(function (id) {
               var c = CATALOG.items[id], txt = c && gapSurfaces(c)[0];
               if (!txt || d.length >= 3 || ids.some(function (x) { return gapClash(x, id); }) || (GAP_ANSWER_BLOCKS[g.id] || []).indexOf(id) >= 0 || surfaces.indexOf(txt) >= 0 ||
-                  d.indexOf(txt) >= 0 || sharesSense(c.meaning, g.meaning)) return;
+                  d.indexOf(txt) >= 0 || !sameSet(GAP_FORM_SETS, g.id, id) && sharesSense(c.meaning, g.meaning)) return;
               ids.push(id);
               d.push(txt);
+            });
+            // top up to 3 from the authored wrong fills: 4 options, as on the test (N5 r2 exam T4)
+            // a fill that is another point's surface keeps the GAP_INTERCHANGEABLE rule (を and で never together)
+            rndShuffle((g.gap && g.gap[ans]) || []).forEach(function (w) {
+              var wi = catalogOf('grammar').filter(function (c) { return gapSurfaces(c).indexOf(w) >= 0; }).map(function (c) { return c.id; });
+              if (d.length >= 3 || d.indexOf(w) >= 0 || surfaces.indexOf(w) >= 0 || wi.some(function (x) { return ids.some(function (y) { return x !== y && gapClash(x, y); }); })) return;
+              ids = ids.concat(wi);
+              d.push(w);
             });
             if (d.length < 2) return null;
             var opts = rndShuffle([ans].concat(d));
@@ -1585,6 +1738,16 @@ function formsFor(item, ctx) {
         return s ? orderQuestion(s, ctx.taughtKanji) : null;
       })
     ];
+    // keigo points (pairs: [plain verb, keigo answers…]): say it raised or lowered (N4 r1 newbie3 N3: no keigo
+    // lesson asked to apply keigo; the label match could be won without telling raise from lower)
+    if (g.pairs) gForms.push(f('keigo', true, function () {
+      var p = rndShuffle(g.pairs)[0];
+      // ruby over kanji not taught yet (返す, 手伝う in u096 / u098)
+      var v = catalogOf('vocab').filter(function (x) { return x.word === p[0]; })[0];
+      var parts = v && hasKanji(p[0]) ? quizFurigana([{ t: p[0], r: v.reading }], ctx.taughtKanji, '') : [{ t: p[0] }];
+      return typing(g.keigo === 'up' ? 'Someone above you does it. Type the respectful form (dictionary form) of:' : 'You do it for someone above you. Type the humble form (dictionary form) of:',
+        p[0], p.slice(1), 'in Japanese…', Object.assign({ parts: parts }, KANA_INPUT));
+    }));
     if (g.conjForm) gForms.push(f('conj', true, function () {
       var vs = ctx.verbs.concat(ctx.adjs).filter(function (x) { return conjugateItem(x, g.conjForm); });
       var mine = vs.filter(function (x) { return ctx.vocab.indexOf(x) >= 0; });
@@ -1606,8 +1769,16 @@ var LEAK_BODY_OK = { gap: true, order: true, bunshou: true, iikae: true, reading
 // answer not as a whole word in the shown question (prompts are fixed English instructions).
 // MC: no other option may equal the answer. makeQuestion and mondaiQuestions skip a leaking
 // question, so every generator goes through it.
+// rubySpells(parts, answers): the shown text read through its ruby (kana as written) is one of the answers
+// (田中(たなか)様(さま) for たなかさま); only when some ruby is shown. N4 r1 vocab T1.
+function rubySpells(parts, answers) {
+  if (!parts || !parts.some(function (p) { return p.r; })) return false;
+  var read = kataToHira(parts.map(function (p) { return p.r || p.t; }).join(''));
+  return (answers || []).some(function (a) { return JA_CHARS.test(a) && kataToHira(a) === read; });
+}
 function answerLeaks(ex) {
   if (ex.type === 'pair_match') return null;
+  if (!LEAK_BODY_OK[ex.type] && ex.answers && rubySpells(ex.parts, ex.answers)) return 'ruby: ' + ex.answers[0];
   var shown = function (ps) { return ps.map(function (p) { return p.t + ' ' + (p.r || ''); }).join(' '); };
   var answers = ex.answers ? ex.answers.slice() : [ex.options[ex.correct]], it = ex.item;
   if (it && it.kind === 'vocab' && ex.type !== 'hyouki' && answers.indexOf(it.word) >= 0) answers.push(it.reading);
@@ -1671,21 +1842,34 @@ function hearQuestion(item, ctx) {
   var w = item.word;
   // ponytail: skip を and a final は / へ (the voice may read them as particles: wa / e)
   if (!w || !KANA_WORD_RE.test(w) || /を|[はへ]$/.test(w) || !kanaReadable(w, ctx.learned)) return null;
-  var kata = /[ァ-ヺ]/.test(w), ch = Array.from(w), cands = kanaWordFakes(w, ctx.learned);
-  ch.forEach(function (c, i) {
-    var h = kataToHira(c);
-    SOUND_SWAPS.forEach(function (pr) {
-      var j = pr.indexOf(h);
-      if (j >= 0) { var o = pr.charAt(1 - j); cands.push(ch.slice(0, i).concat(kata ? hiraToKata(o) : o, ch.slice(i + 1)).join('')); }
+  var kata = /[ァ-ヺ]/.test(w), r = kanaToRomaji(w);
+  var gen = function (x) {
+    var cands = kanaWordFakes(x, ctx.learned, 99);
+    Array.from(x).forEach(function (c, i) {
+      var h = kataToHira(c), ch = Array.from(x);
+      SOUND_SWAPS.forEach(function (pr) {
+        var j = pr.indexOf(h);
+        if (j >= 0) { var o = pr.charAt(1 - j); cands.push(ch.slice(0, i).concat(kata ? hiraToKata(o) : o, ch.slice(i + 1)).join('')); }
+      });
     });
-  });
-  var key = {}, r = kanaToRomaji(w), fakes = [];
-  key[soundKey(w)] = true;
-  rndShuffle(cands).forEach(function (f) {
-    var k = soundKey(f);
-    if (fakes.length < 3 && f !== w && !key[k] && kanaReadable(f, ctx.learned) && !/^[ぁぃぅぇぉゃゅょっァィゥェォャュョッー]/.test(f) &&
-      editDistance(kanaToRomaji(f), r) <= 2) { key[k] = true; fakes.push(f); }
-  });
+    return cands;
+  };
+  var ok = function (f) {
+    return f !== w && soundKey(f) !== soundKey(w) && kanaReadable(f, ctx.learned) && !/^[ぁぃぅぇぉゃゅょっァィゥェォャュョッー]/.test(f) &&
+      editDistance(kanaToRomaji(f), r) <= 2;
+  };
+  // square fakes first: one-edit fakes alone leave the answer the "centre" option (N5 r3 vocab T4: 96%)
+  var fakes = squareFakes(w, ok, gen);
+  if (fakes && new Set([w].concat(fakes).map(soundKey)).size < 4) fakes = null;
+  if (!fakes) {
+    var key = {}, seen = {};
+    key[soundKey(w)] = true;
+    fakes = [];
+    rndShuffle(gen(w)).forEach(function (f) {
+      var k = soundKey(f);
+      if (fakes.length < 3 && !seen[f] && !key[k] && ok(f)) { key[k] = true; seen[f] = true; fakes.push(f); }
+    });
+  }
   if (fakes.length < 3) return null;
   var opts = rndShuffle([w].concat(fakes));
   return { type: 'listen', prompt: 'Listen and choose the word you hear:', question: '', options: opts, correct: opts.indexOf(w), audio: w,
@@ -1718,7 +1902,8 @@ function makeQuestion(item, ctx, wantRecall, avoid, strict, part) {
   // a grammar point is made, not matched to its label: patternMc only when no gap / ★ / conjugation
   // fits (N5 r1 newbie: 75% of lesson grammar questions were the label match)
   var made = function (fs) { return fs.filter(function (fm) { return fm.name !== 'patternMc'; }); };
-  var ex = (item.kind === 'grammar' && (tryAll(want(made(fresh))) || tryAll(made(fresh)))) ||
+  // a second ask makes it again in a used form before it falls back to the label (N5 r2 grammar T2)
+  var ex = (item.kind === 'grammar' && (tryAll(want(made(fresh))) || tryAll(made(fresh)) || tryAll(made(forms)))) ||
     tryAll(want(fresh)) || tryAll(fresh) || tryAll(want(forms)) || tryAll(forms);
   if (ex || ctx.leakOk) return ex;
   // last resort: a sentence using items taught later (quizSentences), rather than no question
@@ -1922,7 +2107,9 @@ var SPEECH_NUMERAL_OK = /一緒|一番/; // hold a numeral kanji but are not num
 // (ひらける), 塩 (えん: しお), 上 / 下 / 中 (かみ / しも / じゅう: 上と下), 辺 (あたり), 角 (かく / つの), 所 (しょ), 物 (ぶつ), 背 (せい).
 // Kept as kanji, read reliably: 今日, 昨日, 上手, 下手, 人, 後ろ, 出口. Numbers (一人, 一日) are kana anyway.
 var SPEECH_KANA_KEEP = ['家|いえ', '明日|あした', '何|なに', '何|なん', '昨夜|ゆうべ', '居る|いる', '入る|はいる', '入口|いりぐち',
-  '開ける|あける', '上|うえ', '下|した', '中|なか', '辺|へん', '角|かど', '所|ところ', '物|もの', '背|せ', '塩|しお'].map(function (e) { return e.split('|'); });
+  '開ける|あける', '上|うえ', '下|した', '中|なか', '辺|へん', '角|かど', '所|ところ', '物|もの', '背|せ', '塩|しお',
+  // N4 r1 listening T1: 開く (ひらく), 空く (あく / すく / そら), 辛い (つらい), 方 (ほう), 大分 (おおいた), 真ん中 (まなか), 日 (にち)
+  '開く|あく', '空く|あく', '空く|すく', '辛い|からい', '方|かた', '大分|だいぶ', '真ん中|まんなか', '日|ひ'].map(function (e) { return e.split('|'); });
 // kana words a shorter word would split wrongly (いくら → 行くら, ほんとう → 本とう): nothing is swapped at their start
 var SPEECH_KANA_WORDS = /^(?:いくら|いくつ|ほんとう)/;
 // a kana number right before a counter in ruby (ろく[時|じ], さん[円|えん]): the counter is spoken as its kana too
@@ -2314,7 +2501,9 @@ function dialogueSwaps(unit) {
     if (items.join() === r.answer.join()) items = items.slice().reverse();
     var notes = (it.bridge || []).filter(function (b) { return r.chunks.some(function (c) { return c.indexOf(b.text) >= 0; }); })
       .map(function (b) { return b.text + ' · ' + b.gloss; });
-    return { type: 'reorder', prompt: r.en, scene: r.scene, items: items, answer: r.answer.join(''), need: r.answer.length,
+    // also: other grammatical orders of the same pieces (N4 r1 newbie2 N2: やっと placed second was refused)
+    return { type: 'reorder', prompt: r.en, scene: r.scene, items: items, answer: r.answer.join(''), need: r.answer.length, pieces: r.answer,
+      answers: [r.answer].concat(r.also || []).map(function (a) { return a.join(''); }),
       explain: r.explain, note: notes.length ? notes.join(' ') : undefined };
   });
 }
@@ -2410,12 +2599,13 @@ function timeUpResults(exs, results) {
   return results.concat(exs.slice(results.length).map(function () { return false; }));
 }
 
-// mockItemIds(): passage / listening / mondai ids some mock uses (prep drills leave them alone).
+// mockItemIds(): passage / listening / mondai / sentence ids some mock uses (prep drills and
+// quizSentences leave them alone).
 function mockItemIds() {
   var ids = {};
   catalogOf('mock').forEach(function (m) {
     MOCK_SECTIONS.forEach(function (s) {
-      m.sections[s.key].forEach(function (q) { ids[q.p || q.l || q.item || ''] = true; });
+      m.sections[s.key].forEach(function (q) { ids[q.p || q.l || q.item || ''] = true; if (q.s) ids[q.s] = true; });
     });
   });
   delete ids[''];
@@ -2538,13 +2728,17 @@ function mockOutlook(parts, level) {
   };
   var lo = scaled(0), hi = scaled(1);
   var out = { lkr: [lo.lkr, hi.lkr], listening: [lo.listening, hi.listening], total: [lo.lkr + lo.listening, hi.lkr + hi.listening] };
+  // the point estimate under a section minimum fails the test, so it is never "borderline" (N5 r2 newbie N4:
+  // listening 5 of 24 read as Borderline next to a green total)
+  var p = function (k) { return parts[k][1] ? parts[k][0] / parts[k][1] : 0; };
+  var mid = { lkr: mockLkr(p('vocab'), p('grammar'), p('reading'), level), listening: Math.round(60 * p('listening')) };
   out.verdict = out.total[0] >= rule.total && lo.lkr >= rule.lkr && lo.listening >= rule.listening ? 'likely'
-    : out.total[1] < rule.total || hi.lkr < rule.lkr || hi.listening < rule.listening ? 'unlikely' : 'borderline';
+    : out.total[1] < rule.total || hi.lkr < rule.lkr || hi.listening < rule.listening || mid.lkr < rule.lkr || mid.listening < rule.listening ? 'unlikely' : 'borderline';
   // marks: the ones the high end misses (unlikely) or the range crosses (borderline), named for the
   // headline (N5 r1 newbie N15: "crosses a pass mark" hid that the listening minimum was the cause)
   var marks = [['total', 'the pass mark of ' + rule.total], ['lkr', 'the language and reading minimum of ' + rule.lkr], ['listening', 'the listening minimum of ' + rule.listening]];
   out.marks = out.verdict === 'likely' ? [] : marks.filter(function (m) {
-    return out[m[0]][1] < rule[m[0]] || (out.verdict === 'borderline' && out[m[0]][0] < rule[m[0]]);
+    return out[m[0]][1] < rule[m[0]] || (m[0] !== 'total' && mid[m[0]] < rule[m[0]]) || (out.verdict === 'borderline' && out[m[0]][0] < rule[m[0]]);
   }).map(function (m) { return m[1]; });
   return out;
 }
@@ -2609,9 +2803,22 @@ function mockRunClear() { try { localStorage.removeItem(MOCK_RUN_KEY); } catch (
 // prepDrill(unit): a prep unit's timed section drill (unit.drill = { blueprint key: count }):
 // `count` catalog items per mondai, random each time, in test order. Passages, listening items
 // and authored mondai that a mock uses are left out, so the mocks stay unseen.
+// Prep only (the gap keeps its English note, the paper has none): tense / polarity / mood points are left out
+// of the 文法1 gap pool, and number / time words out of 文脈規定, as the Japanese alone leaves 2+ fits (N5 r3 EX-T5, EX-T6, GS-T2).
+var PREP_GAP_SKIP = ['g:masu', 'g:mashita', 'g:masen', 'g:mashou', 'g:masen-ka', 'g:mashou-ka', 'g:tai', 'g:sugiru', 'g:hou-ga-ii',
+  'g:deshita', 'g:ja-nai', 'g:te-iru', 'g:mada-te-imasen'];
+function prepSingleFit(key, x) {
+  if (key === 'gap') return PREP_GAP_SKIP.indexOf(x.id) < 0;
+  return key !== 'bunmyaku' || x.pos !== 'number' && (x.tags || []).every(function (t) { return t !== 'numbers' && t !== 'time'; });
+}
 function prepDrill(unit) {
-  var ctx = quizContext(unit), skip = mockItemIds(), out = [];
-  var fresh = function (xs) { return rndShuffle(xs.filter(function (x) { return !skip[x.id]; })); };
+  var ctx = quizContext(unit), skip = mockItemIds(), out = [], seen = {};
+  // items a review already asked come last, so the drill is not a recap (N5 r2 newbie N5)
+  allUnits().forEach(function (u) { if (u.kind === 'review') (u.passages || []).concat(u.listening || []).forEach(function (id) { seen[id] = true; }); });
+  var fresh = function (xs) {
+    var ys = rndShuffle(xs.filter(function (x) { return !skip[x.id]; }));
+    return ys.filter(function (x) { return !seen[x.id]; }).concat(ys.filter(function (x) { return seen[x.id]; }));
+  };
   var order = ['kanjiYomi', 'hyouki', 'bunmyaku', 'iikae', 'youhou', 'gap', 'order', 'bunshou', 'short', 'mid', 'info', 'task', 'point', 'utterance', 'quick'];
   order.forEach(function (key) {
     var n = (unit.drill || {})[key];
@@ -2625,11 +2832,19 @@ function prepDrill(unit) {
       fresh(listeningFor(unit.level, key)).forEach(function (l) { add([listenQuestion(l, ctx.taughtKanji, { mock: true })]); });
     } else {
       var kind = MONDAI[key].section === 'bunpou' ? 'grammar' : 'vocab';
-      fresh(catalogOf(kind).filter(function (x) { return x.level === unit.level && !x.alt; })).forEach(function (x) {
+      // a lower level's word written with one of this level's kanji counts too (病気 for 病 at N4), as in the mocks:
+      // the kanji is what 漢字読み / 表記 test (N4 r1 exam T5: 16 N4 words could make a 漢字読み)
+      var lvKanji = {};
+      catalogOf('kanji').forEach(function (k) { if (k.level === unit.level) lvKanji[k.char] = true; });
+      fresh(catalogOf(kind).filter(function (x) {
+        return !x.alt && prepSingleFit(key, x) && (x.level === unit.level || kind === 'vocab' && levelRank(x.level) < levelRank(unit.level) && Array.from(x.word).some(function (c) { return lvKanji[c]; }));
+      })).forEach(function (x) {
         if (got < n) add(mondaiQuestions(key, x, ctx));
       });
     }
   });
+  // 文脈規定: the English note would answer it, as the test has none; it waits behind a button (N5 r2 exam T2)
+  out.forEach(function (ex) { if (ex.form === 'bunmyaku' && ex.note) ex.noteLater = true; });
   return out;
 }
 
@@ -2637,7 +2852,7 @@ function prepDrill(unit) {
 // answers elsewhere in the drill, or reuse a sentence (N5 r1 newbie N6: Q3 printed ノート, Q8 asked it).
 // The learner moves freely, so both directions count. A 表記 key (父) counts kanji by kanji.
 function drillLeak(out, qs) {
-  var stem = function (ex) { return (ex.parts || ex.passageParts || []).map(function (p) { return p.t + (p.r || ''); }).join('') + (typeof ex.question === 'string' ? ex.question : ''); };
+  var stem = function (ex) { return [ex.parts, ex.passageParts, ex.passage].map(function (xs) { return (xs || []).map(function (p) { return p.t + (p.r || ''); }).join(''); }).join('\n') + (typeof ex.question === 'string' ? ex.question : ''); };
   var keys = function (ex) {
     var a = ex.options && ex.options[ex.correct];
     if (typeof a !== 'string') return [];
@@ -2648,9 +2863,8 @@ function drillLeak(out, qs) {
     return ys.some(function (ex) { return keys(ex).some(function (k) { return text.indexOf(k) >= 0; }); });
   };
   var sents = out.map(function (ex) { return ex.sentence; }).filter(Boolean);
-  // ponytail: a passage group (several questions) is not checked for earlier keys in its text; a long text
-  // holds most short words, so the reading part would starve. Upgrade if a reading drill shows a key.
-  return qs.some(function (ex) { return ex.sentence && sents.indexOf(ex.sentence) >= 0; }) || hits(out, qs) || hits(qs.length > 1 ? [] : qs, out);
+  // a passage group's text is checked for earlier keys too (N5 r2 exam T5: a 表記 key 母 printed in a later passage)
+  return qs.some(function (ex) { return ex.sentence && sents.indexOf(ex.sentence) >= 0; }) || hits(out, qs) || hits(qs, out);
 }
 
 // chunkSpeech(text, max): split a line for speech synthesis at sentence ends, then commas /
@@ -2718,7 +2932,8 @@ function requeueExercise(unit, ex) {
   var o = ex.type === 'reading' && rndShuffle(ex.options.map(function (_, i) { return i; })); // same question, options reshuffled
   var r = o ? Object.assign({}, ex, { options: o.map(function (i) { return ex.options[i]; }), optionParts: o.map(function (i) { return ex.optionParts[i]; }), correct: o.indexOf(ex.correct) })
     : ex.type === 'listen_dialog' ? listenQuestion(CATALOG.items[ex.itemId], quizContext(unit).taughtKanji, { mock: ex.maxPlays > 0 })
-    : ex.item && makeQuestion(ex.item, quizContext(unit), null, [ex.form], false, ex.part);
+    // another form first: makeQuestion may make a grammar point again in its used form (N5 r2 grammar T2)
+    : ex.item && (makeQuestion(ex.item, quizContext(unit), null, [ex.form], true, ex.part) || makeQuestion(ex.item, quizContext(unit), null, [ex.form], false, ex.part));
   return r ? Object.assign(r, { requeue: true }) : null;
 }
 
@@ -2730,12 +2945,17 @@ function answerIsRight(ex, resp) {
     (ex.pairs || []).forEach(function (p) { meaningOf[p[0]] = p[1]; });
     return Array.isArray(resp) && ex.items.every(function (w, i) { return typeof resp[i] === 'number' && ex.options[resp[i]] === meaningOf[w]; });
   }
-  if (ex.type === 'reorder') return Array.isArray(resp) && resp.map(function (i) { return ex.items[i]; }).join('') === ex.answer;
+  if (ex.type === 'reorder') return Array.isArray(resp) && (ex.answers || [ex.answer]).indexOf(resp.map(function (i) { return ex.items[i]; }).join('')) >= 0;
   if (ex.options && typeof ex.correct === 'number') return resp === ex.correct;
   if (ex.romaji) return romajiMatches(resp, ex.romaji); // a kana word typed in romaji: exact
   // ponytail: romaji answers (kana items) go through the English path too; at ≤ 3 letters no typo
   // or plural rule can fire on them
-  return checkTyping(String(resp == null ? '' : resp), ex.answers, englishPool());
+  var typed = String(resp == null ? '' : resp);
+  var noun = !!ex.item && ex.item.kind === 'vocab' && /^noun/.test(ex.item.pos || '') && /^meaning/.test(ex.form || '');
+  if (checkTyping(typed, ex.answers, englishPool(), noun)) return true;
+  // the kana box reads "nn" as ん, so juusannichi became じゅうさんいち: try ん + な行 too (N5 r2b newbie N3)
+  var alt = ex.kana && typed.replace(/ん([あいうえお])/g, function (m, v) { return 'ん' + 'なにぬねの'.charAt('あいうえお'.indexOf(v)); });
+  return !!alt && alt !== typed && checkTyping(alt, ex.answers, englishPool());
 }
 
 // scoreQuiz(kind, exs, results): results[i] = was exs[i] right. Score = first
@@ -2819,13 +3039,15 @@ function osaDistance(a, b) {
 }
 // typoTolerance(answer): edits forgiven for a normalised answer: 1 from 5 letters, 2 from 10.
 function typoTolerance(a) { var n = a.replace(/ /g, '').length; return n >= 10 ? 2 : n >= 5 ? 1 : 0; }
+// enSplit(a): the alternatives of an English answer, split on / and , but not inside (brackets).
+function enSplit(a) { return String(a).split(/[\/,](?![^(]*\))/); }
 var _rejectMemo = { src: null, set: null };
 // enSet(list): { normalised and stemmed form: true } of English strings (split on / and ,).
 function enSet(list) {
   if (_rejectMemo.src === list) return _rejectMemo.set;
   var set = {};
   (list || []).forEach(function (s) {
-    String(s).split(/[\/,]/).forEach(function (p) { var n = normEn(p); if (n) { set[n] = true; set[enStem(n)] = true; } });
+    enSplit(s).forEach(function (p) { var n = normEn(p); if (n) { set[n] = true; set[enStem(n)] = true; } });
   });
   _rejectMemo = { src: list, set: set };
   return set;
@@ -2844,9 +3066,10 @@ function englishPool() {
 // checkTyping(typed, answers, reject?): exact (case, width, punctuation, / and , alternatives)
 // for every answer. English answers also match after normEn, with the space dropped
 // (well-lit / welllit), as a plural, or with a typo (typoTolerance) — but never when the typed
-// text is the meaning of something else (reject: English strings, e.g. englishPool()).
+// text is the meaning of something else (reject: English strings, e.g. englishPool()), unless it is the
+// plain plural of one of a noun's own answers (noun: true).
 // Kana answers stay exact: hiragana and katakana are different answers.
-function checkTyping(userAns, answers, reject) {
+function checkTyping(userAns, answers, reject, noun) {
   if (userAns.length > 200) return false;
   var u = foldAns(userAns);
   var uNorm = normAns(userAns);
@@ -2854,8 +3077,8 @@ function checkTyping(userAns, answers, reject) {
   var exact = answers.some(function (a) {
     if (typeof a !== 'string') return false;
     // split before folding so full-width ／ ， in an answer stay literal, as before
-    var parts = a.split(/[\/,]/).map(foldAns);
-    var partsNorm = a.split(/[\/,]/).map(function (s) {
+    var parts = enSplit(a).map(foldAns);
+    var partsNorm = enSplit(a).map(function (s) {
       return normAns(s);
     });
     return foldAns(a) === u || parts.includes(u) || partsNorm.includes(uNorm);
@@ -2866,12 +3089,16 @@ function checkTyping(userAns, answers, reject) {
   var n = normEn(userAns), ns = enStem(n);
   if (!n) return false;
   // a bracketed word both dropped and kept: "to ask (a favour)" takes "ask" and "ask a favour", "to take (time)" "take time"
-  var forms = [].concat.apply([], en.map(function (a) { return a.split(/[\/,]/); }))
+  var forms = [].concat.apply([], en.map(enSplit))
     .reduce(function (out, a) { return out.concat(normEn(a), /\(/.test(a) ? normEn(a.replace(/[()]/g, ' ')) : []); }, []).filter(Boolean);
   var flat = function (s) { return s.replace(/ /g, ''); };
   if (forms.some(function (f) { return f === n || flat(f) === flat(n); })) return true;
   var own = {}, ownStem = {};
   forms.forEach(function (f) { own[f] = true; ownStem[enStem(f)] = true; });
+  // a noun's own meaning as a plain plural (plans for "plan", days for "day") is right even when another
+  // word means that plural (予定 "plans"): checked before the reject set (N4 r1 vocab T5). Nouns only: news ≠ new.
+  var plural = function (f) { var m = f.match(/^(.*?)(\S+)$/), w = m[2]; return [w + 's', w + 'es', w.replace(/y$/, 'ies')].map(function (x) { return m[1] + x; }); };
+  if (noun && forms.some(function (f) { return plural(f).indexOf(n) >= 0; })) return true;
   var rej = enSet(reject);
   if ((rej[n] && !own[n]) || (rej[ns] && !ownStem[ns])) return false; // someone else's meaning (news ≠ new)
   return forms.some(function (f) {

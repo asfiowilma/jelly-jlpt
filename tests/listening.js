@@ -115,6 +115,20 @@ QUnit.module('listening', function () {
     assert.ok(!all.filter(function (n) { return /qz-play/.test(n.props.className || ''); })[0].props.disabled, 'the main Play is untouched by reply plays');
   });
 
+  // N5 r2 newbie N4: kana "Listen and choose" used browser speech only and was silent with no word
+  QUnit.test('qzKit: a listen question warns when there is no Japanese voice and shows the word once answered', function (assert) {
+    var ex = { type: 'listen', prompt: 'Listen and choose the word you hear:', question: '', options: ['いえ', 'いいえ'], correct: 0, audio: 'いえ' };
+    var h = function (tag, props) { return { tag: tag, props: props || {}, kids: Array.prototype.slice.call(arguments, 2) }; };
+    var walk = function (n, out) { if (Array.isArray(n)) n.forEach(function (x) { walk(x, out); }); else if (n && n.props) { out.push(n); walk(n.kids, out); } return out; };
+    var st = function (voice, revealed) { return { lv: 'N5', pick: null, revealed: revealed, selected: revealed ? 1 : null, tone: '', onPick: function () {},
+      plays: 0, speaking: false, play: function () {}, voiceStatus: voice, showEarly: false, onEarly: function () {} }; };
+    var cls = function (voice, revealed, c) { return walk(qzKit(h, ex, st(voice, revealed)).choice().main, []).filter(function (n) { return n.props.className === c; }); };
+    assert.equal(cls('none', false, 'qz-warn').length, 1, 'no voice: notice');
+    assert.equal(cls('ok', false, 'qz-warn').length, 0, 'voice: no notice');
+    assert.equal(cls('none', false, 'qz-solved').length, 0, 'word hidden before answering');
+    assert.deepEqual(cls('none', true, 'qz-solved')[0].kids, ['いえ'], 'word shown after answering');
+  });
+
   // A reply button played the dialogue: Chrome's cancel() is async, so a speak() in the same tick
   // queued behind the cancelled dialogue. speakScript now waits a beat when the engine is busy.
   QUnit.test('speakScript: starts after a beat when the engine is still speaking, at once when idle', function (assert) {

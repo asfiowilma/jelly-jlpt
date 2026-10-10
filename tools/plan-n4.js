@@ -44,8 +44,8 @@ const LESSONS = [
   ["Like stars in the sky", "g:no-you-na", "雲 星 光 光る 空気 砂 島 海岸"],
   ["Rain is coming, they say", "g:sou-da-hearsay", "天気予報 台風 降り出す 冷える 揺れる ぬれる 地震 止む"],
   ["Maybe it was a thief", "g:kamo-shirenai", "事故 火事 泥棒 すり 盗む 警察 危険 安全"],
-  ["It should be there", "g:hazu g:hazu-ga-nai", "はず そんな きっと 決して 正しい 確か 間違える 答"],
-  ["Plans for the week", "g:yotei-da", "予定 会議 計画 今度 さ来週 さ来月 都合 将来"],
+  ["It should be there", "g:hazu g:hazu-ga-nai", "はず そんな きっと 決して 正しい 確か 間違える 答え"],
+  ["Plans for the week", "g:yotei-da", "予定 会議 計画 今度 再来週 再来月 都合 将来"],
   // 5. ability
   ["At the sports centre", "g:potential", "運動 柔道 テニス 試合 勝つ 負ける 投げる 打つ"],
   ["Things I can do", "g:koto-ga-dekiru", "経験 機会 技術 ピアノ 生きる 力 頑張る 一生懸命"],
@@ -74,7 +74,7 @@ const LESSONS = [
   ["While I was out", "g:te-iru-aida-ni", "間 留守 昼間 昼休み 夫 妻 家内 お宅"],
   ["Just about to leave", "g:tokoro-da", "帰り 出発 間に合う 急行 特急 乗り換える 空港 寄る", "京"],
   // 9. conditionals I
-  ["Turn left and you'll see it", "g:to-conditional", "通り 向かう 回る 坂 線 遠く 周り 真中"],
+  ["Turn left and you'll see it", "g:to-conditional", "通り 向かう 回る 坂 線 遠く 周り 真ん中"],
   ["I hope it's sunny", "g:to-ii", "祈る 神社 教会 心 気持ち 両方 特に もし"],
   ["When I get there", "g:tara", "泊まる 旅館 港 舟 汽車 乗り物 交通 飛行場"],
   ["Why don't you rest?", "g:tara-dou", "入院 退院 看護師 看護婦 けがする 倒れる 太る 痩せる"],
@@ -103,7 +103,7 @@ const LESSONS = [
   // 13. voice: passive, causative
   ["Stepped on in the train", "g:passive", "踏む 込む 空く|すく 騒ぐ 運転手 金持ち 滑る"],
   ["Making staff work", "g:causative", "運転 行う 工業 産業 生産 新聞社 国際"],
-  ["Made to practise", "g:causative-passive", "校長 講堂 高校生 教育 競争 糸"],
+  ["Made to practise", "g:causative-passive", "校長 講堂 高校生 高等学校 教育 競争 糸"],
   ["Only one left", "g:shika-nai", "残る 石 小鳥 内 すっと たいてい"],
   ["As many as that?", "g:number-mo", "億 人口 市 市民 都 区 町 軒"],
   ["It is said that…", "g:to-iwarete-iru", "建てる 社会 文化 世界 戦争 政治 経済 法律"],
@@ -249,18 +249,18 @@ const GUIDES = [
     part: 1, partJp: "[文法|ぶんぽう]", glance: "**3** question types. About **20** of the 55 minutes.",
     kindsLabel: "Question types",
     kinds: [
-      { jp: "[文|ぶん]の[文法|ぶんぽう]1", en: "Sentence grammar", ask: "A gap in a sentence. Pick the particle or form. About 13 of the 21 grammar questions are this kind.", trap: "Looking at one side only. The **words after the gap** pick the form: a noun wants な, a ください wants て.", tip: "Look at the words on both sides of the gap. Your eyes will want to stop at the left one.", eg: "[道|みち]を [聞|き]かれる / [弟|おとうと]に [待|ま]たされる" },
+      { jp: "[文|ぶん]の[文法|ぶんぽう]1", en: "Sentence grammar", ask: "A gap in a sentence. Pick the particle or form. About 13 of the 21 grammar questions are this kind.", trap: "Looking at one side only. The **words after the gap** pick the form: a noun wants な, a ください wants て.", tip: "Look at the words on both sides of the gap. Your eyes will want to stop at the left one.", eg: "しずか（な）[町|まち] / [待|ま]っ（て）ください" },
       { jp: "[文|ぶん]の[文法|ぶんぽう]2 (★)", en: "Sentence order", ask: "Four pieces to put in order. Answer with the piece that lands on ★.", trap: "Judging pieces one by one. Particles **stick to the word before them**.", tip: "Build the whole sentence first and write the order down (1-3-4-2). Then read off the ★ slot." },
       { jp: "[文章|ぶんしょう]の[文法|ぶんぽう]", en: "Text gaps", ask: "A short text with four numbered gaps.", trap: "A choice that fits its own sentence but not **the story**: but or so, giving or receiving.", tip: "Read the sentence before and after each gap. A gap never lives alone." }
     ],
     time: "Grammar and reading share part 2 (55 minutes). If two choices both seem fine, one breaks a rule that only the full sentence shows. **Read it once more** with each choice in place." },
-  { lead: "Reading is about 8 questions in the same 55 minutes as grammar. Plan on about 30 minutes for it.",
+  { lead: "Reading is about 8 questions in the same 55 minutes as grammar. Plan on about 30 to 34 minutes for it.",
     part: 1, partJp: "[読解|どっかい]", glance: "**3** question types. About **30** of the 55 minutes.",
     kindsLabel: "Question types",
     kinds: [
       { jp: "[内容理解|ないようりかい]（[短文|たんぶん]）", en: "Short text", ask: "A note, an email or a notice of 100 to 200 characters, one question. There are three of them.", trap: "Wrong choices use words from the text in the **wrong place**. They feel right because you just read them.", tip: "Read the question first. Then find the sentence that answers it." },
       { jp: "[内容理解|ないようりかい]（[中文|ちゅうぶん]）", en: "Medium text", ask: "One longer text of about 450 characters with three questions, in the order of the text.", trap: "Stopping at the first idea. The writer's real point is often **at the end**.", tip: "The questions follow the text, so read it in pieces. Watch for でも, それで and the last lines." },
-      { jp: "[情報検索|じょうほうけんさく]", en: "Information search", ask: "A timetable, a price list or a flyer of about 400 characters, with two questions.", trap: "Reading it all instead of **scanning**. It is a flyer, not a novel.", tip: "Note the conditions in the question (day, time, price, age). Then look for the one line that meets all of them." }
+      { jp: "[情報検索|じょうほうけんさく]", en: "Information search", ask: "A timetable, a price list or a flyer of about 300 to 400 characters, with two questions.", trap: "Reading it all instead of **scanning**. It is a flyer, not a novel.", tip: "Note the conditions in the question (day, time, price, age). Then look for the one line that meets all of them." }
     ],
     time: "In this course the clock gives each reading question about 4 minutes. Kanji from the N4 list show no furigana in these questions, so **read them as you would on the day**." },
   { lead: "Listening is part 3: about 28 questions in 35 minutes, and the audio never waits for you.",
@@ -272,7 +272,7 @@ const GUIDES = [
       { jp: "[発話表現|はつわひょうげん]", en: "Right thing to say", ask: "On the test you see a picture. Here the narrator describes the situation.", trap: "Mixing up **who does the favour**. A request and an offer can use the same verb.", tip: "Is it a request (〜ていただけませんか), an offer (〜ましょうか) or an apology? Decide before the choices start.", eg: "〜ていただけませんか" },
       { jp: "[即時応答|そくじおうとう]", en: "Quick reply", ask: "One short line and three replies, nothing printed. N4 has 8 of these.", trap: "Dwelling on one answer. It eats the next question, so **move on**.", tip: "Go with your first instinct, then let it go. A polite line expects a polite reply." }
     ],
-    time: "On the real test you hear everything once. Here you get **one replay** per question, because the computer voice is slower and flatter than the real thing. Try the official sample audio too (link in Settings and on the mock results)." },
+    time: "Test takers report hearing each item only once on the real test. Here you get **one replay** per question, because the computer voice is slower and flatter than the real thing. Try the official sample audio too (link in Settings and on the mock results)." },
   Object.assign({ lead: "A full N4 test: 85 questions in three timed parts. You get an estimate of the real scaled score at the end." }, MOCK_GUIDE),
   { lead: "Open your mock results. The table for each もんだい shows where you lost points. Missed words come back sooner in your reviews, so do those first.",
     kindsLabel: "Three kinds of miss",
@@ -283,7 +283,7 @@ const GUIDES = [
     ],
     timeLabel: "Next",
     time: "The mixed drill below has every part of the test at real pacing. Take **mock 2** when you can pass it with time to spare." },
-  Object.assign({ lead: "The second full test, with all new questions. Take it a few days before the exam under exam conditions: one sitting, no notes. Treat it like the real one." }, MOCK_GUIDE)
+  Object.assign({ lead: "The second full test: none of its questions is in mock 1, and no lesson, review or drill asks them. Take it a few days before the exam under exam conditions: one sitting, no notes. Treat it like the real one." }, MOCK_GUIDE)
 ];
 // After the last lesson review: 4 section drills, mock 1, a mixed fix-up drill, mock 2 (as at N5). Counts are
 // questions per mondai, or passages / listening items per format; the mix follows the official share.

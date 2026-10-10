@@ -158,11 +158,12 @@ QUnit.module('quiz variety (ticket 43)', {
 // to the printed pattern. A point is now made (gap, ★ order, conjugation) whenever such a question fits.
 // 10 seeded builds of every N5 lesson: 25% made before, 42% after; the rest have no gap or ★ form yet.
 QUnit.module('grammar is made, not matched', function () {
-  QUnit.test('10 seeded builds: the label match only when no gap / ★ / conjugation fits; made share at the ratchet', function (assert) {
+  // N4 r1 grammar T1/T2: N4 confusable families + conjForm on every form point: 44% made before, 74% after (lessons + reviews).
+  [['N5', 0.4], ['N4', 0.65]].forEach(function (lv) { QUnit.test(lv[0] + ': 10 seeded builds: the label match only when no gap / ★ / conjugation fits; made share at the ratchet', function (assert) {
     var rnd = Math.random, x = 3, tot = 0, made = 0, bad = [];
     Math.random = function () { x = (x * 1664525 + 1013904223) % 4294967296; return x / 4294967296; };
     try {
-      buildUnits(PLAN, CATALOG).filter(function (u) { return u.level === 'N5' && u.kind === 'lesson' && (u.grammar || []).length; }).forEach(function (u) {
+      buildUnits(PLAN, CATALOG).filter(function (u) { return u.level === lv[0] && u.kind === 'lesson' && (u.grammar || []).length; }).forEach(function (u) {
         var ctx = quizContext(u), can = {};
         u.grammar.forEach(function (g) {
           can[g.id] = formsFor(g, ctx).some(function (fm) {
@@ -171,15 +172,55 @@ QUnit.module('grammar is made, not matched', function () {
             return false;
           });
         });
-        for (var r = 0; r < 10; r++) buildExercises(u).forEach(function (ex) {
-          if (!ex.item || ex.item.kind !== 'grammar') return;
-          tot++;
-          if (ex.form !== 'patternMc') made++;
-          else if (can[ex.item.id]) bad.push(u.id + ' ' + ex.item.id);
-        });
+        for (var r = 0; r < 10; r++) {
+          var madeOf = {}; // N4: a second ask avoids the form already used (one ★ sentence), so a label match beside a made one is fair
+          buildExercises(u).forEach(function (ex) {
+            if (!ex.item || ex.item.kind !== 'grammar') return;
+            tot++;
+            if (ex.form !== 'patternMc') made++;
+            else if (can[ex.item.id] && lv[0] === 'N5') bad.push(u.id + ' ' + ex.item.id); // N5: no label match at all where a made form fits
+            madeOf[ex.item.id] = madeOf[ex.item.id] || ex.form !== 'patternMc';
+          });
+          Object.keys(madeOf).forEach(function (id) { if (!madeOf[id] && can[id]) bad.push(u.id + ' ' + id); });
+        }
       });
     } finally { Math.random = rnd; }
     assert.deepEqual(bad.filter(function (b, i) { return bad.indexOf(b) === i; }), [], 'label match although a made form fits');
-    assert.ok(made / tot >= 0.4, Math.round(made / tot * 100) + '% of ' + tot + ' lesson grammar questions made');
+    assert.ok(made / tot >= lv[1], Math.round(made / tot * 100) + '% of ' + tot + ' lesson grammar questions made');
+  }); });
+  QUnit.test('N4: a sentence gap for at least 45 points, the grammar prep drill asks its 6, label options are taught points first (N4 r1 grammar T1/T2)', function (assert) {
+    var units = buildUnits(PLAN, CATALOG), last = units.filter(function (u) { return u.level === 'N4' && u.kind === 'review'; }).slice(-1)[0], ctx = quizContext(last);
+    var withGap = catalogOf('grammar').filter(function (g) {
+      if (g.level !== 'N4') return false;
+      var f = formsFor(g, ctx).filter(function (fm) { return fm.name === 'gap'; })[0];
+      for (var i = 0; i < 5; i++) if (f.make()) return true;
+      return false;
+    });
+    assert.ok(withGap.length >= 45, withGap.length + ' N4 points with a gap question');
+    var prep = units.filter(function (u) { return u.id === 'n4.u104'; })[0];
+    for (var r = 0; r < 3; r++) assert.equal(buildExercises(prep).filter(function (e) { return e.form === 'gap'; }).length, 6, 'u104: 6 文法形式の判断');
+    var u = units.filter(function (x) { return x.level === 'N4' && x.kind === 'lesson'; })[30], c2 = quizContext(u), untaught = 0, n = 0;
+    (u.grammar || []).forEach(function (g) {
+      var f = formsFor(g, c2).filter(function (fm) { return fm.name === 'patternMc'; })[0];
+      for (var i = 0; i < 10; i++) { var ex = f.make(); ex.options.forEach(function (o, k) { if (k === ex.correct) return; n++; if (!catalogOf('grammar').some(function (x) { return x.pattern === o && c2.taught[x.id]; })) untaught++; }); }
+    });
+    assert.ok(n > 0 && untaught === 0, u.id + ': ' + untaught + ' of ' + n + ' label options untaught');
+  });
+
+  // N5 r2 grammar T2: 29 of 67 points were only ever matched to a label; authored g.gap fills fixed most
+  QUnit.test('20 seeded builds of every N5 lesson and review: at most 10 points are only ever matched to a label', function (assert) {
+    var rnd = Math.random, x = 11, seen = {}, made = {};
+    Math.random = function () { x = (x * 1664525 + 1013904223) % 4294967296; return x / 4294967296; };
+    try {
+      buildUnits(PLAN, CATALOG).filter(function (u) { return u.level === 'N5' && (u.kind === 'lesson' || u.kind === 'review'); }).forEach(function (u) {
+        for (var r = 0; r < 20; r++) buildExercises(u).forEach(function (ex) {
+          if (!ex.item || ex.item.kind !== 'grammar') return;
+          seen[ex.item.id] = true;
+          if (ex.form !== 'patternMc') made[ex.item.id] = true;
+        });
+      });
+    } finally { Math.random = rnd; }
+    var only = Object.keys(seen).filter(function (id) { return !made[id]; });
+    assert.ok(only.length <= 10, only.length + ' label-only: ' + only.join(' '));
   });
 });

@@ -109,6 +109,14 @@ QUnit.module('checkTyping', function () {
     assert.strictEqual(checkTyping(long, [long]), false);
     assert.ok(checkTyping(long.slice(1), [long.slice(1)]), '200 chars still checked');
   });
+  // N5 r2b newbie N3: typed juusannichi lands in the kana box as じゅうさんいち (nn = ん)
+  QUnit.test('answerIsRight: a kana answer with ん + な行 also takes the nn-read typing', function (assert) {
+    var ex = { type: 'typing', answers: ['じゅうさんにち'], kana: true };
+    assert.ok(answerIsRight(ex, 'じゅうさんにち'), 'exact');
+    assert.ok(answerIsRight(ex, 'じゅうさんいち'), 'nn read as ん');
+    assert.notOk(answerIsRight(ex, 'じゅうさんじ'), 'other answer');
+    assert.notOk(answerIsRight({ type: 'typing', answers: ['じゅうさんにち'] }, 'じゅうさんいち'), 'only for the kana box');
+  });
 });
 
 

@@ -3,7 +3,7 @@
 // N4 reading passages: original texts in the three N4 読解 formats of the official test
 // (jlpt.jp n4_e_revised.pdf, format only, nothing copied): short = 内容理解(短文), a note / email /
 // notice of about 100–200 characters with 1 question; mid = 内容理解(中文), about 450 characters
-// with 3 questions in text order; info = 情報検索, a notice / timetable / flyer of about 400
+// with 3 questions in text order; info = 情報検索, a notice / timetable / flyer of about 300-400
 // characters to search, 2 questions whose answers combine two or more conditions.
 //
 // Written by hand for this project (sources: ['own']). Text rules:

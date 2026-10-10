@@ -149,4 +149,13 @@ QUnit.module('buildExercises', {
       assert.ok(buildExercises(u).length > 0, u.id);
     });
   });
+  QUnit.test('keigo points ask to say a plain verb raised or lowered (N4 r1 newbie3 N3)', function (assert) {
+    catalogOf('grammar').filter(function (g) { return g.pairs; }).forEach(function (g) {
+      var u = buildUnits(PLAN, CATALOG).filter(function (x) { return x.kind === 'lesson' && (x.grammar || []).some(function (y) { return y.id === g.id; }); })[0];
+      var ex = formsFor(g, quizContext(u)).filter(function (f) { return f.name === 'keigo'; })[0].make();
+      assert.ok(ex && ex.type === 'typing' && checkTyping(ex.answers[0], ex.answers) && !answerLeaks(Object.assign(ex, { item: g })), g.id + ': ' + (ex && ex.question));
+      assert.ok(buildExercises(u).some(function (e) { return e.form === 'keigo'; }), u.id + ' asks it');
+    });
+    assert.equal(catalogOf('grammar').filter(function (g) { return g.pairs; }).length, 4, 'honorific and humble verbs, お〜になる, お〜する');
+  });
 });

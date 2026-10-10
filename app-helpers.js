@@ -71,6 +71,7 @@ var UI_STRINGS = {
   kanji_view_rows:    { en: 'View all',           ja: 'ぜんぶ見る' },
   kanji_words:        { en: "This lesson's words", ja: 'このレッスンのことば' },
   kanji_strokes:      { en: 'strokes',            ja: 'かくすう' },
+  kanji_stroke:       { en: 'stroke',             ja: 'かくすう' },
   kanji_strokes_show: { en: 'Show stroke order',  ja: 'かきじゅんをみる' },
   kanji_strokes_hide: { en: 'Hide stroke order',  ja: 'かきじゅんをかくす' },
   kanji_info_label:   { en: 'What are kun and on readings?', ja: 'くんよみとおんよみ' },
@@ -254,6 +255,8 @@ var UI_STRINGS = {
   cred_pouchdb:      { en: 'local storage and sync', ja: 'ローカル保存と同期' },
   cred_edrdg:        { en: 'readings, meanings and stroke counts checked against JMdict and KANJIDIC while writing the course (no files shipped)', ja: '読み・意味・画数の確認（ファイルは含みません）' },
   cred_wiktionary:   { en: 'kanji stroke counts and readings cross-checked while writing the course (no text shipped)', ja: '漢字の画数・読みの確認（本文は含みません）' },
+  cred_grammar_ref:  { en: 'grammar points cross-checked while writing the course', ja: '文法の確認' },
+  cred_link_only:    { en: 'linked, no text shipped', ja: 'リンクのみ、本文は含みません' },
   cred_by:           { en: 'by',                ja: '作成：' },
   set_sent_credits:  { en: 'Sentence credits',  ja: '例文のクレジット' },
   set_sent_credits_n: { en: '{n} Tatoeba sentences', ja: 'Tatoeba例文{n}件' },
@@ -475,8 +478,10 @@ function tRuby(key, level, furigana) {
 }
 // rubyNodes(s, show): learner text with [漢字|かな] markup (tips, grammar notes) → React nodes, ruby over
 // the kanji when show (the furigana pref) is not false, else the plain kanji (N5 r1 newbie N5).
-function rubyNodes(s, show) {
-  return furiganaParts(s || '').map(function (p, i) {
+// taught ({ kanji: true }, optional): ruby only on blocks holding a kanji not taught yet (N4 r1 vocab T2)
+function rubyNodes(s, show, taught) {
+  var parts = furiganaParts(s || '');
+  return (taught ? quizFurigana(parts, taught, '') : parts).map(function (p, i) {
     return p.r && show !== false ? React.createElement('ruby', { key: i }, p.t, React.createElement('rt', null, p.r)) : p.t;
   });
 }

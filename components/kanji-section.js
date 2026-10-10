@@ -94,7 +94,7 @@ function KanjiSection(props) {
         })), React.createElement("span", { className: "kj-word-rd" }, v.reading), React.createElement("span", { className: "kj-word-gl" }, glossText(v)));
       })));
   };
-  var strokes = function (k) { return k.strokes + " " + t('kanji_strokes', lv); };
+  var strokes = function (k) { return k.strokes + " " + t(k.strokes === 1 ? 'kanji_stroke' : 'kanji_strokes', lv); }; // 一: "1 stroke"
 
   var body;
   if (view === 'focus') {

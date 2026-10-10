@@ -54,8 +54,14 @@ QUnit.module('catalog checks', function () {
   // 〜たことがある → 読んだことがある), and a token ending in a verb's る/く/う conjugates like the vocab
   // stem rule above (〜ている → ています, 〜に行く → に行きました).
   // ponytail: ≥3 kana before the tail rule kicks in, so particles and short tokens stay exact.
+  // A full ます / する / くる ending (〜ことにします, 〜にする, 〜てくる) also stands for its other forms
+  // (しました, しなさい, きた), so pattern labels never need a cut-off fragment like ことにしま (N4 r1 grammar T5).
+  var TAIL_FORMS = { 'ます': 'ま[すしせ]', 'する': '(?:す[るれ]|し|さ[せれ])', 'くる': '(?:く[るれ]|き|こ[なさらよい])' };
   function grammarHas(tok, jp) {
-    return [tok, tok.replace(/^て/, 'で').replace(/^た/, 'だ')].some(function (f) {
+    // a token ending in です also shows as でしょう (〜んです → 来たんでしょう, N5 r2 grammar T1)
+    return [tok, tok.replace(/^て/, 'で').replace(/^た/, 'だ'), tok.replace(/です$/, 'でしょう')].some(function (f) {
+      var tail = f.length >= 3 && TAIL_FORMS[f.slice(-2)];
+      if (tail && new RegExp(f.slice(0, -2).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + tail).test(jp)) return true;
       return jp.indexOf(f) >= 0 ||
         (f.length >= 3 && /[るくう]$/.test(f) && new RegExp(f.slice(0, -1).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[' + HIRA + ']').test(jp));
     });
@@ -70,7 +76,8 @@ QUnit.module('catalog checks', function () {
     if (typeof it.verified !== 'boolean') err('verified not boolean');
     // Learner text where the kanji is often the point (引く / 弾く): every kanji carries [漢字|かな] ruby, since the
     // tip shows before any quiz (N5 r1 newbie N5). N5 only until N4 ships its notes. A vocab notes field is authoring-only.
-    if (it.level === 'N5') ({ vocab: ['tip'], grammar: ['notes', 'formation'] }[it.kind] || []).forEach(function (f) {
+    // usage too, and N4 since its vocab usage / tip and grammar notes / formation got ruby (N4 r1 vocab T2, grammar T10).
+    if (it.level === 'N5' || it.level === 'N4') ({ vocab: ['tip', 'usage'], grammar: ['notes', 'formation'] }[it.kind] || []).forEach(function (f) {
       var bare = typeof it[f] === 'string' && it[f].replace(/\[([^|\]]+)\|([^\]]+)\]/g, '').match(/[一-鿿㐀-䶿々]/g);
       if (bare) err(f + ': kanji without ruby: ' + bare.join(''));
     });
@@ -119,6 +126,8 @@ QUnit.module('catalog checks', function () {
     } else if (it.kind === 'grammar') {
       if (!/^g:[a-z0-9-]+$/.test(it.id)) err('id not g:<slug>');
       if (PLACEHOLDER_RE.test(it.pattern)) err('placeholder pattern ' + it.pattern);
+      // every alternative ends on a whole form: no ます-stem or しな(い) cut-off (〜ことにしま, 〜にしな; N4 r1 grammar T5)
+      it.pattern.replace(/\([^)]*\)/g, '').split('/').forEach(function (a) { if (/(ま|しな)$/.test(a.trim())) err('pattern cut mid-word: ' + a.trim()); });
       var ex = it.examples || [];
       if (it.verified && ex.length < 2) err('verified needs ≥2 examples');
       ex.forEach(function (s) {
@@ -636,6 +645,12 @@ QUnit.module('catalog checks', function () {
     items[iru.id] = with_(iru, { pattern: '〜くない/〜かった' });
     assert.strictEqual(errsFor(s('高かったです。', [iru.id]), items), '', "'/〜' alternatives: either one");
     assert.ok(/placeholder/.test(errsFor(with_(g, { pattern: 'Phase 6 review' }), items)), 'placeholder pattern');
+    items[iru.id] = with_(iru, { pattern: '〜ことにします' });
+    assert.strictEqual(errsFor(s('行くことにしました。', [iru.id]), items), '', 'ます tail (しました)');
+    items[iru.id] = with_(iru, { pattern: '〜にする' });
+    assert.strictEqual(errsFor(s('しずかにしなさい。', [iru.id]), items), '', 'する tail (しなさい)');
+    assert.ok(/cut mid-word: 〜ことにしま/.test(errsFor(with_(g, { pattern: '〜ことにする/〜ことにしま' }), items)), 'cut ます stem');
+    assert.ok(/cut mid-word: 〜にしな/.test(errsFor(with_(g, { pattern: '〜にしな' }), items)), 'cut しない');
   });
 
   QUnit.test('item checks: reading passages', function (assert) {

@@ -38,6 +38,17 @@ QUnit.module('typed English answers', function () {
     assert.ok(checkTyping('fruits', ['fruit'], ['fruit', 'vegetable']), 'own plural stays right');
     assert.ok(checkTyping('pocket', ['pocket'], ['pocket']), 'exact always right');
   });
+  QUnit.test('a noun\'s own meaning as a plural is right even when another word means the plural (N4 r1 vocab T5)', function (assert) {
+    var pool = englishPool();
+    [['v:計画|けいかく', 'plans'], ['v:看護師|かんごし', 'nurses'], ['v:準備|じゅんび', 'preparations'], ['v:場合|ばあい', 'cases'],
+     ['v:気持ち|きもち', 'feelings'], ['v:日|ひ', 'days'], ['v:利用|りよう', 'uses']].forEach(function (c) {
+      var v = CATALOG.items[c[0]], ex = { answers: meaningAnswers(v.gloss).concat(v.accept || []), item: v, form: 'meaningType' };
+      assert.ok(answerIsRight(ex, c[1]), c[0] + ' takes ' + c[1]);
+    });
+    var adj = CATALOG.items['v:新しい|あたらしい'];
+    assert.notOk(answerIsRight({ answers: meaningAnswers(adj.gloss).concat(adj.accept || []), item: adj, form: 'meaningType' }, 'news'), 'not an adjective: news ≠ new');
+    assert.notOk(checkTyping('news', ['new'], pool), 'no noun flag: reject set as before');
+  });
 
   QUnit.test('kana answers stay exact (script matters), romaji items unaffected', function (assert) {
     assert.ok(checkTyping('にほんじん', ['にほんじん']));
@@ -134,5 +145,10 @@ QUnit.module('typed English answers', function () {
     var u = buildUnits(PLAN, CATALOG).filter(function (x) { return (x.vocab || []).some(function (v) { return v.id === 'v:人|ひと'; }); })[0];
     var ex = formsFor(CATALOG.items['v:人|ひと'], quizContext(u)).filter(function (f) { return f.name === 'meaningType'; })[0].make();
     assert.ok(otherMeaning(ex, 'person from'), '人: the じん meaning is a retry, not a miss');
+  });
+  QUnit.test('a comma inside brackets does not split the answer (N5 r3 vocab T2)', function (assert) {
+    var ok = function (id, typed) { var v = CATALOG.items[id]; return checkTyping(typed, meaningAnswers(v.gloss).concat(v.accept || []), englishPool()); };
+    ['guitar', 'fire'].forEach(function (t) { assert.notOk(ok(t === 'guitar' ? 'v:弾く|ひく' : 'v:消える|きえる', t), t + ' alone'); });
+    assert.notOk(ok('v:着る|きる', 'coat'), 'きる: coat alone');
   });
 });

@@ -741,14 +741,14 @@ CATALOG.add([
     lines: [
       { speaker: 'N', furigana: 'かいしゃで　[男|おとこ]の　[人|ひと]と　[女|おんな]の　[人|ひと]が　[話|はな]して　います。' },
       { speaker: 'F', furigana: '[明日|あした]の　かいぎ、[三|さん]がいの　かいぎしつでしたよね。' },
-      { speaker: 'M', furigana: 'それが、[三|さん]がいの　へやは　ほかの　[人|ひと]が　つかう　ことに　なったので、[五|ご]かいに　かわりました。' },
+      { speaker: 'M', furigana: 'それが、[三|さん]がいの　へやは　ほかの　[人|ひと]が　つかうので、[五|ご]かいに　かわりました。' },
       { speaker: 'F', furigana: '[五|ご]かいですか。[四|よん]かいの　しょくどうの　[上|うえ]ですね。' },
       { speaker: 'M', furigana: 'そうです。エレベーターを　おりて、すぐ　[右|みぎ]の　へやです。' }],
     question: 'かいぎは　[何|なん]がいで　ありますか。',
     options: ['[三|さん]がい', '[五|ご]かい', '[四|よん]かい', '[二|に]かい'], answer: 1,
     en: 'Narrator: At a company, a man and a woman are talking. Which floor is the meeting on? — F: Tomorrow\'s meeting is in the third-floor meeting room, right? M: Actually, other people are going to use the third-floor room, so it moved to the fifth floor. F: The fifth floor? Above the cafeteria on the fourth floor. M: That\'s right. Get off the lift and it\'s the room right on the right. — Which floor is the meeting on?',
     explain: 'The third-floor room was the old plan; it changed to the fifth floor (五かいにかわりました). The fourth floor is the cafeteria below it.',
-    uses: ['g:to', 'g:ga', 'g:te-iru', 'g:de', 'g:no', 'g:deshita', 'g:yo', 'g:ne', 'g:node', 'g:naru', 'g:ka', 'v:男|おとこ', 'v:女|おんな', 'v:人|ひと', 'v:話す|はなす', 'v:会社|かいしゃ', 'v:明日|あした', 'v:会議|かいぎ', 'v:三|さん', 'v:階|かい', 'v:会議室|かいぎしつ', 'v:それ|それ', 'v:部屋|へや', 'v:ほか|ほか', 'v:使う|つかう', 'v:事|こと', 'v:なる|なる', 'v:五|ご', 'v:変わる|かわる', 'v:四|よん', 'v:食堂|しょくどう', 'v:上|うえ', 'v:そう|そう', 'v:エレベーター|エレベーター', 'v:降りる|おりる', 'v:右|みぎ', 'v:何|なん', 'v:ある|ある', 'v:二|に', 'k:男', 'k:人', 'k:女', 'k:話', 'k:明', 'k:日', 'k:三', 'k:五', 'k:四', 'k:上', 'k:右', 'k:何', 'k:二'],
+    uses: ['g:to', 'g:ga', 'g:te-iru', 'g:de', 'g:no', 'g:deshita', 'g:yo', 'g:ne', 'g:node', 'g:ka', 'v:男|おとこ', 'v:女|おんな', 'v:人|ひと', 'v:話す|はなす', 'v:会社|かいしゃ', 'v:明日|あした', 'v:会議|かいぎ', 'v:三|さん', 'v:階|かい', 'v:会議室|かいぎしつ', 'v:それ|それ', 'v:部屋|へや', 'v:ほか|ほか', 'v:使う|つかう', 'v:五|ご', 'v:変わる|かわる', 'v:四|よん', 'v:食堂|しょくどう', 'v:上|うえ', 'v:そう|そう', 'v:エレベーター|エレベーター', 'v:降りる|おりる', 'v:右|みぎ', 'v:何|なん', 'v:ある|ある', 'v:二|に', 'k:男', 'k:人', 'k:女', 'k:話', 'k:明', 'k:日', 'k:三', 'k:五', 'k:四', 'k:上', 'k:右', 'k:何', 'k:二'],
     verified: true }),
 
   L({ id: 'l:n4-cherry-blossom-weather', format: 'point', // review
@@ -759,10 +759,10 @@ CATALOG.add([
       { speaker: 'M', furigana: 'じゃあ、[午後|ごご]から　[行|い]こうか。' },
       { speaker: 'F', furigana: 'そうね。でも、[夕方|ゆうがた]から　また　[風|かぜ]が　つよく　なるそうだから、はやめに　かえろう。' }],
     question: '[明日|あした]は　いつ　はれますか。',
-    options: ['[朝|あさ]', '[十|じゅう][時|じ]ごろ', '[夕方|ゆうがた]', '[午後|ごご]'], answer: 3,
+    options: ['[朝|あさ]', '[夜|よる]', '[夕方|ゆうがた]', '[午後|ごご]'], answer: 3,
     en: 'Narrator: A man and a woman are talking. When will it be sunny tomorrow? — M: I wonder if the weather will be OK for tomorrow\'s cherry-blossom viewing. F: The forecast says rain until tomorrow morning. But it stops around ten, and the afternoon will be sunny. M: Then shall we go from the afternoon? F: Yes. But they say the wind gets strong again from the evening, so let\'s head home early. — When will it be sunny tomorrow?',
     explain: 'Rain lasts until the morning and stops around ten; the sun comes in the afternoon (午後ははれる). In the evening it is the wind that is the problem.',
-    uses: ['g:to', 'g:ga', 'g:te-iru', 'g:kana-kashira', 'g:made', 'g:sou-da-hearsay', 'g:yo', 'g:goro', 'g:tte', 'g:volitional', 'g:naru', 'g:kara', 'g:ne', 'g:de', 'g:no', 'v:男|おとこ', 'v:女|おんな', 'v:人|ひと', 'v:話す|はなす', 'v:明日|あした', 'v:花見|はなみ', 'v:天気|てんき', 'v:大丈夫|だいじょうぶ', 'v:天気予報|てんきよほう', 'v:朝|あさ', 'v:雨|あめ', 'v:そう|そう', 'v:でも|でも', 'v:十|じゅう', 'v:時|じ', 'v:止む|やむ', 'v:午後|ごご', 'v:晴れる|はれる', 'v:じゃあ|じゃあ', 'v:行く|いく', 'v:夕方|ゆうがた', 'v:また|また', 'v:風|かぜ', 'v:強い|つよい', 'v:なる|なる', 'v:帰る|かえる', 'v:いつ|いつ', 'k:男', 'k:人', 'k:女', 'k:話', 'k:明', 'k:日', 'k:花', 'k:見', 'k:天', 'k:気', 'k:朝', 'k:雨', 'k:十', 'k:時', 'k:午', 'k:後', 'k:行', 'k:夕', 'k:方', 'k:風'],
+    uses: ['g:to', 'g:ga', 'g:te-iru', 'g:kana-kashira', 'g:made', 'g:sou-da-hearsay', 'g:yo', 'g:goro', 'g:tte', 'g:volitional', 'g:naru', 'g:kara', 'g:ne', 'g:de', 'g:no', 'v:男|おとこ', 'v:女|おんな', 'v:人|ひと', 'v:話す|はなす', 'v:明日|あした', 'v:花見|はなみ', 'v:天気|てんき', 'v:大丈夫|だいじょうぶ', 'v:天気予報|てんきよほう', 'v:朝|あさ', 'v:雨|あめ', 'v:そう|そう', 'v:でも|でも', 'v:十|じゅう', 'v:時|じ', 'v:止む|やむ', 'v:午後|ごご', 'v:晴れる|はれる', 'v:じゃあ|じゃあ', 'v:行く|いく', 'v:夕方|ゆうがた', 'v:また|また', 'v:風|かぜ', 'v:強い|つよい', 'v:なる|なる', 'v:帰る|かえる', 'v:いつ|いつ', 'k:男', 'k:人', 'k:女', 'k:話', 'k:明', 'k:日', 'k:花', 'k:見', 'k:天', 'k:気', 'k:朝', 'k:雨', 'k:十', 'k:時', 'k:午', 'k:後', 'k:行', 'k:夕', 'k:方', 'k:風', 'k:夜'],
     verified: true }),
 
   L({ id: 'l:n4-who-picks-up-yui', format: 'point', // review
@@ -1161,8 +1161,8 @@ CATALOG.add([
     lines: [
       { speaker: 'F', furigana: 'よかったら、ケーキ、めしあがって　ください。' }],
     optionSpeaker: 'M',
-    options: ['どうぞ、めしあがって　ください。', 'じゃあ、えんりょなく　いただきます。', 'ごちそうさまでした。'], answer: 1,
-    en: 'Woman: If you like, please have some cake. — 1. Please, help yourself. 2. Then I\'ll help myself, thank you. 3. Thank you for the meal.',
+    options: ['じゃあ、えんりょなく　いただきます。', 'どうぞ、めしあがって　ください。', 'ごちそうさまでした。'], answer: 0,
+    en: 'Woman: If you like, please have some cake. — 1. Then I\'ll help myself, thank you. 2. Please, help yourself. 3. Thank you for the meal.',
     explain: 'She offers cake with the honorific めしあがって, and he accepts with the humble いただきます. Repeating めしあがってください offers it back to her, and ごちそうさまでした is said after eating.',
     uses: ['g:tara', 'g:sonkeigo-verbs', 'g:te-kudasai', 'g:deshita', 'v:よい|よい', 'v:ケーキ|ケーキ', 'v:召し上がる|めしあがる', 'v:じゃあ|じゃあ', 'v:遠慮|えんりょ', 'v:頂く|いただく', 'v:どうぞ|どうぞ', 'v:ごちそう|ごちそう'],
     verified: true }),
@@ -1242,10 +1242,10 @@ CATALOG.add([
     lines: [
       { speaker: 'F', furigana: 'おひさしぶりです。おげんきでしたか。' }],
     optionSpeaker: 'M',
-    options: ['はじめまして。よろしく　おねがいします。', 'じゃあ、また　[明日|あした]。', 'ほんとうに　ひさしぶりですね。[元気|げんき]でしたよ。'], answer: 2,
-    en: 'Woman: It\'s been a long time. Have you been well? — 1. Nice to meet you. 2. See you tomorrow, then. 3. It really has been a long time. I\'ve been well.',
-    explain: 'She greets someone she has not seen for a while, and he answers both parts: it has been long, and he has been well. はじめまして is for a first meeting, and またあした is a goodbye.',
-    uses: ['g:deshita', 'g:ka', 'g:ne', 'g:yo', 'v:久しぶり|ひさしぶり', 'v:元気|げんき', 'v:ほんとう|ほんとう', 'v:初め|はじめ', 'v:じゃあ|じゃあ', 'v:また|また', 'v:明日|あした', 'k:明', 'k:日', 'k:元', 'k:気'],
+    options: ['はじめまして。よろしく　おねがいします。', 'じゃあ、また　[明日|あした]。', 'はい、おかげさまで。ほんとうに　ひさしぶりですね。'], answer: 2,
+    en: 'Woman: It\'s been a long time. Have you been well? — 1. Nice to meet you. 2. See you tomorrow, then. 3. Yes, thanks to you. It really has been a long time.',
+    explain: 'She greets someone she has not seen for a while, and he answers with the set reply おかげさまで (I have been well, thanks) and agrees it has been long. はじめまして is for a first meeting, and またあした is a goodbye.',
+    uses: ['g:deshita', 'g:ka', 'g:ne', 'g:yo', 'v:久しぶり|ひさしぶり', 'v:元気|げんき', 'v:ほんとう|ほんとう', 'v:初め|はじめ', 'v:じゃあ|じゃあ', 'v:また|また', 'v:明日|あした', 'v:お陰|おかげ', 'k:明', 'k:日'],
     verified: true }),
 
   // ── dialogue (lesson dialogs): one scene per lesson unit, shown in the lesson ─────
@@ -1406,9 +1406,9 @@ CATALOG.add([
       { speaker: 'anya', furigana: 'うそじゃない。キルアさんに　つたえてって。', en: 'It’s not a lie. She said to tell you.' },
       { speaker: 'killua', furigana: '……[何|なに]を　つくるって？', en: '...What did she say she’s making?' },
       { speaker: 'anya', furigana: 'カレーだって。', en: 'Curry, she says.' },
-      { speaker: 'killua', furigana: 'なるほど。……きみの　ははの　カレーって、おいしい？', en: 'I see. ...Is your mom’s curry any good?' },
+      { speaker: 'killua', furigana: 'なるほど。……きみの　おかあさんの　カレーって、おいしい？', en: 'I see. ...Is your mom’s curry any good?' },
       { speaker: 'anya', furigana: 'もちろん！　……たぶん。', en: 'Of course! ...Probably.' },
-      { speaker: 'killua', furigana: 'ははに　へんじを　つたえて。「きょうは　いそがしい」って。', en: 'Give your mom my answer. Tell her "I’m busy today".' },
+      { speaker: 'killua', furigana: 'おかあさんに　へんじを　つたえて。「きょうは　いそがしい」って。', en: 'Give your mom my answer. Tell her "I’m busy today".' },
       { speaker: 'anya', furigana: 'キルアさん、それ、うそ。', en: 'Killua, that’s a lie.' },
       { speaker: 'killua', furigana: '……ちょっとだけ　うそ。', en: '...Only a little one.' }
     ],
@@ -1421,7 +1421,7 @@ CATALOG.add([
         explain: 'くるって passes on Gon’s news: he will come. きてって passes on a request ("come", he says): a different message.' }
     ],
     names: ['アーニャ', 'キルア', 'ゴン'],
-    uses: ['g:tte', 'g:no', 'g:ga', 'g:ni', 'g:te-form', 'g:wo', 'g:ja-nai', 'g:adj-i', 'g:dake', 'g:verb-groups-dict', 'v:さん|さん', 'v:母|はは', 'v:今日|きょう', 'v:晩御飯|ばんごはん', 'v:作る|つくる', 'v:嘘|うそ', 'v:伝える|つたえる', 'v:何|なに', 'v:カレー|カレー', 'v:なるほど|なるほど', 'v:君|きみ', 'v:おいしい|おいしい', 'v:もちろん|もちろん', 'v:たぶん|たぶん', 'v:返事|へんじ', 'v:忙しい|いそがしい', 'v:それ|それ', 'v:ちょっと|ちょっと', 'v:だけ|だけ', 'k:何'],
+    uses: ['g:tte', 'g:no', 'g:ga', 'g:ni', 'g:te-form', 'g:wo', 'g:ja-nai', 'g:adj-i', 'g:dake', 'g:verb-groups-dict', 'v:さん|さん', 'v:母|はは', 'v:今日|きょう', 'v:晩御飯|ばんごはん', 'v:作る|つくる', 'v:嘘|うそ', 'v:伝える|つたえる', 'v:何|なに', 'v:カレー|カレー', 'v:なるほど|なるほど', 'v:君|きみ', 'v:おいしい|おいしい', 'v:もちろん|もちろん', 'v:たぶん|たぶん', 'v:返事|へんじ', 'v:忙しい|いそがしい', 'v:それ|それ', 'v:ちょっと|ちょっと', 'v:だけ|だけ', 'k:何', 'v:お母さん|おかあさん'],
     notes: 'Yor’s cooking thread (she cannot cook, canonically), from the children’s side. うん is a unit word but unverified, so it is left out. Gon (mentioned, on the allowed list) is Killua’s friend.',
     verified: true }),
 
@@ -1742,7 +1742,7 @@ CATALOG.add([
       { speaker: 'yor', furigana: 'ありがとうございます。……あ、むすめは　あちらで　ケーキを　[見|み]て　います。', en: 'Thank you. ...Oh, my daughter is over there looking at the cakes.' },
       { speaker: 'sanji', furigana: 'アーニャさんは　ケーキが　すきなんですね。', en: 'Anya likes cake, then.' },
       { speaker: 'yor', furigana: 'はい……ぜんぶ　[食|た]べたがって　いて、こまって　います。', en: 'Yes... She wants to eat every one of them. I don’t know what to do.' },
-      { speaker: 'sanji', furigana: 'いいじゃないですか。[子|こ]どもは　みんな　そうですよ。', en: 'Where’s the harm? All children are like that.' },
+      { speaker: 'sanji', furigana: 'いいですよ。[子|こ]どもは　みんな　そうですよ。', en: 'That’s fine. All children are like that.' },
       { speaker: 'yor', furigana: 'きのうは　おもちゃを　ほしがって、ないて　いました。[子|こ]どもを　そだてるのは　むずかしいです。', en: 'Yesterday she wanted a toy and cried. Raising a child is hard.' },
       { speaker: 'sanji', furigana: 'では、[小|ちい]さい　ケーキを　ひとつ　プレゼントします。', en: 'Then let me give her one small cake, on the house.' },
       { speaker: 'yor', furigana: 'え、いいんですか？', en: 'Oh, are you sure?' },
@@ -1758,7 +1758,7 @@ CATALOG.add([
         explain: 'ます-stem + たがる: いき + たがる → いきたがって いました. いきたかって is not a form.' }
     ],
     names: ['ヨル', 'サンジ', 'アーニャ'],
-    uses: ['g:tagaru', 'g:te-iru', 'g:te-form', 'g:n-desu', 'g:ja-nai', 'g:ga', 'g:wo', 'g:de', 'g:wa-desu', 'g:ne', 'g:yo', 'g:mo', 'g:ka', 'g:no', 'v:さん|さん', 'v:どうぞ|どうぞ', 'v:こちら|こちら', 'v:娘|むすめ', 'v:あちら|あちら', 'v:ケーキ|ケーキ', 'v:見る|みる', 'v:好き|すき', 'v:全部|ぜんぶ', 'v:食べる|たべる', 'v:困る|こまる', 'v:いい|いい', 'v:子供|こども', 'v:子|こ', 'v:みんな|みんな', 'v:そう|そう', 'v:昨日|きのう', 'v:おもちゃ|おもちゃ', 'v:泣く|なく', 'v:育てる|そだてる', 'v:難しい|むずかしい', 'v:では|では', 'v:小さい|ちいさい', 'v:一つ|ひとつ', 'v:プレゼント|プレゼント', 'v:する|する', 'v:もちろん|もちろん', 'v:ください|ください', 'v:もう|もう', 'v:笑う|わらう', 'v:ほか|ほか', 'k:見', 'k:食', 'k:子', 'k:小'],
+    uses: ['g:tagaru', 'g:te-iru', 'g:te-form', 'g:n-desu', 'g:ga', 'g:wo', 'g:de', 'g:wa-desu', 'g:ne', 'g:yo', 'g:mo', 'g:ka', 'g:no', 'v:さん|さん', 'v:どうぞ|どうぞ', 'v:こちら|こちら', 'v:娘|むすめ', 'v:あちら|あちら', 'v:ケーキ|ケーキ', 'v:見る|みる', 'v:好き|すき', 'v:全部|ぜんぶ', 'v:食べる|たべる', 'v:困る|こまる', 'v:いい|いい', 'v:子供|こども', 'v:子|こ', 'v:みんな|みんな', 'v:そう|そう', 'v:昨日|きのう', 'v:おもちゃ|おもちゃ', 'v:泣く|なく', 'v:育てる|そだてる', 'v:難しい|むずかしい', 'v:では|では', 'v:小さい|ちいさい', 'v:一つ|ひとつ', 'v:プレゼント|プレゼント', 'v:する|する', 'v:もちろん|もちろん', 'v:ください|ください', 'v:もう|もう', 'v:笑う|わらう', 'v:ほか|ほか', 'k:見', 'k:食', 'k:子', 'k:小'],
     notes: 'Threads: Anya always wants more (her school/home thread) and Sanji’s restaurant (part-time job thread). ほしがって is the がる form of ほしい, in the grammar note of g:tagaru.',
     verified: true }),
 
@@ -1890,7 +1890,7 @@ CATALOG.add([
     cast: { maomao: { name: 'Maomao', jp: 'マオマオ', gender: 'F', role: 'Doctor' }, lelouch: { name: 'Lelouch', jp: 'ルルーシュ', gender: 'M', role: 'Patient' } },
     lines: [
       { speaker: 'maomao', furigana: 'きょうは　どう　しましたか。', en: 'What seems to be the trouble today?' },
-      { speaker: 'lelouch', furigana: 'きのうから　のどが　いたくて、きぶんが　わるいです。', en: 'My throat has hurt since yesterday, and I feel unwell.' },
+      { speaker: 'lelouch', furigana: 'きのうから　のどが　いたくて、はも　すこし　いたいです。', en: 'My throat has hurt since yesterday, and my tooth hurts a little too.' },
       { speaker: 'maomao', furigana: 'ねつも　ありますね。[三|さん][十|じゅう][八|はち]ど……かぜの　ようです。', en: 'You have a fever too. Thirty-eight degrees... It seems to be a cold.' },
       { speaker: 'lelouch', furigana: 'かぜですか。あしたは　だいじな　チェスが　あるんですが。', en: 'A cold? I have an important chess match tomorrow.' },
       { speaker: 'maomao', furigana: 'ぐあいは　とても　わるい　ようです。ちゅうしゃを　しますか。', en: 'You seem to be in quite a bad way. Shall I give you an injection?' },
@@ -1898,7 +1898,7 @@ CATALOG.add([
       { speaker: 'maomao', furigana: 'なおりますよ。でも、この　くすりは　とても　にがいです。', en: 'It will. But this medicine is very bitter.' },
       { speaker: 'lelouch', furigana: 'だいじょうぶです。ちゅうしゃより　いいです。', en: 'That’s fine. Better than an injection.' },
       { speaker: 'maomao', furigana: 'こんやは　はやく　ねて　ください。それから、はいしゃにも　[行|い]った　ほうが　いい　ようです。', en: 'Go to bed early tonight. Also, it looks like you’d better see a dentist.' },
-      { speaker: 'lelouch', furigana: '……チェスより　むずかしい　[病気|びょうき]の　ようですね。', en: '...This seems to be a harder problem than chess.' }
+      { speaker: 'lelouch', furigana: '……チェスより　むずかしい　[病気|びょうき]の　ようですね。', en: '...This seems to be a harder illness than chess.' }
     ],
     bridge: [
       { text: 'チェス', gloss: 'チェス = chess' }
@@ -1912,7 +1912,7 @@ CATALOG.add([
         explain: 'Noun + の + ようです: やすみの ようです. な is for な-adjectives (しずかな ようです), not nouns.' }
     ],
     names: ['マオマオ', 'ルルーシュ'],
-    uses: ['g:you-da', 'g:te-adj-noun', 'g:te-kudasai', 'g:hou-ga-ii', 'g:n-desu', 'g:dake-de', 'g:no', 'g:ga', 'g:mo', 'g:ka', 'g:ne', 'g:yo', 'g:wo', 'g:kara', 'g:ni', 'v:今日|きょう', 'v:どう|どう', 'v:する|する', 'v:昨日|きのう', 'v:喉|のど', 'v:痛い|いたい', 'v:気分|きぶん', 'v:悪い|わるい', 'v:熱|ねつ', 'v:ある|ある', 'v:三|さん', 'v:十|じゅう', 'v:八|はち', 'v:度|ど', 'v:風邪|かぜ', 'v:明日|あした', 'v:大事|だいじ', 'v:具合|ぐあい', 'v:とても|とても', 'v:注射|ちゅうしゃ', 'v:ちょっと|ちょっと', 'v:薬|くすり', 'v:だけ|だけ', 'v:治る|なおる', 'v:でも|でも', 'v:この|この', 'v:苦い|にがい', 'v:大丈夫|だいじょうぶ', 'v:より|より', 'v:いい|いい', 'v:今夜|こんや', 'v:早い|はやい', 'v:寝る|ねる', 'v:ください|ください', 'v:それから|それから', 'v:歯医者|はいしゃ', 'v:行く|いく', 'v:難しい|むずかしい', 'v:病気|びょうき', 'k:三', 'k:十', 'k:八', 'k:行', 'k:病', 'k:気'],
+    uses: ['g:you-da', 'g:te-adj-noun', 'g:te-kudasai', 'g:hou-ga-ii', 'g:n-desu', 'g:dake-de', 'g:no', 'g:ga', 'g:mo', 'g:ka', 'g:ne', 'g:yo', 'g:wo', 'g:kara', 'g:ni', 'v:今日|きょう', 'v:どう|どう', 'v:する|する', 'v:昨日|きのう', 'v:喉|のど', 'v:痛い|いたい', 'v:悪い|わるい', 'v:熱|ねつ', 'v:ある|ある', 'v:三|さん', 'v:十|じゅう', 'v:八|はち', 'v:度|ど', 'v:風邪|かぜ', 'v:明日|あした', 'v:大事|だいじ', 'v:具合|ぐあい', 'v:とても|とても', 'v:注射|ちゅうしゃ', 'v:ちょっと|ちょっと', 'v:薬|くすり', 'v:だけ|だけ', 'v:治る|なおる', 'v:でも|でも', 'v:この|この', 'v:苦い|にがい', 'v:大丈夫|だいじょうぶ', 'v:より|より', 'v:いい|いい', 'v:今夜|こんや', 'v:早い|はやい', 'v:寝る|ねる', 'v:ください|ください', 'v:それから|それから', 'v:歯医者|はいしゃ', 'v:行く|いく', 'v:難しい|むずかしい', 'v:病気|びょうき', 'k:三', 'k:十', 'k:八', 'k:行', 'k:病', 'k:気', 'v:歯|は', 'v:少し|すこし'],
     notes: 'Series nods: Maomao is the blunt doctor; Lelouch plays chess. チェス is not on the list: a bridge.',
     verified: true }),
 
@@ -2034,7 +2034,7 @@ CATALOG.add([
         explain: 'はずが ない = "there is no way that ...", after the plain form: まちがえる はずが ない. The て-form cannot go before はず.' }
     ],
     names: ['フリーレン', 'ルルーシュ'],
-    uses: ['g:hazu', 'g:hazu-ga-nai', 'g:te-ita', 'g:n-desu', 'g:no', 'g:ka', 'g:ga', 'g:ne', 'g:wa-desu', 'g:deshita', 'g:mashita', 'v:さん|さん', 'v:テスト|テスト', 'v:一つ|ひとつ', 'v:間違える|まちがえる', 'v:そんな|そんな', 'v:はず|はず', 'v:全部|ぜんぶ', 'v:正しい|ただしい', 'v:三|さん', 'v:番|ばん', 'v:答|こたえ', 'v:確か|たしか', 'v:北|きた', 'v:問題|もんだい', 'v:南|みなみ', 'v:どちら|どちら', 'v:私|わたし', 'v:きっと|きっと', 'v:疲れる|つかれる', 'v:では|では', 'v:ほう|ほう', 'v:おかしい|おかしい', 'v:作る|つくる', 'v:もう一度|もういちど', 'v:勉強|べんきょう', 'k:一', 'k:正', 'k:三', 'k:答', 'k:北', 'k:問', 'k:題', 'k:南', 'k:方', 'k:勉', 'k:強'],
+    uses: ['g:hazu', 'g:hazu-ga-nai', 'g:te-ita', 'g:n-desu', 'g:no', 'g:ka', 'g:ga', 'g:ne', 'g:wa-desu', 'g:deshita', 'g:mashita', 'v:さん|さん', 'v:テスト|テスト', 'v:一つ|ひとつ', 'v:間違える|まちがえる', 'v:そんな|そんな', 'v:はず|はず', 'v:全部|ぜんぶ', 'v:正しい|ただしい', 'v:三|さん', 'v:番|ばん', 'v:答え|こたえ', 'v:確か|たしか', 'v:北|きた', 'v:問題|もんだい', 'v:南|みなみ', 'v:どちら|どちら', 'v:私|わたし', 'v:きっと|きっと', 'v:疲れる|つかれる', 'v:では|では', 'v:ほう|ほう', 'v:おかしい|おかしい', 'v:作る|つくる', 'v:もう一度|もういちど', 'v:勉強|べんきょう', 'k:一', 'k:正', 'k:三', 'k:答', 'k:北', 'k:問', 'k:題', 'k:南', 'k:方', 'k:勉', 'k:強'],
     notes: 'Series nod: Lelouch never accepts defeat; Frieren, flat, wrote the test. はず is written right after the word before it (no phrase space), so the hl of g:hazu / g:hazu-ga-nai marks it and not the unit word はず.',
     verified: true }),
 
@@ -2063,7 +2063,7 @@ CATALOG.add([
         explain: 'A plan takes the dictionary form: かえる よてい. かえった would be something already done.' }
     ],
     names: ['ヒナタ', 'サクラ'],
-    uses: ['g:yotei-da', 'g:mitai', 'g:tai', 'g:naru', 'g:kara', 'g:ja-nai', 'g:tte', 'g:te-form', 'g:no', 'g:ni', 'g:mo', 'g:yo', 'g:wo', 'v:さん|さん', 'v:下宿|げしゅく', 'v:いつ|いつ', 'v:住む|すむ', 'v:予定|よてい', 'v:さ来週|さらいしゅう', 'v:土曜日|どようび', 'v:荷物|にもつ', 'v:少ない|すくない', 'v:簡単|かんたん', 'v:計画|けいかく', 'v:ある|ある', 'v:その|その', 'v:日|ひ', 'v:私|わたし', 'v:都合|つごう', 'v:いい|いい', 'v:行く|いく', 'v:朝|あさ', 'v:起きる|おきる', 'v:それ|それ', 'v:だけ|だけ', 'v:机|つくえ', 'v:今度|こんど', 'v:買う|かう', 'v:さ来月|さらいげつ', 'v:じゃあ|じゃあ', 'v:貸す|かす', 'v:勉強|べんきょう', 'v:大事|だいじ', 'v:将来|しょうらい', 'v:人|ひと', 'v:なる|なる', 'k:日', 'k:行', 'k:貸'],
+    uses: ['g:yotei-da', 'g:mitai', 'g:tai', 'g:naru', 'g:kara', 'g:ja-nai', 'g:tte', 'g:te-form', 'g:no', 'g:ni', 'g:mo', 'g:yo', 'g:wo', 'v:さん|さん', 'v:下宿|げしゅく', 'v:いつ|いつ', 'v:住む|すむ', 'v:予定|よてい', 'v:再来週|さらいしゅう', 'v:土曜日|どようび', 'v:荷物|にもつ', 'v:少ない|すくない', 'v:簡単|かんたん', 'v:計画|けいかく', 'v:ある|ある', 'v:その|その', 'v:日|ひ', 'v:私|わたし', 'v:都合|つごう', 'v:いい|いい', 'v:行く|いく', 'v:朝|あさ', 'v:起きる|おきる', 'v:それ|それ', 'v:だけ|だけ', 'v:机|つくえ', 'v:今度|こんど', 'v:買う|かう', 'v:再来月|さらいげつ', 'v:じゃあ|じゃあ', 'v:貸す|かす', 'v:勉強|べんきょう', 'v:大事|だいじ', 'v:将来|しょうらい', 'v:人|ひと', 'v:なる|なる', 'k:日', 'k:行', 'k:貸'],
     notes: 'Moving thread (u011): Hinata moves in; Sakura (practical, a little bossy) lends him a desk. 予定 stays in kana (予 and 定 are N3 kanji).',
     verified: true }),
 
@@ -2277,7 +2277,7 @@ CATALOG.add([
         explain: 'With もらう the person who does the favour takes に: ゴンに おしえて もらった. With が, Gon would be the one receiving.' }
     ],
     names: ['キルア', 'アーニャ', 'ゴン'],
-    uses: ['g:te-morau', 'g:te-ageru', 'g:potential', 'g:nakucha-ikenai', 'g:te-adj-noun', 'g:ga-arimasu', 'g:no', 'g:wo', 'g:ni', 'g:mo', 'g:to', 'g:noun-modifier', 'v:さん|さん', 'v:先輩|せんぱい', 'v:頼む|たのむ', 'v:事|こと', 'v:何|なに', 'v:また|また', 'v:宿題|しゅくだい', 'v:答|こたえ', 'v:調べる|しらべる', 'v:もらう|もらう', 'v:それ|それ', 'v:仕事|しごと', 'v:父|ちち', 'v:忙しい|いそがしい', 'v:直す|なおす', 'v:仕方|しかた', 'v:間違える|まちがえる', 'v:所|ところ', 'v:教える|おしえる', 'v:でも|でも', 'v:自分|じぶん', 'v:分かる|わかる', 'v:優しい|やさしい', 'v:明日|あした', 'v:予習|よしゅう', 'v:今日|きょう', 'v:復習|ふくしゅう', 'v:する|する', 'v:あげる|あげる', 'v:要る|いる'],
+    uses: ['g:te-morau', 'g:te-ageru', 'g:potential', 'g:nakucha-ikenai', 'g:te-adj-noun', 'g:ga-arimasu', 'g:no', 'g:wo', 'g:ni', 'g:mo', 'g:to', 'g:noun-modifier', 'v:さん|さん', 'v:先輩|せんぱい', 'v:頼む|たのむ', 'v:事|こと', 'v:何|なに', 'v:また|また', 'v:宿題|しゅくだい', 'v:答え|こたえ', 'v:調べる|しらべる', 'v:もらう|もらう', 'v:それ|それ', 'v:仕事|しごと', 'v:父|ちち', 'v:忙しい|いそがしい', 'v:直す|なおす', 'v:仕方|しかた', 'v:間違える|まちがえる', 'v:所|ところ', 'v:教える|おしえる', 'v:でも|でも', 'v:自分|じぶん', 'v:分かる|わかる', 'v:優しい|やさしい', 'v:明日|あした', 'v:予習|よしゅう', 'v:今日|きょう', 'v:復習|ふくしゅう', 'v:する|する', 'v:あげる|あげる', 'v:要る|いる'],
     notes: 'Anya’s school thread. ちち = Loid (allowed as a family word). The swap names Gon (allowed list).',
     verified: true }),
 
@@ -2382,7 +2382,7 @@ CATALOG.add([
       { speaker: 'sanji', furigana: 'はい。あきの　りょうりに　かえました。', en: 'Yes. I changed them to autumn dishes.' },
       { speaker: 'nami', furigana: 'おかねは？　やすく　なった？', en: 'And the prices? Did they get cheaper?' },
       { speaker: 'sanji', furigana: 'いいえ……[肉|にく]が　たかく　なったんです。', en: 'No... meat has got more expensive.' },
-      { speaker: 'nami', furigana: 'じゃあ、わたしだけ　やすく　して。', en: 'Then make it cheaper just for me.' },
+      { speaker: 'nami', furigana: 'じゃあ、わたしだけ　やすく　なる？', en: 'Then will it be cheaper just for me?' },
       { speaker: 'sanji', furigana: 'う……。では、きょうは　とくべつに　ケーキも　だします。', en: 'Ugh... All right, today I’ll serve you a cake as well, specially.' },
       { speaker: 'nami', furigana: 'やった！　じゃあ、はやく　りょうりを　[始|はじ]めて。', en: 'Yes! Then start cooking, quick.' },
       { speaker: 'sanji', furigana: 'はい！　……あ、まだ　[電気|でんき]を　つけて　いなかった。', en: 'Right away! ...Oh, I hadn’t even turned on the lights.' }
@@ -2567,6 +2567,7 @@ CATALOG.add([
     remixes: [
       { scene: 'Sakura talks about her medicine textbook.', en: 'I finally finished reading the medicine book.',
         chunks: ['やっと', 'くすりの　ほんを', 'よみおわった。', 'よむおわった。'], answer: ['やっと', 'くすりの　ほんを', 'よみおわった。'],
+        also: [['くすりの　ほんを', 'やっと', 'よみおわった。']],
         explain: 'おわる joins the ます-stem: よみ + おわる = finish reading. The dictionary form よむ cannot join.' },
       { scene: 'Kakashi looks out of the classroom window.', en: 'It suddenly started to rain.',
         chunks: ['あめが', 'ふりだした。', 'ふるだした。'], answer: ['あめが', 'ふりだした。'],
@@ -2619,7 +2620,7 @@ CATALOG.add([
       { speaker: 'lelouch', furigana: 'だいじょうぶです。もう　[書|か]き[終|お]わって　います。', en: 'It’s fine. I’ve already finished writing it.' },
       { speaker: 'kakashi', furigana: 'はやいね！　こうこうの　ときから　そう？', en: 'That was fast! Have you been like that since high school?' },
       { speaker: 'lelouch', furigana: 'はい。しゅくだいは　いつも　[一日|いちにち][前|まえ]までに　だして　いました。', en: 'Yes. I always handed in homework at least a day early.' },
-      { speaker: 'kakashi', furigana: 'そつぎょうまでに、きみに　かてる　[大学生|だいがくせい]は　いないね。', en: 'By graduation, no student here will be able to beat you.' },
+      { speaker: 'kakashi', furigana: 'そつぎょうまでに、もっと　つよく　なるね。', en: 'By graduation, you’ll be even stronger.' },
       { speaker: 'lelouch', furigana: '[先生|せんせい]にも　まけませんよ。', en: 'I won’t lose to you either, sir.' }
     ],
     remixes: [
@@ -2631,7 +2632,7 @@ CATALOG.add([
         explain: 'An action done once, before a time limit: までに. まで is for something that goes on up to that time.' }
     ],
     names: ['カカシ', 'ルルーシュ'],
-    uses: ['g:made-ni', 'g:made', 'g:mae-ni', 'g:tai', 'g:te-adj-noun', 'g:stem-compounds', 'g:te-iru', 'g:te-ita', 'g:potential', 'g:noun-modifier', 'g:ja-nai', 'g:no', 'g:ni', 'g:mo', 'g:yo', 'g:ne', 'g:ka', 'v:さん|さん', 'v:講義|こうぎ', 'v:レポート|レポート', 'v:覚える|おぼえる', 'v:金曜日|きんようび', 'v:出す|だす', 'v:それ|それ', 'v:水曜日|すいようび', 'v:変わる|かわる', 'v:あさって|あさって', 'v:試験|しけん', 'v:前|まえ', 'v:読む|よむ', 'v:大丈夫|だいじょうぶ', 'v:もう|もう', 'v:書く|かく', 'v:早い|はやい', 'v:高校|こうこう', 'v:時|とき', 'v:そう|そう', 'v:宿題|しゅくだい', 'v:いつも|いつも', 'v:一日|いちにち', 'v:卒業|そつぎょう', 'v:君|きみ', 'v:勝つ|かつ', 'v:大学生|だいがくせい', 'v:居る|いる', 'v:先生|せんせい', 'v:負ける|まける', 'k:金', 'k:曜', 'k:日', 'k:水', 'k:前', 'k:読', 'k:書', 'k:終', 'k:一', 'k:大', 'k:学', 'k:生', 'k:先'],
+    uses: ['g:made-ni', 'g:made', 'g:mae-ni', 'g:tai', 'g:te-adj-noun', 'g:stem-compounds', 'g:te-iru', 'g:te-ita', 'g:potential', 'g:noun-modifier', 'g:ja-nai', 'g:no', 'g:ni', 'g:mo', 'g:yo', 'g:ne', 'g:ka', 'v:さん|さん', 'v:講義|こうぎ', 'v:レポート|レポート', 'v:覚える|おぼえる', 'v:金曜日|きんようび', 'v:出す|だす', 'v:それ|それ', 'v:水曜日|すいようび', 'v:変わる|かわる', 'v:あさって|あさって', 'v:試験|しけん', 'v:前|まえ', 'v:読む|よむ', 'v:大丈夫|だいじょうぶ', 'v:もう|もう', 'v:書く|かく', 'v:早い|はやい', 'v:高校|こうこう', 'v:時|とき', 'v:そう|そう', 'v:宿題|しゅくだい', 'v:いつも|いつも', 'v:一日|いちにち', 'v:卒業|そつぎょう', 'v:勝つ|かつ', 'v:居る|いる', 'v:先生|せんせい', 'v:負ける|まける', 'k:金', 'k:曜', 'k:日', 'k:水', 'k:前', 'k:読', 'k:書', 'k:終', 'k:一', 'k:生', 'k:先', 'v:もっと|もっと', 'v:強い|つよい', 'v:なる|なる'],
     notes: 'Lelouch competitive and always early; Kakashi, the late one, moves a deadline forward. Kakashi as a university lecturer here.',
     verified: true }),
 
@@ -2648,7 +2649,7 @@ CATALOG.add([
       { speaker: 'frieren', furigana: '……うん。ともだちと　ここに　あつまって　いた。', en: '...Yes. My friends and I used to meet here.' },
       { speaker: 'sanji', furigana: 'きょうは　なん[時|じ]ごろまで　いられますか。', en: 'Until about what time can you stay today?' },
       { speaker: 'frieren', furigana: '……[九|く][時|じ]ごろ。そろそろ　つぎの　まちに　[行|い]く。', en: '...About nine. It’s nearly time to go on to the next town.' },
-      { speaker: 'sanji', furigana: 'では、これからは　たまに　[来|き]て　ください。みっかおきでも　いいですよ。', en: 'Then come by now and then from now on. Every three days would be fine.' },
+      { speaker: 'sanji', furigana: 'では、これからは　たまに　[来|き]て　ください。いちにちおきでも　いいですよ。', en: 'Then come by now and then from now on. Every other day would be fine.' },
       { speaker: 'frieren', furigana: '……じゃあ、[十|じゅう][年|ねん]に　[一|いち][度|ど]。', en: '...Then once every ten years.' }
     ],
     remixes: [
@@ -2660,7 +2661,7 @@ CATALOG.add([
         explain: 'About a point in time: ごろ (+ に): とおかごろに. を does not mark a time.' }
     ],
     names: ['サンジ', 'フリーレン'],
-    uses: ['g:ni-frequency', 'g:goro', 'g:tte', 'g:to-omou', 'g:te-kureru', 'g:te-ita', 'g:potential', 'g:made', 'g:te-kudasai', 'g:demo', 'g:te-mo-ii', 'g:no', 'g:ni', 'g:yo', 'g:ne', 'g:ka', 'v:さん|さん', 'v:久しぶり|ひさしぶり', 'v:しばらく|しばらく', 'v:来る|くる', 'v:十|じゅう', 'v:年|ねん', 'v:そう|そう', 'v:少し|すこし', 'v:思う|おもう', 'v:昔|むかし', 'v:月|つき', 'v:二|に', 'v:友達|ともだち', 'v:ここ|ここ', 'v:集まる|あつまる', 'v:今日|きょう', 'v:何|なん', 'v:時|じ', 'v:居る|いる', 'v:九|く', 'v:そろそろ|そろそろ', 'v:次|つぎ', 'v:町|まち', 'v:行く|いく', 'v:では|では', 'v:これから|これから', 'v:たまに|たまに', 'v:三日|みっか', 'v:おき|おき', 'v:いい|いい', 'v:じゃあ|じゃあ', 'v:一|いち', 'k:来', 'k:十', 'k:年', 'k:月', 'k:二', 'k:度', 'k:時', 'k:九', 'k:行', 'k:一'],
+    uses: ['g:ni-frequency', 'g:goro', 'g:tte', 'g:to-omou', 'g:te-kureru', 'g:te-ita', 'g:potential', 'g:made', 'g:te-kudasai', 'g:demo', 'g:te-mo-ii', 'g:no', 'g:ni', 'g:yo', 'g:ne', 'g:ka', 'v:さん|さん', 'v:久しぶり|ひさしぶり', 'v:しばらく|しばらく', 'v:来る|くる', 'v:十|じゅう', 'v:年|ねん', 'v:そう|そう', 'v:少し|すこし', 'v:思う|おもう', 'v:昔|むかし', 'v:月|つき', 'v:二|に', 'v:友達|ともだち', 'v:ここ|ここ', 'v:集まる|あつまる', 'v:今日|きょう', 'v:何|なん', 'v:時|じ', 'v:居る|いる', 'v:九|く', 'v:そろそろ|そろそろ', 'v:次|つぎ', 'v:町|まち', 'v:行く|いく', 'v:では|では', 'v:これから|これから', 'v:たまに|たまに', 'v:おき|おき', 'v:いい|いい', 'v:じゃあ|じゃあ', 'v:一|いち', 'k:来', 'k:十', 'k:年', 'k:月', 'k:二', 'k:度', 'k:時', 'k:九', 'k:行', 'k:一', 'v:一日|いちにち'],
     notes: 'Frieren’s sense of time (a series nod). 十年に一度: the unit word 一度 takes that mark; 月に二度 carries the grammar mark.',
     verified: true }),
 
@@ -2676,7 +2677,7 @@ CATALOG.add([
       { speaker: 'emilia', furigana: 'ステレオも　ついて　いますね。おんがくを　[聞|き]きながら？', en: 'The stereo is on too. While listening to music?' },
       { speaker: 'maomao', furigana: 'はい。しずかな　へやでは　ねむく　なります。', en: 'Yes. I get sleepy in a quiet room.' },
       { speaker: 'emilia', furigana: 'なんの　[研究|けんきゅう]ですか。', en: 'What is your research on?' },
-      { speaker: 'maomao', furigana: 'くすりと　どくです。いがくと　かがくの　[研究|けんきゅう]です。', en: 'Medicine and poison. It’s research in medical science and chemistry.' },
+      { speaker: 'maomao', furigana: 'くすりと　どくです。いがくと　かがくの　[研究|けんきゅう]です。', en: 'Medicine and poison. It’s research in medicine and science.' },
       { speaker: 'emilia', furigana: 'でも、どくを　さわりながら、[食|た]べないで　くださいね。', en: 'But please don’t eat while you’re touching poison.' },
       { speaker: 'maomao', furigana: '……だいじょうぶです。てぶくろを　して　います。', en: '...It’s fine. I’m wearing gloves.' }
     ],
@@ -2693,7 +2694,7 @@ CATALOG.add([
     ],
     names: ['エミリア', 'マオマオ'],
     uses: ['g:nagara', 'g:te-iru', 'g:node', 'g:nai-de-kudasai', 'g:naru', 'g:adj-na', 'g:to', 'g:no', 'g:wo', 'g:de', 'g:mo', 'g:ka', 'g:ne', 'v:さん|さん', 'v:研究室|けんきゅうしつ', 'v:居る|いる', 'v:どうぞ|どうぞ', 'v:パン|パン', 'v:食べる|たべる', 'v:研究|けんきゅう', 'v:する|する', 'v:食事|しょくじ', 'v:時間|じかん', 'v:ない|ない', 'v:ステレオ|ステレオ', 'v:点く|つく', 'v:音楽|おんがく', 'v:聞く|きく', 'v:静か|しずか', 'v:部屋|へや', 'v:眠い|ねむい', 'v:なる|なる', 'v:何|なん', 'v:薬|くすり', 'v:医学|いがく', 'v:科学|かがく', 'v:でも|でも', 'v:触る|さわる', 'v:大丈夫|だいじょうぶ', 'v:手袋|てぶくろ', 'k:食', 'k:研', 'k:究', 'k:時', 'k:間', 'k:聞'],
-    notes: 'Maomao loves poison and forgets meals (series nods). どく is a bridge (as in batch 1). かがく here is the catalog 科学 (science); "chemistry" in the en is loose: check.',
+    notes: 'Maomao loves poison and forgets meals (series nods). どく is a bridge (as in batch 1). かがく here is the catalog 科学 (science).',
     verified: true }),
 
   L({ id: 'l:n4-dlg-while-out', format: 'dialogue',
@@ -2738,7 +2739,7 @@ CATALOG.add([
       { speaker: 'kakashi', furigana: '……じゃあ、きゅうこうで。', en: '...The express, then.' },
       { speaker: 'killua', furigana: '[先生|せんせい]、ほんとうは　まだ　ねて　いる　ところでしょう？', en: 'Sir, you’re actually still in bed, aren’t you?' },
       { speaker: 'kakashi', furigana: '……いま　おきた　ところだ。', en: '...I’ve just got up.' },
-      { speaker: 'killua', furigana: 'もう。じゃあ、くうこうで　[待|ま]って　いる。どこにも　よらないで　[来|き]てよ。', en: 'Honestly. Then we’ll wait at the airport. Come without stopping anywhere.' },
+      { speaker: 'killua', furigana: 'もう。じゃあ、くうこうで　[待|ま]って　いる。まっすぐ　[来|き]てよ。', en: 'Honestly. Then we’ll wait at the airport. Come straight there.' },
       { speaker: 'kakashi', furigana: 'はいはい。……かえりの　ひこうきには、かならず　まにあうよ。', en: 'Yes, yes. ...I’ll definitely make the flight home.' }
     ],
     remixes: [
@@ -2750,7 +2751,7 @@ CATALOG.add([
         explain: 'Have just done it: た-form + ところ (ついた ところ).' }
     ],
     names: ['キルア', 'カカシ'],
-    uses: ['g:tokoro-da', 'g:te-iru', 'g:deshou', 'g:kara', 'g:potential', 'g:mada', 'g:no', 'g:ni', 'g:de', 'g:wo', 'g:mo', 'g:yo', 'v:先生|せんせい', 'v:今|いま', 'v:どこ|どこ', 'v:みんな|みんな', 'v:駅|えき', 'v:待つ|まつ', 'v:家|いえ', 'v:出る|でる', 'v:所|ところ', 'v:出発|しゅっぱつ', 'v:九|く', 'v:時|じ', 'v:五|ご', 'v:分|ふん', 'v:大丈夫|だいじょうぶ', 'v:特急|とっきゅう', 'v:乗り換える|のりかえる', 'v:間に合う|まにあう', 'v:この|この', 'v:町|まち', 'v:止まる|とまる', 'v:じゃあ|じゃあ', 'v:急行|きゅうこう', 'v:ほんとう|ほんとう', 'v:まだ|まだ', 'v:寝る|ねる', 'v:起きる|おきる', 'v:もう|もう', 'v:空港|くうこう', 'v:寄る|よる', 'v:来る|くる', 'v:帰り|かえり', 'v:飛行機|ひこうき', 'v:必ず|かならず', 'k:先', 'k:生', 'k:駅', 'k:待', 'k:出', 'k:九', 'k:時', 'k:来'],
+    uses: ['g:tokoro-da', 'g:te-iru', 'g:deshou', 'g:kara', 'g:potential', 'g:mada', 'g:no', 'g:ni', 'g:de', 'g:wo', 'g:mo', 'g:yo', 'v:先生|せんせい', 'v:今|いま', 'v:どこ|どこ', 'v:みんな|みんな', 'v:駅|えき', 'v:待つ|まつ', 'v:家|いえ', 'v:出る|でる', 'v:所|ところ', 'v:出発|しゅっぱつ', 'v:九|く', 'v:時|じ', 'v:五|ご', 'v:分|ふん', 'v:大丈夫|だいじょうぶ', 'v:特急|とっきゅう', 'v:乗り換える|のりかえる', 'v:間に合う|まにあう', 'v:この|この', 'v:町|まち', 'v:止まる|とまる', 'v:じゃあ|じゃあ', 'v:急行|きゅうこう', 'v:ほんとう|ほんとう', 'v:まだ|まだ', 'v:寝る|ねる', 'v:起きる|おきる', 'v:もう|もう', 'v:空港|くうこう', 'v:来る|くる', 'v:帰り|かえり', 'v:飛行機|ひこうき', 'v:必ず|かならず', 'k:先', 'k:生', 'k:駅', 'k:待', 'k:出', 'k:九', 'k:時', 'k:来', 'v:まっすぐ|まっすぐ'],
     notes: 'Kakashi always late (batch 1 u005, u018). The class trip flies from the airport.',
     verified: true }),
 
@@ -2779,7 +2780,7 @@ CATALOG.add([
         explain: 'Something that always follows: dictionary form + と: はるに なると (when spring comes).' }
     ],
     names: ['ヒナタ', 'サスケ'],
-    uses: ['g:to-conditional', 'g:te-form', 'g:te-iru', 'g:kara', 'g:no', 'g:wo', 'g:ni', 'g:ga', 'g:de', 'g:yo', 'v:さん|さん', 'v:駅|えき', 'v:着く|つく', 'v:ここ|ここ', 'v:どう|どう', 'v:行く|いく', 'v:出る|でる', 'v:大きい|おおきい', 'v:通り|とおり', 'v:右|みぎ', 'v:曲がる|まがる', 'v:まっすぐ|まっすぐ', 'v:坂|さか', 'v:ある|ある', 'v:登る|のぼる', 'v:公園|こうえん', 'v:見える|みえる', 'v:周り|まわり', 'v:何|なに', 'v:真中|まんなか', 'v:木|き', 'v:その|その', 'v:向かう|むかう', 'v:歩く|あるく', 'v:白い|しろい', 'v:家|いえ', 'v:三つ|みっつ', 'v:電車|でんしゃ', 'v:線|せん', 'v:近い|ちかい', 'v:遠く|とおく', 'v:窓|まど', 'v:そこ|そこ', 'v:待つ|まつ', 'k:駅', 'k:行', 'k:出', 'k:右', 'k:見', 'k:木', 'k:歩', 'k:白', 'k:三', 'k:電', 'k:車', 'k:待'],
+    uses: ['g:to-conditional', 'g:te-form', 'g:te-iru', 'g:kara', 'g:no', 'g:wo', 'g:ni', 'g:ga', 'g:de', 'g:yo', 'v:さん|さん', 'v:駅|えき', 'v:着く|つく', 'v:ここ|ここ', 'v:どう|どう', 'v:行く|いく', 'v:出る|でる', 'v:大きい|おおきい', 'v:通り|とおり', 'v:右|みぎ', 'v:曲がる|まがる', 'v:まっすぐ|まっすぐ', 'v:坂|さか', 'v:ある|ある', 'v:登る|のぼる', 'v:公園|こうえん', 'v:見える|みえる', 'v:周り|まわり', 'v:何|なに', 'v:真ん中|まんなか', 'v:木|き', 'v:その|その', 'v:向かう|むかう', 'v:歩く|あるく', 'v:白い|しろい', 'v:家|いえ', 'v:三つ|みっつ', 'v:電車|でんしゃ', 'v:線|せん', 'v:近い|ちかい', 'v:遠く|とおく', 'v:窓|まど', 'v:そこ|そこ', 'v:待つ|まつ', 'k:駅', 'k:行', 'k:出', 'k:右', 'k:見', 'k:木', 'k:歩', 'k:白', 'k:三', 'k:電', 'k:車', 'k:待'],
     notes: 'Moving thread: Sasuke’s first visit to Hinata’s boarding house. Hinata’s directions are vague (one humour beat).',
     verified: true }),
 
@@ -2793,7 +2794,7 @@ CATALOG.add([
       { speaker: 'anya', furigana: 'アーニャは、あしたの　テストが　ないと　いい。', en: 'Anya hopes there’s no test tomorrow.' },
       { speaker: 'maomao', furigana: '……べんきょうした　ほうが　いいですよ。', en: '...You’d better study.' },
       { speaker: 'anya', furigana: 'じゃあ、テストが　かんたんだと　いい！', en: 'Then Anya hopes the test is easy!' },
-      { speaker: 'maomao', furigana: 'いのる　[前|まえ]に、こころを　しずかに　して　ください。', en: 'Before you pray, please make your heart calm.' },
+      { speaker: 'maomao', furigana: 'しずかな　こころで　いのって　ください。', en: 'Please pray with a calm heart.' },
       { speaker: 'anya', furigana: 'アーニャの　きもち、もう　しずか。', en: 'Anya’s feelings are already calm.' },
       { speaker: 'maomao', furigana: '……では、どうぞ。', en: '...Then go ahead.' },
       { speaker: 'anya', furigana: '……おわった！　マオマオさんは、とくに　なにを　いのった？', en: '...Done! Maomao, what did you pray for most of all?' },
@@ -2811,7 +2812,7 @@ CATALOG.add([
         explain: 'といい also gives advice: よむと いいですよ (it would be good to read).' }
     ],
     names: ['アーニャ', 'マオマオ'],
-    uses: ['g:to-ii', 'g:hou-ga-ii', 'g:mae-ni', 'g:te-kudasai', 'g:potential', 'g:noun-modifier', 'g:adj-na', 'g:no', 'g:de', 'g:wo', 'g:ga', 'g:yo', 'v:さん|さん', 'v:神社|じんじゃ', 'v:何|なに', 'v:祈る|いのる', 'v:薬|くすり', 'v:仕事|しごと', 'v:うまい|うまい', 'v:行く|いく', 'v:いい|いい', 'v:明日|あした', 'v:テスト|テスト', 'v:ない|ない', 'v:勉強|べんきょう', 'v:する|する', 'v:じゃあ|じゃあ', 'v:簡単|かんたん', 'v:前|まえ', 'v:心|こころ', 'v:静か|しずか', 'v:気持ち|きもち', 'v:もう|もう', 'v:では|では', 'v:どうぞ|どうぞ', 'v:終わる|おわる', 'v:特に|とくに', 'v:新しい|あたらしい', 'v:見つける|みつける', 'k:前'],
+    uses: ['g:to-ii', 'g:hou-ga-ii', 'g:te-kudasai', 'g:potential', 'g:noun-modifier', 'g:adj-na', 'g:no', 'g:de', 'g:wo', 'g:ga', 'g:yo', 'v:さん|さん', 'v:神社|じんじゃ', 'v:何|なに', 'v:祈る|いのる', 'v:薬|くすり', 'v:仕事|しごと', 'v:うまい|うまい', 'v:行く|いく', 'v:いい|いい', 'v:明日|あした', 'v:テスト|テスト', 'v:ない|ない', 'v:勉強|べんきょう', 'v:する|する', 'v:じゃあ|じゃあ', 'v:簡単|かんたん', 'v:心|こころ', 'v:静か|しずか', 'v:気持ち|きもち', 'v:もう|もう', 'v:では|では', 'v:どうぞ|どうぞ', 'v:終わる|おわる', 'v:特に|とくに', 'v:新しい|あたらしい', 'v:見つける|みつける'],
     notes: 'Maomao and poison again (series nod).',
     verified: true }),
 
@@ -3030,7 +3031,7 @@ CATALOG.add([
       { speaker: 'sasuke', furigana: '……ルルーシュさんは　ねっしんだからな。', en: '...You’re keen, that’s why.' },
       { speaker: 'lelouch', furigana: 'きみは　チェスに　きょうみが　あるの？', en: 'Are you interested in chess?' },
       { speaker: 'sasuke', furigana: '……ない。', en: '...No.' },
-      { speaker: 'lelouch', furigana: 'きょうみが　ないのに、どうして　かてるんだ。', en: 'You’re not interested, so how can you win?' },
+      { speaker: 'lelouch', furigana: 'きょうみが　ないのに、どうして　かてるんだ。', en: 'How can you win even though you’re not interested?' },
       { speaker: 'sasuke', furigana: '……ルルーシュさんの　[手|て]を　よく　[見|み]て　いた。', en: '...I watched your moves closely.' },
       { speaker: 'lelouch', furigana: '……おどろいた。とうとう　まけたよ。', en: '...I’m amazed. I finally lost.' },
       { speaker: 'sasuke', furigana: '……もう[一|いち]ど　やるか。', en: '...Another game?' }
@@ -3212,7 +3213,7 @@ CATALOG.add([
       { speaker: 'lelouch', furigana: 'フリーレン[先生|せんせい]、レポートは　ていねいに　かかなければ　なりませんか。', en: 'Frieren-sensei, do we have to write the report neatly?' },
       { speaker: 'frieren', furigana: '……ていねいに　かかなくても　いい。だいたいで　いい。', en: '...You don’t have to write it neatly. Roughly is fine.' },
       { speaker: 'lelouch', furigana: 'こまかい　ことも　かかなくても　いいんですか。', en: 'We don’t have to write the details either?' },
-      { speaker: 'frieren', furigana: '……いい。でも、[二|に]まい　いないで　おねがい。', en: '...That’s fine. But keep it within two pages, please.' },
+      { speaker: 'frieren', furigana: '……いい。でも、[二|に]まいまでで　おねがい。', en: '...That’s fine. But keep it within two pages, please.' },
       { speaker: 'lelouch', furigana: '[二|に]まい……。では、まず　なにから　かけば　いいですか。', en: 'Two pages... Then what should I write first?' },
       { speaker: 'frieren', furigana: '……まず、じぶんの　ことばで　かんがえて。', en: '...First, think in your own words.' },
       { speaker: 'lelouch', furigana: 'わかりました。……でも、もう　[十|じゅう]まい　かいて　しまいました。', en: 'I understand. ...But I’ve already written ten pages.' },
@@ -3229,7 +3230,7 @@ CATALOG.add([
         explain: 'Must I…? is the ない-form + ければ なりませんか: だす → ださない → ださなければ. The answer "no need" is ださなくても いいです.' }
     ],
     names: ['フリーレン', 'ルルーシュ'],
-    uses: ['g:nakute-mo-ii', 'g:nakereba-naranai', 'g:te-mo-ii', 'g:ba', 'g:te-shimau', 'g:n-desu', 'g:de', 'g:no', 'g:mo', 'g:kara', 'g:ka', 'g:ni', 'g:yo', 'v:先生|せんせい', 'v:レポート|レポート', 'v:丁寧|ていねい', 'v:書く|かく', 'v:いい|いい', 'v:大体|だいたい', 'v:細かい|こまかい', 'v:事|こと', 'v:でも|でも', 'v:二|に', 'v:枚|まい', 'v:以内|いない', 'v:では|では', 'v:まず|まず', 'v:何|なに', 'v:自分|じぶん', 'v:言葉|ことば', 'v:考える|かんがえる', 'v:分かる|わかる', 'v:もう|もう', 'v:十|じゅう', 'v:赤い|あかい', 'v:ペン|ペン', 'v:直す|なおす', 'v:所|ところ', 'v:ある|ある', 'v:その|その', 'v:まま|まま', 'v:出す|だす', 'v:私|わたし', 'v:全部|ぜんぶ', 'v:読む|よむ', 'k:先', 'k:生', 'k:二', 'k:十', 'k:赤'],
+    uses: ['g:nakute-mo-ii', 'g:nakereba-naranai', 'g:te-mo-ii', 'g:ba', 'g:te-shimau', 'g:n-desu', 'g:de', 'g:no', 'g:mo', 'g:kara', 'g:ka', 'g:ni', 'g:yo', 'v:先生|せんせい', 'v:レポート|レポート', 'v:丁寧|ていねい', 'v:書く|かく', 'v:いい|いい', 'v:大体|だいたい', 'v:細かい|こまかい', 'v:事|こと', 'v:でも|でも', 'v:二|に', 'v:枚|まい', 'v:では|では', 'v:まず|まず', 'v:何|なに', 'v:自分|じぶん', 'v:言葉|ことば', 'v:考える|かんがえる', 'v:分かる|わかる', 'v:もう|もう', 'v:十|じゅう', 'v:赤い|あかい', 'v:ペン|ペン', 'v:直す|なおす', 'v:所|ところ', 'v:ある|ある', 'v:その|その', 'v:まま|まま', 'v:出す|だす', 'v:私|わたし', 'v:全部|ぜんぶ', 'v:読む|よむ', 'k:先', 'k:生', 'k:二', 'k:十', 'k:赤', 'g:made'],
     notes: 'Lelouch over-prepares; Frieren’s flat understatement turns the grammar point back on herself.',
     verified: true }),
 
@@ -3272,7 +3273,7 @@ L({ id: 'l:n4-dlg-no-breakfast', format: 'dialogue',
       { speaker: 'yor', furigana: 'しっかり　たべないと、つよく　なれませんよ。', en: 'If you don’t eat properly, you won’t get strong.' },
       { speaker: 'anya', furigana: 'つよく　なったら、クラスの　おとこのこに　かてる？　アーニャを　いじめる　こ。', en: 'If I get strong, can I beat the boy in my class? The one who picks on me.' },
       { speaker: 'yor', furigana: 'けんかは　だめですよ。でも、いやな　ことは　「やめて」と　しっかり　[言|い]いなさい。', en: 'No fighting. But when something is mean, say "stop it", and say it firmly.', say: 'けんかはだめですよ。でも、嫌なことは「やめて」としっかり言いなさい。' },
-      { speaker: 'anya', furigana: 'ははは　しょうがっこうの　とき、つよかった？', en: 'Mum, were you strong in primary school?' },
+      { speaker: 'anya', furigana: 'ははは　しょうがっこうの　とき、つよかった？', en: 'Mama, were you strong in primary school?' },
       { speaker: 'yor', furigana: 'ちゅうがっこうの　ときは、もう　だれにも　まけませんでした。', en: 'By junior high, I never lost to anyone.' },
       { speaker: 'anya', furigana: '……アーニャ、やさい　たべる。', en: '...Anya will eat the vegetables.' },
       { speaker: 'yor', furigana: 'いい　こですね。じゃあ、よく　かんで　たべなさい。', en: 'Good girl. Then chew them well.' },
@@ -3616,7 +3617,7 @@ L({ id: 'l:n4-dlg-old-temple', format: 'dialogue',
         explain: 'と いわれて います (passive of いう + ている) reports what people in general say, without naming anyone.' }
     ],
     names: ['ゴジョウ', 'ルルーシュ'],
-    uses: ['g:to-iwarete-iru', 'g:passive', 'g:te-iru', 'g:n-desu', 'g:sou-da-hearsay', 'g:ya', 'g:de', 'g:no', 'g:ni', 'g:mo', 'g:yo', 'g:ne', 'v:さん|さん', 'v:この|この', 'v:お|お', 'v:寺|てら', 'v:五|ご', 'v:百|ひゃく', 'v:年|ねん', 'v:前|まえ', 'v:建てる|たてる', 'v:言う|いう', 'v:誰|だれ', 'v:町|まち', 'v:人|ひと', 'v:たち|たち', 'v:戦争|せんそう', 'v:後|あと', 'v:一緒|いっしょ', 'v:では|では', 'v:昔|むかし', 'v:政治|せいじ', 'v:経済|けいざい', 'v:真中|まんなか', 'v:よく|よく', 'v:知る|しる', 'v:法律|ほうりつ', 'v:話|はなし', 'v:社会|しゃかい', 'v:文化|ぶんか', 'v:歴史|れきし', 'v:好き|すき', 'v:じゃあ|じゃあ', 'v:これ|これ', 'v:覚える|おぼえる', 'v:ここ|ここ', 'v:お菓子|おかし', 'v:世界|せかい', 'v:いちばん|いちばん', 'v:おいしい|おいしい', 'v:それ|それ', 'v:私|わたし', 'v:先生|せんせい', 'v:ある|ある', 'k:五', 'k:百', 'k:年', 'k:言', 'k:世', 'k:界', 'k:先', 'k:生'],
+    uses: ['g:to-iwarete-iru', 'g:passive', 'g:te-iru', 'g:n-desu', 'g:sou-da-hearsay', 'g:ya', 'g:de', 'g:no', 'g:ni', 'g:mo', 'g:yo', 'g:ne', 'v:さん|さん', 'v:この|この', 'v:お|お', 'v:寺|てら', 'v:五|ご', 'v:百|ひゃく', 'v:年|ねん', 'v:前|まえ', 'v:建てる|たてる', 'v:言う|いう', 'v:誰|だれ', 'v:町|まち', 'v:人|ひと', 'v:たち|たち', 'v:戦争|せんそう', 'v:後|あと', 'v:一緒|いっしょ', 'v:では|では', 'v:昔|むかし', 'v:政治|せいじ', 'v:経済|けいざい', 'v:真ん中|まんなか', 'v:よく|よく', 'v:知る|しる', 'v:法律|ほうりつ', 'v:話|はなし', 'v:社会|しゃかい', 'v:文化|ぶんか', 'v:歴史|れきし', 'v:好き|すき', 'v:じゃあ|じゃあ', 'v:これ|これ', 'v:覚える|おぼえる', 'v:ここ|ここ', 'v:お菓子|おかし', 'v:世界|せかい', 'v:いちばん|いちばん', 'v:おいしい|おいしい', 'v:それ|それ', 'v:私|わたし', 'v:先生|せんせい', 'v:ある|ある', 'k:五', 'k:百', 'k:年', 'k:言', 'k:世', 'k:界', 'k:先', 'k:生'],
     notes: 'Gojo’s sweet tooth; Lelouch’s precision turns the grammar point into the joke (one person vs people in general). The number 五百 is in ruby so speech reads ごひゃく.',
     verified: true }),
 

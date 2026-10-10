@@ -11,7 +11,7 @@ QUnit.module('teaching order', function () {
 
   // Words the course never teaches, so no `uses` id can hold them back (N5 r1 newbie N3/N6: 彼 in shown
   // examples and graded stems). Independent of lib.js OFF_CATALOG; a sentence holding one is never shown.
-  var NOT_TAUGHT = ['彼', '彼女', 'ビール', '人形', '親切', '本当に', '経験', '象', '出発', '失礼', '動物園'];
+  var NOT_TAUGHT = ['彼', '彼女', 'ビール', '人形', '親切', '本当に', '経験', '象', '出発', '失礼', '動物園', 'いちご'];
   // a word a later level teaches is in that sentence's uses, so later() holds it back instead
   var offWord = function (s) {
     return NOT_TAUGHT.filter(function (w) { return (s.jp || '').indexOf(w) >= 0 && !(s.uses || []).some(function (id) { return id.indexOf('v:' + w + '|') === 0; }); });
@@ -96,9 +96,14 @@ QUnit.module('teaching order', function () {
     ['g:ta-form', /(?<![あふまわ])(?:た|(?<=[いん])だ)(?:こと|り|ら|ほう)|(?<![まで])した(?=[。、？！よねのけ]|$)|(?<![かだ])った(?=[。、？！よねのけ]|$)|(?<=[べめれけせてね見来寝])た(?=[。、？！よねのけ])/,
       ['g:ta-form', 'g:ta-koto-ga-aru', 'g:tari-tari', 'g:hou-ga-ii']],
     ['g:nai-form', /(?<![くゃはすぶ少危汚])(?<!きた)(?<!つまら)(?:ない|なかった)/,
-      ['g:nai-form', 'g:nai-de-kudasai', 'g:nakute-wa-ikenai', 'g:nakute-wa-naranai', 'g:nakucha-ikenai', 'g:mada-te-imasen', 'g:ta-koto-ga-aru', 'g:ta-form', 'v:ない|ない']]
+      ['g:nai-form', 'g:nai-de-kudasai', 'g:nakute-wa-ikenai', 'g:nakute-wa-naranai', 'g:nakucha-ikenai', 'g:mada-te-imasen', 'g:ta-koto-ga-aru', 'g:ta-form', 'v:ない|ない']],
+    // N5 r2 grammar T1: いる "be (somewhere)", ました, よ and んです shown before they were taught
+    ['v:居る', /(?<![てでは])(?:^|[にがもこ])い(?:る|ます|ました|ません|ない|た)(?![いく])/, ['v:居る|いる', 'g:ga-imasu']],
+    ['g:mashita', /ました|ませんでした/, ['g:mashita']],
+    ['g:yo', /よ(?=[。！？!?]|$)/, ['g:yo']],
+    ['g:n-desu', /(?<=[るうくいた])んで(?:す|しょう)/, ['g:n-desu']] // after a verb / adjective end, not こうえんです
   ];
-  QUnit.test('every N5 sentence lists the て / た / ない form it shows in `uses`', function (assert) {
+  QUnit.test('every N5 sentence lists the て / た / ない form (and いる, ました, よ, んです) it shows in `uses`', function (assert) {
     var miss = [];
     catalogOf('sentence').filter(function (s) { return s.level === 'N5'; }).forEach(function (s) {
       FORM_DETECTORS.forEach(function (d) {

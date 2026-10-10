@@ -92,13 +92,23 @@ QUnit.module('no untaught kanji in quiz options', function () {
     assert.ok(seen > 0, '靴 wordMc built');
   });
 
+  QUnit.test('grammar labels with kanji carry patternFuri, the same text with ruby (N5 r2 vocab T4)', function (assert) {
+    catalogOf('grammar').filter(function (g) { return g.level === 'N5'; }).forEach(function (g) {
+      if (!hasKanji(g.pattern)) return assert.notOk(g.patternFuri, g.id + ': no kanji, no patternFuri');
+      var plain = furiganaParts(g.patternFuri || '').map(function (p) { return p.t; }).join('');
+      assert.strictEqual(plain, g.pattern, g.id + ' patternFuri text');
+      assert.ok(furiganaParts(g.patternFuri).every(function (p) { return p.r || !hasKanji(p.t); }), g.id + ' every kanji has ruby');
+    });
+  });
+
   QUnit.test('generic scan: option and stem text never shows an untaught kanji', function (assert) {
     var bad = {}, n = 0;
     units().forEach(function (u) {
       var tk = unitTaughtKanji(u);
       for (var r = 0; r < 15; r++) buildExercises(u).forEach(function (ex) {
-        // patternMc: grammar text. ctxRead(Mc): the bound morpheme's reading is the question. reading: passage text
-        if (ex.form === 'patternMc' || ex.form === 'ctxRead' || ex.form === 'ctxReadMc' || ex.type === 'reading') return;
+        // ctxRead(Mc): the bound morpheme's reading is the question. reading: passage text. N5 patternMc labels
+        // carry ruby on untaught kanji (N5 r2 vocab T4), so they are scanned; N4 labels get patternFuri with N4's build
+        if ((ex.form === 'patternMc' && u.level !== 'N5') || ex.form === 'ctxRead' || ex.form === 'ctxReadMc' || ex.type === 'reading') return;
         if (KANJI_FORMS[ex.form] || ex.type === 'hyouki' || ex.type === 'kanji_yomi') return;
         n++;
         var texts = [].concat(ex.optionParts ? [] : ex.options || [], ex.items || [], ex.pairs ? [].concat.apply([], ex.pairs) : [], ex.prompt, ex.parts ? [] : ex.question);

@@ -55,6 +55,9 @@ const VOCAB_FIXES = {
   "決る|きまる": { word: "決まる/決る" },
   "下る|さがる": { word: "下がる/下る" },                       // 下る alone is normally くだる
   "楽む|たのしむ": { word: "楽しむ" },                          // typo: 楽む is no spelling at all
+  // N4 r1 vocab T4: Tanos spellings that are not the standard written form (JMdict's first form)
+  "真中|まんなか": { word: "真ん中" },                          // JMdict: 真ん中 is the only まんなか form; 真中 alone is まなか
+  "答|こたえ": { word: "答え" },                                // JMdict lists 答え first; 答 is a rarer form (altSpell)
 };
 // Rows left out of the ref (N4 list), keyed like VOCAB_FIXES: elzup rows that repeat a Tanos row
 // once its variants are read, and grammar patterns filed as words (they are on the grammar list).
@@ -90,6 +93,8 @@ const VOCAB_SKIP = {
   "～(て) しまう|～(て) しまう": "grammar pattern (～てしまう)",
   "～(に) よると|～(に) よると": "grammar pattern (～によると)",
   "～(に) ついて|～(に) ついて": "grammar pattern (～について)",
+  // N4 r1 vocab T3: よう "way, manner" only occurs bound in patterns, which the grammar list teaches
+  "様|よう": "grammar, not a word card: taught as ～ようだ (g:you-da), ～のような / ～のように (g:no-you-na)",
 };
 function vocabEntry(e) {
   e = Object.assign({}, e, VOCAB_FIXES[e.word + "|" + e.reading]);

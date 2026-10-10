@@ -27,10 +27,10 @@ CATALOG.add([
 
   { id: 'm:n4-iikae-shumi', kind: 'mondai', type: 'iikae', level: 'N4', jp: 'わたしのしゅみは、写真をとることです。',
     furigana: 'わたしのしゅみは、[写真|しゃしん]をとることです。', underline: 'しゅみ',
-    options: ['わたしのしごとは、[写真|しゃしん]をとることです。', 'わたしは、[写真|しゃしん]をとるのがじょうずです。', 'わたしは、[写真|しゃしん]をとるのがすきです。', 'わたしは、[写真|しゃしん]をとるのをならっています。'],
+    options: ['わたしのしごとは、[写真|しゃしん]をとることです。', 'わたしは、[写真|しゃしん]をとるのがへたです。', 'わたしは、[写真|しゃしん]をとるのがすきです。', 'わたしは、[写真|しゃしん]をとるのをならっています。'],
     answer: 2, en: 'My hobby is taking photos.',
     uses: ['g:koto', 'v:私|わたし', 'v:趣味|しゅみ', 'v:写真|しゃしん', 'v:撮る|とる', 'v:好き|すき', 'k:写', 'k:真'], sources: ['own'], verified: false,
-    notes: 'A hobby is something you like doing; being good at it, doing it for work or taking lessons in it are other meanings.' },
+    notes: 'A hobby is something you like doing; being bad at it, doing it for work or taking lessons in it are other meanings.' },
 
   { id: 'm:n4-iikae-chuui', kind: 'mondai', type: 'iikae', level: 'N4', jp: '先生に注意されました。',
     furigana: '[先生|せんせい]に[注意|ちゅうい]されました。', underline: '注意されました',
@@ -40,10 +40,10 @@ CATALOG.add([
 
   { id: 'm:n4-iikae-tsugou', kind: 'mondai', type: 'iikae', level: 'N4', jp: 'あしたは、つごうが悪いです。',
     furigana: 'あしたは、つごうが[悪|わる]いです。', underline: 'つごうが悪い',
-    options: ['あしたは、ひまです。', 'あしたは、びょうきです。', 'あしたは、てんきがわるいです。', 'あしたは、[用事|ようじ]があります。'],
+    options: ['あしたは、ひまです。', 'あしたは、[休|やす]みです。', 'あしたは、てんきがわるいです。', 'あしたは、[用事|ようじ]があります。'],
     answer: 3, en: 'Tomorrow is not convenient for me.',
     uses: ['v:明日|あした', 'v:都合|つごう', 'v:悪い|わるい', 'v:用事|ようじ', 'v:ある|ある', 'k:悪', 'k:用', 'k:事'], sources: ['own'], verified: false,
-    notes: 'つごうが悪い = the time does not suit you, typically because something else is planned (用事). Being ill or the weather are other situations, and ひま is the opposite.' },
+    notes: 'つごうが悪い = the time does not suit you, typically because something else is planned (用事). A day off or the weather are other situations, and ひま is the opposite.' },
 
   { id: 'm:n4-iikae-yushutsu', kind: 'mondai', type: 'iikae', level: 'N4', jp: 'この会社は、車をゆしゅつしています。',
     furigana: 'この[会社|かいしゃ]は、[車|くるま]をゆしゅつしています。', underline: 'ゆしゅつしています',
@@ -61,9 +61,9 @@ CATALOG.add([
 
   { id: 'm:n4-iikae-kowarete', kind: 'mondai', type: 'iikae', level: 'N4', jp: 'このへやのテレビは、こわれています。',
     furigana: 'このへやのテレビは、こわれています。', underline: 'こわれています',
-    options: ['このへやのテレビは、あたらしいです。', 'このへやのテレビは、つけてあります。', 'このへやのテレビは、おおきいです。', 'このへやのテレビは、[動|うご]きません。'],
+    options: ['このへやのテレビは、あたらしいです。', 'このへやのテレビは、つけてあります。', 'このへやのテレビは、おおきいです。', 'このへやのテレビは、つきません。'],
     answer: 3, en: 'The TV in this room is broken.',
-    uses: ['g:te-iru', 'v:この|この', 'v:部屋|へや', 'v:テレビ|テレビ', 'v:壊れる|こわれる', 'v:動く|うごく', 'k:動'], sources: ['own'], verified: false },
+    uses: ['g:te-iru', 'v:この|この', 'v:部屋|へや', 'v:テレビ|テレビ', 'v:壊れる|こわれる', 'v:点く|つく'], sources: ['own'], verified: false },
 
   { id: 'm:n4-iikae-hiruma', kind: 'mondai', type: 'iikae', level: 'N4', jp: 'ひるま、兄はうちにいません。',
     furigana: 'ひるま、[兄|あに]はうちにいません。', underline: 'ひるま',
@@ -108,7 +108,7 @@ CATALOG.add([
 
   { id: 'm:n4-iikae-sobo', kind: 'mondai', type: 'iikae', level: 'N4', jp: 'そぼは、80さいです。',
     furigana: 'そぼは、80さいです。', underline: 'そぼ',
-    options: ['[母|はは]の[母|はは]は、80さいです。', '[母|はは]のあねは、80さいです。', 'ちちのいもうとは、80さいです。', 'ちちのおばさんは、80さいです。'],
+    options: ['[母|はは]の[母|はは]は、80さいです。', '[母|はは]のあねは、80さいです。', '[父|ちち]のあねは、80さいです。', '[父|ちち]のおばさんは、80さいです。'],
     answer: 0, en: 'My grandmother is 80.',
     uses: ['v:祖母|そぼ', 'v:母|はは', 'v:歳|さい', 'k:母'], sources: ['own'], verified: false,
     notes: 'そぼ = a parent\'s mother; the father\'s mother is not among the options, so only はは の はは fits. An aunt is a parent\'s sister.' },
@@ -140,7 +140,7 @@ CATALOG.add([
     uses: ['v:受ける|うける', 'v:明日|あした', 'v:語|ご', 'v:試験|しけん', 'k:日', 'k:本', 'k:語'], sources: ['own'], verified: false },
 
   { id: 'm:n4-youhou-hirou', kind: 'mondai', type: 'youhou', level: 'N4', word: 'ひろう', reading: 'ひろう',
-    options: ['きのうの[夜|よる]、ねつがひろって[病院|びょういん]へ[行|い]きました。', '[友|とも]だちに[電話|でんわ]をひろいました。', '[道|みち]でさいふをひろったので、こうばんにとどけました。', 'しゅくだいは、あしたまでに[先生|せんせい]にひろってください。'],
+    options: ['きのうの[夜|よる]、ねつがひろって[病院|びょういん]へ[行|い]きました。', '[友|とも]だちに[電話|でんわ]をひろって、[話|はな]しました。', '[道|みち]でさいふをひろったので、こうばんにとどけました。', 'しゅくだいは、あしたまでに[先生|せんせい]にひろってください。'],
     answer: 2, en: 'I picked up a wallet in the street, so I took it to the police box.',
     explain: 'ひろう = to pick up something from the ground. A fever goes up (上がる), you call a friend (電話をかける) and hand in homework (出す).',
     uses: ['v:拾う|ひろう', 'v:道|みち', 'v:財布|さいふ', 'v:交番|こうばん', 'v:届ける|とどける', 'k:道'], sources: ['own'], verified: false },
@@ -164,10 +164,10 @@ CATALOG.add([
     uses: ['g:tara', 'g:mashou', 'v:止む|やむ', 'v:雨|あめ', 'v:出かける|でかける', 'k:止', 'k:雨', 'k:出'], sources: ['own'], verified: false },
 
   { id: 'm:n4-youhou-kimaru', kind: 'mondai', type: 'youhou', level: 'N4', word: 'きまる', reading: 'きまる',
-    options: ['[旅行|りょこう]に[行|い]く[日|ひ]が、やっときまりました。', 'パーティーの[日|ひ]は、わたしがきまります。', 'こまったときは、[先生|せんせい]にきまってください。', '[電車|でんしゃ]が、[駅|えき]にきまりました。'],
-    answer: 0, en: 'The day of the trip has finally been decided.',
+    options: ['[試合|しあい]の[日|ひ]が、やっときまりました。', 'パーティーの[日|ひ]は、わたしがきまります。', 'こまったときは、[先生|せんせい]にきまってください。', '[電車|でんしゃ]が、[駅|えき]にきまりました。'],
+    answer: 0, en: 'The day of the match has finally been decided.',
     explain: 'きまる (intransitive) = something gets decided. A person decides with きめる, you talk things over with そうだんする, and a train arrives (つく).',
-    uses: ['v:決まる|きまる', 'v:旅行|りょこう', 'v:行く|いく', 'v:日|ひ', 'v:やっと|やっと', 'k:旅', 'k:行', 'k:日'], sources: ['own'], verified: false },
+    uses: ['v:決まる|きまる', 'v:試合|しあい', 'v:日|ひ', 'v:やっと|やっと', 'k:試', 'k:日'], sources: ['own'], verified: false },
 
   { id: 'm:n4-youhou-sagasu', kind: 'mondai', type: 'youhou', level: 'N4', word: 'さがす', reading: 'さがす',
     options: ['あしたの[天気|てんき]を、テレビでさがします。', 'ゆうべはつかれていたので、[早|はや]くさがしました。', 'なくしたかぎを、1[時間|じかん]もさがしました。', 'えんぴつで、[作文|さくぶん]をさがしました。'],
@@ -176,13 +176,13 @@ CATALOG.add([
     uses: ['g:number-mo', 'v:探す|さがす', 'v:無くす|なくす', 'v:鍵|かぎ', 'v:時間|じかん', 'k:時', 'k:間'], sources: ['own'], verified: false },
 
   { id: 'm:n4-youhou-mukaeru', kind: 'mondai', type: 'youhou', level: 'N4', word: 'むかえる', reading: 'むかえる',
-    options: ['[国|くに]の[家族|かぞく]に、[手紙|てがみ]をむかえました。', '[駅|えき]まで、[友|とも]だちをむかえに[行|い]きます。', 'にもつを、[友|とも]だちのうちにむかえました。', 'あついので、まどをむかえました。'],
+    options: ['[国|くに]の[家族|かぞく]に、プレゼントをむかえました。', '[駅|えき]まで、[友|とも]だちをむかえに[行|い]きます。', 'にもつを、[友|とも]だちのうちにむかえました。', 'あついので、まどをむかえました。'],
     answer: 1, en: 'I am going to the station to meet my friend.',
-    explain: 'むかえる = to go and meet someone who is arriving. A letter or parcel is sent (おくる / とどける), and a window is opened (あける).',
+    explain: 'むかえる = to go and meet someone who is arriving. A present or parcel is sent (おくる / とどける), and a window is opened (あける).',
     uses: ['g:ni-iku', 'v:迎える|むかえる', 'v:駅|えき', 'v:行く|いく', 'k:駅', 'k:友', 'k:行'], sources: ['own'], verified: false },
 
   { id: 'm:n4-youhou-majime', kind: 'mondai', type: 'youhou', level: 'N4', word: 'まじめ', reading: 'まじめ',
-    options: ['この[料理|りょうり]は、とてもまじめです。', '[今日|きょう]はまじめな[天気|てんき]なので、さんぽしましょう。', 'このへやはまじめで、とても[広|ひろ]いです。', '[弟|おとうと]はまじめで、[毎日|まいにち]よくべんきょうします。'],
+    options: ['この[料理|りょうり]は、とてもまじめです。', '[今日|きょう]はまじめな[天気|てんき]なので、[出|で]かけましょう。', 'このへやはまじめで、とてもしずかです。', '[弟|おとうと]はまじめで、[毎日|まいにち]よくべんきょうします。'],
     answer: 3, en: 'My younger brother is serious and studies hard every day.',
     explain: 'まじめ describes people and attitudes: serious, hard-working. Food is おいしい, weather is いい, and a room is きれい or しずか.',
     uses: ['g:te-adj-noun', 'v:真面目|まじめ', 'v:弟|おとうと', 'v:毎日|まいにち', 'v:勉強|べんきょう', 'v:今日|きょう', 'k:弟', 'k:毎', 'k:日'], sources: ['own'], verified: false },
@@ -251,7 +251,7 @@ CATALOG.add([
     en: 'In the winter holidays I went to Hokkaido with my family. From the airport to the hotel took an hour by bus. Hokkaido was very cold, and it snowed every day. The hotel staff told us, "When you go outside, please put these under your shoes," and we borrowed things to stop us slipping. Because of that, we did not fall over once. In the evening we ate fish at a famous restaurant. It was so good that I am thinking of going again next year.',
     names: ['北海道|ほっかいどう'],
     uses: ['g:te-adj-noun', 'g:te-iru', 'g:te-ita', 'g:te-kudasai', 'g:passive', 'g:noun-modifier', 'g:node', 'g:volitional', 'g:you-to-omou', 'v:冬|ふゆ', 'v:休み|やすみ', 'v:家族|かぞく', 'v:旅行|りょこう', 'v:行く|いく', 'v:空港|くうこう', 'v:バス|バス', 'v:時間|じかん', 'v:かかる|かかる', 'v:とても|とても', 'v:寒い|さむい', 'v:毎日|まいにち', 'v:雪|ゆき', 'v:降る|ふる', 'v:ホテル|ホテル', 'v:人|ひと', 'v:外|そと', 'v:出る|でる', 'v:時|とき', 'v:靴|くつ', 'v:下|した', 'v:これ|これ', 'v:つける|つける', 'v:ください|ください', 'v:言う|いう', 'v:滑る|すべる', 'v:物|もの', 'v:借りる|かりる', 'v:それで|それで', 'v:一度|いちど', 'v:夜|よる', 'v:有名|ゆうめい', 'v:店|みせ', 'v:魚|さかな', 'v:食べる|たべる', 'v:おいしい|おいしい', 'v:来年|らいねん', 'v:また|また', 'v:思う|おもう', 'k:冬', 'k:休', 'k:家', 'k:族', 'k:北', 'k:海', 'k:道', 'k:旅', 'k:行', 'k:時', 'k:間', 'k:毎', 'k:日', 'k:人', 'k:外', 'k:出', 'k:下', 'k:言', 'k:借', 'k:一', 'k:度', 'k:夜', 'k:有', 'k:名', 'k:店', 'k:魚', 'k:食', 'k:来', 'k:年', 'k:思'], sources: ['own'], verified: false,
-    notes: 'Blank 2: a request quoted from the hotel staff, so 〜てください. Blank 3: それで (as a result); でも / それでも would contrast with borrowing the grips. ころぶ (転ぶ) is outside the catalog and stays kana.' },
+    notes: 'Blank 2: a request quoted from the hotel staff, so 〜てください. Blank 3: それで (as a result); でも / それでも would contrast with borrowing the grips.' },
 
   { id: 'm:n4-bunshou-broken-computer', kind: 'mondai', type: 'bunshou', level: 'N4',
     text: '[先週|せんしゅう]、[会社|かいしゃ]で[大切|たいせつ]なかいぎに[使|つか]う[紙|かみ]を[作|つく]っていましたが、とちゅうでコンピューターがこわれて［1］。こまっていると、となりのせきの[山田|やまだ]さんが「わたしのパソコンを［2］いいですよ」と[言|い]って、[貸|か]してくれました。その[上|うえ]、[作|つく]り[方|かた]も[教|おし]えて［3］。おかげで、かいぎにまにあいました。[山田|やまだ]さんがこまっているときは、[今度|こんど]はわたしが［4］つもりです。',
@@ -272,7 +272,7 @@ CATALOG.add([
       { options: ['は', 'を', 'が', 'も'], answer: 3 }],
     en: 'These days a white cat often comes into our garden. It is a very pretty cat with a red string around its neck, so it seems someone keeps it. Yesterday, when I asked the old woman next door, it turned out to be her cat. She said, "I\'m sorry my cat goes into your garden." I like cats, so I answered, "It can come any time."',
     uses: ['g:noun-modifier', 'g:node', 'g:te-iru', 'g:you-da', 'g:te-miru', 'g:to-conditional', 'g:te-shimau', 'g:te-sumimasen', 'g:demo', 'g:te-mo-ii', 'v:この頃|このごろ', 'v:うち|うち', 'v:庭|にわ', 'v:白い|しろい', 'v:首|くび', 'v:赤い|あかい', 'v:つける|つける', 'v:猫|ねこ', 'v:よく|よく', 'v:来る|くる', 'v:とても|とても', 'v:きれい|きれい', 'v:誰か|だれか', 'v:昨日|きのう', 'v:隣|となり', 'v:おばあさん|おばあさん', 'v:聞く|きく', 'v:お宅|おたく', 'v:入る|はいる', 'v:言う|いう', 'v:私|わたし', 'v:好き|すき', 'v:いつ|いつ', 'v:答える|こたえる', 'k:白', 'k:来', 'k:赤', 'k:聞', 'k:入', 'k:言', 'k:答'], sources: ['own'], verified: false,
-    notes: 'Blank 1: ようです is a guess from what the writer sees (a pretty, cared-for cat); ところです / ばかりです do not fit 〜ている, and たがります is for wishes. Blank 2: 聞いてみると, "when I tried asking, it turned out…". かう (飼う) and すみません are outside the catalog.' },
+    notes: 'Blank 1: ようです is a guess from what the writer sees (a pretty, cared-for cat); ところです / ばかりです do not fit 〜ている, and たがります is for wishes. Blank 2: 聞いてみると, "when I tried asking, it turned out…".' },
 
   { id: 'm:n4-bunshou-water-notice', kind: 'mondai', type: 'bunshou', level: 'N4',
     text: 'アパートに[住|す]んでいるみなさまへ\n[来月|らいげつ]15[日|にち]の[午前|ごぜん]9[時|じ]から12[時|じ]まで、[水道|すいどう]をなおす[仕事|しごと]がございます。この[時間|じかん]は、[水|みず]が［1］。トイレもエレベーターも[止|と]まりますので、ご[注意|ちゅうい]ください。[料理|りょうり]やせんたくに[使|つか]う[水|みず]は、[前|まえ]の[日|ひ]［2］よういしておいてください。[雨|あめ]がふった［3］、つぎの[日|ひ]の[同|おな]じ[時間|じかん]になります。わからないことが［4］、1かいの[山田|やまだ]までお[知|し]らせください。',
@@ -297,12 +297,12 @@ CATALOG.add([
 
   { id: 'm:n4-bunshou-letter-teacher', kind: 'mondai', type: 'bunshou', level: 'N4',
     text: '[先生|せんせい]、お[元気|げんき]でいらっしゃいますか。[去年|きょねん]、[先生|せんせい]のクラスで[日本|にほん][語|ご]を[教|おし]えて［1］リーです。[先生|せんせい]に[教|おし]えていただいた［2］、[今|いま]は[日本|にほん]の[会社|かいしゃ]ではたらいています。[毎日|まいにち][日本|にほん][語|ご]を[使|つか]うので、たいへんですが、とても[楽|たの]しいです。［3］、[来月|らいげつ]、[仕事|しごと]で[東京|とうきょう]へ[行|い]く[用事|ようじ]があります。もし[先生|せんせい]のごつごうがよろしければ、[学校|がっこう]へごあいさつに［4］たいのですが、いかがでしょうか。',
-    blanks: [{ options: ['くださった', 'さしあげた', 'いただいた', 'いらっしゃった'], answer: 2 },
+    blanks: [{ options: ['あげた', 'さしあげた', 'いただいた', 'いらっしゃった'], answer: 2 },
       { options: ['おかげで', 'せいで', 'のに', 'けれど'], answer: 0 },
-      { options: ['だから', 'それとも', 'すると', 'ところで'], answer: 3 },
+      { options: ['だから', 'それとも', 'すると', 'それから'], answer: 3 },
       { options: ['いらっしゃい', 'うかがい', 'めしあがり', 'ごらんになり'], answer: 1 }],
-    en: 'Dear teacher, are you keeping well? I am Lee, whom you taught Japanese in your class last year. Thanks to what you taught me, I now work at a Japanese company. I use Japanese every day, so it is hard, but it is great fun. By the way, next month I have business in Tokyo. If it suits you, I would like to visit the school to say hello. Would that be all right?',
+    en: 'Dear teacher, are you keeping well? I am Lee, whom you taught Japanese in your class last year. Thanks to what you taught me, I now work at a Japanese company. I use Japanese every day, so it is hard, but it is great fun. Also, next month I have business in Tokyo. If it suits you, I would like to visit the school to say hello. Would that be all right?',
     names: ['日本|にほん', '東京|とうきょう', 'リー'],
-    uses: ['g:sonkeigo-verbs', 'g:te-iru', 'g:noun-modifier', 'g:ba', 'g:tai', 'g:node', 'g:deshou', 'v:先生|せんせい', 'v:お|お', 'v:元気|げんき', 'v:いらっしゃる|いらっしゃる', 'v:去年|きょねん', 'v:クラス|クラス', 'v:語|ご', 'v:教える|おしえる', 'v:頂く|いただく', 'v:お陰|おかげ', 'v:今|いま', 'v:会社|かいしゃ', 'v:働く|はたらく', 'v:毎日|まいにち', 'v:使う|つかう', 'v:大変|たいへん', 'v:とても|とても', 'v:楽しい|たのしい', 'v:来月|らいげつ', 'v:仕事|しごと', 'v:行く|いく', 'v:用事|ようじ', 'v:ある|ある', 'v:もし|もし', 'v:ご|ご', 'v:都合|つごう', 'v:よろしい|よろしい', 'v:学校|がっこう', 'v:挨拶|あいさつ', 'v:伺う|うかがう', 'v:いかが|いかが', 'k:先', 'k:生', 'k:元', 'k:気', 'k:去', 'k:年', 'k:日', 'k:本', 'k:語', 'k:教', 'k:今', 'k:会', 'k:社', 'k:毎', 'k:使', 'k:楽', 'k:来', 'k:月', 'k:仕', 'k:事', 'k:東', 'k:京', 'k:行', 'k:用', 'k:学', 'k:校'], sources: ['own'], verified: false,
-    notes: 'Blank 1: the writer received the teaching (教えていただいた); くださった would make Lee the teacher. Blank 4: humble うかがう for the writer\'s own visit; the others are respectful verbs for other people. ところで (by the way) and the ending のですが are outside the catalog.' }
+    uses: ['g:sonkeigo-verbs', 'g:te-iru', 'g:noun-modifier', 'g:ba', 'g:tai', 'g:node', 'g:deshou', 'v:先生|せんせい', 'v:お|お', 'v:元気|げんき', 'v:いらっしゃる|いらっしゃる', 'v:去年|きょねん', 'v:クラス|クラス', 'v:語|ご', 'v:教える|おしえる', 'v:頂く|いただく', 'v:お陰|おかげ', 'v:今|いま', 'v:会社|かいしゃ', 'v:働く|はたらく', 'v:毎日|まいにち', 'v:使う|つかう', 'v:大変|たいへん', 'v:とても|とても', 'v:楽しい|たのしい', 'v:来月|らいげつ', 'v:仕事|しごと', 'v:行く|いく', 'v:用事|ようじ', 'v:ある|ある', 'v:もし|もし', 'v:ご|ご', 'v:都合|つごう', 'v:よろしい|よろしい', 'v:学校|がっこう', 'v:挨拶|あいさつ', 'v:伺う|うかがう', 'v:いかが|いかが', 'v:それから|それから', 'k:先', 'k:生', 'k:元', 'k:気', 'k:去', 'k:年', 'k:日', 'k:本', 'k:語', 'k:教', 'k:今', 'k:会', 'k:社', 'k:毎', 'k:使', 'k:楽', 'k:来', 'k:月', 'k:仕', 'k:事', 'k:東', 'k:京', 'k:行', 'k:用', 'k:学', 'k:校'], sources: ['own'], verified: false,
+    notes: 'Blank 1: the writer received the teaching (教えていただいた); あげた / さしあげた would make Lee the teacher (くださった was dropped: as a relative clause on the recipient it is marginal, N4 r1 exam T6). Blank 3: それから adds the next piece of news; だから, それとも and すると do not follow from "it is fun" (the key was ところで, an N3 word). Blank 4: humble うかがう for the writer\'s own visit; the others are respectful verbs for other people.' }
 ]);

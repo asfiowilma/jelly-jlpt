@@ -173,7 +173,7 @@ function SettingsView(props) {
           return ce("li", { key: c.name },
             ce("a", { href: c.url, target: "_blank", rel: "noopener noreferrer" }, c.name),
             ': ' + L(c.key) + ' (',
-            ce("a", { href: c.licenseUrl, target: "_blank", rel: "noopener noreferrer" }, c.license), ')');
+            c.licenseUrl ? ce("a", { href: c.licenseUrl, target: "_blank", rel: "noopener noreferrer" }, c.license) : L(c.license), ')');
         })),
         ce("p", { className: "credits-note" }, L("cred_cameo"))),
       ce(SentenceCredits, { L: L }),
@@ -245,7 +245,13 @@ var CREDITS = [
   { name: 'Qwen3-TTS (Alibaba Qwen team)', url: 'https://github.com/QwenLM/Qwen3-TTS', key: 'cred_qwen3tts', license: 'Apache 2.0', licenseUrl: 'https://github.com/QwenLM/Qwen3-TTS/blob/main/LICENSE' },
   { name: 'DiceBear', url: 'https://www.dicebear.com/', key: 'cred_dicebear', license: 'CC0', licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/' },
   { name: 'React', url: 'https://react.dev/', key: 'cred_react', license: 'MIT', licenseUrl: 'vendor/LICENSE-react.txt' },
-  { name: 'PouchDB', url: 'https://pouchdb.com/', key: 'cred_pouchdb', license: 'Apache 2.0', licenseUrl: 'vendor/LICENSE-pouchdb.txt' }
+  { name: 'PouchDB', url: 'https://pouchdb.com/', key: 'cred_pouchdb', license: 'Apache 2.0', licenseUrl: 'vendor/LICENSE-pouchdb.txt' },
+  // grammar points cite these in `sources`; links only, nothing copied (N5 r2 vocab T7)
+  { name: 'St. Olaf Genki grammar index', url: 'https://wp.stolaf.edu/japanese/grammar-index/genki-i-ii-grammar-index/', key: 'cred_grammar_ref', license: 'cred_link_only' },
+  { name: 'Bunpro', url: 'https://bunpro.jp/', key: 'cred_grammar_ref', license: 'cred_link_only' },
+  { name: 'JLPT Sensei', url: 'https://jlptsensei.com/', key: 'cred_grammar_ref', license: 'cred_link_only' },
+  { name: 'japanesetest4you', url: 'https://japanesetest4you.com/', key: 'cred_grammar_ref', license: 'cred_link_only' },
+  { name: 'Tae Kim, Guide to Japanese', url: 'https://guidetojapanese.org/learn/', key: 'cred_grammar_ref', license: 'cred_link_only' } // cited by N4 grammar sources (N4 r1 vocab T6)
 ];
 
 // Tatoeba sentences in the catalog, by sentence number (CC BY 2.0 FR: credit each author).

@@ -85,7 +85,13 @@ QUnit.module('mock exams', function () {
     });
     assert.deepEqual(errs, []);
     var ids = mockItemIds();
-    assert.ok(ids['p:n5-bakery'] && ids['l:n5-where-box'] && ids['m:n5-iikae-kurai'], 'mockItemIds covers passages, listening and mondai');
+    assert.ok(ids['p:n5-bakery'] && ids['l:n5-where-box'] && ids['m:n5-iikae-kurai'] && ids['s:tatoeba:10901910'], 'mockItemIds covers passages, listening, mondai and sentences');
+    // N5 r2 exam T1: no lesson, review or drill quiz asks a sentence a mock asks
+    var used = [];
+    allUnits().filter(function (u) { return u.level === 'N5' && u.kind !== 'mock' && u.kind !== 'kana'; }).forEach(function (u) {
+      for (var r = 0; r < 3; r++) (u.kind === 'prep' ? prepDrill(u) : buildExercises(u)).forEach(function (ex) { if (ex.sentence && ids[ex.sentence]) used.push(u.id + ' ' + ex.form + ' ' + ex.sentence); });
+    });
+    assert.deepEqual(used.slice(0, 10), [], 'mock sentences asked elsewhere');
   });
 
   QUnit.test('fixed answers are valid and the question never shows its answer', function (assert) {
@@ -168,6 +174,35 @@ QUnit.module('mock exams', function () {
         all.forEach(function (b, bi) {
           var stem = shown(b.ex.parts) + shown(b.ex.passageParts) + shown(b.ex.passage);
           if (bi !== ai && stem.indexOf(ans) >= 0) errs.push(m.id + ' Q' + (ai + 1) + ' ' + ans + ' shown in Q' + (bi + 1));
+        });
+      });
+    });
+    assert.deepEqual(errs, []);
+  });
+
+  // N4 r1 exam T2: options print words too (びょうき in an 言い換え option gave away a 漢字読み key; the 用法 word
+  // おくれる gave away a 文脈規定 key). Inside one section, no 漢字読み / 表記 / 文脈規定 key shows in another question's
+  // stem or options, and no 文法形式 key in another question's stem or ★ pieces. Short keys skipped as above.
+  QUnit.test('no key shows in another question\'s stem or options in its section (N4 r1 exam T2)', function (assert) {
+    var errs = [], txt = function (parts) { // the text and the text read through its ruby ([広|ひろ]い shows ひろい)
+      parts = parts || [];
+      return parts.map(function (p) { return p.t; }).join('') + ' ' + parts.map(function (p) { return p.r || p.t; }).join('');
+    };
+    // ponytail: N4 and up; the N5 mocks belong to the N5 audit (x:n5-mock-3 vocab Q9 きらい shows in Q12)
+    mocks().filter(function (m) { return levelRank(m.level) >= 1; }).forEach(function (m) {
+      mockSections(m).forEach(function (s) {
+        s.questions.forEach(function (ex, i) {
+          var q = m.sections[s.key][i];
+          if (!/^(kanjiYomi|hyouki|bunmyaku|gap)$/.test(q.m || '')) return;
+          var ans = ex.options[ex.correct];
+          if (ans.length < (q.m === 'hyouki' || q.m === 'gap' ? 2 : 3)) return;
+          s.questions.forEach(function (b, bi) {
+            if (bi === i) return;
+            var qb = m.sections[s.key][bi], opts = (b.options || []).join(' ') + (b.optionParts || []).map(txt).join(' ') + (b.items || []).join(' ');
+            if (q.m === 'gap' && qb.m !== 'order') return; // grammar keys are function words: only a ★ piece gives one away
+            var hay = q.m === 'gap' ? opts : txt(b.parts) + txt(b.passageParts) + (typeof b.question === 'string' ? b.question : '') + ' ' + opts;
+            if (hay.indexOf(ans) >= 0) errs.push(m.id + ' ' + s.key + ' Q' + (i + 1) + ' ' + ans + ' shown in Q' + (bi + 1));
+          });
         });
       });
     });
@@ -304,8 +339,12 @@ QUnit.module('mock exams', function () {
     var noListening = mockOutlook(parts([100, 100], [100, 100], [100, 100], [0, 11]), 'N5');
     assert.strictEqual(noListening.verdict, 'unlikely', 'upper end of listening misses its minimum');
     // not likely on the low end of a section minimum, but not out either: borderline
-    var wobble = mockOutlook(parts([100, 100], [100, 100], [100, 100], [3, 11]), 'N5');
-    assert.strictEqual(wobble.verdict, 'borderline', 'lower listening bound under 19, upper above it');
+    var wobble = mockOutlook(parts([100, 100], [100, 100], [100, 100], [4, 11]), 'N5');
+    assert.strictEqual(wobble.verdict, 'borderline', 'lower listening bound under 19, score and upper bound above it');
+    // N5 r2 newbie N4: a score under a section minimum fails the test, whatever the range's top
+    var under = mockOutlook(parts([100, 100], [100, 100], [100, 100], [3, 11]), 'N5');
+    assert.strictEqual(under.verdict, 'unlikely', 'listening 3 of 11 scores 16, under 19');
+    assert.deepEqual(under.marks, ['the listening minimum of 19'], 'names the missed minimum');
     // N5 r1 newbie N15: the headline names the mark that decides
     assert.deepEqual(wobble.marks, ['the listening minimum of 19'], 'borderline names only the crossed mark');
     assert.deepEqual(noListening.marks, ['the listening minimum of 19'], 'unlikely names the missed minimum');
@@ -385,6 +424,26 @@ QUnit.module('mock exams', function () {
       exs.forEach(function (ex) {
         if (!ex.options || !(ex.correct >= 0)) assert.ok(false, u.id + ' ' + ex.form + ' not MC');
         if (ids[ex.itemId]) assert.ok(false, u.id + ' uses mock item ' + ex.itemId);
+        if (ex.form === 'bunmyaku' && ex.note && !ex.noteLater) assert.ok(false, u.id + ' bunmyaku shows its English up front');
+      });
+    });
+    // N5 r2 newbie N5: the listening drill drew review items while fresh ones were left
+    var inReview = {};
+    allUnits().forEach(function (u) { if (u.kind === 'review') (u.listening || []).forEach(function (id) { inReview[id] = true; }); });
+    var lu = allUnits().filter(function (u) { return u.id === 'n5.u109'; })[0];
+    if (lu) {
+      var used = prepDrill(lu).filter(function (ex) { return ex.type === 'listen_dialog'; });
+      Object.keys(LISTEN_PROMPTS).forEach(function (f) {
+        var mine = used.filter(function (ex) { return ex.format === f; }), rev = mine.filter(function (ex) { return inReview[ex.itemId]; }).length;
+        var freshN = catalogOf('listening').filter(function (l) { return l.level === 'N5' && l.format === f && !ids[l.id] && !inReview[l.id]; }).length;
+        assert.ok(rev <= Math.max(0, mine.length - freshN), 'u109 ' + f + ': ' + rev + ' review items of ' + mine.length + ', ' + freshN + ' fresh');
+      });
+    }
+    // N4 r1 exam T4: the sentences a mock is built on (q.s) are mock items too, and no N4+ quiz asks them
+    assert.ok(ids['s:tatoeba:10901517'] && ids['s:own:n4-hazu-ga-nai-shiranai'], 'mockItemIds covers the 漢字読み and ★ sentences');
+    allUnits().filter(function (u) { return levelRank(u.level) >= 1 && u.kind !== 'mock'; }).forEach(function (u) {
+      for (var r = 0; r < 2; r++) buildExercises(u).forEach(function (ex) {
+        if (ex.sentence && ids[ex.sentence]) assert.ok(false, u.id + ' ' + ex.form + ' asks mock sentence ' + ex.sentence);
       });
     });
     var mocksUnits = allUnits().filter(function (u) { return u.kind === 'mock'; });
@@ -407,7 +466,11 @@ QUnit.module('mock exams', function () {
             var ks = ex.form === 'hyouki' ? key.split('').filter(function (c) { return /[\u4e00-\u9faf]/.test(c); }) : key.length > 1 ? [key] : [];
             exs.forEach(function (o, j) {
               if (j === i || (o.passageParts && o.passageParts === ex.passageParts)) return;
-              ks.forEach(function (k) { if (stem(o).indexOf(k) >= 0 && !(o.passageParts && j > i)) bad.push(u.id + ' Q' + (i + 1) + ' key ' + k + ' in Q' + (j + 1)); });
+              // later passages count too (N5 r2 exam T5)
+              ks.forEach(function (k) { if (stem(o).indexOf(k) >= 0) bad.push(u.id + ' Q' + (i + 1) + ' key ' + k + ' in Q' + (j + 1)); });
+            });
+            if (ex.form === 'hyouki') ks.forEach(function (k) { // its own stem: 【いく】か行かないか
+              if (ex.parts.some(function (p) { return !p.u && p.t.indexOf(k) >= 0; })) bad.push(u.id + ' Q' + (i + 1) + ' own stem shows ' + k);
             });
           });
         }

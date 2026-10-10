@@ -114,25 +114,25 @@ function UnitView(props) {
         unit.grammar.map(function (g) {
           // "〜A/〜B/〜C" patterns stack one per line; a long formation (て-form) leaves the rail
           // for a list in the main column
-          var alts = g.pattern.split("/");
-          if (!alts.every(function (a) { return /^[〜～]/.test(a); })) alts = [g.pattern];
+          var alts = g.pattern.split("/"), shown = (g.patternFuri || g.pattern).split("/");
+          if (!alts.every(function (a) { return /^[〜～]/.test(a); })) { alts = [g.pattern]; shown = [g.patternFuri || g.pattern]; }
           var longForm = g.formation && speechText(g.formation).length > 70; // ruby markup not counted
           var toks = grammarMarks(g, alts);
           var build = g.formation && React.createElement("div", { className: "grammar-form" },
-            React.createElement("b", null, t('grammar_build', lv)), rubyNodes(g.formation, showFurigana));
+            React.createElement("b", null, t('grammar_build', lv)), rubyNodes(noteIds(g.formation), showFurigana));
           return React.createElement(React.Fragment, { key: g.id }, section(t('section_grammar', lv),
             React.createElement("div", { className: "grammar-card" },
               React.createElement("div", { className: "grammar-rail" },
-                React.createElement("div", { className: "grammar-pattern" }, alts.map(function (a, i) {
-                  return React.createElement("span", { key: i, className: "grammar-alt" }, a);
+                React.createElement("div", { className: "grammar-pattern" }, shown.map(function (a, i) {
+                  return React.createElement("span", { key: i, className: "grammar-alt" }, rubyNodes(a, showFurigana));
                 })),
                 React.createElement("div", { className: "grammar-meaning" }, g.meaning),
                 !longForm && build),
               React.createElement("div", { className: "grammar-main" },
                 longForm && React.createElement("div", { className: "grammar-form grammar-steps" },
                   React.createElement("b", null, t('grammar_build', lv)),
-                  React.createElement("ul", null, g.formation.split("; ").map(function (x, i) { return React.createElement("li", { key: i }, rubyNodes(x, showFurigana)); }))),
-                g.notes && React.createElement("p", { className: "grammar-notes" }, rubyNodes(g.notes, showFurigana)),
+                  React.createElement("ul", null, splitTop(noteIds(g.formation), "; ").map(function (x, i) { return React.createElement("li", { key: i }, rubyNodes(x, showFurigana)); }))),
+                g.notes && React.createElement("p", { className: "grammar-notes" }, rubyNodes(noteIds(g.notes), showFurigana)),
                 React.createElement("div", { className: "grammar-examples" }, grammarExamples(g).map(function (s) { return sentence(s, toks); }))))));
         }),
         examples.length > 0 && section(t('section_examples', lv), React.createElement("div", { className: "example-list" }, examples.map(exampleCard))),

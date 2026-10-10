@@ -20,4 +20,12 @@ QUnit.module('noteParts', function () {
       assert.ok(noteParts(u.notes).head.length > 0, u.id);
     });
   });
+  QUnit.test('grammar notes show labels, never raw ids; BUILD rows split outside brackets only (N4 r1 newbie N1, N2)', function (assert) {
+    assert.strictEqual(noteIds('their own て-form (g:te-form).'), 'their own て-form (' + CATALOG.items['g:te-form'].pattern.split('/')[0] + ').');
+    assert.notOk(/\(.*\(/.test(noteIds('g:te-form')), 'no bracketed gloss inside a bracket');
+    catalogOf('grammar').forEach(function (g) {
+      assert.notOk(/g:[a-z]/.test(noteIds(g.notes) + noteIds(g.formation)), g.id + ': raw id left');
+    });
+    assert.deepEqual(splitTop('い-adj: add くて (安い → 安くて; いい → よくて); な-adj + で', '; '), ['い-adj: add くて (安い → 安くて; いい → よくて)', 'な-adj + で']);
+  });
 });

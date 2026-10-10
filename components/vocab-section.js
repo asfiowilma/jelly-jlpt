@@ -75,7 +75,7 @@ function VocabSection(props) {
     var meaningCell = practice && !rev[v.id + ':m']
       ? cover(v.id + ':m', t('vocab_meaning', lv))
       : React.createElement("span", { className: "vocab-cell vocab-meaning" }, glossText(v),
-        v.usage && React.createElement("span", { className: "vocab-usage", lang: "ja" }, v.usage),
+        v.usage && React.createElement("span", { className: "vocab-usage", lang: "ja" }, rubyNodes(v.usage, props.showFurigana, tk)),
         React.createElement("span", { className: "pos-chip", title: POS_HELP[posChip(v.pos)] }, posChip(v.pos)));
     return React.createElement("li", { key: v.id, className: "vocab-row" },
       React.createElement("div", { className: "vocab-jp jp" }, displayWord(v, tk)),
@@ -87,7 +87,7 @@ function VocabSection(props) {
       }, "🔊"),
       v.tip && (!practice || rev[v.id + ':m']) && React.createElement("div", { className: "vocab-tip" },
         React.createElement("div", { className: "vocab-tip-label" }, icon('bulb'), t('vocab_tip', lv)),
-        React.createElement("p", null, rubyNodes(v.tip, props.showFurigana))));
+        React.createElement("p", null, rubyNodes(v.tip, props.showFurigana, tk))));
   };
 
   var groups = vocabGroups(vocab, lv);
