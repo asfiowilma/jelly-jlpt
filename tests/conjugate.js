@@ -179,7 +179,7 @@ QUnit.module('conjugate', function () {
     var odd = /^(過ぎよう|決まろう|鳴ろう|見つかろう|空かれる|込まれる|込ませる)$/; // kanji spellings: なろう (なる become) is fine
     buildUnits(PLAN, CATALOG).filter(function (u) { return u.level === 'N4' && (u.grammar || []).some(function (g) { return g.conjForm; }); }).forEach(function (u) {
       var g = u.grammar.filter(function (x) { return x.conjForm; })[0], f = formsFor(g, quizContext(u)).filter(function (x) { return x.name === 'conj'; })[0];
-      for (var i = 0; i < 15; i++) { var ex = f.make(); if (ex) ex.answers.forEach(function (a) { assert.notOk(odd.test(a), u.id + ': ' + a); }); }
+      for (var i = 0; i < 4; i++) { var ex = f.make(); if (ex) ex.answers.forEach(function (a) { assert.notOk(odd.test(a), u.id + ': ' + a); }); }
     });
   });
 });

@@ -133,7 +133,7 @@ const LESSONS = [
 // Lesson dialogs (pilot): lesson title -> l:n5-dlg-… (data/n5/listening.js, format dialogue). Shown above the vocabulary.
 // Optional lesson note (the box above the lesson): first sentence = headline, rest = quiet lines.
 const LESSON_NOTES = {
-  "Days of the week": "The seven days come in a fixed order, so a song helps: げつ, か, すい, もく, きん, ど, にち. Try searching for 「いっしゅうかんのうた」 and sing along until the order feels automatic.",
+  "Days of the week": "The seven days come in a fixed order, so a song helps: げつ, か, すい, もく, きん, ど, にち. Say or sing the seven in order a few times until the order feels automatic.",
   "At the doctor's": "Most of the body words here are in a children's touch-and-sing game: あたま, め, みみ, はな, くち, あし. Try searching for 「あたま かた ひざ ポン」 and touch each part as you sing. Versions differ a little, so just follow along.",
   "One thing, two things": "These ten words have a rhythm: ひとつ, ふたつ, みっつ … ここのつ, とお. Songs make rhythm stick. Try searching for the Naruto \"Bijuu Kazoe Uta\" (the tailed-beast counting song) and sing along. It runs from ひとつ to ここのつ, which is most of this lesson.",
 };
@@ -242,10 +242,10 @@ const GUIDES = [
     kinds: [
       { jp: "[漢字|かんじ][読|よ]み", en: "Kanji reading", ask: "A word in kanji is underlined. Pick its reading.", trap: "Wrong choices often differ by **one sound**: a missing ゛, a long vowel made short, a missing small っ. Some are simply another word.", tip: "Sound each choice out slowly in your head. Rushing is how きょねん becomes きょうねん.", eg: "きょねん / きょうねん" },
       { jp: "[表記|ひょうき]", en: "Writing", ask: "A word in hiragana is underlined. Pick its kanji.", trap: "Wrong choices often swap **one kanji** for a lookalike, or are another word of the same kind. [休|やす] and [体|からだ] love to cause trouble.", tip: "Check every kanji of the word. The impostor usually hides in the second one.", eg: "[休|やす] / [体|からだ]" },
-      { jp: "[文脈規定|ぶんみゃくきてい]", en: "Word in context", ask: "A sentence has a gap. Pick the word that fits.", trap: "Two choices fit the gap, but only **one fits the whole sentence**. The other is a decoy in a nice suit.", tip: "Read the whole sentence before you touch the choices. The reason (〜から) or the object (まどを) usually decides it.", eg: "まどを ＿＿ ください。" },
+      { jp: "[文脈規定|ぶんみゃくきてい]", en: "Word in context", ask: "A sentence has a gap. Pick the word that fits.", trap: "The wrong choices can look right if you read only half the sentence, but only **one fits the whole sentence**.", tip: "Read the whole sentence before you touch the choices. The reason (〜から) or the object (まどを) usually decides it.", eg: "まどを ＿＿ ください。" },
       { jp: "[言|い]い[換|か]え[類義|るいぎ]", en: "Same meaning", ask: "Pick the sentence that means about the same as the underlined part.", trap: "Wrong choices change who, when, or the **opposite**. Same words, different story.", tip: "The right one often says it another way. Expect a disguise, not a copy.", eg: "たかくない = やすい" }
     ],
-    time: "Answer what you know right away, flag the rest, come back. **Never leave a blank**: a wrong answer costs the same as an empty one, so a guess is free." },
+    time: "Answer what you know right away, flag the rest, come back. **Never leave a blank**: as far as jlpt.jp publishes, scores are scaled and no penalty for wrong answers is stated, so an answer beats a blank." },
   { lead: "Grammar is about 17 questions, roughly a minute each. That leaves about 23 of the 40 minutes for reading.",
     part: 1, partJp: "[文法|ぶんぽう]", glance: "**3** question types. About **17** of the 40 minutes.",
     kindsLabel: "Question types",
@@ -275,7 +275,7 @@ const GUIDES = [
     ],
     time: "Test-takers report that each item plays only once; the official guide does not say, so we could not confirm it. Here you get **one replay** per question, because the computer voice is slower and flatter than the real thing. Try the official sample audio too (link in Settings and on the mock results). This drill is short on purpose: only a few fresh listening items exist (and no fresh quick replies), so the quick replies here come from your reviews. More come with the next level." },
   Object.assign({ lead: "A full N5 test: 67 questions in three timed parts. You get an estimate of the real scaled score at the end." }, MOCK_GUIDE),
-  { lead: "Open your mock results. The table for each もんだい shows where you lost points. Missed words come back sooner in your reviews, so do those first.",
+  { lead: "Open your mock results. The table for each もんだい (question set) shows where you lost points. Missed words come back sooner in your reviews, so do those first.",
     kindsLabel: "Three kinds of miss",
     kinds: [
       { jp: "", en: "Didn't know it", ask: "The word or grammar point was new or forgotten.", trap: "It stays **missed** unless you go back to it. Hoping is not a study method.", tip: "Study the word or grammar point again." },

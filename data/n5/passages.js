@@ -312,7 +312,7 @@ CATALOG.add([
         explain: 'いちばんゆうめいなところは大きいこうえんです: the most famous place is a big park. The shops are only "many", the town has no university, and Tokyo is another city.' },
       { q: 'おにいさんは　どうして　とうきょうへ　[行|い]きましたか。',
         options: ['まちに　[大学|だいがく]が　ないから', 'とうきょうの　ほうが　すきだから', 'はなを　[見|み]たいから', 'しごとが　あるから'], answer: 0,
-        explain: 'このまちには大学がありません。ですから、あにはとうきょうの大学へ行きました: there is no university in the town, so he went to one in Tokyo. Liking Tokyo better is the opposite of what the writer says (about themselves), the flowers are in the town, and no job is mentioned.' }],
+        explain: 'このまちには大学がありません。ですから、あにはとうきょうの大学へ行きました: there is no university in the town, so he went to one in Tokyo. The brother did not go because he likes Tokyo better; the writer says the town has no university. The flowers are in the town, and no job is mentioned.' }],
     names: ['とうきょう'],
     uses: ['g:adj-i', 'g:adj-na', 'g:ga-arimasu', 'g:hou-ga-yori', 'g:kara', 'g:totemo', 'g:ni', 'g:ni-iku', 'g:ni-ikimasu', 'g:mashita', 'g:doushite', 'g:tai', 'g:no', 'g:wa-desu', 'g:ka', 'v:私|わたし', 'v:町|まち', 'v:小さい|ちいさい', 'v:でも|でも', 'v:駅|えき', 'v:近く|ちかく', 'v:店|みせ', 'v:たくさん|たくさん', 'v:ある|ある', 'v:より|より', 'v:この|この', 'v:ほう|ほう', 'v:好き|すき', 'v:静か|しずか', 'v:中|なか', 'v:いちばん|いちばん', 'v:有名|ゆうめい', 'v:所|ところ', 'v:大きい|おおきい', 'v:公園|こうえん', 'v:春|はる', 'v:花|はな', 'v:とても|とても', 'v:きれい|きれい', 'v:毎年|まいとし', 'v:四|し', 'v:月|がつ', 'v:人|ひと', 'v:見る|みる', 'v:行く|いく', 'v:大学|だいがく', 'v:兄|あに', 'v:毎月|まいつき', 'v:うち|うち', 'v:帰る|かえる', 'v:お兄さん|おにいさん', 'v:どうして|どうして', 'v:ない|ない', 'v:仕事|しごと', 'k:小', 'k:中', 'k:大', 'k:毎', 'k:年', 'k:四', 'k:月', 'k:人', 'k:見', 'k:行', 'k:学'],
     verified: true }),

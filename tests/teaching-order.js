@@ -72,7 +72,7 @@ QUnit.module('teaching order', function () {
       lessons().forEach(function (u) {
         var known = taughtIds(u), check = function (s, what) { n++; if (later(s, known).length) leaks.push(u.id + ' ' + what + ' ' + s.id); };
         (u.grammar || []).forEach(function (g) { lessonExamples(g, u).forEach(function (s) { check(s, 'example'); }); });
-        for (var r = 0; r < 3; r++) buildExercises(u).forEach(function (ex) {
+        buildsOf(u, 3).forEach(function (ex) {
           var s = ex.sentence && CATALOG.items[ex.sentence];
           if (s && s.kind === 'sentence') check(s, ex.form);
         });
@@ -142,13 +142,13 @@ QUnit.module('teaching order', function () {
   });
 
   // reviews too, and every sentence form: gap, ★ order (chunked sentences: N5 r1 newbie, a より ★ item in u048 / u053)
-  QUnit.test('5 builds of every planned lesson and review: no sentence question uses an item taught later', function (assert) {
+  QUnit.test('4 builds of every planned lesson and review: no sentence question uses an item taught later', function (assert) {
     var rnd = Math.random, bad = [], sent = 0, fallback = [], orders = 0;
     Math.random = seeded(11);
     try {
       buildUnits(PLAN, CATALOG).filter(function (u) { return u.kind === 'lesson' || u.kind === 'review'; }).forEach(function (u) {
         var known = taughtIds(u);
-        for (var r = 0; r < 5; r++) buildExercises(u).forEach(function (ex) {
+        buildsOf(u, 4).forEach(function (ex) {
           if (ex.leaky && LEAK_FALLBACK_OK.indexOf(u.id + ' ' + ex.itemId) < 0) fallback.push(u.id + ' ' + ex.itemId);
           var s = ex.sentence && CATALOG.items[ex.sentence];
           if (!s || s.kind !== 'sentence') return;

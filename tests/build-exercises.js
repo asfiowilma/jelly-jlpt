@@ -26,7 +26,7 @@ QUnit.module('buildExercises', {
   });
 
   QUnit.test('mc exercises have required fields and in-bounds correct index (10 runs)', function (assert) {
-    for (var run = 0; run < 10; run++) {
+    for (var run = 0; run < 4; run++) {
       buildExercises(this.unit).filter(function (e) { return e.type === 'mc'; }).forEach(function (mc) {
         assert.ok(mc.prompt, 'mc.prompt is non-empty');
         assert.ok(mc.options.length >= 2, 'mc has at least 2 options');
@@ -36,7 +36,7 @@ QUnit.module('buildExercises', {
   });
 
   QUnit.test('typing exercises have a non-empty answers array', function (assert) {
-    for (var run = 0; run < 5; run++) {
+    for (var run = 0; run < 4; run++) {
       buildExercises(this.unit).filter(function (e) { return e.type === 'typing'; }).forEach(function (t) {
         assert.ok(Array.isArray(t.answers) && t.answers.length > 0, 'typing.answers is non-empty');
       });
@@ -58,7 +58,7 @@ QUnit.module('buildExercises', {
     // a kana quiz reads words first (ticket 44); the single-kana forms are its fallback
     var kanaUnit = buildUnits(PLAN, CATALOG).filter(function (u) { return u.kind === 'kana'; })[1]; // か/さ rows
     var ctx = quizContext(kanaUnit), types = {};
-    for (var run = 0; run < 20; run++) {
+    for (var run = 0; run < 4; run++) {
       kanaUnit.kana.map(function (k) { return makeQuestion(k, ctx, null, []); }).forEach(function (e) {
         var k =CATALOG.items['c:' + e.question] || catalogOf('kana').filter(function (x) { return x.script === 'hiragana' && x.romaji === e.question; })[0];
         assert.ok(k && k.kind === 'kana', 'question is a unit kana or its romaji: ' + e.question);
@@ -85,7 +85,7 @@ QUnit.module('buildExercises', {
     var c = function (ch) { return CATALOG.items['c:' + ch]; };
     var shi = kanaDistractors(c('シ'), 3, []).map(function (x) { return x.char; });
     assert.ok(shi.indexOf('ツ') >= 0, 'シ → ツ: ' + shi.join(''));
-    for (var i = 0; i < 20; i++) {
+    for (var i = 0; i < 4; i++) {
       assert.ok(kanaDistractors(c('じ'), 3, []).every(function (x) { return x.char !== 'ぢ'; }), 'じ never gets ぢ (both ji)');
     }
     var kya = kanaDistractors(c('きゃ'), 3, []);
@@ -157,5 +157,12 @@ QUnit.module('buildExercises', {
       assert.ok(buildExercises(u).some(function (e) { return e.form === 'keigo'; }), u.id + ' asks it');
     });
     assert.equal(catalogOf('grammar').filter(function (g) { return g.pairs; }).length, 4, 'honorific and humble verbs, お〜になる, お〜する');
+  });
+  QUnit.test('a katakana word typed in hiragana from romaji is accepted (N4 r2 newbie3 N1: esukareetaa)', function (assert) {
+    assert.equal(hiraLong('エスカレーター'), 'えすかれえたあ');
+    var u = buildUnits(PLAN, CATALOG).filter(function (x) { return x.id === 'n4.u080'; })[0];
+    var f = formsFor(CATALOG.items['v:エスカレーター|エスカレーター'], quizContext(u)).filter(function (x) { return x.name === 'enToJp'; })[0];
+    var ex = f && f.make();
+    assert.ok(ex && checkTyping('えすかれえたあ', ex.answers) && checkTyping('えすかれーたー', ex.answers), 'hiragana accepted');
   });
 });

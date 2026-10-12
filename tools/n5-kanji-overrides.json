@@ -69,7 +69,7 @@
   "西": {"meaning":["west"],"extra":["セイ","サイ"]},
   "電": {"meaning":["electricity"],"accept":["electric","lightning","electrical"]},
   "校": {"meaning":["school"],"accept":["schoolhouse"]},
-  "語": {"meaning":["language","word"],"accept":["speech","talk"]},
+  "語": {"meaning":["language","word"],"accept":["speech"]},
   "土": {"meaning":["earth","soil"],"accept":["ground","dirt"],"extra":["つち"]},
   "木": {"meaning":["tree","wood"],"accept":["timber"]},
   "聞": {"meaning":["hear","listen","ask"]},

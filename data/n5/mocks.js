@@ -181,7 +181,7 @@ CATALOG.add([
       {"m":"kanjiYomi","s":"s:tatoeba:2143385","w":"v:大きい|おおきい","o":["おきい","おおきい","おぎい","おおぎい"],"a":1},
       {"m":"hyouki","s":"s:own:n5-ya-pan","w":"v:上|うえ","o":["工","土","上","士"],"a":2},
       {"m":"hyouki","s":"s:own:n5-ne-hon","w":"v:本|ほん","o":["休","末","木","本"],"a":3},
-      {"m":"hyouki","s":"s:tatoeba:172298","w":"v:時|じ","o":["持","待","時","特"],"a":2},
+      {"m":"hyouki","s":"s:tatoeba:10953992","w":"v:時|じ","o":["持","待","時","特"],"a":2},
       {"m":"bunmyaku","f":"きのうは　[雨|あめ]でしたから、かさを（　）[出|で]かけました。","o":["はいて","さして","きて","かぶって"],"a":1,"en":"It rained yesterday, so I went out with my umbrella up.","explain":"An umbrella is held up: かさをさす. かぶる is for hats, はく for shoes and trousers, きる for clothes."},
       {"m":"bunmyaku","f":"わたしは　コーヒーが（　）ですから、のみません。","o":["げんき","すき","じょうず","きらい"],"a":3,"en":"I don't like coffee, so I don't drink it.","explain":"Not drinking it follows from disliking it (きらい); すき would be a reason to drink it."},
       {"m":"bunmyaku","f":"ごはんの　まえに、てを（　）ください。","o":["あらって","かって","たべて","あびて"],"a":0,"en":"Please wash your hands before the meal.","explain":"Hands are washed: てをあらう. かう (buy), たべる (eat) and あびる (take a shower) don't fit て."},

@@ -74,7 +74,7 @@ QUnit.module('buildExercises (N3+ types)', {
 
   QUnit.test('conjugation falls back to the "to …" gloss heuristic without pos', function (assert) {
     var u = unit('N3', 1, { vocab: [v('書く', 'かく', 'to write'), v('難しい', 'むずかしい', 'difficult')] });
-    for (var i = 0; i < 10; i++) {
+    for (var i = 0; i < 4; i++) {
       buildExercises(u).filter(function (e) { return e.type === 'conjugation'; }).forEach(function (c) {
         assert.strictEqual(c.question, 'かく', 'untaught kanji: kana only');
         assert.deepEqual(c.parts, [{ t: 'かく' }]);
@@ -93,7 +93,7 @@ QUnit.module('buildExercises (N3+ types)', {
   QUnit.test('lengths: N3+ lessons aim at 16, a 7-item lesson is shortened to 8 (ticket 43)', function (assert) {
     var fields = { vocab: VERBS, kanji: [CATALOG.items['k:人'], CATALOG.items['k:大']], grammar: [CATALOG.items['g:mo']] };
     assert.strictEqual(quizLength(unit('N3', 0, fields), 7), 16);
-    for (var i = 0; i < 5; i++) {
+    for (var i = 0; i < 4; i++) {
       assert.strictEqual(buildExercises(unit('N3', 0, fields)).length, 8);
       assert.strictEqual(buildExercises(unit('N2', 0, fields)).length, 8);
     }

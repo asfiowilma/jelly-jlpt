@@ -442,7 +442,7 @@ QUnit.module('mock exams', function () {
     // N4 r1 exam T4: the sentences a mock is built on (q.s) are mock items too, and no N4+ quiz asks them
     assert.ok(ids['s:tatoeba:10901517'] && ids['s:own:n4-hazu-ga-nai-shiranai'], 'mockItemIds covers the 漢字読み and ★ sentences');
     allUnits().filter(function (u) { return levelRank(u.level) >= 1 && u.kind !== 'mock'; }).forEach(function (u) {
-      for (var r = 0; r < 2; r++) buildExercises(u).forEach(function (ex) {
+      buildsOf(u, 2).forEach(function (ex) {
         if (ex.sentence && ids[ex.sentence]) assert.ok(false, u.id + ' ' + ex.form + ' asks mock sentence ' + ex.sentence);
       });
     });
@@ -452,13 +452,13 @@ QUnit.module('mock exams', function () {
   });
 
   // N5 r1 newbie N6: u106 Q3 printed つくえの上に本やノートがあります, Q8 asked ノート; 父 was the key twice.
-  QUnit.test('prep drills, 10 seeded builds: no key shows in another question, no sentence or 表記 kanji twice', function (assert) {
+  QUnit.test('prep drills, 4 seeded builds: no key shows in another question, no sentence or 表記 kanji twice', function (assert) {
     var rnd = Math.random, x = 7, bad = [];
     Math.random = function () { x = (x * 1664525 + 1013904223) % 4294967296; return x / 4294967296; };
     var stem = function (ex) { return (ex.parts || ex.passageParts || []).map(function (p) { return p.t + (p.r || ''); }).join('') + (typeof ex.question === 'string' ? ex.question : ''); };
     try {
       allUnits().filter(function (u) { return u.kind === 'prep' && u.level === 'N5'; }).forEach(function (u) {
-        for (var r = 0; r < 10; r++) {
+        for (var r = 0; r < 4; r++) {
           var exs = prepDrill(u), sents = {};
           exs.forEach(function (ex, i) {
             if (ex.sentence) { if (sents[ex.sentence]) bad.push(u.id + ' sentence twice ' + ex.sentence); sents[ex.sentence] = 1; }

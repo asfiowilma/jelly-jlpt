@@ -177,20 +177,25 @@ function App() {
     _React$useState28 = _slicedToArray(_React$useState27, 2),
     completed = _React$useState28[0],
     setCompleted = _React$useState28[1];
-  // Index into UNITS of the unit being viewed; defaults to the suggested next unit.
+  // Hash route (lib.js parseRoute), read once on load; null when the hash is empty or unknown.
+  var unitIds = UNITS.map(function (u) { return u.id; });
+  var startRoute = React.useState(function () { return parseRoute(currentHash(), unitIds); })[0];
+  // Index into UNITS of the unit being viewed; defaults to the hash's unit, else the suggested next unit.
   var _React$useStateUnit = React.useState(function () {
-      var i = UNITS.map(function (u) { return u.id; }).indexOf(snap0.currentUnit);
+      var i = unitIds.indexOf((startRoute && startRoute.unitId) || snap0.currentUnit);
       return i >= 0 ? i : nextUnit(UNITS, new Set(snap0.completed));
     }),
     unitIdx = _React$useStateUnit[0],
     setUnitIdx = _React$useStateUnit[1];
-  var _React$useState29 = React.useState('today'),
+  var _React$useState29 = React.useState(startRoute ? startRoute.view : 'today'),
     _React$useState30 = _slicedToArray(_React$useState29, 2),
     view = _React$useState30[0],
     setView = _React$useState30[1];
   // A stage page is a drill-down, not a tab: it keeps the tab it was opened from highlighted
   // ('today' or 'units') and shows a back link to it.
-  var _unitFrom = React.useState('today'), unitFrom = _unitFrom[0], setUnitFrom = _unitFrom[1];
+  var _unitFrom = React.useState(startRoute && startRoute.view === 'unit' ? 'units' : 'today'), unitFrom = _unitFrom[0], setUnitFrom = _unitFrom[1];
+  // Unit id whose quiz was deep-linked (#/unit/<id>/quiz); cleared once the view or unit changes.
+  var _quizAt = React.useState(startRoute && startRoute.quiz ? startRoute.unitId : null), quizAt = _quizAt[0], setQuizAt = _quizAt[1];
   // View to return to when Settings is closed
   var _React$useStatePrev = React.useState('today'),
     _React$useStatePrev2 = _slicedToArray(_React$useStatePrev, 2),
@@ -230,8 +235,9 @@ function App() {
     setPendingCards = _React$useStatePending[1];
   // Full-screen takeovers (ticket 39): null | { screen: 'welcome', again? } | { screen: 'placement', fromWelcome? }.
   // The welcome opens once on a completely empty store (never after an import or sync brought data).
+  // A hash route (deep link) opens its view straight away, with no overlay.
   var _React$useStateFlow = React.useState(function () {
-      return !welcomeSeen() && progressIsEmpty(Store.docs()) ? { screen: 'welcome' } : null;
+      return !startRoute && !welcomeSeen() && progressIsEmpty(Store.docs()) ? { screen: 'welcome' } : null;
     }),
     flow = _React$useStateFlow[0],
     setFlow = _React$useStateFlow[1];
@@ -430,6 +436,43 @@ function App() {
   React.useEffect(function () {
     if (unit) Store.putPrefs({ currentUnit: unit.id });
   }, [unit && unit.id]);
+  // Deep-linked quiz lasts only while its unit is on screen.
+  React.useEffect(function () {
+    setQuizAt(function (q) { return q && !(view === 'unit' && q === unit.id) ? null : q; });
+  }, [view, unit.id]);
+  // Quiz link opens at the quiz, not the top of the stage (UnitView scrolls to the top on mount).
+  React.useEffect(function () {
+    var el = quizAt && view === 'unit' && document.getElementById('unit-quiz');
+    if (el) el.scrollIntoView();
+  }, [quizAt]);
+  // URL follows view and unit. The first write replaces; later view or unit changes push an entry,
+  // so browser back and forward step between views.
+  var hashMounted = React.useRef(false);
+  React.useEffect(function () {
+    var want = routeHash(view === 'unit'
+      ? { view: 'unit', unitId: unit.id, quiz: quizAt === unit.id }
+      : { view: view });
+    if (currentHash() !== want) {
+      if (hashMounted.current) history.pushState(null, '', want);
+      else history.replaceState(null, '', want);
+    }
+    hashMounted.current = true;
+  }, [view, unit.id, quizAt]);
+  // Manual hash edits and back/forward open the matching view. Unknown hash opens today.
+  React.useEffect(function () {
+    function onHash() {
+      var r = parseRoute(currentHash(), unitIds) || { view: 'today' };
+      setReviewAuto(false);
+      if (r.view === 'unit') {
+        setUnitIdx(unitIds.indexOf(r.unitId));
+        setUnitFrom('units');
+      }
+      setView(r.view);
+      setQuizAt(r.quiz ? r.unitId : null);
+    }
+    window.addEventListener('hashchange', onHash);
+    return function () { window.removeEventListener('hashchange', onHash); };
+  }, []);
   // Welcome / placement exits. Any way out of the welcome marks it seen on this device.
   var closeFlow = function closeFlow() {
     markWelcomeSeen();

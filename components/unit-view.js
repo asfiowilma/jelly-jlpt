@@ -63,6 +63,7 @@ function UnitView(props) {
   };
   // Lesson units: up to 3 more sentences using this unit's words / kanji (lib.js unitExamples)
   var examples = unitExamples(unit);
+  var terms = pageTerms(unit);
   var practice = unit.practice || [];
   // lesson note box; lessons with a dialogue show it right after the dialogue
   var noteAfterDialogue = unit.kind === 'lesson' && !!unit.dialogue;
@@ -135,6 +136,9 @@ function UnitView(props) {
                 g.notes && React.createElement("p", { className: "grammar-notes" }, rubyNodes(noteIds(g.notes), showFurigana)),
                 React.createElement("div", { className: "grammar-examples" }, grammarExamples(g).map(function (s) { return sentence(s, toks); }))))));
         }),
+        terms.length > 0 && section("Terms on this page", React.createElement("dl", { className: "page-terms" }, terms.map(function (x) {
+          return React.createElement(React.Fragment, { key: x.label }, React.createElement("dt", null, x.label), React.createElement("dd", null, rubyNodes(x.line, showFurigana)));
+        }))),
         examples.length > 0 && section(t('section_examples', lv), React.createElement("div", { className: "example-list" }, examples.map(exampleCard))),
         unit.dialogue && unit.kind === 'lesson' && React.createElement(DialoguePractice, { key: 'dlgp:' + unit.id, unit: unit }),
         (examples.length > 0 || unit.grammar.length > 0 || unit.guide) && React.createElement("button", {

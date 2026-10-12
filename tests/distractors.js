@@ -249,7 +249,7 @@ QUnit.module('buildExercises distractors', {
   QUnit.test('vocab reading MC and kanji meaning MC are generated', function (assert) {
     var u = buildUnits(PLAN, CATALOG).filter(function (x) { return x.kind === 'lesson' && x.kanji.length; })[0];
     var seen = {};
-    for (var i = 0; i < 40; i++) buildExercises(u).forEach(function (e) { seen[e.prompt] = e; });
+    buildsOf(u, 40).forEach(function (e) { seen[e.prompt] = e; });
     var rd = seen['How do you read this word?'];
     assert.ok(rd, 'reading MC');
     var v = u.vocab.filter(function (x) { return x.word === rd.question; })[0];

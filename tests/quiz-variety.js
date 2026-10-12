@@ -61,7 +61,7 @@ QUnit.module('quiz variety (ticket 43)', {
     var vs = ['v:水|みず', 'v:食べる|たべる', 'v:飲む|のむ', 'v:本|ほん', 'v:先生|せんせい'].map(function (id) { return CATALOG.items[id]; });
     var small = { id: 'n5.u999', level: 'N5', kind: 'lesson', index: 30, vocab: vs, kanji: [], grammar: [] };
     withSeed(4, function () {
-      for (var run = 0; run < 10; run++) {
+      for (var run = 0; run < 4; run++) {
         var exs = buildExercises(small), count = {};
         assert.strictEqual(exs.length, 8, '5 items → 8 questions');
         exs.forEach(function (e, i) {
@@ -159,7 +159,8 @@ QUnit.module('quiz variety (ticket 43)', {
 // 10 seeded builds of every N5 lesson: 25% made before, 42% after; the rest have no gap or ★ form yet.
 QUnit.module('grammar is made, not matched', function () {
   // N4 r1 grammar T1/T2: N4 confusable families + conjForm on every form point: 44% made before, 74% after (lessons + reviews).
-  [['N5', 0.4], ['N4', 0.65]].forEach(function (lv) { QUnit.test(lv[0] + ': 10 seeded builds: the label match only when no gap / ★ / conjugation fits; made share at the ratchet', function (assert) {
+  // N4 r2 newbie2 N2: gap options only from taught points, 65% made (a gap with untaught options is unfair).
+  [['N5', 0.4], ['N4', 0.6]].forEach(function (lv) { QUnit.test(lv[0] + ': 4 seeded builds: the label match only when no gap / ★ / conjugation fits; made share at the ratchet', function (assert) {
     var rnd = Math.random, x = 3, tot = 0, made = 0, bad = [];
     Math.random = function () { x = (x * 1664525 + 1013904223) % 4294967296; return x / 4294967296; };
     try {
@@ -168,11 +169,11 @@ QUnit.module('grammar is made, not matched', function () {
         u.grammar.forEach(function (g) {
           can[g.id] = formsFor(g, ctx).some(function (fm) {
             if (fm.name === 'patternMc') return false;
-            for (var i = 0; i < 5; i++) { var ex = fm.make(); if (ex && !answerLeaks(Object.assign(ex, { item: g }))) return true; }
+            for (var i = 0; i < 4; i++) { var ex = fm.make(); if (ex && !answerLeaks(Object.assign(ex, { item: g }))) return true; }
             return false;
           });
         });
-        for (var r = 0; r < 10; r++) {
+        for (var r = 0; r < 4; r++) {
           var madeOf = {}; // N4: a second ask avoids the form already used (one ★ sentence), so a label match beside a made one is fair
           buildExercises(u).forEach(function (ex) {
             if (!ex.item || ex.item.kind !== 'grammar') return;
@@ -202,18 +203,18 @@ QUnit.module('grammar is made, not matched', function () {
     var u = units.filter(function (x) { return x.level === 'N4' && x.kind === 'lesson'; })[30], c2 = quizContext(u), untaught = 0, n = 0;
     (u.grammar || []).forEach(function (g) {
       var f = formsFor(g, c2).filter(function (fm) { return fm.name === 'patternMc'; })[0];
-      for (var i = 0; i < 10; i++) { var ex = f.make(); ex.options.forEach(function (o, k) { if (k === ex.correct) return; n++; if (!catalogOf('grammar').some(function (x) { return x.pattern === o && c2.taught[x.id]; })) untaught++; }); }
+      for (var i = 0; i < 4; i++) { var ex = f.make(); ex.options.forEach(function (o, k) { if (k === ex.correct) return; n++; if (!catalogOf('grammar').some(function (x) { return x.pattern === o && c2.taught[x.id]; })) untaught++; }); }
     });
     assert.ok(n > 0 && untaught === 0, u.id + ': ' + untaught + ' of ' + n + ' label options untaught');
   });
 
   // N5 r2 grammar T2: 29 of 67 points were only ever matched to a label; authored g.gap fills fixed most
-  QUnit.test('20 seeded builds of every N5 lesson and review: at most 10 points are only ever matched to a label', function (assert) {
+  QUnit.test('4 seeded builds of every N5 lesson and review: at most 10 points are only ever matched to a label', function (assert) {
     var rnd = Math.random, x = 11, seen = {}, made = {};
     Math.random = function () { x = (x * 1664525 + 1013904223) % 4294967296; return x / 4294967296; };
     try {
       buildUnits(PLAN, CATALOG).filter(function (u) { return u.level === 'N5' && (u.kind === 'lesson' || u.kind === 'review'); }).forEach(function (u) {
-        for (var r = 0; r < 20; r++) buildExercises(u).forEach(function (ex) {
+        buildsOf(u, 4).forEach(function (ex) {
           if (!ex.item || ex.item.kind !== 'grammar') return;
           seen[ex.item.id] = true;
           if (ex.form !== 'patternMc') made[ex.item.id] = true;

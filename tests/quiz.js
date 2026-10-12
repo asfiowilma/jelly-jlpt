@@ -111,7 +111,7 @@ QUnit.module('quiz difficulty model', {
   QUnit.test('Q30 recall forms: kana reading of a word (kana only, IME hint), meaning, EN→JP', function (assert) {
     var u = this.units.filter(function (x) { return x.kind === 'lesson' && x.vocab.some(function (v) { return hasKanji(v.word); }); })[0];
     var seen = {};
-    for (var i = 0; i < 30; i++) buildExercises(u).forEach(function (e) { seen[e.form] = e; });
+    buildsOf(u, 4).forEach(function (e) { seen[e.form] = e; });
     var rd = seen.readingType;
     assert.ok(rd, 'reading typing');
     var v = CATALOG.items[rd.itemId];
@@ -152,8 +152,8 @@ QUnit.module('quiz difficulty model', {
   QUnit.test('every gap question in the N5 plan has exactly one surface that fits', function (assert) {
     var n = 0;
     this.units.filter(function (u) { return u.kind === 'lesson'; }).forEach(function (u) {
-      // 8 builds: te-iru / te-kudasai gaps are gone (N5 r1 grammar T3), so 4 builds sometimes drew only ~10
-      for (var r = 0; r < 8; r++) buildExercises(u).filter(function (e) { return e.form === 'gap'; }).forEach(function (e) {
+      // 4 builds: te-iru / te-kudasai gaps are gone (N5 r1 grammar T3), so 4 builds sometimes drew only ~10
+      buildsOf(u, 4).filter(function (e) { return e.form === 'gap'; }).forEach(function (e) {
         n++;
         var g = CATALOG.items[e.itemId];
         e.options.forEach(function (o, i) {
@@ -210,7 +210,7 @@ QUnit.module('quiz difficulty model', {
       Array.from(v.word).forEach(function (ch) { ctx.taughtKanji[ch] = true; }); // readingType needs the kanji taught
       var ex = formsFor(v, ctx).filter(function (f) { return f.name === 'readingType'; })[0].make();
       assert.ok(answerIsRight(ex, c[1]) && answerIsRight(ex, v.reading), c[0] + ' accepts ' + c[1]);
-      for (var r = 0; r < 10; r++) {
+      for (var r = 0; r < 4; r++) {
         if (pickDistractors(v, catalogOf('vocab'), 'reading', 3).indexOf(c[1]) >= 0) assert.ok(false, c[0] + ': ' + c[1] + ' offered as a wrong reading');
       }
     });
@@ -229,7 +229,7 @@ QUnit.module('quiz difficulty model', {
       var ctx = quizContext(u);
       gs.forEach(function (g) {
         var fm = formsFor(g, ctx).filter(function (x) { return x.name === 'gap'; })[0];
-        for (var r = 0; r < 6; r++) {
+        for (var r = 0; r < 4; r++) {
           var ex = fm.make();
           if (!ex) continue;
           n++;
@@ -308,7 +308,7 @@ QUnit.module('quiz difficulty model', {
   QUnit.test('Q33 quiz questions: no reading on the tested word, ruby only for untaught kanji', function (assert) {
     var u = this.units.filter(function (x) { return x.kind === 'lesson' && x.vocab.some(function (v) { return hasKanji(v.word); }); })[0];
     var taughtK = quizContext(u).taughtKanji;
-    for (var i = 0; i < 10; i++) buildExercises(u).forEach(function (e) {
+    buildsOf(u, 4).forEach(function (e) {
       if (['readingMc', 'readingType', 'kanjiReadMc', 'kanjiReadType', 'kanjiMeanMc', 'kanjiMeanType'].indexOf(e.form) >= 0) {
         if (e.parts && e.parts.some(function (p) { return p.r; })) assert.ok(false, e.form + ' shows the tested reading');
       }

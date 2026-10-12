@@ -14,7 +14,8 @@ N5 built, N4–N1 "Coming soon" until rebuilt. Nothing is locked; every unit is 
   file, run `node tools/build-sw.js` and commit `sw.js`. A new top-level shipped file type goes in
   `listFiles` in `tools/build-sw.js`.
 - **Never hand-edit generated files**: `sw.js`, `data/n5/{vocab,kanji,plan,read-words}.js`,
-  `audio/manifest.js`, `kanji-svg/strokes.js`. Change the input (overrides JSON, plan outline,
+  `audio/manifest.js`, `kanji-svg/strokes.js`, and `data/<level>/mocks.js` for levels built with
+  `tools/author-mocks.js` (the N5 and N4 mock files are hand-written). Change the input (overrides JSON, plan outline,
   etc.) and rerun the tool named in the file header.
 - **Ids are stable.** Catalog ids are content-keyed. Once a level ships, never reuse or
   renumber unit ids.
@@ -24,7 +25,7 @@ N5 built, N4–N1 "Coming soon" until rebuilt. Nothing is locked; every unit is 
 ## Content rules
 
 Japanese facts come from research against sources, never from the project owner. Don't ask
-the owner Japanese questions. Building a new level: read `docs/level-playbook.md` first.
+the owner Japanese questions. Building a new level: read `docs/playbook/index.md` first, then the files it lists for your task.
 
 1. **Authority order**: jlpt.jp (format, scoring) > Tanos (levels) > Jisho/JMdict, KANJIDIC
    (authoring-time checks only) > Tatoeba (sentences) > JLPT Sensei / Tofugu / NHK Easy
@@ -41,8 +42,8 @@ the owner Japanese questions. Building a new level: read `docs/level-playbook.md
 
 ## Tests
 
-Must pass before every commit and push: `node .claude/hooks/run-tests.js` (the pre-commit
-hook enforces it). In a git worktree run
+The suite must pass before every commit, push and release: `node .claude/hooks/run-tests.js`
+(the pre-commit hook enforces the commit gate). There is no tier flag. In a git worktree run
 `CLAUDE_PROJECT_DIR=$(pwd) node .claude/hooks/run-tests.js`, else the hook tests main.
 
 ## Commits
@@ -55,3 +56,4 @@ NEVER include claude as co-author in any commit messages. If you find yourself d
 
 Tickets: local markdown in `.scratch/<slug>/` (gitignored), see `docs/agents/issue-tracker.md`.
 Domain docs: `CONTEXT.md` + `docs/adr/`, see `docs/agents/domain.md`.
+Content review rubric (per-level, per-persona): `docs/review/index.md`. Load only the files it lists.

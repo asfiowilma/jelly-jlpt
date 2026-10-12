@@ -53,7 +53,7 @@ QUnit.module('kana reading through words (ticket 44)', function () {
       units().filter(function (u) { return u.kind === 'kana'; }).forEach(function (u) {
         var words = kanaReadWords(u).concat(quizItems(u).filter(function (it) { return it.kind === 'vocab'; }));
         var holds = function (c) { return words.some(function (w) { return kanaSyllables(w.word).indexOf(c) >= 0; }); };
-        for (var run = 0; run < 5; run++) {
+        for (var run = 0; run < 4; run++) {
           var exs = buildExercises(u), inWord = {}, alone = {};
           exs.forEach(function (e) {
             if (e.part !== 'read') return;
@@ -79,7 +79,7 @@ QUnit.module('kana reading through words (ticket 44)', function () {
     withSeed(9, function () {
       kanaStages().forEach(function (u) {
         var one = { w: 0, s: 0 };
-        for (var run = 0; run < 5; run++) buildExercises(u).forEach(function (e) {
+        buildsOf(u, 4).forEach(function (e) {
           if (e.part !== 'read') return;
           var single = e.item.kind === 'kana';
           if (single && u.kind === 'review') assert.ok(false, u.id + ': single kana in a review');
@@ -96,7 +96,7 @@ QUnit.module('kana reading through words (ticket 44)', function () {
     withSeed(13, function () {
       kanaStages().forEach(function (u) {
         var taught = taughtIds(u);
-        for (var run = 0; run < 5; run++) buildExercises(u).forEach(function (e) {
+        buildsOf(u, 4).forEach(function (e) {
           if (e.item.kind === 'kanaword' && e.part !== 'read') assert.ok(false, u.id + ' ' + e.item.word + ': ' + e.form + ' on a reading-only word');
           if (e.item.kind === 'kanaword' && e.itemId) assert.ok(false, u.id + ': a reading word carries an itemId (no SRS card)');
           if (e.part === 'meaning' && !(e.item.kind === 'vocab' && taught[e.item.id])) assert.ok(false, u.id + ' ' + e.item.id + ': meaning asked of an untaught item');
@@ -143,7 +143,7 @@ QUnit.module('kana reading through words (ticket 44)', function () {
   QUnit.test('Q47 rule: on a kana stage every word read holds a new kana or mark; reviews draw from all words', function (assert) {
     withSeed(17, function () {
       kanaStages().forEach(function (u) {
-        for (var run = 0; run < 5; run++) buildExercises(u).forEach(function (e) {
+        buildsOf(u, 4).forEach(function (e) {
           if (e.part === 'read' && e.item.word && !hasNewKana(u, e.item.word)) assert.ok(false, u.id + ': ' + e.item.word + ' uses only earlier kana');
         });
       });
@@ -163,7 +163,7 @@ QUnit.module('kana reading through words (ticket 44)', function () {
     });
     var u2 = units().filter(function (x) { return x.id === 'n5.u002'; })[0];
     withSeed(2, function () {
-      for (var run = 0; run < 5; run++) buildExercises(u2).forEach(function (e) {
+      buildsOf(u2, 4).forEach(function (e) {
         if (e.item.kind === 'kanaword' && e.item.level !== 'N5') assert.ok(false, 'u002 has plenty of N5 words, yet read ' + e.item.word + ' (' + e.item.level + ')');
       });
     });

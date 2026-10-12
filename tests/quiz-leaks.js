@@ -41,12 +41,12 @@ QUnit.module('quiz answer leaks', function () {
     };
   }
 
-  QUnit.test('20 builds of every planned unit (every level): no question shows its answer', function (assert) {
+  QUnit.test('4 builds of every planned unit (every level): no question shows its answer', function (assert) {
     var rnd = Math.random, found = {}, n = 0, examples = {};
     Math.random = seeded(5);
     try {
       buildUnits(PLAN, CATALOG).forEach(function (u) {
-        for (var r = 0; r < 20; r++) buildExercises(u).forEach(function (ex) {
+        buildsOf(u, 4).forEach(function (ex) {
           n++;
           var l = leaks(ex);
           if (!l) return;

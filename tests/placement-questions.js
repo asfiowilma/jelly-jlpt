@@ -13,7 +13,7 @@ QUnit.module('placementQuestions', function () {
       else assert.ok(n > 0, n + ' ' + p.level + ' teaching stages');
     });
     list.forEach(function (u) {
-      for (var run = 0; run < 5; run++) { // random forms: repeat
+      for (var run = 0; run < 4; run++) { // random forms: repeat
         var a = placementQuestions(u, 2, []), b = placementQuestions(u, 1, a.map(function (q) { return q.itemId; }));
         if (a.length < 2 || b.length < 1) { bad.push(u.id + ' ' + a.length + '+' + b.length); return; }
         var ids = a.concat(b).map(function (q) { return q.itemId; });

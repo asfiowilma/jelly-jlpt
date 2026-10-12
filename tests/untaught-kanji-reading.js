@@ -11,7 +11,7 @@ QUnit.module('no reading question for untaught kanji', function () {
     units().forEach(function (u) {
       if (u.kind === 'prep' || u.kind === 'mock') return;
       var tk = quizContext(u).taughtKanji;
-      for (var r = 0; r < 15; r++) buildExercises(u).forEach(function (ex) {
+      buildsOf(u, 4).forEach(function (ex) {
         var it = ex.item;
         if (!it || it.kind !== 'vocab' || !READING_FORMS[ex.form]) return;
         n++;
@@ -29,7 +29,7 @@ QUnit.module('no reading question for untaught kanji', function () {
     var u = units().filter(function (x) { return (x.vocab || []).some(function (i) { return i.id === v.id; }); })[0];
     assert.ok(u, 'a unit teaches 隣');
     var forms = {};
-    for (var r = 0; r < 30; r++) buildExercises(u).forEach(function (ex) { if (ex.item && ex.item.id === v.id) forms[ex.form] = 1; });
+    buildsOf(u, 4).forEach(function (ex) { if (ex.item && ex.item.id === v.id) forms[ex.form] = 1; });
     assert.ok(forms.meaningMc || forms.meaningType, 'asked for its meaning: ' + Object.keys(forms));
   });
 });
@@ -47,7 +47,7 @@ QUnit.module('displayWord hides untaught kanji', function () {
   });
   QUnit.test('quiz question text shows the kana for 隣', function (assert) {
     var u = unitOf('v:隣|となり'), seen = 0;
-    for (var r = 0; r < 30; r++) buildExercises(u).forEach(function (ex) {
+    buildsOf(u, 4).forEach(function (ex) {
       if (ex.item && ex.item.id === 'v:隣|となり' && (ex.form === 'meaningMc' || ex.form === 'meaningType')) {
         seen++; assert.equal(ex.question, 'となり');
         assert.equal(ex.parts.map(function (p) { return p.t + (p.r || ''); }).join(''), 'となり');
@@ -68,7 +68,7 @@ QUnit.module('no untaught kanji in quiz options', function () {
     var bad = [], n = 0;
     units().forEach(function (u) {
       var tk = unitTaughtKanji(u);
-      for (var r = 0; r < 15; r++) buildExercises(u).forEach(function (ex) {
+      buildsOf(u, 4).forEach(function (ex) {
         if (ex.form !== 'wordMc') return;
         n++;
         ex.options.forEach(function (o) { if (untaught(o, tk).length) bad.push(u.id + ' ' + o); });
@@ -82,7 +82,7 @@ QUnit.module('no untaught kanji in quiz options', function () {
   QUnit.test('靴: kana options, one right answer, four distinct', function (assert) {
     var u = buildUnits(PLAN, CATALOG).filter(function (x) { return (x.vocab || []).some(function (i) { return i.id === 'v:靴|くつ'; }); })[0];
     var seen = 0;
-    for (var r = 0; r < 40; r++) buildExercises(u).forEach(function (ex) {
+    buildsOf(u, 40).forEach(function (ex) {
       if (ex.form !== 'wordMc' || ex.item.id !== 'v:靴|くつ') return;
       seen++;
       assert.equal(ex.options[ex.correct], 'くつ');
@@ -105,7 +105,7 @@ QUnit.module('no untaught kanji in quiz options', function () {
     var bad = {}, n = 0;
     units().forEach(function (u) {
       var tk = unitTaughtKanji(u);
-      for (var r = 0; r < 15; r++) buildExercises(u).forEach(function (ex) {
+      buildsOf(u, 4).forEach(function (ex) {
         // ctxRead(Mc): the bound morpheme's reading is the question. reading: passage text. N5 patternMc labels
         // carry ruby on untaught kanji (N5 r2 vocab T4), so they are scanned; N4 labels get patternFuri with N4's build
         if ((ex.form === 'patternMc' && u.level !== 'N5') || ex.form === 'ctxRead' || ex.form === 'ctxReadMc' || ex.type === 'reading') return;

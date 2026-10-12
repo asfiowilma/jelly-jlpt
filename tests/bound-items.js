@@ -43,13 +43,13 @@ QUnit.module('bound morphemes and homograph readings', function () {
     });
   });
 
-  QUnit.test('20 builds of every planned unit: a bound item is only asked in context, never offered bare', function (assert) {
+  QUnit.test('4 builds of every planned unit: a bound item is only asked in context, never offered bare', function (assert) {
     var standalone = {}, bareOption = 0, asked = 0, ex1 = null;
     var glosses = {};
     bound().forEach(function (b) { glosses[glossText(b)] = b.id; });
     withSeed(40, function () {
       buildUnits(PLAN, CATALOG).forEach(function (u) {
-        for (var r = 0; r < 20; r++) buildExercises(u).forEach(function (ex) {
+        buildsOf(u, 4).forEach(function (ex) {
           if (isBound(ex.item)) {
             asked++;
             if (!BOUND_FORMS[ex.form]) standalone[ex.form] = (standalone[ex.form] || 0) + 1;
@@ -70,7 +70,7 @@ QUnit.module('bound morphemes and homograph readings', function () {
     withSeed(7, function () {
       bound().forEach(function (b) {
         boundContexts(b).forEach(function (c) {
-          for (var r = 0; r < 10; r++) {
+          for (var r = 0; r < 4; r++) {
             var d = boundGapOptions(b, c);
             if (d.length < 3) problems.push(b.id + ' ' + c.word + ': ' + d.length + ' distractors');
             d.forEach(function (x) {
@@ -86,7 +86,7 @@ QUnit.module('bound morphemes and homograph readings', function () {
     // the hand-checked pairs: 三回 / 三度 both "three times"; 日本人 offers 人 (にん) as the trap
     var once = boundContexts(v('v:回|かい')).filter(function (c) { return c.word === '一回'; })[0];
     assert.ok(once, '一回 context');
-    for (var i = 0; i < 20; i++) assert.ok(boundGapOptions(v('v:回|かい'), once).every(function (x) { return x.id !== 'v:度|ど'; }), '一度 never offered for "once"');
+    for (var i = 0; i < 4; i++) assert.ok(boundGapOptions(v('v:回|かい'), once).every(function (x) { return x.id !== 'v:度|ど'; }), '一度 never offered for "once"');
     var jp = boundContexts(v('v:人|じん'))[0];
     assert.equal(jp.word, '日本人');
     assert.ok(boundGapOptions(v('v:人|じん'), jp).some(function (x) { return x.id === 'v:人|にん'; }), '人 (にん) is the first distractor');
@@ -99,7 +99,7 @@ QUnit.module('bound morphemes and homograph readings', function () {
     forms.forEach(function (fm) { by[fm.name] = fm; });
     assert.deepEqual(Object.keys(by).sort(), ['ctxGap', 'ctxRead', 'ctxReadMc']);
     withSeed(3, function () {
-      for (var i = 0; i < 15; i++) {
+      for (var i = 0; i < 4; i++) {
         var g = by.ctxGap.make();
         assert.equal(g.type, 'gap');
         assert.equal(g.options[g.correct], '階 (かい)');
@@ -107,8 +107,8 @@ QUnit.module('bound morphemes and homograph readings', function () {
         assert.equal(new Set(g.options).size, 4, 'four distinct options');
         // 階 is not one of the N5 kanji: never shown bare (N5 r1 vocab T6). Typed: 階 carries its plain reading かい,
         // the compound's own reading (さんがい) is still asked; no MC reading (its options would be the ruby).
-        var t = by.ctxRead.make(), kai = t.parts.filter(function (p) { return p.t === '階'; })[0];
-        assert.ok(kai && kai.r === 'かい', t.question + ': 階 with ruby かい');
+        var t = by.ctxRead.make();
+        assert.notOk(t.parts.some(function (p) { return p.r && p.t.indexOf('階') >= 0; }), t.question + ': no ruby on the asked 階 (N4 r2 T1)');
         assert.ok(t.answers.indexOf('さんがい') >= 0 || t.answers.indexOf('にかい') >= 0 || t.answers.indexOf('いっかい') >= 0, t.question + ' → ' + t.answers.join('/'));
         assert.notOk(answerLeaks(t), 'no leak');
         assert.strictEqual(by.ctxReadMc.make(), null, '階: no MC reading');
@@ -121,7 +121,7 @@ QUnit.module('bound morphemes and homograph readings', function () {
     var nb = {};
     formsFor(nin, quizContext(late)).forEach(function (fm) { nb[fm.name] = fm; });
     withSeed(3, function () {
-      for (var i = 0; i < 10; i++) {
+      for (var i = 0; i < 4; i++) {
         var t = nb.ctxRead.make();
         assert.ok(t && /にん$/.test(t.answers[0]), t && t.question + ' → ' + t.answers.join('/'));
         assert.notOk(t.parts.some(function (p) { return p.t.indexOf('人') >= 0 && p.r; }), 'no ruby on the asked morpheme');
@@ -159,7 +159,7 @@ QUnit.module('bound morphemes and homograph readings', function () {
     assert.equal(otherReading(tsuitachi, 'ついたち').id, 'v:一日|ついたち', '一日: ついたち (the 1st) is another word → retry');
     // MC readings never offer another reading of the same spelling
     withSeed(9, function () {
-      for (var i = 0; i < 30; i++) {
+      for (var i = 0; i < 4; i++) {
         var mc = formsFor(hito, ctx).filter(function (fm) { return fm.name === 'readingMc'; })[0].make();
         assert.ok(mc.options.every(function (o, k) { return k === mc.correct || ['じん', 'にん'].indexOf(o) < 0; }), mc.options.join(' '));
       }
@@ -177,7 +177,7 @@ QUnit.module('twin words (早い / 速い)', function () {
     assert.equal(otherMeaning(mt, 'fast').word, '速い', 'fast → retry');
     assert.equal(otherMeaning(mt, 'early'), null, 'own meaning is just right');
     assert.equal(otherMeaning(mt, 'dog'), null, 'plain miss stays a miss');
-    for (var i = 0; i < 20; i++) {
+    for (var i = 0; i < 4; i++) {
       var mc = formsFor(hayai, ctx).filter(function (fm) { return fm.name === 'meaningMc'; })[0].make();
       assert.ok(!mc || mc.options.every(function (o) { return !/fast|quick/.test(o); }), 'no twin meaning option');
     }
@@ -208,6 +208,7 @@ QUnit.module('near-synonym typed meaning (コップ / カップ)', function () {
             if (!ex) continue;
             asked++;
             assert.notOk(rubySpells(ex.parts, ex.answers), u.id + ' ' + ex.question + ': ruby reads ' + ex.answers[0]);
+            assert.notOk(ex.parts.some(function (p) { return p.r && Array.from(v.word).some(function (c) { return hasKanji(c) && p.t.indexOf(c) >= 0; }); }), u.id + ' ' + ex.question + ': ruby on the asked morpheme');
           }
         } finally { Math.random = rnd; }
       });

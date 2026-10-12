@@ -90,7 +90,7 @@ QUnit.module('kana unit words (ticket 42)', function () {
     withSeed(3, function () {
       kanaUnits().concat(kanaReviews()).forEach(function (u) {
         var learned = learnedKana(u), taught = taughtIds(u);
-        for (var run = 0; run < 5; run++) buildExercises(u).filter(function (e) { return !isChar(e); }).forEach(function (e) {
+        buildsOf(u, 4).filter(function (e) { return !isChar(e); }).forEach(function (e) {
           forms[e.form] = true;
           var tag = u.id + ' ' + e.form + ' ' + e.item.id;
           if (['romajiType', 'romajiPick', 'kanaSpell', 'meaningMc', 'wordMc'].indexOf(e.form) < 0) assert.ok(false, tag + ': unexpected form');

@@ -390,17 +390,17 @@ CATALOG.add([
   L({ id: 'l:n4-aircon-leave-key', format: 'task', // review
     lines: [
       { speaker: 'N', furigana: '[電話|でんわ]で　[女|おんな]の　[人|ひと]と　アパートの　おおやさんが　[話|はな]して　います。' },
-      { speaker: 'F', furigana: '[二|に]かいの　[青木|あおき]です。へやの　れいぼうが　こわれて　しまったみたいなんです。' },
-      { speaker: 'M', furigana: 'それは　こまりましたね。[明日|あした]の　[午前|ごぜん]に　[電気|でんき][屋|や]さんを　よびますが、おへやに　いますか。' },
+      { speaker: 'F', furigana: '[二|に]かいの　あおきです。へやの　れいぼうが　こわれて　しまったみたいなんです。' },
+      { speaker: 'M', furigana: 'それは　こまりましたね。[明日|あした]の　[午前|ごぜん]に　[電気|でんき]やさんを　よびますが、おへやに　いますか。' },
       { speaker: 'F', furigana: '[明日|あした]は　しごとなんです。かぎを　あずけても　いいですか。' },
       { speaker: 'M', furigana: 'いいですよ。じゃあ、こんばん、わたしの　へやに　かぎを　[持|も]って　きて　ください。' },
       { speaker: 'F', furigana: 'わかりました。[八|はち][時|じ]ごろ　[行|い]きます。' }],
     question: '[女|おんな]の　[人|ひと]は　こんばん　[何|なに]を　しますか。',
-    options: ['[電気|でんき][屋|や]さんを　よぶ', 'しごとを　[休|やす]む', 'れいぼうを　なおす', 'かぎを　[持|も]って　[行|い]く'], answer: 3,
+    options: ['[電気|でんき]やさんを　よぶ', 'しごとを　[休|やす]む', 'れいぼうを　なおす', 'かぎを　[持|も]って　[行|い]く'], answer: 3,
     names: ['青木|あおき'],
     en: 'Narrator: On the phone, a woman and the landlord of her apartment are talking. What will the woman do tonight? — F: This is Aoki on the second floor. The air conditioner in my room seems to have broken. M: That\'s a nuisance. I\'ll call an electrician tomorrow morning; will you be in your room? F: I have work tomorrow. May I leave my key with you? M: That\'s fine. Then please bring the key to my place tonight. F: Got it. I\'ll come around eight. — What will the woman do tonight?',
     explain: 'She works tomorrow, so the landlord asks her to bring her key to his place tonight, and she says she will come around eight. The landlord calls the electrician, the repair is tomorrow, and she is not taking the day off.',
-    uses: ['g:de', 'g:to', 'g:ga', 'g:te-iru', 'g:no', 'g:te-shimau', 'g:mitai', 'g:n-desu', 'g:ne', 'g:te-mo-ii', 'g:yo', 'g:te-kudasai', 'g:goro', 'g:ka', 'g:ni', 'v:電話|でんわ', 'v:女|おんな', 'v:人|ひと', 'v:アパート|アパート', 'v:話す|はなす', 'v:二|に', 'v:階|かい', 'v:部屋|へや', 'v:冷房|れいぼう', 'v:壊れる|こわれる', 'v:困る|こまる', 'v:明日|あした', 'v:午前|ごぜん', 'v:電気|でんき', 'v:屋|や', 'v:さん|さん', 'v:呼ぶ|よぶ', 'v:居る|いる', 'v:仕事|しごと', 'v:かぎ|かぎ', 'v:いい|いい', 'v:じゃあ|じゃあ', 'v:今晩|こんばん', 'v:私|わたし', 'v:持つ|もつ', 'v:来る|くる', 'v:分かる|わかる', 'v:八|はち', 'v:時|じ', 'v:行く|いく', 'v:休む|やすむ', 'v:直す|なおす', 'v:何|なに', 'v:する|する', 'k:電', 'k:話', 'k:女', 'k:人', 'k:二', 'k:青', 'k:木', 'k:明', 'k:日', 'k:午', 'k:前', 'k:気', 'k:屋', 'k:持', 'k:八', 'k:時', 'k:行', 'k:何', 'k:休'],
+    uses: ['g:de', 'g:to', 'g:ga', 'g:te-iru', 'g:no', 'g:te-shimau', 'g:mitai', 'g:n-desu', 'g:ne', 'g:te-mo-ii', 'g:yo', 'g:te-kudasai', 'g:goro', 'g:ka', 'g:ni', 'v:電話|でんわ', 'v:女|おんな', 'v:人|ひと', 'v:アパート|アパート', 'v:話す|はなす', 'v:二|に', 'v:階|かい', 'v:部屋|へや', 'v:冷房|れいぼう', 'v:壊れる|こわれる', 'v:困る|こまる', 'v:明日|あした', 'v:午前|ごぜん', 'v:電気|でんき', 'v:さん|さん', 'v:呼ぶ|よぶ', 'v:居る|いる', 'v:仕事|しごと', 'v:かぎ|かぎ', 'v:いい|いい', 'v:じゃあ|じゃあ', 'v:今晩|こんばん', 'v:私|わたし', 'v:持つ|もつ', 'v:来る|くる', 'v:分かる|わかる', 'v:八|はち', 'v:時|じ', 'v:行く|いく', 'v:休む|やすむ', 'v:直す|なおす', 'v:何|なに', 'v:する|する', 'k:電', 'k:話', 'k:女', 'k:人', 'k:二', 'k:明', 'k:日', 'k:午', 'k:前', 'k:気', 'k:持', 'k:八', 'k:時', 'k:行', 'k:何', 'k:休'],
     verified: true }),
 
   L({ id: 'l:n4-gloves-for-grandma', format: 'task', // review
@@ -1212,10 +1212,10 @@ CATALOG.add([
     lines: [
       { speaker: 'F', furigana: 'その　かばん、いいね。どこで　[買|か]ったの？' }],
     optionSpeaker: 'M',
-    options: ['[五|ご][千|せん][円|えん]ぐらいだったよ。', '[駅|えき]の　[前|まえ]の　デパートだよ。', '[先週|せんしゅう]の　[日曜日|にちようび]だよ。'], answer: 1,
+    options: ['[五|ご][千|せん][円|えん]ぐらいだったよ。', 'えきの　[前|まえ]の　デパートだよ。', 'せんしゅうの　にちようびだよ。'], answer: 1,
     en: 'Woman: That bag is nice. Where did you buy it? — 1. It was about 5,000 yen. 2. At the department store in front of the station. 3. Last Sunday.',
     explain: 'どこで asks where, so the answer names a place: the department store by the station. The price answers いくら, and last Sunday answers いつ.',
-    uses: ['g:ne', 'g:de', 'g:no', 'g:yo', 'g:deshita', 'v:その|その', 'v:かばん|かばん', 'v:いい|いい', 'v:どこ|どこ', 'v:買う|かう', 'v:駅|えき', 'v:前|まえ', 'v:デパート|デパート', 'v:五|ご', 'v:千|せん', 'v:円|えん', 'v:先週|せんしゅう', 'v:日曜日|にちようび', 'k:買', 'k:五', 'k:千', 'k:円', 'k:駅', 'k:前', 'k:先', 'k:週', 'k:日', 'k:曜'],
+    uses: ['g:ne', 'g:de', 'g:no', 'g:yo', 'g:deshita', 'v:その|その', 'v:かばん|かばん', 'v:いい|いい', 'v:どこ|どこ', 'v:買う|かう', 'v:前|まえ', 'v:デパート|デパート', 'v:五|ご', 'v:千|せん', 'v:円|えん', 'k:買', 'k:五', 'k:千', 'k:円', 'k:前'],
     verified: true }),
 
   L({ id: 'l:n4-help-me-tomorrow', format: 'quick', // review
@@ -1956,7 +1956,7 @@ CATALOG.add([
       { speaker: 'hinata', furigana: 'カカシ[先生|せんせい]！　あしたの　れんしゅうは　ありますか？', en: 'Kakashi-sensei! Is there practice tomorrow?' },
       { speaker: 'kakashi', furigana: 'てんきよほうで　[聞|き]きました。たいふうが　[来|く]るそうです。', en: 'I heard the weather forecast. They say a typhoon is coming.' },
       { speaker: 'hinata', furigana: 'たいふう！？　いつですか？', en: 'A typhoon?! When?' },
-      { speaker: 'kakashi', furigana: 'あしたの　ひるごろから　あめが　ふりだすそうです。', en: 'They say the rain will start around noon tomorrow.' },
+      { speaker: 'kakashi', furigana: 'あしたの　ひるごろから　あめが　ふるそうです。', en: 'They say it will rain from around noon tomorrow.' },
       { speaker: 'hinata', furigana: 'でも、たいせつな　れんしゅうです……。', en: 'But it’s an important practice...' },
       { speaker: 'kakashi', furigana: 'かぜも　つよいそうですよ。がっこうの　まどが　ゆれて、あぶないです。', en: 'They say the wind will be strong too. The school windows shake; it’s dangerous.' },
       { speaker: 'hinata', furigana: 'じゃあ、あめが　やむまで　まちます！', say: 'じゃあ、雨がやむまで待ちます！', en: 'Then I’ll wait till the rain stops!' },
@@ -1973,7 +1973,7 @@ CATALOG.add([
         explain: 'Hearsay そうです follows the plain form, here the past あった. ありそうです means "it looks like there will be one".' }
     ],
     names: ['ヒナタ', 'カカシ'],
-    uses: ['g:sou-da-hearsay', 'g:te-mo-ii', 'g:te-kudasai', 'g:te-form', 'g:made', 'g:no', 'g:ga', 'g:de', 'g:ka', 'g:mo', 'g:yo', 'g:wo', 'g:adj-na', 'v:先生|せんせい', 'v:明日|あした', 'v:練習|れんしゅう', 'v:ある|ある', 'v:天気予報|てんきよほう', 'v:聞く|きく', 'v:台風|たいふう', 'v:来る|くる', 'v:いつ|いつ', 'v:昼|ひる', 'v:ごろ|ごろ', 'v:雨|あめ', 'v:降り出す|ふりだす', 'v:でも|でも', 'v:大切|たいせつ', 'v:風|かぜ', 'v:強い|つよい', 'v:学校|がっこう', 'v:窓|まど', 'v:揺れる|ゆれる', 'v:危ない|あぶない', 'v:じゃあ|じゃあ', 'v:止む|やむ', 'v:待つ|まつ', 'v:あさって|あさって', 'v:ぬれる|ぬれる', 'v:いい|いい', 'v:夜|よる', 'v:冷える|ひえる', 'v:家|いえ', 'v:宿題|しゅくだい', 'v:する|する', 'v:ください|ください', 'k:先', 'k:生', 'k:聞', 'k:来'],
+    uses: ['g:sou-da-hearsay', 'g:te-mo-ii', 'g:te-kudasai', 'g:te-form', 'g:made', 'g:no', 'g:ga', 'g:de', 'g:ka', 'g:mo', 'g:yo', 'g:wo', 'g:adj-na', 'v:先生|せんせい', 'v:明日|あした', 'v:練習|れんしゅう', 'v:ある|ある', 'v:天気予報|てんきよほう', 'v:聞く|きく', 'v:台風|たいふう', 'v:来る|くる', 'v:いつ|いつ', 'v:昼|ひる', 'v:ごろ|ごろ', 'v:雨|あめ', 'v:でも|でも', 'v:大切|たいせつ', 'v:風|かぜ', 'v:強い|つよい', 'v:学校|がっこう', 'v:窓|まど', 'v:揺れる|ゆれる', 'v:危ない|あぶない', 'v:じゃあ|じゃあ', 'v:止む|やむ', 'v:待つ|まつ', 'v:あさって|あさって', 'v:ぬれる|ぬれる', 'v:いい|いい', 'v:夜|よる', 'v:冷える|ひえる', 'v:家|いえ', 'v:宿題|しゅくだい', 'v:する|する', 'v:ください|ください', 'k:先', 'k:生', 'k:聞', 'k:来'],
     notes: 'Hinata (volleyball, never tired) wants to practise in a typhoon; Kakashi stays calm. やまない is the ない form of the unit word 止む.',
     verified: true }),
 
@@ -3670,8 +3670,8 @@ L({ id: 'l:n4-dlg-old-temple', format: 'dialogue',
       { scene: 'A regular customer asks about Frieren-sensei.', en: 'Has the teacher already gone home?',
         chunks: ['せんせいは', 'もう', 'おかえりに', 'なりましたか。', 'おかえるに'], answer: ['せんせいは', 'もう', 'おかえりに', 'なりましたか。'],
         explain: 'お + the ます-stem (かえり) + に なる. The dictionary form (かえる) does not fit in the pattern.' },
-      { scene: 'Maomao asks another customer about their medicine.', en: 'Which medicine will you take?',
-        chunks: ['どの', 'くすりを', 'おのみに', 'なりますか。', 'おのむに'], answer: ['どの', 'くすりを', 'おのみに', 'なりますか。'],
+      { scene: 'Maomao asks another customer about their medicine.', en: 'When will you take the medicine?',
+        chunks: ['くすりは', 'いつ', 'おのみに', 'なりますか。', 'おのむに'], answer: ['くすりは', 'いつ', 'おのみに', 'なりますか。'],
         explain: 'お〜に なる raises the listener: おのみに なります = (you) take. Never use it for yourself.' }
     ],
     names: ['マオマオ', 'ヨル'],

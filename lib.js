@@ -235,10 +235,40 @@ function glossText(v) { return v.gloss.join(' / '); }
 // noteIds(s): learner text with internal grammar ids (g:te-form) written as the point's label (〜て), so no raw
 // id shows (N4 r1 newbie N1); the label's first form, without its bracketed gloss.
 function noteIds(s) {
-  return String(s || '').replace(/\bg:[a-z0-9-]+/g, function (id) {
+  var name = function (id) {
     var g = CATALOG.items[id];
     return g && g.pattern ? g.pattern.split('/')[0].replace(/\s*\([^)]*\)\s*$/, '').trim() : id;
-  });
+  };
+  // "〜ないで (g:nai-de)": the bracket is a link, dropped when it would only repeat the text before it (N4 r2 newbie N1)
+  return String(s || '').replace(/(\S+) \((g:[a-z0-9-]+)\)/g, function (m, pre, id) { return name(id) === pre ? pre : m; })
+    .replace(/\bg:[a-z0-9-]+/g, name);
+}
+// GRAMMAR_TERMS: [regex, label, plain line] for the "Terms on this page" box (N5 r5 newbie N1). Examples in kana: the box also shows on kana stages.
+// pageTerms(unit): the terms a unit's grammar text (pattern, formation, notes) or vocab word types use, once each, in table order.
+var GRAMMAR_TERMS = [
+  [/\bparticles?\b/i, 'particle', 'A small word after a word that shows its job in the sentence: は, を, に, で.'],
+  [/\bcounters?\b/i, 'counter', 'An ending put after a number to count one kind of thing: さんまい (flat things), ふたり (people).'],
+  [/\bsuffix/i, 'suffix', 'A word part that goes after another word: たなかさん, にほんじん.'],
+  [/い-adj(?!\w* stem)/, 'い-adjective', 'A describing word ending in い that changes its own ending: たかい → たかくない.'],
+  [/な-adj/, 'な-adjective', 'A describing word that takes な before a noun: しずかな へや.'],
+  [/dictionary form/i, 'dictionary form', 'The basic verb, as a word list shows it: いく, たべる, する.'],
+  [/plain form/i, 'plain form', 'The casual form friends use, also used inside longer sentences: いく, いかない, いった.'],
+  [/ます[- ]?stem|stem after ます/, 'ます-stem', 'The verb with ます taken off: いきます → いき.'],
+  [/ない[- ]?stem/, 'ない-stem', 'The ない form with ない taken off: いかない → いか.'],
+  [/い-adj stem/, 'い-adj stem', 'The い-adjective without its last い: たかい → たか.'],
+  [/て-form/, 'て-form', 'A verb ending that links and connects: たべて, いって.'],
+  [/た-form/, 'た-form', 'The plain past form of a verb: たべた, いった.'],
+  [/ない-form/, 'ない-form', 'The plain "not" form of a verb: たべない, いかない.'],
+  [/intonation/i, 'intonation', 'The rise or fall of your voice; rising at the end makes a question.'],
+  [/\bclauses?\b/i, 'clause', 'A piece of a sentence with its own verb or adjective: あめがふる in あめがふるから.'],
+  [/conjugat/i, 'conjugate', 'To change the ending of a word for a new job: たべる → たべます, たべない.'],
+  [/volitional/i, 'volitional', 'The "let us" or "I will" form of a verb: いこう.']
+];
+var POS_TERM = { 'adj-i': 'い-adjective', 'adj-na': 'な-adjective' };
+function pageTerms(unit) {
+  var text = (unit.grammar || []).map(function (g) { return speechText(noteIds([g.pattern, g.formation, g.notes].join(' '))); }).join(' ')
+    + ' ' + (unit.vocab || []).map(function (v) { return POS_TERM[v.pos] || v.pos || ''; }).join(' ');
+  return GRAMMAR_TERMS.filter(function (t) { return t[0].test(text); }).map(function (t) { return { label: t[1], line: t[2] }; });
 }
 // splitTop(s, sep): s split at sep outside brackets, so "Plain form (dictionary; ない) + noun; N + の" keeps the
 // bracket whole (N4 r1 newbie N2: the BUILD list broke rows inside （…）).
@@ -355,12 +385,15 @@ function conjugateItem(v, form) {
   return /^adj-(i|na)$/.test(v.pos || '') ? conjugateAdj(v.word, v.reading, form, v.pos) : conjugate(v.word, v.reading, form, v.pos);
 }
 
-// catalogOf: every catalog item of one kind (distractor pools).
-// ponytail: O(catalog) per call; cache per kind if quizzes ever feel slow.
+// catalogOf: every catalog item of one kind (distractor pools). Cached per kind; the cache is dropped
+// when the catalog grows (tests add items at runtime).
+var _catalogKinds = {}, _catalogCount = -1;
 function catalogOf(kind) {
-  return Object.keys(CATALOG.items).map(function (k) { return CATALOG.items[k]; }).filter(function (it) {
+  var count = Object.keys(CATALOG.items).length;
+  if (count !== _catalogCount) { _catalogKinds = {}; _catalogCount = count; }
+  return _catalogKinds[kind] || (_catalogKinds[kind] = Object.keys(CATALOG.items).map(function (k) { return CATALOG.items[k]; }).filter(function (it) {
     return it.kind === kind;
-  });
+  }));
 }
 
 // ── Kana distractors ────────────────────────────────────────────────────────
@@ -571,10 +604,10 @@ function sharesSense(a, b) {
 // Also every pair where one item's accept list holds the other's meaning (元気 accepts "fine", 結構's
 // gloss): typed it is right, so picked it must never be a wrong option either (N5 r1 vocab T5).
 var NEAR_SYNONYMS = [['v:する|する', 'v:やる|やる'], ['v:コップ|コップ', 'v:カップ|カップ'], ['v:どうぞ|どうぞ', 'v:ください|ください']];
-var _enMemo = {};
-function enAnswers(it) { // normalised gloss / meaning + accept, memo per text
-  var key = (it.gloss || it.meaning || []).join('/') + '#' + (it.accept || []).join('/');
-  return _enMemo[key] || (_enMemo[key] = [].concat.apply([], meaningAnswers(it.gloss || it.meaning || []).concat(it.accept || []).map(enForms)));
+var _enAnswersMemo = new WeakMap(); // per item object: called once per pair in every distractor pick
+function enAnswers(it) { // normalised gloss / meaning + accept
+  if (!_enAnswersMemo.has(it)) _enAnswersMemo.set(it, [].concat.apply([], meaningAnswers(it.gloss || it.meaning || []).concat(it.accept || []).map(enForms)));
+  return _enAnswersMemo.get(it);
 }
 // enForms(s): normEn with a bracketed word dropped and kept, as checkTyping reads it: "that (one)" is
 // "that" and "that one", so それ's gloss meets あちら's accept "that one" (N5 r2 vocab T1).
@@ -682,6 +715,11 @@ var LONG_VOWEL = { a: 'あ', i: 'い', u: 'う', e: 'い', o: 'う' };
 function kanaVowel(c) {
   for (var v in KANA_VOWEL) if (c && KANA_VOWEL[v].indexOf(c) >= 0) return v;
   return null;
+}
+// hiraLong(s): a katakana word as typed in hiragana from romaji, ー as the vowel again (エスカレーター → えすかれえたあ).
+function hiraLong(s) {
+  var h = kataToHira(s), ch = Array.from(h);
+  return ch.map(function (c, i) { var v = c === 'ー' && kanaVowel(ch[i - 1]); return v ? { a: 'あ', i: 'い', u: 'う', e: 'え', o: 'お' }[v] : c; }).join('');
 }
 function readingFakes(s) {
   var out = [], ch = Array.from(s);
@@ -1017,7 +1055,11 @@ GAP_INTERCHANGEABLE = GAP_INTERCHANGEABLE.concat([
   ['g:mitai', 'g:you-da', 'g:kamo-shirenai'], // この犬、病気（みたい / かもしれない）: both a guess
   ['g:koto', 'g:to-iu-koto'],                 // 本を読む（こと / ということ）は大切です
   ['g:hazu', 'g:yotei-da'],                   // バスは九時に着く（はずです / よていです）
-  ['g:to-conditional', 'g:nara']]);           // ボタンをおす（と / なら）、
+  ['g:to-conditional', 'g:nara'],             // ボタンをおす（と / なら）、
+  // N4 r2 grammar T2 / exam T3, T4: no English on the paper, so these fit the same blank
+  ['g:hazu', 'g:kamo-shirenai'],              // 家にいる（はずです / かもしれません）
+  ['g:mae-ni', 'g:ato-de'],                   // じゅぎょうの（前に / 後で）
+  ['g:nakute', 'g:nai-de']]);                 // 学校へ行か（なくて / ないで）
 // … and one-way fits: the key's stems also take these
 Object.assign(GAP_ANSWER_BLOCKS, {
   'g:te-adj-noun': ['g:dake-de'],                         // 病気（だけで）学校を休みました
@@ -1030,7 +1072,8 @@ Object.assign(GAP_ANSWER_BLOCKS, {
   'g:ja-nai-ka': ['g:yo', 'g:ne'],                        // だから言った（よ / ね）
   'g:ba': ['g:tara', 'g:te-mo'],                          // 飲め（たら / ても）: potential + たら
   'g:to-ii': ['g:hou-ga-ii'],                             // ここにカンマを入れる（ほうがいい）ですよ
-  'g:hazu': ['g:mitai']                                   // バスはすぐ来る（みたい）
+  'g:hazu': ['g:mitai'],                                  // バスはすぐ来る（みたい）
+  'g:sou-da-hearsay': ['g:mitai']                         // 雨が降る（みたい）だ: N4 r2 grammar T3
 });
 // gapClash(a, b): grammar ids a and b share a GAP_INTERCHANGEABLE set.
 function gapClash(a, b) {
@@ -1412,7 +1455,7 @@ function boundForms(v, ctx, f, typing) {
     // context whose reading still differs from the ruby (a sound change: 三匹 さんびき) is asked; else no typed reading.
     f('ctxRead', true, function () {
       if (!hasKanji(v.word)) return null;
-      var partsOf = function (bc) { return allKanjiTaught(v.word, ctx.taughtKanji) ? shown(bc) : spliceParts(shown(bc), bc.at, bc.end, [{ t: v.word, r: kataToHira(v.reading) }]); };
+      var partsOf = shown; // N4 r2 T1: no ruby on the asked morpheme (it spells part of the answer); ruby stays on the rest
       var bc = rndShuffle(bcs.filter(function (c) { var p = partsOf(c); return p && !rubySpells(p, c.answers); }))[0];
       if (!bc) return null;
       var parts = partsOf(bc);
@@ -1447,7 +1490,12 @@ function formsFor(item, ctx) {
     var d = pickDistractors(item, pool, field, 3, Object.assign({ answer: answer }, opt, word ? { shown: function (x) { return displayWord(x, ctx.taughtKanji); } } : {}));
     if (d.length < 2) return null;
     var opts = rndShuffle([answer].concat(d));
-    return Object.assign({ type: type, prompt: prompt, question: question, options: opts, correct: opts.indexOf(answer) }, extra);
+    // word options: ruby (quizFurigana, like wordParts) on any kanji not taught yet (N4 r2 newbie2 N1)
+    var optionParts = word ? { optionParts: opts.map(function (o) {
+      var x = [item].concat(pool).filter(function (w) { return w && w.word && w.reading && shownWord(w) === o; })[0];
+      return x && hasKanji(o) ? quizFurigana([{ t: x.word, r: x.reading }], ctx.taughtKanji, '') : [{ t: o }];
+    }) } : {};
+    return Object.assign({ type: type, prompt: prompt, question: question, options: opts, correct: opts.indexOf(answer) }, optionParts, extra);
   };
   var typing = function (prompt, question, answers, placeholder, extra) {
     return Object.assign({ type: 'typing', prompt: prompt, question: question, answers: answers, placeholder: placeholder }, extra);
@@ -1598,7 +1646,7 @@ function formsFor(item, ctx) {
       }),
       f('readingType', true, function () {
         var hint = homographs.some(function (x) { return ctx.taught[x.id]; }) ? { note: '"' + glossText(v) + '"' } : {};
-        return readable ? typing('Type the reading of this word in hiragana:', v.word, [kataToHira(v.reading), v.reading].concat(alsoRight).filter(function (a, i, arr) { return arr.indexOf(a) === i; }),
+        return readable ? typing('Type the reading of this word in hiragana:', v.word, [kataToHira(v.reading), hiraLong(v.reading), v.reading].concat(alsoRight).filter(function (a, i, arr) { return arr.indexOf(a) === i; }),
           'hiragana…', Object.assign(hint, kanaIn)) : null;
       }),
       f('enToJp', true, function () {
@@ -1607,7 +1655,7 @@ function formsFor(item, ctx) {
           (!kanjiWord && Array.from(v.reading).length === 1); // one kana (あ "ah / oh"): ああ, あっ fit too (N4 r1 newbie3 N2)
         // other spellings are right too: the catalog's alt partners (椅子 for いす) and altSpell (ご飯 for 御飯)
         var spelt = catalogOf('vocab').filter(function (x) { return x.alt === v.id; }).map(function (x) { return x.word; }).concat(v.altSpell || []);
-        var ans = [v.reading, kataToHira(v.reading), v.word].concat(alsoRight, spelt).filter(function (a, i, arr) { return arr.indexOf(a) === i; });
+        var ans = [v.reading, kataToHira(v.reading), hiraLong(v.reading), v.word].concat(alsoRight, spelt).filter(function (a, i, arr) { return arr.indexOf(a) === i; });
         return clash ? null : typing('Type the Japanese for "' + glossText(v) + '":', '', ans, 'in Japanese…', kanaIn);
       }),
       f('meaningMc', false, function () { return mc('mc', 'What does this word mean?', shownWord(v), 'gloss', twinPool, null, { parts: wordParts(v) }); }),
@@ -1707,9 +1755,9 @@ function formsFor(item, ctx) {
             var ans = surfaces[j];
             // distractors: confusables, no two from one GAP_INTERCHANGEABLE set (answer included)
             var ids = [g.id], d = [];
-            // from N4 on, taught points first (N4 r1 grammar T2); the sort is stable, so random within a tier
+            // from N4 on, taught points only (N4 r1 grammar T2; N4 r2 newbie2 N2: ばよかった before its stage)
             var conf = rndShuffle([].concat.apply([], confusableSets(g)));
-            if (levelRank(g.level) >= 1) conf.sort(function (a, b) { return !ctx.taught[a] - !ctx.taught[b]; });
+            if (levelRank(g.level) >= 1) conf = conf.filter(function (id) { return ctx.taught[id]; });
             conf.forEach(function (id) {
               var c = CATALOG.items[id], txt = c && gapSurfaces(c)[0];
               if (!txt || d.length >= 3 || ids.some(function (x) { return gapClash(x, id); }) || (GAP_ANSWER_BLOCKS[g.id] || []).indexOf(id) >= 0 || surfaces.indexOf(txt) >= 0 ||
@@ -4654,4 +4702,28 @@ function shouldAskSupport(milestone, state, now) {
   if (!milestone || state.dismissed) return false;
   if (!state.lastAskedAt) return true;
   return now - state.lastAskedAt >= SUPPORT_ASK_GAP_DAYS * 86400000;
+}
+
+// ── Hash routes (app.js) ─────────────────────────────────────────────────────
+// '#/today', '#/unit/<unitId>/quiz' and friends. Unit ids are opaque catalog ids (n5.u001).
+var ROUTE_VIEWS = ['today', 'units', 'review', 'stats', 'achievements', 'settings', 'diagnostic'];
+// parseRoute(hash, unitIds): { view, unitId?, quiz? }, or null for an empty or unknown hash.
+// A unit id not in unitIds falls back to the units list.
+function parseRoute(hash, unitIds) {
+  var parts = String(hash || '').replace(/^#\/?/, '').split('/').filter(Boolean);
+  try { parts = parts.map(decodeURIComponent); } catch (e) { return null; }
+  if (parts[0] === 'unit' && parts.length >= 2 && parts.length <= 3) {
+    if (parts.length === 3 && parts[2] !== 'quiz') return null;
+    if (unitIds.indexOf(parts[1]) < 0) return { view: 'units' };
+    return { view: 'unit', unitId: parts[1], quiz: parts.length === 3 };
+  }
+  if (parts.length === 1 && ROUTE_VIEWS.indexOf(parts[0]) >= 0) return { view: parts[0] };
+  return null;
+}
+// Node test harness has no location: read it guarded.
+function currentHash() { return typeof location === 'undefined' ? '' : location.hash; }
+// routeHash(route): the hash that shows route. Inverse of parseRoute for valid routes.
+function routeHash(route) {
+  if (route.view === 'unit') return '#/unit/' + route.unitId + (route.quiz ? '/quiz' : '');
+  return '#/' + route.view;
 }

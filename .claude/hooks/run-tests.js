@@ -187,11 +187,15 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
       });
     },
   };
-  fs.readdirSync(path.join(projectDir, "tests")).filter(function (f) { return /\.js$/.test(f); }).sort().forEach(function (f) {
+  // TEST_ONLY=url-routing,store runs just those tests/*.js files (dev loop; skips the Node-only checks below).
+  var only = process.env.TEST_ONLY ? process.env.TEST_ONLY.split(",").map(function (s) { return s.trim() + ".js"; }) : null;
+  if (only) console.error("TEST_ONLY: partial run, " + only.join(", ") + " (full suite still required before commit)");
+  fs.readdirSync(path.join(projectDir, "tests")).filter(function (f) { return /\.js$/.test(f) && (!only || f[0] === "_" || only.indexOf(f) >= 0); }).sort().forEach(function (f) {
     load(path.join("tests", f));
   });
 }());
 
+if (!process.env.TEST_ONLY) {
 // ── React render smoke tests ──────────────────────────────────────────────────
 // Call each top-level component with the stub React to verify all referenced
 // globals exist. createElement returns {} without recursing into children, so
@@ -1605,6 +1609,8 @@ fs.readdirSync(path.join(projectDir, "tools", "ref")).filter(function (f) { retu
     a.ok(true, "node --check ok");
   });
 }());
+
+}
 
 // ── summary ───────────────────────────────────────────────────────────────────
 _asyncChain.then(function () {
