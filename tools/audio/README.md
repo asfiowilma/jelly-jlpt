@@ -1,6 +1,6 @@
 # Listening audio tracks
 
-`tracks.json` lists every N5 listening item as a flat play sequence, for the Colab TTS notebook
+`tracks.json` lists every N5 and N4 listening item (exam items and lesson dialogues) as a flat play sequence, for the Colab TTS notebook
 that renders the audio. Each track has `lines` of `{ role, text, kana, say }`: `text` is the natural
 Japanese (kanji kept, full-width spaces removed, for reading only), `kana` the text the Web Speech
 fallback uses, and `say` = `kana` with full-width spaces removed: the text the clips are rendered from. A dialogue line may also carry

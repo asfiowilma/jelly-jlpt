@@ -3,7 +3,8 @@
 // Achievement engine (ticket 08): the list, every rule, unlock docs, batching.
 // Fixtures are built from the real N5 catalog + plan.
 QUnit.module('achievements', function () {
-  var UNITS_ = buildUnits(PLAN, CATALOG).filter(liveUnit); // the shipped levels, as the app sees them
+  // N5 fixtures; N4 rows use the stand-in below (relabelled N5 plan), so the real N4 units stay out
+  var UNITS_ = buildUnits(PLAN, CATALOG).filter(liveUnit).filter(function (u) { return u.level === 'N5'; });
   var CTX = function (now) { return { units: UNITS_, catalog: CATALOG, now: now || at(2026, 6, 1) }; };
   function at(y, m, d, h, mi) { return new Date(y, m - 1, d, h === undefined ? 12 : h, mi || 0).getTime(); }
   function ids(res) { return res.map(function (r) { return r.id; }); }

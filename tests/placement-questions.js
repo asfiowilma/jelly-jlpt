@@ -5,11 +5,12 @@ QUnit.module('placementQuestions', function () {
   var stages = function () { return buildUnits(PLAN, CATALOG).filter(liveUnit).filter(function (u) { return u.kind === 'kana' || u.kind === 'lesson'; }); }; // the shipped levels, as the app sees them
 
   QUnit.test('every teaching stage yields 2 + 1 distinct questions, no leaks, no single letters', function (assert) {
-    // every planned level, live or not: ready: false keeps N4 out of the app's placement, not out of this check
+    // every planned level, live or not (a level with ready: false is still checked here)
     var list = buildUnits(PLAN, CATALOG).filter(function (u) { return u.kind === 'kana' || u.kind === 'lesson'; }), bad = [];
     PLAN.forEach(function (p) {
       var n = list.filter(function (u) { return u.level === p.level; }).length;
       if (p.level === 'N5') assert.strictEqual(n, 90, '90 N5 teaching stages');
+      else if (p.level === 'N4') assert.strictEqual(n, 87, '87 N4 teaching stages');
       else assert.ok(n > 0, n + ' ' + p.level + ' teaching stages');
     });
     list.forEach(function (u) {

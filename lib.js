@@ -1071,6 +1071,9 @@ Object.assign(GAP_ANSWER_BLOCKS, {
   'g:nakute-mo-ii': ['g:nai-de'],                         // 急が（ないで）よ
   'g:ja-nai-ka': ['g:yo', 'g:ne'],                        // だから言った（よ / ね）
   'g:ba': ['g:tara', 'g:te-mo'],                          // 飲め（たら / ても）: potential + たら
+  'g:ba-yokatta': ['g:tara-dou'],                         // 話せ（たらどうですか）: potential + たら
+  'g:ato-de': ['g:te-iru-aida-ni'],                       // じゅぎょうの（間に）、先生に聞きました (N4 r4 grammar T1)
+  'g:te-mo': ['g:tara'],                                  // 雨がふっ（たら）、行きます (N4 r4 exam T2)
   'g:to-ii': ['g:hou-ga-ii'],                             // ここにカンマを入れる（ほうがいい）ですよ
   'g:hazu': ['g:mitai'],                                  // バスはすぐ来る（みたい）
   'g:sou-da-hearsay': ['g:mitai']                         // 雨が降る（みたい）だ: N4 r2 grammar T3
@@ -1786,6 +1789,14 @@ function formsFor(item, ctx) {
         return s ? orderQuestion(s, ctx.taughtKanji) : null;
       })
     ];
+    // from N4 a miss says which pattern the sentence wanted, what it means and how it is built (N4 r3 newbie N1)
+    if (levelRank(g.level) >= 1) gForms.forEach(function (fm) {
+      var make = fm.make;
+      fm.make = function () {
+        var ex = make();
+        return ex && !ex.explain ? Object.assign(ex, { explain: noteIds(g.pattern.split('/')[0].replace(/\s*\([^)]*\)\s*$/, '')) + ' = ' + g.meaning + (g.formation ? '. Built: ' + furiganaParts(noteIds(g.formation)).map(function (p) { return p.r || p.t; }).join('') : '') + '.' }) : ex;
+      };
+    });
     // keigo points (pairs: [plain verb, keigo answers…]): say it raised or lowered (N4 r1 newbie3 N3: no keigo
     // lesson asked to apply keigo; the label match could be won without telling raise from lower)
     if (g.pairs) gForms.push(f('keigo', true, function () {
@@ -2855,9 +2866,21 @@ function mockRunClear() { try { localStorage.removeItem(MOCK_RUN_KEY); } catch (
 // of the 文法1 gap pool, and number / time words out of 文脈規定, as the Japanese alone leaves 2+ fits (N5 r3 EX-T5, EX-T6, GS-T2).
 var PREP_GAP_SKIP = ['g:masu', 'g:mashita', 'g:masen', 'g:mashou', 'g:masen-ka', 'g:mashou-ka', 'g:tai', 'g:sugiru', 'g:hou-ga-ii',
   'g:deshita', 'g:ja-nai', 'g:te-iru', 'g:mada-te-imasen'];
-function prepSingleFit(key, x) {
-  if (key === 'gap') return PREP_GAP_SKIP.indexOf(x.id) < 0;
-  return key !== 'bunmyaku' || x.pos !== 'number' && (x.tags || []).every(function (t) { return t !== 'numbers' && t !== 'time'; });
+// From N4 on (N5 drills unchanged)
+var PREP_GAP_SKIP_N4 = [
+  // N4 r3 grammar T1: guess / certainty / tag endings (はずだ, はずがない, かもしれない, かしら …) all fit one plain-form slot
+  'g:hazu', 'g:hazu-ga-nai', 'g:kamo-shirenai', 'g:yotei-da', 'g:tsumori', 'g:mitai', 'g:you-da', 'g:sou-da-hearsay',
+  'g:kana-kashira', 'g:ja-nai-ka',
+  // N4 r3 exam T2: aspect / giving / feeling て-endings, stem endings, amount and time words share their slot too
+  'g:te-aru', 'g:te-oku', 'g:te-shimau', 'g:te-miru', 'g:te-iku', 'g:te-kuru', 'g:te-ita', 'g:te-ageru', 'g:te-kureru',
+  'g:te-morau', 'g:te-hoshii', 'g:te-yokatta', 'g:te-sumimasen', 'g:te-kurete-arigatou', 'g:yasui', 'g:nikui', 'g:tagaru',
+  'g:nasai', 'g:tara', 'g:number-mo', 'g:dake', 'g:goro', 'g:made-ni', 'g:te-iru-aida-ni'];
+function prepSingleFit(key, x, level) {
+  var n4 = levelRank(level) >= 1;
+  if (key === 'gap') return PREP_GAP_SKIP.indexOf(x.id) < 0 && !(n4 && PREP_GAP_SKIP_N4.indexOf(x.id) >= 0);
+  // from N4, adjectives, adverbs, prenouns, connectors too: 何か（新しい / 白い）もの, トムに（同じ / その）こと (N4 r3-r4 exam)
+  return key !== 'bunmyaku' || x.pos !== 'number' && (x.tags || []).every(function (t) { return t !== 'numbers' && t !== 'time'; }) &&
+    !(n4 && (['pronoun', 'prenoun', 'conjunction', 'adverb'].indexOf(x.pos) >= 0 || /^adj/.test(x.pos || '')));
 }
 function prepDrill(unit) {
   var ctx = quizContext(unit), skip = mockItemIds(), out = [], seen = {};
@@ -2885,9 +2908,10 @@ function prepDrill(unit) {
       var lvKanji = {};
       catalogOf('kanji').forEach(function (k) { if (k.level === unit.level) lvKanji[k.char] = true; });
       fresh(catalogOf(kind).filter(function (x) {
-        return !x.alt && prepSingleFit(key, x) && (x.level === unit.level || kind === 'vocab' && levelRank(x.level) < levelRank(unit.level) && Array.from(x.word).some(function (c) { return lvKanji[c]; }));
+        return !x.alt && prepSingleFit(key, x, unit.level) && (x.level === unit.level || kind === 'vocab' && levelRank(x.level) < levelRank(unit.level) && Array.from(x.word).some(function (c) { return lvKanji[c]; }));
       })).forEach(function (x) {
-        if (got < n) add(mondaiQuestions(key, x, ctx));
+        // from N4, a 文脈規定 stem under 10 characters (（　）が好きです) gives no context to pick one word (N4 r3 exam T3)
+        if (got < n) add(mondaiQuestions(key, x, ctx).filter(function (q) { return key !== 'bunmyaku' || levelRank(unit.level) < 1 || Array.from(String(q.question || '')).length - Array.from(String(q.options[q.correct])).length >= 10; }));
       });
     }
   });

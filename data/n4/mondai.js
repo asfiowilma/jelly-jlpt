@@ -115,10 +115,10 @@ CATALOG.add([
 
   // ── 用法 ──
   { id: 'm:n4-youhou-tsutsumu', kind: 'mondai', type: 'youhou', level: 'N4', word: 'つつむ', reading: 'つつむ',
-    options: ['プレゼントを、きれいな[紙|かみ]でつつみました。', 'さむいので、ドアをつつんでください。', 'ごはんのあとで、はをつつみました。', 'へやのでんきをつつんでから、ねました。'],
+    options: ['プレゼントを、きれいなかみでつつみました。', 'さむいので、ドアをつつんでください。', 'ごはんのあとで、はをつつみました。', 'へやのでんきをつつんでから、ねました。'],
     answer: 0, en: 'I wrapped the present in pretty paper.',
     explain: 'つつむ = to wrap something in paper or cloth. Doors are shut (しめる), teeth are brushed (みがく) and lights are switched off (けす).',
-    uses: ['v:包む|つつむ', 'v:プレゼント|プレゼント', 'v:きれい|きれい', 'v:紙|かみ', 'k:紙'], sources: ['own'], verified: false },
+    uses: ['v:包む|つつむ', 'v:プレゼント|プレゼント', 'v:きれい|きれい', 'v:紙|かみ'], sources: ['own'], verified: false },
 
   { id: 'm:n4-youhou-sawagu', kind: 'mondai', type: 'youhou', level: 'N4', word: 'さわぐ', reading: 'さわぐ',
     options: ['[朝|あさ]から[雨|あめ]がさわいでいます。', 'かばんの[中|なか]で、[電話|でんわ]がさわいでいます。', '[図書館|としょかん]の[中|なか]で、さわがないでください。', 'つくえの[上|うえ]に、[本|ほん]がたくさんさわいでいます。'],
@@ -254,14 +254,14 @@ CATALOG.add([
     notes: 'Blank 2: a request quoted from the hotel staff, so 〜てください. Blank 3: それで (as a result); でも / それでも would contrast with borrowing the grips.' },
 
   { id: 'm:n4-bunshou-broken-computer', kind: 'mondai', type: 'bunshou', level: 'N4',
-    text: '[先週|せんしゅう]、[会社|かいしゃ]で[大切|たいせつ]なかいぎに[使|つか]う[紙|かみ]を[作|つく]っていましたが、とちゅうでコンピューターがこわれて［1］。こまっていると、となりのせきの[山田|やまだ]さんが「わたしのパソコンを［2］いいですよ」と[言|い]って、[貸|か]してくれました。その[上|うえ]、[作|つく]り[方|かた]も[教|おし]えて［3］。おかげで、かいぎにまにあいました。[山田|やまだ]さんがこまっているときは、[今度|こんど]はわたしが［4］つもりです。',
+    text: '[先週|せんしゅう]、[会社|かいしゃ]で[大切|たいせつ]なかいぎに[使|つか]うものを[作|つく]っていましたが、とちゅうでコンピューターがこわれて［1］。こまっていると、となりのせきの[山田|やまだ]さんが「わたしのパソコンを［2］いいですよ」と[言|い]って、[貸|か]してくれました。その[上|うえ]、[作|つく]り[方|かた]も[教|おし]えて［3］。おかげで、かいぎにまにあいました。[山田|やまだ]さんがこまっているときは、[今度|こんど]はわたしが［4］つもりです。',
     blanks: [{ options: ['おきました', 'ありました', 'しまいました', 'みました'], answer: 2 },
       { options: ['つかっても', 'つかったり', 'つかうので', 'つかわせて'], answer: 0 },
       { options: ['あげました', 'もらいました', 'いただきました', 'くれました'], answer: 3 },
       { options: ['てつだってもらう', 'てつだってあげる', 'てつだってくれる', 'てつだわれる'], answer: 1 }],
-    en: 'Last week at work I was making the papers for an important meeting, but halfway through my computer broke. While I was stuck, Ms. Yamada at the next desk said, "You can use my computer," and lent it to me. On top of that, she showed me how to make the papers. Thanks to her, I was in time for the meeting. Next time Ms. Yamada is in trouble, I intend to help her.',
+    en: 'Last week at work I was making the materials for an important meeting, but halfway through my computer broke. While I was stuck, Ms. Yamada at the next desk said, "You can use my computer," and lent it to me. On top of that, she showed me how to make them. Thanks to her, I was in time for the meeting. Next time Ms. Yamada is in trouble, I intend to help her.',
     names: ['山田|やまだ'],
-    uses: ['g:te-ita', 'g:noun-modifier', 'g:te-shimau', 'g:to-conditional', 'g:te-iru', 'g:te-mo-ii', 'g:te-kureru', 'g:kata', 'g:te-ageru', 'g:tsumori', 'v:先週|せんしゅう', 'v:会社|かいしゃ', 'v:大切|たいせつ', 'v:会議|かいぎ', 'v:使う|つかう', 'v:紙|かみ', 'v:作る|つくる', 'v:途中|とちゅう', 'v:コンピューター|コンピューター', 'v:壊れる|こわれる', 'v:困る|こまる', 'v:隣|となり', 'v:席|せき', 'v:さん|さん', 'v:私|わたし', 'v:パソコン|パソコン', 'v:いい|いい', 'v:言う|いう', 'v:貸す|かす', 'v:その|その', 'v:上|うえ', 'v:方|かた', 'v:教える|おしえる', 'v:お陰|おかげ', 'v:間に合う|まにあう', 'v:時|とき', 'v:今度|こんど', 'v:手伝う|てつだう', 'v:あげる|あげる', 'v:つもり|つもり', 'k:先', 'k:週', 'k:会', 'k:社', 'k:大', 'k:切', 'k:使', 'k:紙', 'k:作', 'k:山', 'k:田', 'k:言', 'k:貸', 'k:上', 'k:方', 'k:教', 'k:今', 'k:度'], sources: ['own'], verified: false,
+    uses: ['g:te-ita', 'g:noun-modifier', 'g:te-shimau', 'g:to-conditional', 'g:te-iru', 'g:te-mo-ii', 'g:te-kureru', 'g:kata', 'g:te-ageru', 'g:tsumori', 'v:先週|せんしゅう', 'v:会社|かいしゃ', 'v:大切|たいせつ', 'v:会議|かいぎ', 'v:使う|つかう', 'v:物|もの', 'v:作る|つくる', 'v:途中|とちゅう', 'v:コンピューター|コンピューター', 'v:壊れる|こわれる', 'v:困る|こまる', 'v:隣|となり', 'v:席|せき', 'v:さん|さん', 'v:私|わたし', 'v:パソコン|パソコン', 'v:いい|いい', 'v:言う|いう', 'v:貸す|かす', 'v:その|その', 'v:上|うえ', 'v:方|かた', 'v:教える|おしえる', 'v:お陰|おかげ', 'v:間に合う|まにあう', 'v:時|とき', 'v:今度|こんど', 'v:手伝う|てつだう', 'v:あげる|あげる', 'v:つもり|つもり', 'k:先', 'k:週', 'k:会', 'k:社', 'k:大', 'k:切', 'k:使', 'k:作', 'k:山', 'k:田', 'k:言', 'k:貸', 'k:上', 'k:方', 'k:教', 'k:今', 'k:度'], sources: ['own'], verified: false,
     notes: 'Blank 1: こわれる is intransitive, so not てある; the trouble calls for てしまいました. Blank 3: 山田さんが is the giver, so くれました (もらう / いただく need に). Blank 4: わたしが gives the help: てあげる.' },
 
   { id: 'm:n4-bunshou-white-cat', kind: 'mondai', type: 'bunshou', level: 'N4',

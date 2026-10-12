@@ -34,6 +34,8 @@ Load when: changing quiz generation, distractors, answer checking, or lib quiz c
 - The playthrough test fails any question whose question line is not rendered. After any quiz-layout change, play one question of every type in the browser.
 - ★ reorder questions use authored chunks only. `star` slots are restricted where several orders are valid.
 - Generated 文脈規定 rely on the English note shown, the only disambiguator. Mocks use authored items with exactly one fit and no note.
+- Prep drills (no English on the real paper): the 文法1 gap pool skips points whose siblings share one slot (tense, polarity, mood, guess / certainty endings, て-endings, stem endings, amount and time words; `PREP_GAP_SKIP`). Generated 文脈規定 cannot be made single-fit for noun keys: the note waits behind a hint button and shows after the answer. To close this, author single-fit 文脈規定 items for the drill pool at N3 (N4 r3-r4 exam).
+- From N4 every grammar question carries `explain` (pattern = meaning, built from the formation), so a miss says why (N4 r3 newbie).
 - Conjugation is rule-based from item `pos`. ら抜き potentials are not accepted (decide per level).
 - `[N4+]` `conjugate()` covers ば-form, たら-form, imperative, causative-passive and なくて-form; `conjugateAdj()` covers い and な adjectives. Extend `tests/conjugate.js` for each new column.
 - Grammar is quizzed by its own point (gap, ★, conjugation) before falling back to the label match. Ratchet in `tests/quiz-variety.js`: ≥40% made.

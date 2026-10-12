@@ -1,6 +1,6 @@
 "use strict";
 
-// Roadmap ticket 36: placement engine (binary search + spot-checks) over the real N5 plan.
+// Roadmap ticket 36: placement engine (binary search + spot-checks) over the live plan (N5 + N4).
 QUnit.module('placement engine', function () {
   var units = function () { return buildUnits(PLAN, CATALOG).filter(liveUnit); }; // the shipped levels, as the app sees them
   var seeded = function (seed) { var x = seed; return function () { x = (x * 1664525 + 1013904223) % 4294967296; return x / 4294967296; }; };
@@ -21,7 +21,7 @@ QUnit.module('placement engine', function () {
     }
     return { s: s, res: placementResult(s), asked: asked, num: num, us: us };
   }
-  var N = 90;
+  var N = units().filter(function (u) { return u.kind === 'kana' || u.kind === 'lesson'; }).length; // 90 N5 + 87 N4
 
   QUnit.test('knows nothing: nothing passed, starts at stage 1, no holes', function (assert) {
     var r = run(function () { return false; });
@@ -30,7 +30,7 @@ QUnit.module('placement engine', function () {
     assert.strictEqual(r.res.startStageId, r.s.stages[0].id);
   });
 
-  QUnit.test('knows everything: all 90 passed, nothing to start', function (assert) {
+  QUnit.test('knows everything: every stage passed, nothing to start', function (assert) {
     var r = run(function () { return true; });
     assert.strictEqual(r.res.passedStageIds.length, N);
     assert.strictEqual(r.res.startStageId, null);
@@ -38,7 +38,7 @@ QUnit.module('placement engine', function () {
   });
 
   QUnit.test('knows the first K stages: boundary lands exactly after K', function (assert) {
-    [1, 7, 23, 44, 71, 89].forEach(function (k) {
+    [1, 7, 23, 44, 71, 89, 90, 130, 176].forEach(function (k) {
       var r = run(function (n) { return n <= k; }, k);
       assert.strictEqual(r.res.passedStageIds.length, k, 'K=' + k);
       assert.strictEqual(r.res.startStageId, r.s.stages[k].id, 'start after ' + k);

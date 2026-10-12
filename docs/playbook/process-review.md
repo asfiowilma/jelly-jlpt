@@ -43,3 +43,13 @@ Tests passing proved nothing about quality: in N5 round 1, seven reviewer report
 - The walk JSON must carry what the newbie judges: `lessonText` (page text with the lesson dialogue opened), `again: true` on the missed-question retry (the UI tags it "Again · not scored"), and `mock.parts` / `mock.resultsShown` for mock units. Without these, round 5's first newbies judged lessons from quiz text only and filed the retry as a duplicate-question bug.
 - Jargon findings recur every round when fixed note by note. Fix them once in code: the "Terms on this page" box (`GRAMMAR_TERMS`, `pageTerms` in `lib.js`) gives a plain line for each grammar term a page uses. Add a row when a note starts using a new term; examples stay in kana, since the box shows on kana stages too.
 - Agent files in `.claude/agents/` list Claude Code tool names (`Read`, `Bash`, ...) before the Copilot names, or Claude Code refuses to spawn them. Agent definitions load at session start: after editing one, spawn `general-purpose` told to read the file until the next session.
+
+## `[N4 r3-r5]` Cheap fix loops
+
+- Fix small findings inline in the orchestrator when each is a few lines; spawn a fixer only for a batch that needs real reading. N4 r3-r5 (11 majors) needed no fixer agent.
+- Unmerged fixer worktrees that went stale: port them with `git -C <wt> diff | git apply -3` onto main instead of rebasing each branch. Then delete the worktrees.
+- Dev loop: `TEST_ONLY=prep-guide,mocks,...` runs a few test files in seconds. Run the full suite once per commit batch, and make several commits in one shell command: the pre-commit hook then runs one suite, not one per commit.
+- Reuse the reviewers' scratch scripts (`review/<lvl>/r<n>/exam/*.js`, with a seeded `load.js`) to check a fix before the next round, instead of writing new probes.
+- Persona at a later level: the N4 newbie has finished the N5 course in the app (`docs/review/levels/n4.md`). Say so in the level config, or the newbie flags every N5 word as untaught.
+- Reviewers re-flag by-design residue every round (generated 文脈規定 noun two-fits, note-decided lesson gaps). Decide once, record it in `docs/review/known-open.md` with the reason, and the next round stops counting it.
+- Tool-generated distractors cannot guarantee one fit without the English note. Gate the prep-drill pools by point family (`PREP_GAP_SKIP_N4`) and by key part of speech; plan authored single-fit drill items for N3.

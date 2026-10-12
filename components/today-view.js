@@ -93,7 +93,7 @@ function TodayView(props) {
         .concat(props.reviewedToday ? [tdPlural(props.reviewedToday, '{n} card reviewed', '{n} cards reviewed')] : [])
         .concat(streak ? ['🔥 ' + tdPlural(streak, '{n} day', '{n} days')] : []) };
   } else if (plan.levelEnd) {
-    hero = { eyebrow: props.level + ' complete', title: "You've finished every " + props.level + ' stage.', lead: 'Take a mock exam or keep your reviews going. N4 is on its way.',
+    hero = { eyebrow: props.level + ' complete', title: "You've finished every " + props.level + ' stage.', lead: 'Take a mock exam or keep your reviews going. More levels are on the way.',
       cta: 'Take a mock exam', onCta: props.onMock };
   } else if (nowStep.kind === 'review') {
     var n = nowStep.due;

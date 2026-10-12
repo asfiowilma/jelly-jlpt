@@ -11,7 +11,7 @@
 
 // READY: false keeps N4 out of the app (Overview "Coming soon", placement, Today) while the
 // level is built; tests still see the plan. Set true (and rerun author-plan.js) to ship N4.
-const READY = false;
+const READY = true;
 
 // [title, grammar id(s) or '', vocab tokens, fixed kanji?]
 const LESSONS = [
@@ -109,7 +109,7 @@ const LESSONS = [
   ["It is said that…", "g:to-iwarete-iru", "建てる 社会 文化 世界 戦争 政治 経済 法律"],
   // 14. keigo and casual endings
   ["Welcome, sir", "g:sonkeigo-verbs", "いらっしゃる おっしゃる なさる 召し上がる おいでになる ごらんになる くださる ご存じ"],
-  ["The teacher has gone home", "g:o-ni-naru", "様 お嬢さん 御主人 お子さん 祖父 祖母 亡くなる"],
+  ["Medicine for the family", "g:o-ni-naru", "様 お嬢さん 御主人 お子さん 祖父 祖母 亡くなる"],
   ["Please take a seat", "g:o-kudasai", "席 ご 利用 知らせる 電報 スクリーン"],
   ["Let me carry that", "g:o-suru", "送る かまう ひきだす 取り替える 時代 西洋"],
   ["Calling a company", "g:itasu", "致す 参る 申す 申し上げる 差し上げる 拝見 うかがう"],
@@ -207,7 +207,7 @@ const DIALOGUES = {
   "As many as that?": "l:n4-dlg-five-houses",
   "It is said that…": "l:n4-dlg-old-temple",
   "Welcome, sir": "l:n4-dlg-early-guest",
-  "The teacher has gone home": "l:n4-dlg-pharmacy-counter",
+  "Medicine for the family": "l:n4-dlg-pharmacy-counter",
   "Please take a seat": "l:n4-dlg-cinema-seat",
   "Let me carry that": "l:n4-dlg-western-book",
   "Calling a company": "l:n4-dlg-job-call",

@@ -1,8 +1,8 @@
 # jelly-jlpt
 
-A free Japanese course for the JLPT that runs entirely in your browser. It starts from zero with hiragana and katakana and takes you through everything on the N5 list. No install, no account, no server.
+A free Japanese course for the JLPT that runs entirely in your browser. It starts from zero with hiragana and katakana and takes you through everything on the N5 and N4 lists. No install, no account, no server.
 
-**N5 is the only level built so far.** N4, N3, N2 and N1 show as "Coming soon" and will be added one level at a time. There are no dates for them yet.
+**N5 and N4 are built.** N3, N2 and N1 show as "Coming soon" and will be added one level at a time. There are no dates for them yet.
 
 Live site: [asfiowilma.github.io/jelly-jlpt](https://asfiowilma.github.io/jelly-jlpt)
 
@@ -22,13 +22,34 @@ There is also a half-length **diagnostic test** you can take at any time from th
 
 What the units cover:
 
-- **Vocabulary**: every word on the community N5 list (767 of 767 entries), taught as 747 entries. Some list entries are alternative spellings of the same word, and those are taught together.
+- **Vocabulary**: every word on the community N5 list (767 of 767 entries), taught as 749 catalog entries. Some list entries are alternative spellings of the same word, and those are taught together.
 - **Kanji**: all 79 kanji on the N5 list, with readings, meanings and stroke order.
 - **Grammar**: 67 grammar points, including all 40 on the Tanos N5 list. The rest are N5 points confirmed by a second source.
-- **Example sentences**: 224 sentences. 168 come from [Tatoeba](https://tatoeba.org) with their sentence ids and authors kept; 56 were written for this project.
+- **Example sentences**: 322 sentences. 168 come from [Tatoeba](https://tatoeba.org) with their sentence ids and authors kept; the rest were written for this project.
 - **Reading**: 36 short passages in the three N5 reading formats (short texts, mid-length texts, information search).
 - **Listening**: 75 listening questions in the four N5 formats, voiced with pre-rendered AI clips (Qwen3-TTS). If a clip can't play, your browser's own Japanese voice reads the rest.
 - **Exam-style questions**: the quizzes use the N5 question types (kanji reading, spelling, words in context, paraphrase, grammar gaps, sentence ordering, text grammar).
+
+## What N4 includes
+
+N4 is a list of 109 units, open from the start like N5. It carries on from the end of N5.
+
+| Unit type | Count | What it is |
+|---|---|---|
+| Lesson | 87 | About 8 words, 2 kanji and 1 grammar point each, with example sentences and a short dialogue |
+| Review | 15 | A timed mini-mock over the units since the last review, with reading passages and listening |
+| Test prep | 5 | Exam prep and timed drills for each section of the test |
+| Mock exam | 2 | Full-length N4 mocks in the official format and timing (25 / 55 / 35 minutes) |
+
+There is also an N4 half-length diagnostic test.
+
+- **Vocabulary**: every word on the community N4 list (678 of 678 entries), taught as 687 catalog entries.
+- **Kanji**: 166 kanji, with readings, meanings and stroke order.
+- **Grammar**: 96 grammar points, including 50 from the Tanos N4 list; the rest are confirmed by a second source.
+- **Example sentences**: 420 sentences. 270 come from Tatoeba with their ids and authors kept; the rest were written for this project.
+- **Reading**: 38 short passages in the N4 reading formats.
+- **Listening**: 90 exam-style listening questions plus a dialogue for each of the 87 lessons. N5 is voiced with pre-rendered AI clips; N4 uses your browser's Japanese voice until its clips are rendered.
+- **Exam-style questions**: 38 question sets in the N4 question types.
 
 The level lists come from Tanos (via elzup/jlpt-word-list). The JLPT has published no official vocabulary, kanji or grammar list since 2010, so treat the lists as a guide to what the test asks, not a promise.
 
@@ -45,7 +66,7 @@ The level lists come from Tanos (via elzup/jlpt-word-list). The JLPT has publish
 
 If you add your JLPT exam date, the app tells you whether your pace finishes at least a week before the exam and suggests a pace if it doesn't.
 
-**Pass the quiz to finish a unit.** Each unit ends with a quiz. Kana units need 85% on reading and 80% on meanings; everything else needs 80%. Questions you miss come back later in the same quiz. Some answers are typed rather than picked, so you have to recall them. Lessons and kana units have no timer. Reviews and test-prep drills are timed at real N5 pacing.
+**Pass the quiz to finish a unit.** Each unit ends with a quiz. Kana units need 85% on reading and 80% on meanings; everything else needs 80%. Questions you miss come back later in the same quiz. Some answers are typed rather than picked, so you have to recall them. Lessons and kana units have no timer. Reviews and test-prep drills are timed at the real pacing for the level.
 
 **Review with spaced repetition.** Every kana, word, kanji and grammar point you finish becomes a flashcard in the Review tab, scheduled with SM-2 (the algorithm Anki started from). New cards are capped to what your pace introduces each day, so studying ahead doesn't flood your reviews.
 
@@ -57,7 +78,7 @@ If you add your JLPT exam date, the app tells you whether your pace finishes at 
 
 A known item skips the new-card queue and comes back once, 3 to 4 weeks later, as a real test. Get it wrong and it goes back into normal review.
 
-**Take the mocks.** The two full mocks and the diagnostic are fixed tests: the same questions in the same order each time. At the end you get an **estimated** score out of 180 checked against the real N5 pass rules (80 total, at least 38 in language knowledge and reading, at least 19 in listening), a breakdown per question type, and an explanation for every miss.
+**Take the mocks.** The two full mocks and the diagnostic are fixed tests: the same questions in the same order each time. At the end you get an **estimated** score out of 180 checked against the real pass rules (N5: 80 total; N4: 90 total; both need at least 38 in language knowledge and reading and at least 19 in listening), a breakdown per question type, and an explanation for every miss.
 
 ## Limits
 
@@ -174,10 +195,16 @@ Icons are rendered once from `icons/icon.svg` with `node tools/build-icons.js` (
 
 | Source | Used for | License |
 |---|---|---|
-| [Tanos](https://www.tanos.co.uk/jlpt/) (Jonathan Waller) | N5 vocabulary, kanji and grammar lists | [CC BY](https://creativecommons.org/licenses/by/) |
+| [Tanos](https://www.tanos.co.uk/jlpt/) (Jonathan Waller) | N5 and N4 vocabulary, kanji and grammar lists | [CC BY](https://creativecommons.org/licenses/by/) |
 | [elzup/jlpt-word-list](https://github.com/elzup/jlpt-word-list) (Jamie Sinclair and elzup) | CSV copy of the Tanos word lists | [MIT](https://github.com/elzup/jlpt-word-list/blob/master/LICENSE) |
 | [Tatoeba](https://tatoeba.org) | example sentences and translations; every sentence keeps its id and author, listed in Settings under Sentence credits | [CC BY 2.0 FR](https://creativecommons.org/licenses/by/2.0/fr/) |
 | [EDRDG](https://www.edrdg.org/) (JMdict, KANJIDIC) | checking readings, meanings and stroke counts while writing the course; no files ship | [CC BY-SA 4.0](https://www.edrdg.org/edrdg/licence.html) |
+| [Bunpro](https://bunpro.jp/) | grammar points cross-checked against it; link only, no text copied | link only |
+| [japanesetest4you](https://japanesetest4you.com/) | grammar points cross-checked against it; link only, no text copied | link only |
+| [St. Olaf Genki grammar index](https://wp.stolaf.edu/japanese/grammar-index/genki-i-ii-grammar-index/) | grammar points cross-checked against it; link only, no text copied | link only |
+| [Tae Kim, Guide to Japanese](https://guidetojapanese.org/learn/) | grammar points cross-checked against it; link only, no text copied | link only |
+| [JLPT Sensei](https://jlptsensei.com/) | grammar points cross-checked against it; link only, no text copied | link only |
+| [Wiktionary](https://en.wiktionary.org/) | cross-checking kanji stroke counts and readings; no text ships | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
 | [KanjiVG](https://kanjivg.tagaini.net/) (Ulrich Apel) | stroke-order diagrams in `kanji-svg/`, bundled into `kanji-svg/strokes.js` | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) |
 | [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) (Alibaba Qwen team) | the model that rendered the listening clips in `audio/` | [Apache 2.0](https://github.com/QwenLM/Qwen3-TTS/blob/main/LICENSE) |
 | [Kenney](https://kenney.nl/assets) Music Jingles and Interface Sounds | sound effects in `sfx/` (see `sfx/LICENSE-kenney.txt`) | [CC0](https://creativecommons.org/publicdomain/zero/1.0/) |

@@ -438,7 +438,7 @@ if (!process.env.TEST_ONLY) {
       DiagnosticPanel({ onStart: noop });
       DiagnosticPanel({ onStart: noop, level: "N4" });
       a.equal(diagnosticMockId("N5"), "x:n5-mock-3");
-      a.equal(diagnosticMockId("N4"), CATALOG.items["x:n4-mock-3"] ? "x:n4-mock-3" : "x:n5-mock-3", "N4 diagnostic, or N5's until N4 mocks ship");
+      a.equal(diagnosticMockId("N4"), "x:n4-mock-3", "N4 diagnostic");
     } catch (e) { a.ok(false, e.message); }
   });
 
@@ -491,11 +491,11 @@ if (!process.env.TEST_ONLY) {
 
   test("achievements: groupAchievements counts, orders categories, keeps hidden", function (a) {
     var g = groupAchievements(ACHIEVEMENTS, { "first-steps": 1700000000000, comeback: 1700000001000 });
-    a.equal(g.total, 64); a.equal(g.earned, 2);
+    a.equal(g.total, 88); a.equal(g.earned, 2); // 64 N5 + 24 N4
     a.deepEqual(g.groups.map(function (x) { return x.category; }), ["progress", "habit", "quiz", "mock", "review", "mastery"]);
-    a.equal(g.groups.reduce(function (n, x) { return n + x.total; }, 0), 64);
+    a.equal(g.groups.reduce(function (n, x) { return n + x.total; }, 0), 88);
     a.equal(g.groups[0].earned, 1);
-    a.equal(ACHIEVEMENTS.filter(function (d) { return d.hidden; }).length, 7);
+    a.equal(ACHIEVEMENTS.filter(function (d) { return d.hidden; }).length, 9);
     a.ok(ACHIEVEMENTS.filter(function (d) { return d.hidden; }).every(function (d) { return d.revealed; }), "hidden rows carry revealed text");
   });
 

@@ -6,7 +6,7 @@
 // wrong feedback. Nothing is written until the result is confirmed (props.onApply); leaving saves
 // nothing. A retake (some stages already done) only searches the stages after the furthest done one.
 
-var PLACEMENT_ABOUT = 17; // "Question n of about 17": 7 probes x 2 + 3 spot-checks
+var PLACEMENT_ABOUT = 19; // "Question n of about 19": 8 probes x 2 + 3 spot-checks
 
 // PlacementQuestion: one question, same markup/classes as the quiz layer, answered with Next or
 // "I don't know". Remounted per question (key), so its pick / typed text start empty.

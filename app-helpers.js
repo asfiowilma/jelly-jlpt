@@ -300,7 +300,7 @@ var UI_STRINGS = {
   // Welcome + placement test (ticket 39). JA = PLACEHOLDER drafts, need a native review before release.
   src_placement:     { en: 'Placement test', ja: 'レベル診断' },
   wl_title:          { en: 'Learn Japanese for the JLPT', ja: 'JLPTのための日本語' },
-  wl_sub:            { en: 'N5 comes first. Every stage is open, so you can start anywhere.', ja: 'まずはN5から。どのステージからでも始められます。' },
+  wl_sub:            { en: 'Start with N5, or find your level. N5 and N4 are ready.', ja: 'N5から始めても、自分のレベルを調べてもOK。N5とN4が使えます。' },
   wl_fact_1:         { en: 'Nothing is locked. Open any stage, in any order.', ja: 'ロックはありません。好きな順番で学べます。' },
   wl_fact_2:         { en: 'Each stage ends in a short quiz. Pass it to complete the stage.', ja: '各ステージの最後に短いクイズがあります。合格するとステージ完了です。' },
   wl_fact_3:         { en: 'What you learn comes back as a few review cards each day.', ja: '学んだことは、毎日少しずつ復習カードで戻ってきます。' },
@@ -324,7 +324,7 @@ var UI_STRINGS = {
   wl_close:          { en: 'Close', ja: '閉じる' },
   pt_title:          { en: 'Placement test', ja: 'レベル診断' },
   pt_intro_title:    { en: 'Find your starting point', ja: '開始地点を見つける' },
-  pt_intro_sub:      { en: 'About 14 questions, then a few quick double-checks. You will not see right or wrong answers during the test.', ja: '約14問と、いくつかの確認問題です。テスト中は正解・不正解は表示されません。' },
+  pt_intro_sub:      { en: 'About 19 questions, then a few quick double-checks. You will not see right or wrong answers during the test.', ja: '約19問と、いくつかの確認問題です。テスト中は正解・不正解は表示されません。' },
   pt_intro_1:        { en: 'Not sure? Tap "I don’t know". That is a fine answer.', ja: '分からないときは「分からない」を押してください。' },
   pt_intro_2:        { en: 'Stages before your start are marked complete. Their words come back as review cards, so a lucky guess gets caught later.', ja: '開始地点より前のステージは完了になり、単語は復習カードとして戻ります。' },
   pt_intro_3:        { en: 'Nothing is saved until you confirm the result. Leave any time.', ja: '結果を確定するまで何も保存されません。いつでも中断できます。' },

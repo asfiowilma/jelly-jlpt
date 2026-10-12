@@ -149,7 +149,7 @@ CATALOG.add([
       {"m":"gap","f":"あの[店|みせ]はやすい（　）、[料理|りょうり]もおいしいです。","o":["ても","ので","ば","し"],"a":3,"en":"That restaurant is cheap, and the food is good too.","explain":"Adding one good point to another: 〜し … も. ので would make cheapness the reason for good food; ば and ても do not join the plain form やすい (やすければ, やすくても)."},
       {"m":"gap","f":"[田中|たなか]さんは[今日|きょう][来|く]る（　）です。きのう、そう[言|い]っていましたから。","o":["ため","よてい","ほど","まま"],"a":1,"en":"Mr. Tanaka is due to come today. He said so yesterday.","explain":"A plan someone told you about: 〜よていです. ため / まま / ほど do not make a sentence ending here."},
       {"m":"gap","f":"[弟|おとうと]はいつもわたしのおもちゃをほし（　）います。","o":["そうに","くて","がって","たがって"],"a":2,"en":"My younger brother always wants my toys.","explain":"Someone else's wish: ほしい → ほしがっている. たがる goes on a verb stem, not on ほしい, and そうに / くて cannot come before います."},
-      {"m":"gap","f":"[日本語|にほんご]の[本|ほん]が[読|よ]める（　）なりたいです。","o":["ように","ことに","ために","そうに"],"a":0,"en":"I want to become able to read books in Japanese.","explain":"A change in ability: potential + ようになる. ために / ことに / そうに do not combine with なりたい like this."},
+      {"m":"gap","f":"ゆうべ、おかしを[食|た]べ（　）、おなかがいたいです。","o":["すぎて","そうで","たがって","やすくて"],"a":0,"en":"I ate too many sweets last night, so my stomach hurts.","explain":"Too much: ます-stem + すぎる, here すぎて (the て-form gives the reason). そうで is a guess from looks, たがって is someone else's wish, and やすくて (easy to eat) does not explain the pain."},
       {"m":"gap","f":"ドアにかぎがかけて（　）。","o":["おきます","います","あります","しまいます"],"a":2,"en":"The door is locked.","explain":"A state someone left on purpose, with が: 〜てある. ている / ておく / てしまう need かぎを."},
       {"m":"gap","f":"ひるごはんを[食|た]べた（　）で、すこしやすみます。","o":["まえ","あと","ながら","から"],"a":1,"en":"After lunch I will rest a little.","explain":"After doing: た-form + あとで. まえ needs the dictionary form, and ながら / から cannot come before で."},
       {"m":"gap","f":"この[道|みち]をまっすぐ[行|い]く（　）、[右|みぎ]に[銀行|ぎんこう]があります。","o":["ので","のに","ても","と"],"a":3,"en":"If you go straight along this road, there is a bank on the right.","explain":"A sure result of an action, as in directions: dictionary form + と. ので / のに / ても do not give directions."},
@@ -206,7 +206,7 @@ CATALOG.add([
       {"m":"listening","l":"l:n4-please-have-cake"}
       ]
     },
-    uses: ["v:電車|でんしゃ","v:先生|せんせい","v:試験|しけん","v:毎朝|まいあさ","v:大学|だいがく","v:料理|りょうり","v:今日|きょう","v:ドア|ドア","v:銀行|ぎんこう","v:ケーキ|ケーキ","k:電","k:車","k:先","k:生","k:試","k:験","k:飲","k:早","k:道","k:駅","k:人","k:大","k:足","k:毎","k:朝","k:兄","k:学","k:雨","k:店","k:料","k:理","k:田","k:中","k:今","k:日","k:来","k:言","k:弟","k:本","k:語","k:読","k:食","k:行","k:右","k:銀","k:何","k:山","k:水","k:三","k:年"], names: ["山田|やまだ","田中|たなか","日本|にほん","日本語|にほんご"],
+    uses: ["v:電車|でんしゃ","v:先生|せんせい","v:試験|しけん","v:毎朝|まいあさ","v:大学|だいがく","v:料理|りょうり","v:今日|きょう","v:ドア|ドア","v:銀行|ぎんこう","v:ケーキ|ケーキ","k:電","k:車","k:先","k:生","k:試","k:験","k:飲","k:早","k:道","k:駅","k:人","k:大","k:足","k:毎","k:朝","k:兄","k:学","k:雨","k:店","k:料","k:理","k:田","k:中","k:今","k:日","k:来","k:言","k:弟","k:本","k:食","k:行","k:右","k:銀","k:何","k:山","k:水","k:三","k:年"], names: ["山田|やまだ","田中|たなか","日本|にほん","日本語|にほんご"],
     sources: ['own'], verified: false },
   { id: "x:n4-mock-3", kind: 'mock', level: 'N4', format: "diagnostic", title: "N4 diagnostic test",
     sections: {
