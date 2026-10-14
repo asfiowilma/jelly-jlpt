@@ -49,6 +49,8 @@ const root = path.resolve(__dirname, "..");
 const LEVEL = (process.argv[2] || "N5").toUpperCase(), lvl = LEVEL.toLowerCase();
 const { HIRAGANA, KATAKANA, LESSONS, LESSON_NOTES, DIALOGUES, GUIDES, PREP, READY } = require("./plan-" + lvl + ".js");
 const LEVELS_ORDER = ["N5", "N4", "N3", "N2", "N1"];
+// The app numbers stages across levels, so review titles count the lower levels' stages too.
+const STAGE_OFFSET = LEVELS_ORDER.slice(0, LEVELS_ORDER.indexOf(LEVEL)).reduce(function (n, l) { const f = path.join(__dirname, "..", "data", l.toLowerCase(), "plan.js"); return n + (fs.existsSync(f) ? (fs.readFileSync(f, "utf8").match(/{"id":"/g) || []).length : 0); }, 0);
 // a lesson row's grammar: one id, or two space-separated (close siblings / a short form)
 const grammarIds = function (l) { return (l[1] || "").split(" ").filter(Boolean); };
 const load = function (rel) { vm.runInThisContext(fs.readFileSync(path.join(root, rel), "utf8"), { filename: rel }); };
@@ -219,7 +221,7 @@ LESSONS.forEach(function (l, n) {
   sinceReview.push(u);
   if (sinceReview.length === 6 || n === LESSONS.length - 1) {
     const a = units.indexOf(sinceReview[0]) + 1, b = units.length;
-    const review = { id: uid(), level: LEVEL, kind: "review", title: "Review: units " + a + "–" + b };
+    const review = { id: uid(), level: LEVEL, kind: "review", title: "Review: stages " + (a + STAGE_OFFSET) + "–" + (b + STAGE_OFFSET) };
     const p = pickPassage();
     if (p) review.passages = [p.id];
     const l = pickListening();

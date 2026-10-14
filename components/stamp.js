@@ -194,6 +194,12 @@ function stampSVG(s, uid) {
 }
 
 // Stamp({ id, category, rarity, level, earned, hidden, name }) -> <span> holding the SVG.
+// Earned stamps carry the rarity class, the ink vars and two glint marks the sheen CSS animates (styles.css).
 function Stamp(props) {
-  return React.createElement('span', { className: 'stamp-wrap', dangerouslySetInnerHTML: { __html: stampSVG(props, props.uid) } });
+  var ink = stampInks(props.id, props.category, props.level);
+  return React.createElement('span', {
+    className: 'stamp-wrap' + (props.earned ? ' r-' + props.rarity : ''),
+    style: { '--ink': ink[0], '--ink2': ink[1] },
+    dangerouslySetInnerHTML: { __html: stampSVG(props, props.uid) + (props.earned ? '<i class="gl"></i><i class="gl"></i>' : '') }
+  });
 }

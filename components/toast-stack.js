@@ -51,6 +51,9 @@ function ToastStack(props) {
     });
     if (batch.more) kids.push(React.createElement('button', { key: 'more', className: 'toast toast-more' + (leaving ? ' toast-out' : ''), style: { '--i': batch.toasts.length }, onClick: props.onMore }, '+' + batch.more + ' more'));
   }
+  // one dismiss for the whole batch, as the last row so it always sits under the toasts
+  if (kids.length && !leaving) kids.push(React.createElement('div', { key: 'x', className: 'toast-x-row' },
+    React.createElement('button', { className: 'toast-x', type: 'button', onClick: props.onDone }, 'Dismiss all')));
   return React.createElement('div', {
     className: 'toast-stack', role: 'status', 'aria-live': 'polite',
     onMouseEnter: function () { setPaused(true); }, onMouseLeave: function () { setPaused(false); },

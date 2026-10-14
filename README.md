@@ -8,19 +8,19 @@ Live site: [asfiowilma.github.io/jelly-jlpt](https://asfiowilma.github.io/jelly-
 
 ## What N5 includes
 
-The course is a list of 112 **units**. Every unit is open from the start, so you can skip ahead or go back at any time.
+The course is a list of 112 **stages**. Every stage is open from the start, so you can skip ahead or go back at any time.
 
-| Unit type | Count | What it is |
+| Stage type | Count | What it is |
 |---|---|---|
 | Kana | 16 | Hiragana and katakana from scratch, with stroke order and short reading drills |
 | Lesson | 74 | About 8 words, 2 kanji and 1 grammar point each, with example sentences |
-| Review | 15 | A timed mini-mock over the units since the last review, with reading passages and listening |
+| Review | 15 | A timed mini-mock over the stages since the last review, with reading passages and listening |
 | Test prep | 5 | Exam prep and timed drills for each section of the test |
 | Mock exam | 2 | Full-length N5 mocks in the official format and timing |
 
-There is also a half-length **diagnostic test** you can take at any time from the Units tab.
+There is also a half-length **diagnostic test** you can take at any time from the Stages tab.
 
-What the units cover:
+What the stages cover:
 
 - **Vocabulary**: every word on the community N5 list (767 of 767 entries), taught as 749 catalog entries. Some list entries are alternative spellings of the same word, and those are taught together.
 - **Kanji**: all 79 kanji on the N5 list, with readings, meanings and stroke order.
@@ -32,12 +32,12 @@ What the units cover:
 
 ## What N4 includes
 
-N4 is a list of 109 units, open from the start like N5. It carries on from the end of N5.
+N4 is a list of 109 stages, open from the start like N5. It carries on from the end of N5.
 
-| Unit type | Count | What it is |
+| Stage type | Count | What it is |
 |---|---|---|
 | Lesson | 87 | About 8 words, 2 kanji and 1 grammar point each, with example sentences and a short dialogue |
-| Review | 15 | A timed mini-mock over the units since the last review, with reading passages and listening |
+| Review | 15 | A timed mini-mock over the stages since the last review, with reading passages and listening |
 | Test prep | 5 | Exam prep and timed drills for each section of the test |
 | Mock exam | 2 | Full-length N4 mocks in the official format and timing (25 / 55 / 35 minutes) |
 
@@ -48,16 +48,18 @@ There is also an N4 half-length diagnostic test.
 - **Grammar**: 96 grammar points, including 50 from the Tanos N4 list; the rest are confirmed by a second source.
 - **Example sentences**: 420 sentences. 270 come from Tatoeba with their ids and authors kept; the rest were written for this project.
 - **Reading**: 38 short passages in the N4 reading formats.
-- **Listening**: 90 exam-style listening questions plus a dialogue for each of the 87 lessons. N5 is voiced with pre-rendered AI clips; N4 uses your browser's Japanese voice until its clips are rendered.
+- **Listening**: 90 exam-style listening questions plus a dialogue for each of the 87 lessons. every N5 and N4 listening item is voiced with pre-rendered AI clips.
 - **Exam-style questions**: 38 question sets in the N4 question types.
 
 The level lists come from Tanos (via elzup/jlpt-word-list). The JLPT has published no official vocabulary, kanji or grammar list since 2010, so treat the lists as a guide to what the test asks, not a promise.
 
 ## How it works
 
-**Pick a pace.** In Settings you choose how many units a day you want to study. The pace only sets your daily target and the projected finish date. Nothing is locked behind it.
+**Not sure where to start?** On the Welcome screen, "Find my starting point" runs a short placement test across N5 and N4 and marks the stages before your start as complete.
 
-| Pace | Units |
+**Pick a pace.** In Settings you choose how many stages a day you want to study. The pace only sets your daily target and the projected finish date. Nothing is locked behind it.
+
+| Pace | Stages |
 |---|---|
 | Casual | 1 every 2 days |
 | Standard | 1 a day |
@@ -66,7 +68,7 @@ The level lists come from Tanos (via elzup/jlpt-word-list). The JLPT has publish
 
 If you add your JLPT exam date, the app tells you whether your pace finishes at least a week before the exam and suggests a pace if it doesn't.
 
-**Pass the quiz to finish a unit.** Each unit ends with a quiz. Kana units need 85% on reading and 80% on meanings; everything else needs 80%. Questions you miss come back later in the same quiz. Some answers are typed rather than picked, so you have to recall them. Lessons and kana units have no timer. Reviews and test-prep drills are timed at the real pacing for the level.
+**Pass the quiz to finish a stage.** Each stage ends with a quiz. Kana stages need 85% on reading and 80% on meanings; everything else needs 80%. Questions you miss come back later in the same quiz. Some answers are typed rather than picked, so you have to recall them. Lessons and kana stages have no timer. Reviews and test-prep drills are timed at the real pacing for the level.
 
 **Review with spaced repetition.** Every kana, word, kanji and grammar point you finish becomes a flashcard in the Review tab, scheduled with SM-2 (the algorithm Anki started from). New cards are capped to what your pace introduces each day, so studying ahead doesn't flood your reviews.
 
@@ -132,13 +134,13 @@ headers = accept, authorization, content-type, origin, referer
 
 In Fauxton that's **Configuration → CORS**; in Cloudant, **Account → CORS**.
 
-**5. Connect.** Open Settings (gear icon), then Sync. Paste the full database URL (`https://HOST/jelly`), the username and password, and press **Connect**. The app checks it can read and write the database first and tells you what's wrong if not. If both sides already had progress, they're merged: finished units and settings by latest change, flashcards by latest review. A dot on the gear shows the sync status.
+**5. Connect.** Open Settings (gear icon), then Sync. Paste the full database URL (`https://HOST/jelly`), the username and password, and press **Connect**. The app checks it can read and write the database first and tells you what's wrong if not. If both sides already had progress, they're merged: finished stages and settings by latest change, flashcards by latest review. A dot on the gear shows the sync status.
 
 **Remember on this device.** Off by default, so you sign in again each browser session. Turned on, the URL, username and password are saved **in plain text** in this browser's localStorage. Anyone with access to the device or browser profile can read them, and every GitHub Pages site under the same `USERNAME.github.io` shares that storage, so any other project published there could read it. That's why the user above should only be able to reach this one database.
 
 **Disconnect** stops syncing and keeps everything on the device. It never deletes anything on the server.
 
-**Importing a backup while sync is on:** finished units and settings from the file win, but flashcards still follow the most recent review, so a backup can't roll back reviews you did later on another device. Anything not in the file is deleted, and that deletion syncs too.
+**Importing a backup while sync is on:** finished stages and settings from the file win, but flashcards still follow the most recent review, so a backup can't roll back reviews you did later on another device. Anything not in the file is deleted, and that deletion syncs too.
 
 ## Run it locally
 
@@ -209,11 +211,12 @@ Icons are rendered once from `icons/icon.svg` with `node tools/build-icons.js` (
 | [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) (Alibaba Qwen team) | the model that rendered the listening clips in `audio/` | [Apache 2.0](https://github.com/QwenLM/Qwen3-TTS/blob/main/LICENSE) |
 | [Kenney](https://kenney.nl/assets) Music Jingles and Interface Sounds | sound effects in `sfx/` (see `sfx/LICENSE-kenney.txt`) | [CC0](https://creativecommons.org/publicdomain/zero/1.0/) |
 | [DiceBear](https://www.dicebear.com/) identicon | achievement stamp icons (`data/stamp-icons.js`) | [CC0](https://creativecommons.org/publicdomain/zero/1.0/) |
+| Ko-fi and Trakteer logos | linking to the tip pages; trademarks of each service | link only |
 | [React and ReactDOM](https://react.dev/) 18.2.0 | UI, vendored in `vendor/` | MIT (`vendor/LICENSE-react.txt`) |
 | [PouchDB](https://pouchdb.com/) 9.0.0 | local storage and sync, vendored in `vendor/` | Apache 2.0 (`vendor/LICENSE-pouchdb.txt`) |
 | [alanfwilliams/jlpt](https://github.com/alanfwilliams/jlpt) | the original project this one was forked from | MIT (stated in its README) |
 
-The same list is in the app under Settings, followed by the per-sentence Tatoeba credits. Glosses, notes, grammar explanations, reading passages, listening scripts and exam questions are written for this project. No JMdict or KANJIDIC data ships with the app.
+Dialog characters are fan-style cameos, not affiliated with their creators or publishers. The same list is in the app under Settings, followed by the per-sentence Tatoeba credits. Glosses, notes, grammar explanations, reading passages, listening scripts and exam questions are written for this project. No JMdict or KANJIDIC data ships with the app.
 
 jelly-jlpt began as a fork of alanfwilliams/jlpt. The course content and most of the app have since been rebuilt, and the project no longer tracks upstream.
 

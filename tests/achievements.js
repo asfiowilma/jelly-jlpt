@@ -30,7 +30,7 @@ QUnit.module('achievements', function () {
     return id.indexOf(l + '-') === 0 && (TEMPLATE.indexOf(t) >= 0 || (lv === 'N4' && N4_EXTRAS.indexOf(t) >= 0));
   };
   // N4 stand-in: the N5 plan relabelled (every template row) plus lessons teaching the N4 grammar the
-  // extras name, and three N4 mocks (the real N4 plan has no mocks or prep yet, so it can't reach every row).
+  // extras name, and three N4 mocks (the real N4 plan now has prep and mocks; the stand-in stays for controlled fixtures).
   var G = function (ids) { return ids.map(function (id) { return CATALOG.items[id]; }); };
   var N4U = UNITS_.map(function (u) { return Object.assign({}, u, { id: u.id.replace('n5.', 'n4.'), level: 'N4' }); }).concat([
     { id: 'n4.k1', level: 'N4', kind: 'lesson', grammar: G(['g:sonkeigo-verbs', 'g:o-ni-naru', 'g:o-kudasai']) },

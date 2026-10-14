@@ -43,7 +43,7 @@ Do not read review reports, STATE.md, or other levels' plans except the one name
 2. Edit `tools/plan-<level>.js` per the brief. Keep the file header comment short and current.
 3. Run `node tools/author-plan.js <LEVEL>`.
 4. Run the coverage check and the plan tests: `CLAUDE_PROJECT_DIR=$(pwd) node .claude/hooks/run-tests.js` inside the worktree.
-5. Stale audio clips: run the suite with `AUDIO_STALE_OK=1` as the level-author agent says, and list the stale clips in the return message. Never remove the flag.
+5. Stale audio clips: run the suite as the level-author agent says, and list any stale clips in the return message.
 6. Commit once in the worktree on branch `author-<level>-outline`. Gitmoji subject, imperative, one emoji, no scope. No co-author line.
 
 ## Stop and report (do not guess)

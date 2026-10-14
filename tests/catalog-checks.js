@@ -75,7 +75,7 @@ QUnit.module('catalog checks', function () {
     if (!nonEmptyStrings(it.sources)) err('no sources');
     if (typeof it.verified !== 'boolean') err('verified not boolean');
     // Learner text where the kanji is often the point (引く / 弾く): every kanji carries [漢字|かな] ruby, since the
-    // tip shows before any quiz (N5 r1 newbie N5). N5 only until N4 ships its notes. A vocab notes field is authoring-only.
+    // tip shows before any quiz (N5 r1 newbie N5). A vocab notes field is authoring-only.
     // usage too, and N4 since its vocab usage / tip and grammar notes / formation got ruby (N4 r1 vocab T2, grammar T10).
     if (it.level === 'N5' || it.level === 'N4') ({ vocab: ['tip', 'usage'], grammar: ['notes', 'formation'] }[it.kind] || []).forEach(function (f) {
       var bare = typeof it[f] === 'string' && it[f].replace(/\[([^|\]]+)\|([^\]]+)\]/g, '').match(/[一-鿿㐀-䶿々]/g);

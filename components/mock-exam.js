@@ -173,7 +173,7 @@ function MockExam(props) {
   var stepsEl = function (ph) {
     var m = mockSteps(sections, ph, sec);
     return ce(React.Fragment, null,
-      ce("div", { className: "ms" },
+      ce("div", { className: "ms-steps" },
         ce("div", { className: "section-label" }, m.label),
         m.steps.map(function (st) {
           var s = sections[st.n - 1];

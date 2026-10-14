@@ -54,9 +54,9 @@ Do not read `docs/review/**`. Do not open official PDFs or workbooks. Work from 
 3. Author the content in the brief's order. Keep each change to the named ids and files.
 4. Run the validator the skill or brief names (for example `validate.js`). Zero errors required.
 5. Run the rebuild tool the brief names. Then `node tools/build-sw.js` if a shipped file changed.
-6. Run the named tests from the worktree, once at the end: `AUDIO_STALE_OK=1 CLAUDE_PROJECT_DIR=$(pwd) node .claude/hooks/run-tests.js > .scratch/<level>-launch/tests-author-<level>-<type>.log 2>&1` (about 8 min). Rerun once if it dies with no output. Audio-check warnings are fine.
+6. Run the named tests from the worktree, once at the end: `CLAUDE_PROJECT_DIR=$(pwd) node .claude/hooks/run-tests.js > .scratch/<level>-launch/tests-author-<level>-<type>.log 2>&1` (about 8 min). Rerun once if it dies with no output. Audio-check warnings are fine.
 7. Fix failures in your files. Retry once. Then stop.
-8. Commit once on your branch: `<gitmoji> <Imperative subject>`. One emoji, no scopes, brackets, or colons. Body only if the why is unclear. Never a Co-Authored-By line. Set `CLAUDE_PROJECT_DIR=$(pwd)` and `AUDIO_STALE_OK=1` in the env for `git commit` so the hook tests the worktree.
+8. Commit once on your branch: `<gitmoji> <Imperative subject>`. One emoji, no scopes, brackets, or colons. Body only if the why is unclear. Never a Co-Authored-By line. Set `CLAUDE_PROJECT_DIR=$(pwd)` in the env for `git commit` so the hook tests the worktree.
 
 ## Stop (do not retry more than once)
 
@@ -68,7 +68,7 @@ Do not read `docs/review/**`. Do not open official PDFs or workbooks. Work from 
 
 ## Does not
 
-Merge, push, force-push, `reset --hard`, delete branches or worktrees, use `--no-verify`, touch main or other worktrees, spawn sub-agents, edit other content types, hand-edit generated files, or remove `AUDIO_STALE_OK`.
+Merge, push, force-push, `reset --hard`, delete branches or worktrees, use `--no-verify`, touch main or other worktrees, spawn sub-agents, edit other content types, hand-edit generated files.
 
 ## Output (final message, caveman)
 

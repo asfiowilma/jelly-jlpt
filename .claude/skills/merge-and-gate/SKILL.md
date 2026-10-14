@@ -17,7 +17,7 @@ Input: branch name `<branch>`. Worktree: `.claude/worktrees/<branch>`. Repo root
    - Any other conflict: stop. Run `git rebase --abort`. Report the conflicting files. The caller re-runs on sonnet.
 3. Rebuild sw. Run `node tools/build-sw.js` in the worktree. If `sw.js` changed, commit it on the branch as its own commit (`🔧 Rebuild sw.js`).
 4. Gate. Run the full suite on the rebased tip, in the worktree, in the foreground:
-   `AUDIO_STALE_OK=1 CLAUDE_PROJECT_DIR=$(pwd) node .claude/hooks/run-tests.js > .scratch/n4-launch/tests-<branch>-gate.log 2>&1`
+   `CLAUDE_PROJECT_DIR=$(pwd) node .claude/hooks/run-tests.js > .scratch/n4-launch/tests-<branch>-gate.log 2>&1`
    - Takes about 8 min. Wait for the `Tests:` line. Read only that line and the failures.
    - Any failure: stop, do not merge. Report failing test names and the log path.
    - Empty output or the run died: rerun once.
@@ -38,8 +38,7 @@ Input: branch name `<branch>`. Worktree: `.claude/worktrees/<branch>`. Repo root
 - Never use `git reset --hard`, `git clean`, `git branch -D`, or `git worktree remove --force`.
 - Never delete the branch before the ff merge is confirmed.
 - No Co-Authored-By line in any commit.
-- Set `CLAUDE_PROJECT_DIR=$(pwd)` and `AUDIO_STALE_OK=1` in the env for any commit in the worktree. Without it the pre-commit hook tests main.
+- Set `CLAUDE_PROJECT_DIR=$(pwd)` in the env for any commit in the worktree. Without it the pre-commit hook tests main.
 - Run commits in the foreground. Commits from background commands skip the Claude PreToolUse hook.
 - Do not touch other worktrees.
 - Do not start a second merge while a suite is running on main.
-- Do not remove the `AUDIO_STALE_OK` flag. The owner removes it after the audio render.

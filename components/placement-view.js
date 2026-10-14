@@ -168,7 +168,7 @@ function PlacementFlow(props) {
   var sub = pos >= stages.length ? L('pt_res_all_sub') : pos === 0 ? L('pt_res_zero_sub') : L('pt_res_sub');
   var apply = function (opts) { props.onApply(trimmed, startUnit, opts); };
   var stat = function (num, label) { return h("div", { className: "pl-stat" }, h("b", null, num), h("span", null, label)); };
-  var legend = [['marked', 'pt_lg_marked'], ['start', 'pt_lg_start'], ['todo', 'pt_lg_todo']].concat(plan.skippedIds.length ? [['hole', 'pt_lg_hole']] : []).concat(retake ? [['done', 'pt_lg_done']] : []);
+  var legend = [['marked', 'pt_lg_marked']].concat(startUnit ? [['start', 'pt_lg_start']] : [], [['todo', 'pt_lg_todo']]).concat(plan.skippedIds.length ? [['hole', 'pt_lg_hole']] : []).concat(retake ? [['done', 'pt_lg_done']] : []);
   return layer(top(),
     h("div", { key: "m", className: "qz-main" }, h("div", { className: "qz-col wide pl-col" },
       h("h1", { className: "pl-h1" }, title),

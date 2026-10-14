@@ -64,6 +64,19 @@ QUnit.module('pace', function () {
     assert.ok(paceTodayLine(0.5, 0, 'N5').indexOf('0 / 1') !== -1);
   });
 
+  QUnit.test('PacePanel projects the next unfinished level once the current one is done', function (assert) {
+    if (typeof PacePanel !== 'function') { assert.ok(true, 'components not loaded'); return; }
+    var units = buildUnits(PLAN, CATALOG), first = units[0].level;
+    var next = units.filter(function (u) { return u.level !== first; })[0];
+    if (!next) { assert.ok(true, 'single level'); return; }
+    var done = new Set(units.filter(function (u) { return u.level === first; }).map(function (u) { return u.id; }));
+    var orig = React.createElement, seen = [];
+    React.createElement = function () { seen.push([].slice.call(arguments).join('|')); return {}; };
+    try { PacePanel({ units: units, completed: done, level: first, pace: 2, doneToday: 0, examDate: null }); } finally { React.createElement = orig; }
+    var line = seen.filter(function (x) { return x.indexOf('| |' + next.level + '|: |') !== -1; });
+    assert.ok(line.length, 'finish clause names ' + next.level + ', not ' + first);
+  });
+
   QUnit.test('PACE_MODES: casual 0.5 / standard 1 / intensive 2 / super 3', function (assert) {
     assert.deepEqual(PACE_MODES.map(function (m) { return m.pace; }), [0.5, 1, 2, 3]);
   });

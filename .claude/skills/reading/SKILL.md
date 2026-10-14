@@ -52,7 +52,7 @@ Do not read review reports, `STATE.md`, `known-issues.md`, official PDFs, or oth
 8. `furigana` is the source; `jp` is derived. Write the kana reading so TTS speaks it right: は as particle stays は, `[は|わ]` ruby only where the clip needs it.
 9. Original text only. Never copy jlpt.jp, JLPT Sensei or NHK text, skeletons or audio. `sources: ['own']`, `verified` only when every `uses` item is verified and the checks pass; otherwise `verified: false` with the reason in `notes`.
 10. Ids are stable. No reuse or renumber.
-11. Do not set or remove `AUDIO_STALE_OK` for new items. A new item with no manifest track is skipped. A changed transcript of a shipped item goes in the rerender notes (id, line, why).
+11. A new item with no manifest track is skipped (the suite fails until its clip is rendered). A changed transcript of a shipped item goes in the rerender notes (id, line, why).
 
 ## Steps
 
@@ -62,7 +62,7 @@ Do not read review reports, `STATE.md`, `known-issues.md`, official PDFs, or oth
 4. Add assignment entries for each new listening item.
 5. Run `tests/catalog-checks.js`, `tests/listening.js`, `tests/teaching-order.js`, `tests/quiz-leaks.js`. Zero errors before handing in.
 6. Write `notes.md`: item table (id, format, set, genre, detail, verified), key counts per format and set, UNSURE items.
-7. In the worktree run `CLAUDE_PROJECT_DIR=$(pwd) AUDIO_STALE_OK=1 node .claude/hooks/run-tests.js` (the level-author agent file sets the exact command).
+7. In the worktree run `CLAUDE_PROJECT_DIR=$(pwd) node .claude/hooks/run-tests.js` (the level-author agent file sets the exact command).
 8. Commit once on branch `author-<level>-reading`. Gitmoji subject, imperative, one emoji, no scope, no brackets, no colon. No co-author line.
 
 ## Stop and report (do not guess)

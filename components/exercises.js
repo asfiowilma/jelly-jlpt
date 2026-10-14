@@ -191,7 +191,7 @@ function Exercises(_ref9) {
         h("p", { className: "note" }, passed ? "A retake uses new questions. Your stage stays complete."
           : timed ? "Like the real test: unanswered questions count as wrong when time runs out." : "Opens full screen. Esc leaves.")),
       h("button", { className: "qz-cta" + (passed ? " quiet" : "") + " quiz-start-btn", onClick: function () { launch(exs); } },
-        !passed && icon('play'), passed ? "Retake quiz" : t('start_quiz', lv)));
+        !passed && icon('play'), unit.kind === 'review' ? (passed ? "Retake review" : "Start review") : passed ? "Retake quiz" : t('start_quiz', lv)));
   }
 
   // advance(wasRight): record the answer and queue a re-ask of a miss. The learner moves on with Continue.

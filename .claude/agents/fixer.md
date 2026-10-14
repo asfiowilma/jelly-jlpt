@@ -50,7 +50,7 @@ Model: haiku by default. The orchestrator spawns this agent on sonnet when the b
 6. If the batch says rerender, run the named tool and append lines to `.scratch/n4-launch/rerender.md` under the level section.
 7. Run the batch "Tests" files first, then the full suite once. Run in the foreground (about 8 min). From the worktree in PowerShell:
    ```
-   $env:CLAUDE_PROJECT_DIR = (Get-Location).Path; $env:AUDIO_STALE_OK = '1'
+   $env:CLAUDE_PROJECT_DIR = (Get-Location).Path
    node .claude/hooks/run-tests.js *> ..\..\..\.scratch\n4-launch\tests-<branch>.log
    ```
    Adjust the log path to `.scratch/n4-launch/` from the repo root. Wait for the `Tests:` line. Audio-check warnings are not failures. Empty output or a dead run: rerun once.
@@ -60,7 +60,7 @@ Model: haiku by default. The orchestrator spawns this agent on sonnet when the b
    - Subject: `<gitmoji> <Imperative subject>`. One emoji, no scope, no brackets, no colon.
    - Body: when the batch covers several findings, one line per id: `- <id>: <what changed>`. Body only when the why is unclear otherwise.
    - Never a Co-Authored-By line.
-   - Set `CLAUDE_PROJECT_DIR` and `AUDIO_STALE_OK` in the same shell (as in step 7) so the pre-commit hook tests the worktree, not main.
+   - Set `CLAUDE_PROJECT_DIR` in the same shell (as in step 7) so the pre-commit hook tests the worktree, not main.
    - Run commit in the foreground. Never in the background.
 
 WIP commits on the branch are allowed during work. The squash in step 8 leaves one commit.
@@ -78,7 +78,7 @@ Stop and report (retry at most once) when:
 ## Does not
 
 - Merge, push, force-push, `reset --hard`, `git clean`, delete branches or worktrees.
-- Use `--no-verify`. Remove `AUDIO_STALE_OK`.
+- Use `--no-verify`.
 - Touch other worktrees or main.
 - Spawn sub-agents.
 - Edit `STATE.md`, `known-issues.md`, review reports, or `sw.js` and generated data by hand.

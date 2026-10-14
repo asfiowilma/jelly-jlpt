@@ -249,6 +249,12 @@ if (!process.env.TEST_ONLY) {
     a.ok(true);
   });
 
+  // The Overview milestone segment `.ms` has a ::before hit area that ate clicks on the mock Start button.
+  test("MockExam steps wrapper does not reuse the Overview .ms class", function (a) {
+    var src = fs.readFileSync(path.join(projectDir, "components/mock-exam.js"), "utf8");
+    a.notOk(/className:\s*"ms"/.test(src), "no bare ms class in mock-exam.js");
+  });
+
   test("React render: KanjiSection() renders every kanji unit in rows and focus layouts", function (a) {
     var withKanji = units.filter(function (u) { return u.kanji.length > 0; });
     a.ok(withKanji.length > 0, "units with kanji exist");
@@ -399,6 +405,49 @@ if (!process.env.TEST_ONLY) {
     a.equal(vocabHasReading(by("部屋")), true, "部屋 has a reading to test");
     a.equal(vocabHasReading(by("ある")), false, "kana-only ある does not");
     a.equal(vocabHasReading(by("ドア")), false, "katakana ドア does not");
+  });
+
+  test("vocab sheet: steps through the list in order and wraps; usage and tip are optional and hidden while covered", function (a) {
+    var list = [{ id: "a" }, { id: "b" }, { id: "c" }];
+    a.equal(vocabStep(list, "a", 1).id, "b", "next");
+    a.equal(vocabStep(list, "a", -1).id, "c", "prev wraps to the end");
+    a.equal(vocabStep(list, "c", 1).id, "a", "next wraps to the start");
+    a.deepEqual(vocabDetail({}, false), { usage: null, tip: null }, "no blocks when the word has neither");
+    var v = { usage: "[席|せき]が[空|あ]く、[手|て]が[空|あ]く", tip: "t" };
+    a.deepEqual(vocabDetail(v, false), { usage: ["[席|せき]が[空|あ]く", "[手|て]が[空|あ]く"], tip: "t" }, "usage splits into phrases");
+    a.deepEqual(vocabDetail(v, true), { usage: null, tip: null }, "covered meaning hides both");
+    a.deepEqual(vocabDetail({ tip: "t" }, false), { usage: null, tip: "t" }, "tip alone");
+  });
+
+  test("React render: VocabSection() opens the sheet from a row, a covered row reveals instead, the sheet follows the shuffled order", function (a) {
+    var u = units.filter(function (x) { return x.id === "n5.u044"; })[0];
+    var orig = { useState: React.useState, useRef: React.useRef, createElement: React.createElement };
+    var state = [], k = 0, refs = [], r = 0, els = [];
+    React.useState = function (init) { var i = k++; if (!(i in state)) state[i] = typeof init === "function" ? init() : init; return [state[i], function (v) { state[i] = typeof v === "function" ? v(state[i]) : v; }]; };
+    React.useRef = function (init) { var i = r++; if (!(i in refs)) refs[i] = { current: init === undefined ? null : init }; return refs[i]; };
+    React.createElement = function (type, props) { var el = { type: type, props: props || {}, children: [].slice.call(arguments, 2) }; els.push(el); return el; };
+    var render = function () { k = 0; r = 0; els = []; VocabSection({ unit: u }); };
+    var cls = function (re) { return els.filter(function (el) { return re.test(el.props.className || ""); }); };
+    var sheet = function () { return els.filter(function (el) { return el.type === VocabSheet; })[0]; };
+    try {
+      render();
+      a.equal(cls(/vl-row/).length, u.vocab.length, "one row per word");
+      a.ok(!sheet(), "no sheet at first");
+      cls(/vl-main/)[1].props.onClick(); render();
+      a.ok(sheet() && sheet().props.index === 1, "tapping the second row opens its sheet");
+      sheet().props.onStep(1); render();
+      a.equal(sheet().props.index, 2, "next moves one word on");
+      sheet().props.onClose(); render();
+      a.ok(!sheet(), "close drops the sheet");
+      state[0] = true; render(); // Practice: meanings covered
+      cls(/vl-main/)[0].props.onClick(); render();
+      a.ok(!sheet(), "a covered row does not open the sheet");
+      a.ok(state[1][u.vocab[0].id + ":m"], "its main tap revealed the meaning");
+      cls(/vl-main/)[0].props.onClick(); render();
+      a.ok(sheet() && sheet().props.index === 0, "once revealed the row opens the sheet");
+    } finally {
+      React.useState = orig.useState; React.useRef = orig.useRef; React.createElement = orig.createElement;
+    }
   });
 
   test("React render: KanaSection() renders every kana unit in rows and focus layouts", function (a) {

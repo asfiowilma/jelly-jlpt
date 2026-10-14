@@ -26,6 +26,17 @@ QUnit.module('buildExercises (N3+ types)', {
     for (var i = 0; i < (runs || 20); i++) buildExercises(u).forEach(function (e) { seen[e.type] = true; });
     return seen;
   }
+  // mulberry32 seeded Math.random: the type picks are random, so an unseeded run can miss a type
+  function withSeed(seed, fn) {
+    var rnd = Math.random, s = seed;
+    Math.random = function () {
+      s = (s + 0x6D2B79F5) | 0;
+      var t = Math.imul(s ^ (s >>> 15), 1 | s);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    try { return fn(); } finally { Math.random = rnd; }
+  }
   var VERBS = [v('上げる', 'あげる', 'to raise', 'verb-ichidan'), v('下げる', 'さげる', 'to lower', 'verb-ichidan'),
     v('始める', 'はじめる', 'to begin', 'verb-ichidan'), v('集める', 'あつめる', 'to gather', 'verb-ichidan')];
 
@@ -62,13 +73,15 @@ QUnit.module('buildExercises (N3+ types)', {
     // index 1 → ない-form. かえる without pos guesses ichidan; pos godan → かえらない.
     var u = unit('N3', 1, { vocab: [v('かえる', 'かえる', 'to return', 'verb-godan'), v('難しい', 'むずかしい', 'difficult', 'adj-i')] });
     var n = 0;
-    for (var i = 0; i < 10; i++) {
-      buildExercises(u).filter(function (e) { return e.type === 'conjugation'; }).forEach(function (c) {
-        n++;
-        assert.strictEqual(c.question, 'かえる');
-        assert.deepEqual(c.answers, ['かえらない']);
-      });
-    }
+    withSeed(1, function () {
+      for (var i = 0; i < 10; i++) {
+        buildExercises(u).filter(function (e) { return e.type === 'conjugation'; }).forEach(function (c) {
+          n++;
+          assert.strictEqual(c.question, 'かえる');
+          assert.deepEqual(c.answers, ['かえらない']);
+        });
+      }
+    });
     assert.ok(n > 0, 'conjugation generated');
   });
 

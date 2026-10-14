@@ -73,12 +73,13 @@ QUnit.module('exam-format questions (mondai)', function () {
     assert.ok(exs.length > 30, exs.length + ' questions');
     exs.forEach(function (ex) {
       var v = CATALOG.items[ex.word], u = underlined(ex), real =catalogOf('vocab').filter(function (x) { return x.reading === v.reading; }).map(function (x) { return x.word; });
-      if (u.length !== 1 || u[0].t !== v.reading) return assert.ok(false, v.id + ' underline ' + JSON.stringify(u));
+      var kata = !hasKanji(v.word); // katakana word: underlined in hiragana, options in katakana
+      if (u.length !== 1 || u[0].t !== (kata ? kataToHira(v.reading) : v.reading)) return assert.ok(false, v.id + ' underline ' + JSON.stringify(u));
       if (text(ex.parts).indexOf(v.word) >= 0) assert.ok(false, v.id + ' sentence gives the spelling away');
       if (ex.options[ex.correct] !== v.word || new Set(ex.options).size !== 4) assert.ok(false, v.id + ' options ' + ex.options);
       ex.options.forEach(function (o, i) {
         if (i !== ex.correct && real.indexOf(o) >= 0) assert.ok(false, v.id + ' distractor ' + o + ' is a real spelling');
-        if (!hasKanji(o)) assert.ok(false, v.id + ' option without kanji ' + o);
+        if (kata ? !/^[ァ-ヶー]+$/.test(o) : !hasKanji(o)) assert.ok(false, v.id + ' option in the wrong script ' + o);
       });
       Array.from(v.word).forEach(function (ch) { if (hasKanji(ch) && !ex.ctx.taughtKanji[ch]) assert.ok(false, v.id + ' kanji ' + ch + ' not taught'); });
       ex.options.forEach(function (o) {
@@ -94,6 +95,7 @@ QUnit.module('exam-format questions (mondai)', function () {
       return ok[ex.correct] && ok.filter(Boolean).length === 1;
     }).length;
     assert.ok(tell / exs.length <= 0.3, 'answer the only all-taught option ' + tell + '/' + exs.length);
+    assert.ok(exs.some(function (ex) { return !hasKanji(CATALOG.items[ex.word].word); }), 'a katakana word is asked as 表記');
   });
 
   QUnit.test('文脈規定 (bunmyaku): catalog sentence with the word blanked, same-POS options, one sense fits', function (assert) {

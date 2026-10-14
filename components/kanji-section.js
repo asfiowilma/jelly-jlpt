@@ -59,8 +59,8 @@ function kanjiReading(r, extra) {
 function KanjiSection(props) {
   var unit = props.unit,
     lv = unit.level,
-    view = props.kanjiView === 'focus' ? 'focus' : 'rows',
     kanji = unit.kanji;
+  var view = props.kanjiView === 'focus' ? 'focus' : 'rows';
   var _sel = React.useState(0), sel = _sel[0], setSel = _sel[1];
   var _seen = React.useState({ 0: true }), seen = _seen[0], setSeen = _seen[1];
   var _open = React.useState({}), open = _open[0], setOpen = _open[1]; // rows: stroke order shown per kanji id
@@ -87,7 +87,7 @@ function KanjiSection(props) {
   var words = function (k) {
     var ws = wordsOf(k);
     return ws.length > 0 && React.createElement("div", { className: "kj-words" },
-      React.createElement("div", { className: "kj-sub" }, t('kanji_words', lv)),
+      React.createElement("div", { className: "kj-sub" }, props.review ? 'Words you learned with it' : t('kanji_words', lv)),
       React.createElement("div", { className: "kj-word-list" }, ws.map(function (v) {
         return React.createElement("div", { key: v.id, className: "kj-word" }, React.createElement("span", { className: "kj-word-jp" }, v.word.split(k.char).map(function (part, i, a) {
           return React.createElement(React.Fragment, { key: i }, part, i < a.length - 1 && React.createElement("mark", null, k.char));
@@ -96,8 +96,48 @@ function KanjiSection(props) {
   };
   var strokes = function (k) { return k.strokes + " " + t(k.strokes === 1 ? 'kanji_stroke' : 'kanji_strokes', lv); }; // 一: "1 stroke"
 
+  // one kanji's row: glyph + stroke count at the side; meaning, readings, words and stroke order beside
+  var kjRow = function (k) {
+    var shown = !!open[k.id];
+    return React.createElement("div", { key: k.id, className: "kj-row" },
+      React.createElement("div", { className: "kj-side" },
+        React.createElement("div", { className: "kj-big" }, k.char,
+          React.createElement("button", { className: "speak-btn speak-btn-char", onClick: function () { speak(readingSpeech((k.kun && k.kun[0]) || (k.on && k.on[0]) || k.char)); }, 'aria-label': "Listen to " + k.char }, "🔊")),
+        React.createElement("div", { className: "kj-count" }, strokes(k))),
+      React.createElement("div", null, meaning(k), readings(k), words(k),
+        React.createElement("button", {
+          className: "vocab-btn kj-stroke-btn" + (shown ? " active" : ""), 'aria-expanded': shown,
+          onClick: function () { setOpen(function (p) { return Object.assign({}, p, { [k.id]: !p[k.id] }); }); }
+        }, shown ? t('kanji_strokes_hide', lv) : t('kanji_strokes_show', lv)),
+        shown && React.createElement(StrokeOrder, { ch: k.char })));
+  };
+  // review units: every kanji as a tile (glyph + one-word meaning), the selected one in full below.
+  // Arrow keys move the selection and focus without scrolling the page.
+  var gridRef = React.useRef(null), tileRefs = React.useRef({});
+  var onGridKey = function (e) {
+    var cols = gridRef.current ? getComputedStyle(gridRef.current).gridTemplateColumns.split(' ').length : 1;
+    var d = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: cols, ArrowUp: -cols }[e.key];
+    if (!d) return;
+    e.preventDefault();
+    var j = sel + d;
+    if (j < 0 || j >= kanji.length) return;
+    look(j);
+    if (tileRefs.current[j]) tileRefs.current[j].focus({ preventScroll: true });
+  };
+
   var body;
-  if (view === 'focus') {
+  if (props.review) {
+    var cur = kanji[Math.min(sel, kanji.length - 1)];
+    body = React.createElement(React.Fragment, null,
+      React.createElement("div", { className: "kg-grid", role: "group", 'aria-label': t('section_kanji', lv), ref: gridRef, onKeyDown: onGridKey },
+        kanji.map(function (x, i) {
+          return React.createElement("button", {
+            key: x.id, type: "button", className: "kg-tile", 'aria-pressed': i === sel, tabIndex: i === sel ? 0 : -1,
+            ref: function (el) { tileRefs.current[i] = el; }, onClick: function () { look(i); }
+          }, React.createElement("span", { className: "kg-glyph jp" }, x.char), React.createElement("small", null, firstMeaning(x)));
+        })),
+      React.createElement("div", { className: "kg-detail" }, kjRow(cur)));
+  } else if (view === 'focus') {
     var k = kanji[Math.min(sel, kanji.length - 1)];
     body = React.createElement(React.Fragment, null,
       React.createElement("div", { className: "kj-chips", role: "tablist" }, kanji.map(function (x, i) {
@@ -116,20 +156,7 @@ function KanjiSection(props) {
         React.createElement("span", null, Object.keys(seen).length + " / " + kanji.length + " " + t('kanji_looked', lv)),
         sel < kanji.length - 1 && React.createElement("button", { className: "vocab-btn", onClick: function () { look(sel + 1); } }, t('kanji_next', lv))));
   } else {
-    body = kanji.map(function (k) {
-      var shown = !!open[k.id];
-      return React.createElement("div", { key: k.id, className: "kj-row" },
-        React.createElement("div", { className: "kj-side" },
-          React.createElement("div", { className: "kj-big" }, k.char,
-            React.createElement("button", { className: "speak-btn speak-btn-char", onClick: function () { speak(readingSpeech((k.kun && k.kun[0]) || (k.on && k.on[0]) || k.char)); }, 'aria-label': "Listen to " + k.char }, "🔊")),
-          React.createElement("div", { className: "kj-count" }, strokes(k))),
-        React.createElement("div", null, meaning(k), readings(k), words(k),
-          React.createElement("button", {
-            className: "vocab-btn kj-stroke-btn" + (shown ? " active" : ""), 'aria-expanded': shown,
-            onClick: function () { setOpen(function (p) { return Object.assign({}, p, { [k.id]: !p[k.id] }); }); }
-          }, shown ? t('kanji_strokes_hide', lv) : t('kanji_strokes_show', lv)),
-          shown && React.createElement(StrokeOrder, { ch: k.char })));
-    });
+    body = kanji.map(kjRow);
   }
   return React.createElement("div", { className: "section" },
     charSectionHead({
@@ -139,7 +166,7 @@ function KanjiSection(props) {
         React.createElement("p", { key: "k" }, React.createElement("span", { className: "kj-tag kun" }, "kun"), " ", t('kanji_info_kun', lv)),
         React.createElement("p", { key: "o" }, React.createElement("span", { className: "kj-tag on" }, "on"), " ", t('kanji_info_on', lv)),
         React.createElement("p", { key: "e" }, t('kanji_info_extra', lv))],
-      right: kanji.length > 1 && React.createElement("button", {
+      right: kanji.length > 1 && !props.review && React.createElement("button", {
         className: "vocab-btn kj-toggle", onClick: function () { props.setKanjiView(view === 'focus' ? 'rows' : 'focus'); }
       }, view === 'focus' ? t('kanji_view_rows', lv) : t('kanji_view_focus', lv))
     }),

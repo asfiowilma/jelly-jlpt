@@ -115,7 +115,7 @@ Optional: section 5 tunes a new or changed character (as v4 section 4); section 
 finished clips are skipped (each clip is written to a temp file and renamed, so none is half-written). Only the clip in flight is lost.
 
 **How long:** Qwen3-TTS 1.7B on a T4 (fp16) takes roughly 3-6 s per short clip, plus about 5 minutes of install and model download per
-session. The N4 launch (about 1,380 clips: 509 N4 exam, 862 N4 dialogue, 6 N5) is about 1.5-3 hours of rendering. That fits one
+session. The N4 launch render (about 1,380 clips: 509 N4 exam, 862 N4 dialogue, 6 N5) was planned at about 1.5-3 hours of rendering, which fits one
 session on Colab Pro, and usually one on the free tier too, but free GPU time is not guaranteed (a session can be cut after a few
 hours, or a GPU refused for a while): the resume covers that. The Render cell prints the measured seconds per clip; use it for the
 next estimate. Memory: the voice-design and preset models are loaded only to make references and freed before the render, which

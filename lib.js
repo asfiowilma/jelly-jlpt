@@ -108,6 +108,7 @@ function validatePlan(plan, catalog) {
 // A review unit gets the items of every kana/lesson unit since the previous
 // review. Call validatePlan first.
 function buildUnits(plan, catalog) {
+  var idOf = function (it) { return it.id; };
   var out = [];
   var since = [];
   plan.slice().sort(function (a, b) { return levelRank(a.level) - levelRank(b.level); }).forEach(function (lp) {
@@ -118,6 +119,10 @@ function buildUnits(plan, catalog) {
           r[f] = [].concat.apply([], since.map(function (x) { return x[f]; }));
         });
         r.practice = [];
+        // the stages this review recaps, in order, each with the ids it taught (reviewSourceGroups)
+        r.sources = since.map(function (x) {
+          return { unitId: x.id, index: x.index, title: x.title, vocab: x.vocab.map(idOf), grammar: x.grammar.map(idOf) };
+        });
         since = [];
       } else {
         Object.keys(UNIT_REF_FIELDS).forEach(function (f) {
@@ -152,6 +157,73 @@ function levelRamp(units, current) {
     s.fill = Math.max(0, Math.min(s.len, current - s.start + 1)) / s.len * 100;
   });
   return { segments: segments, here: units.length ? (current + 0.5) / units.length * 100 : 0 };
+}
+
+// buildChapters: the Stages tab's chapters, level by level. Lessons run up to and including each
+// review; all prep and mock units of a level form one closing chapter. Numbers are the global
+// stage numbers (index + 1). ponytail: assumes a chapter's units are contiguous (plans are).
+function buildChapters(units) {
+  var out = [], cur = null, closing = {}, count = {};
+  units.forEach(function (u) {
+    var c, lv = u.level.toLowerCase();
+    if (u.kind === 'prep' || u.kind === 'mock') {
+      c = closing[u.level] = closing[u.level] || { id: lv + '.cx', level: u.level, name: 'Exam prep & mocks', final: true, units: [] };
+      if (c.units.length === 0) out.push(c);
+    } else {
+      if (!cur || cur.level !== u.level) {
+        count[u.level] = (count[u.level] || 0) + 1;
+        out.push(cur = { id: lv + '.c' + count[u.level], level: u.level, name: 'Chapter ' + count[u.level], final: false, units: [] });
+      }
+      c = cur;
+      if (u.kind === 'review') cur = null;
+    }
+    c.units.push(u);
+  });
+  out.forEach(function (c) {
+    c.first = c.units[0].index + 1; c.last = c.units[c.units.length - 1].index + 1;
+    c.range = c.first === c.last ? 'Stage ' + c.first : 'Stages ' + c.first + '–' + c.last;
+    c.topics = c.units.filter(function (u) { return u.kind !== 'review'; }).slice(0, 3)
+      .map(function (u) { return u.title.replace(/^(Hiragana|Katakana): /, ''); }).join(' · ');
+  });
+  return out;
+}
+
+// buildStageIndex / searchStages: the Stages tab search. The index lists each unit's own taught
+// vocab, kanji and grammar (a review repeats earlier ones, so it gets none); lowercased once.
+function buildStageIndex(units) {
+  return units.map(function (u) {
+    var own = u.kind !== 'review';
+    var words = own ? (u.vocab || []).map(function (v) {
+      var m = (v.gloss || []).join(', ');
+      return { w: v.word, r: v.reading, m: m, s: (v.word + ' ' + v.reading + ' ' + m).toLowerCase() };
+    }) : [];
+    var grammar = own ? (u.grammar || []).map(function (g) { return { p: g.pattern, s: (g.pattern + ' ' + g.meaning).toLowerCase() }; }) : [];
+    return { u: u, title: u.title.toLowerCase(), level: u.level.toLowerCase(), kind: u.kind, words: words, kanji: own ? (u.kanji || []).map(function (k) { return k.char; }) : [], grammar: grammar };
+  });
+}
+// searchStages: every query term (space separated) must hit the stage number, level, kind, title,
+// a vocab word / reading / meaning, a kanji or a grammar pattern / meaning. null = empty query.
+// Returns [{ unit, score, hits: [{ kind: 'word'|'kanji'|'grammar', text, term }] }], best first.
+function searchStages(index, query) {
+  var terms = String(query).toLowerCase().trim().split(/\s+/).filter(Boolean);
+  if (!terms.length) return null;
+  var out = [];
+  index.forEach(function (e) {
+    var hits = [], score = 0;
+    var ok = terms.every(function (t) {
+      if (/^#?\d+$/.test(t)) { if (e.u.index + 1 !== +t.replace('#', '')) return false; score += 100; return true; } // a bare number is a stage number only
+      if (t === e.level || (t.length > 2 && e.kind.indexOf(t) === 0)) return true;
+      if (e.title.indexOf(t) >= 0) { score += 10; return true; }
+      var w = e.words.filter(function (x) { return x.s.indexOf(t) >= 0; })[0];
+      if (w) { hits.push({ kind: 'word', term: t, text: w.w + (w.r !== w.w ? ' ' + w.r : '') + ' · ' + w.m.split(', ')[0] }); score += 4; return true; }
+      if (e.kanji.indexOf(t) >= 0) { hits.push({ kind: 'kanji', term: t, text: t }); score += 4; return true; }
+      var g = e.grammar.filter(function (x) { return x.s.indexOf(t) >= 0; })[0];
+      if (g) { hits.push({ kind: 'grammar', term: t, text: g.p }); score += 6; return true; }
+      return false;
+    });
+    if (ok) out.push({ unit: e.u, hits: hits, score: score });
+  });
+  return out.sort(function (a, b) { return b.score - a.score || a.unit.index - b.unit.index; });
 }
 
 // furiganaOn: the furigana pref ('true'/'false' string, or null when unset).
@@ -229,6 +301,41 @@ function passMarkText(unit) {
 // Catalog item → display strings
 function glossText(v) { return v.gloss.join(' / '); }
 
+// reviewTabs(unit): the recap tabs of a review unit, in order, empty groups dropped.
+// Non-review units get none (they keep the single-page layout). tabs[0] is the default.
+function reviewTabs(unit) {
+  if (unit.kind !== 'review') return [];
+  return [['kana', 'Kana', unit.kana], ['words', 'Words', unit.vocab], ['kanji', 'Kanji', unit.kanji], ['grammar', 'Grammar', unit.grammar]]
+    .filter(function (x) { return x[2] && x[2].length > 0; })
+    .map(function (x) { return { id: x[0], label: x[1], n: x[2].length }; });
+}
+
+// reviewSourceGroups(unit, field): [{ source, items }] for a review's vocab / grammar, one group per
+// source stage in stage order, empty ones dropped. An item sits in the first stage that taught it,
+// so every item of the review is in exactly one group.
+function reviewSourceGroups(unit, field) {
+  var byId = {}, seen = {};
+  (unit[field] || []).forEach(function (it) { byId[it.id] = it; });
+  return (unit.sources || []).map(function (s) {
+    var items = (s[field] || []).filter(function (id) { return byId[id] && !seen[id] && (seen[id] = true); }).map(function (id) { return byId[id]; });
+    return { source: s, items: items };
+  }).filter(function (g) { return g.items.length > 0; });
+}
+// firstMeaning(k): a kanji's one-word meaning for a grid tile: the first meaning, cut at the first separator.
+function firstMeaning(k) {
+  var m = Array.isArray(k.meaning) ? k.meaning[0] : k.meaning;
+  return String(m || '').split(/\s*[·;,\/]\s*/)[0];
+}
+// Flashcard deck of the review Words tab: state { queue: [id], missed: [id], total, again }.
+// Again sends the card to the back of the queue; Know drops it. Done when the queue is empty.
+function deckStart(ids) { return { queue: ids.slice(), missed: [], total: ids.length, again: 0 }; }
+function deckAnswer(d, know) {
+  if (!d.queue.length) return d;
+  var head = d.queue[0], rest = d.queue.slice(1);
+  if (know) return { queue: rest, missed: d.missed, total: d.total, again: d.again };
+  return { queue: rest.concat(head), missed: d.missed.indexOf(head) < 0 ? d.missed.concat(head) : d.missed, total: d.total, again: d.again + 1 };
+}
+
 // noteParts(notes): a unit note → { head, body[] } for the lesson note box. head = the first
 // sentence of the first paragraph; the rest of that paragraph is split into sentences, later
 // paragraphs (prep/mock notes: one per line) stay whole. "e.g." / "i.e." / "etc." don't end a sentence.
@@ -265,10 +372,19 @@ var GRAMMAR_TERMS = [
   [/volitional/i, 'volitional', 'The "let us" or "I will" form of a verb: いこう.']
 ];
 var POS_TERM = { 'adj-i': 'い-adjective', 'adj-na': 'な-adjective' };
-function pageTerms(unit) {
-  var text = (unit.grammar || []).map(function (g) { return speechText(noteIds([g.pattern, g.formation, g.notes].join(' '))); }).join(' ')
-    + ' ' + (unit.vocab || []).map(function (v) { return POS_TERM[v.pos] || v.pos || ''; }).join(' ');
+// part: 'grammar' | 'words' limits the terms to that tab's content (review tabs); omitted = both.
+function pageTerms(unit, part) {
+  var text = (part === 'words' ? '' : (unit.grammar || []).map(function (g) { return speechText(noteIds([g.pattern, g.formation, g.notes].join(' '))); }).join(' '))
+    + ' ' + (part === 'grammar' ? '' : (unit.vocab || []).map(function (v) { return POS_TERM[v.pos] || v.pos || ''; }).join(' '));
   return GRAMMAR_TERMS.filter(function (t) { return t[0].test(text); }).map(function (t) { return { label: t[1], line: t[2] }; });
+}
+// reviewFuriTabs(unit): the review tabs where the furigana toggle changes something: Grammar always,
+// Words only when a word's usage or tip carries ruby markup ([漢|かん]).
+function reviewFuriTabs(unit) {
+  var ruby = /\[[^\]|]+\|/;
+  return reviewTabs(unit).map(function (x) { return x.id; }).filter(function (id) {
+    return id === 'grammar' || (id === 'words' && (unit.vocab || []).some(function (v) { return ruby.test(v.usage || '') || ruby.test(v.tip || ''); }));
+  });
 }
 // splitTop(s, sep): s split at sep outside brackets, so "Plain form (dictionary; ない) + noun; N + の" keeps the
 // bracket whole (N4 r1 newbie N2: the BUILD list broke rows inside （…）).
@@ -1533,12 +1649,16 @@ function formsFor(item, ctx) {
     }
     return null;
   };
-  // 表記 for vocab w: only once all its kanji are taught (asked from the word or its kanji)
+  // 表記 for vocab w: only once all its kanji are taught (asked from the word or its kanji).
+  // A katakana word has no kanji: shown in hiragana, options are katakana spellings (kanaWordFakes,
+  // none a real word), as in the full mocks (official もんだい2 style).
   var hyouki = function (w) {
-    if (!hasKanji(w.word) || !allKanjiTaught(w.word, ctx.taughtKanji)) return null;
-    var d = spellingFakes(w, ctx.taughtKanji).slice(0, 3);
+    var kata = /^[ァ-ヶー]+$/.test(w.word);
+    if (!kata && (!hasKanji(w.word) || !allKanjiTaught(w.word, ctx.taughtKanji))) return null;
+    var real = catalogOf('vocab').map(function (x) { return x.word; });
+    var d = (kata ? kanaWordFakes(w.word, learnedKana(ctx.unit), 9).filter(function (f) { return real.indexOf(f) < 0; }) : spellingFakes(w, ctx.taughtKanji)).slice(0, 3);
     return d.length < 3 ? null : inSentence(w, function (s, raw, sp) {
-      var parts = spliceParts(quizFurigana(raw, ctx.taughtKanji, w.word), sp.at, sp.end, [{ t: w.reading, u: true }]);
+      var parts = spliceParts(quizFurigana(raw, ctx.taughtKanji, w.word), sp.at, sp.end, [{ t: kata ? kataToHira(w.reading) : w.reading, u: true }]);
       // the rest of the sentence must not print the word's kanji (【いく】か行かないか, N5 r2 exam T5)
       if (parts && parts.some(function (p) { return !p.u && Array.from(w.word).some(function (c) { return hasKanji(c) && p.t.indexOf(c) >= 0; }); })) return null;
       var opts = rndShuffle([w.word].concat(d));

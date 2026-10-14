@@ -1,0 +1,7 @@
+{
+ "id": "narrator",
+ "voice": "Speak slowly and clearly in a calm, neutral tone like an exam recording.",
+ "speaker": "Serena",
+ "seed": 1234,
+ "text": "おはようございます。今日は天気がいいので、駅まで歩いて行きます。"
+}

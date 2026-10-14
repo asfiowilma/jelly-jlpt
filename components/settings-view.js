@@ -172,8 +172,9 @@ function SettingsView(props) {
         ce("ul", { className: "credits" }, CREDITS.map(function (c) {
           return ce("li", { key: c.name },
             ce("a", { href: c.url, target: "_blank", rel: "noopener noreferrer" }, c.name),
-            ': ' + L(c.key) + ' (',
-            c.licenseUrl ? ce("a", { href: c.licenseUrl, target: "_blank", rel: "noopener noreferrer" }, c.license) : L(c.license), ')');
+            ': ' + L(c.key),
+            c.license ? ce(React.Fragment, null, ' (',
+              c.licenseUrl ? ce("a", { href: c.licenseUrl, target: "_blank", rel: "noopener noreferrer" }, c.license) : c.license, ')') : null);
         })),
         ce("p", { className: "credits-note" }, L("cred_cameo"))),
       ce(SentenceCredits, { L: L }),
@@ -244,14 +245,15 @@ var CREDITS = [
   { name: 'Kenney (Music Jingles, Interface Sounds)', url: 'https://kenney.nl/assets', key: 'cred_kenney', license: 'CC0', licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/' },
   { name: 'Qwen3-TTS (Alibaba Qwen team)', url: 'https://github.com/QwenLM/Qwen3-TTS', key: 'cred_qwen3tts', license: 'Apache 2.0', licenseUrl: 'https://github.com/QwenLM/Qwen3-TTS/blob/main/LICENSE' },
   { name: 'DiceBear', url: 'https://www.dicebear.com/', key: 'cred_dicebear', license: 'CC0', licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/' },
+  { name: 'Ko-fi and Trakteer logos', url: 'https://ko-fi.com/', key: 'cred_logos' },
   { name: 'React', url: 'https://react.dev/', key: 'cred_react', license: 'MIT', licenseUrl: 'vendor/LICENSE-react.txt' },
   { name: 'PouchDB', url: 'https://pouchdb.com/', key: 'cred_pouchdb', license: 'Apache 2.0', licenseUrl: 'vendor/LICENSE-pouchdb.txt' },
   // grammar points cite these in `sources`; links only, nothing copied (N5 r2 vocab T7)
-  { name: 'St. Olaf Genki grammar index', url: 'https://wp.stolaf.edu/japanese/grammar-index/genki-i-ii-grammar-index/', key: 'cred_grammar_ref', license: 'cred_link_only' },
-  { name: 'Bunpro', url: 'https://bunpro.jp/', key: 'cred_grammar_ref', license: 'cred_link_only' },
-  { name: 'JLPT Sensei', url: 'https://jlptsensei.com/', key: 'cred_grammar_ref', license: 'cred_link_only' },
-  { name: 'japanesetest4you', url: 'https://japanesetest4you.com/', key: 'cred_grammar_ref', license: 'cred_link_only' },
-  { name: 'Tae Kim, Guide to Japanese', url: 'https://guidetojapanese.org/learn/', key: 'cred_grammar_ref', license: 'cred_link_only' } // cited by N4 grammar sources (N4 r1 vocab T6)
+  { name: 'St. Olaf Genki grammar index', url: 'https://wp.stolaf.edu/japanese/grammar-index/genki-i-ii-grammar-index/', key: 'cred_grammar_ref' },
+  { name: 'Bunpro', url: 'https://bunpro.jp/', key: 'cred_grammar_ref' },
+  { name: 'JLPT Sensei', url: 'https://jlptsensei.com/', key: 'cred_grammar_ref' },
+  { name: 'japanesetest4you', url: 'https://japanesetest4you.com/', key: 'cred_grammar_ref' },
+  { name: 'Tae Kim, Guide to Japanese', url: 'https://guidetojapanese.org/learn/', key: 'cred_grammar_ref' } // cited by N4 grammar sources (N4 r1 vocab T6)
 ];
 
 // Tatoeba sentences in the catalog, by sentence number (CC BY 2.0 FR: credit each author).
@@ -261,7 +263,8 @@ function tatoebaCredits() {
     .map(function (id) { var s = CATALOG.items[id]; return { n: Number(id.slice(10)), s: s }; })
     .sort(function (a, b) { return a.n - b.n; });
 }
-// Settings → Sentence credits: one collapsed card, one row per sentence (JP and EN author).
+// Settings → Sentence credits: one collapsed card, one block per licence (the licence is written once),
+// one line per sentence. enLicense only shows when it differs from the block's licence.
 // A missing enAuthor (Tatoeba lists no owner) just drops the "by" part.
 function SentenceCredits(props) {
   var L = props.L, ce = React.createElement;
@@ -272,18 +275,29 @@ function SentenceCredits(props) {
   var lic = function (name) {
     return TATOEBA_LICENSES[name] ? ce("a", { href: TATOEBA_LICENSES[name], target: "_blank", rel: "noopener noreferrer" }, name) : name;
   };
+  var groups = {}, order = [];
+  rows.forEach(function (r) {
+    if (!groups[r.s.license]) { groups[r.s.license] = []; order.push(r.s.license); }
+    groups[r.s.license].push(r);
+  });
   return ce("details", { className: "settings-section credits-card", id: "sentence-credits" },
     ce("summary", null,
       ce("span", { className: "cr-t" }, L("set_sent_credits")),
       ce("span", { className: "cr-n" }, L("set_sent_credits_n").replace("{n}", rows.length))),
-    ce("ul", { className: "credits" }, rows.map(function (r) {
-      var s = r.s;
-      return ce("li", { key: r.n },
-        ce("span", { lang: "ja" }, s.jp), ' ',
-        link(r.n), ' ' + L("cred_by") + ' ' + s.author + ' (', lic(s.license), ') · EN ',
-        s.enId ? link(s.enId) : null,
-        s.enAuthor ? ' ' + L("cred_by") + ' ' + s.enAuthor : null,
-        s.enLicense ? ce(React.Fragment, null, ' (', lic(s.enLicense), ')') : null);
+    ce("div", { className: "sent-credits" }, order.map(function (name) {
+      return ce("div", { className: "sent-group", key: name },
+        ce("div", { className: "sent-group-h" }, ce("span", { className: "lic" }, lic(name))),
+        groups[name].map(function (r) {
+          var s = r.s;
+          return ce("div", { className: "sent-line", key: r.n },
+            ce("span", { className: "sent-ja", lang: "ja" }, s.jp),
+            ce("span", { className: "sent-meta" },
+              link(r.n), ' ' + L("cred_by") + ' ' + s.author,
+              s.enId ? ' · EN ' : null,
+              s.enId ? link(s.enId) : null,
+              s.enAuthor ? ' ' + L("cred_by") + ' ' + s.enAuthor : null,
+              s.enLicense && s.enLicense !== name ? ce(React.Fragment, null, ' (', lic(s.enLicense), ')') : null));
+        }));
     })));
 }
 

@@ -1,9 +1,11 @@
 "use strict";
 
 // ── Vocabulary section of a lesson ───────────────────────────────────────────
-// Word | Reading | Meaning, grouped by part of speech. Two modes (Learn is the default):
-//   Learn    : everything open; the Reading column is the furigana
-//   Practice : meaning covered, and for kanji words the reading too, each tapped open on its own;
+// A scan list (word, reading, meaning, part of speech) grouped by part of speech; tapping a row opens
+// a detail sheet (usage, tip) that steps through the list. Two modes (Learn is the default):
+//   Learn    : everything open; the reading beside the word is the furigana
+//   Practice : meaning covered, and for kanji words the reading too, each tapped open on its own
+//              (a tap on a covered row reveals its meaning, a tap on an open row opens the sheet);
 //              Shuffle drops the part-of-speech grouping (a "Verbs" heading is a hint);
 //              Reveal all gives up. Session-only, resets per unit (the parent keys it by unit id).
 
@@ -44,6 +46,71 @@ function vocabGroups(vocab, lv) {
 // A word with a reading worth testing: kanji in it and a reading that differs.
 function vocabHasReading(v, tk) { return hasKanji(v.word) && v.reading !== v.word && (!tk || displayWord(v, tk) === v.word); }
 
+// vocabStep(list, id, d): the word d places from id in list order, wrapping at both ends.
+function vocabStep(list, id, d) {
+  var i = list.findIndex(function (v) { return v.id === id; });
+  return list[(i + d + list.length) % list.length];
+}
+
+// vocabDetail(v, covered): the optional blocks of a word's sheet (null = not shown). Usage and tip
+// stay hidden while the meaning is still covered in Practice. A future example block slots in here.
+function vocabDetail(v, covered) {
+  return { usage: !covered && v.usage ? v.usage.split('、') : null, tip: !covered && v.tip ? v.tip : null };
+}
+
+// The bottom sheet: a modal dialog over the list. Focus moves in on open; Tab stays inside; Esc closes;
+// Left / Right step. The parent returns focus to the opening row.
+function VocabSheet(p) {
+  var v = p.v, lv = p.lv, ref = React.useRef(null);
+  React.useEffect(function () {
+    var prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    if (ref.current) ref.current.focus();
+    return function () { document.body.style.overflow = prev; };
+  }, []);
+  var onKey = function (e) {
+    if (e.key === "Escape") { e.stopPropagation(); p.onClose(); }
+    else if (e.key === "ArrowRight") p.onStep(1);
+    else if (e.key === "ArrowLeft") p.onStep(-1);
+    else if (e.key === "Tab") {
+      var f = [].slice.call(ref.current.querySelectorAll("button")), i = f.indexOf(document.activeElement);
+      if (e.shiftKey ? i <= 0 : i === f.length - 1) { e.preventDefault(); f[e.shiftKey ? f.length - 1 : 0].focus(); }
+    }
+  };
+  var covered = p.practice && !p.rev[v.id + ":m"], d = vocabDetail(v, covered);
+  var ib = function (label, text, fn) { return React.createElement("button", { className: "vl-ib", onClick: fn, 'aria-label': label, title: label }, text); };
+  return React.createElement("div", { className: "vl-scrim", onMouseDown: function (e) { if (e.target === e.currentTarget) p.onClose(); } },
+    React.createElement("div", {
+      className: "vl-sheet", ref: ref, tabIndex: -1, role: "dialog", 'aria-modal': "true", 'aria-label': displayWord(v, p.tk), onKeyDown: onKey
+    },
+      React.createElement("div", { className: "vl-top" },
+        React.createElement("span", { className: "vl-count" }, (p.index + 1) + " / " + p.count),
+        React.createElement("span", { className: "vl-nav" },
+          ib(t('vocab_prev', lv), "‹", function () { p.onStep(-1); }),
+          ib(t('vocab_next', lv), "›", function () { p.onStep(1); }),
+          ib(t('vocab_close', lv), "✕", p.onClose))),
+      React.createElement("div", { className: "vl-big" },
+        React.createElement("span", { className: "jp" }, displayWord(v, p.tk)),
+        vocabHasReading(v, p.tk) && (p.practice && !p.rev[v.id + ":r"]
+          ? p.cover(v.id + ":r", t('vocab_reading', lv))
+          : React.createElement("span", { className: "vl-big-rd jp" }, v.reading)),
+        React.createElement("button", {
+          className: "speak-btn speak-btn-row", onClick: function () { speak(v.reading); },
+          title: "Listen to pronunciation", 'aria-label': "Listen to " + displayWord(v, p.tk)
+        }, "🔊")),
+      React.createElement("div", { className: "vl-mean" },
+        covered ? p.cover(v.id + ":m", t('vocab_meaning', lv)) : glossText(v),
+        React.createElement("span", { className: "pos-chip", title: POS_HELP[posChip(v.pos)] }, posChip(v.pos))),
+      d.usage && React.createElement("div", { className: "vl-blk" },
+        React.createElement("div", { className: "vl-lbl" }, t('vocab_usage', lv)),
+        React.createElement("div", { className: "vl-pills jp", lang: "ja" }, d.usage.map(function (u, i) {
+          return React.createElement("span", { key: i, className: "vl-pill" }, rubyNodes(u, p.showFurigana, p.tk));
+        }))),
+      d.tip && React.createElement("div", { className: "vl-blk vl-tip" },
+        React.createElement("div", { className: "vocab-tip-label" }, icon('bulb'), t('vocab_tip', lv)),
+        React.createElement("p", null, rubyNodes(d.tip, p.showFurigana, p.tk)))));
+}
+
 function VocabSection(props) {
   var unit = props.unit,
     lv = unit.level,
@@ -52,6 +119,14 @@ function VocabSection(props) {
   var _pr = React.useState(false), practice = _pr[0], setPractice = _pr[1];
   var _rev = React.useState({}), rev = _rev[0], setRev = _rev[1]; // '<id>:m' / '<id>:r' → opened
   var _order = React.useState(null), order = _order[0], setOrder = _order[1]; // shuffled vocab | null
+  var _sel = React.useState(null), sel = _sel[0], setSel = _sel[1]; // id of the word in the sheet | null
+  var opener = React.useRef(null); // id of the row that opened the sheet, to give focus back
+  React.useEffect(function () {
+    if (sel !== null || opener.current === null) return;
+    var el = document.querySelector('[data-vl="' + opener.current + '"]');
+    opener.current = null;
+    if (el) el.focus();
+  }, [sel]);
   // every coverable cell: the meaning of each word, plus the reading of each kanji word
   var cells = [];
   vocab.forEach(function (v) {
@@ -68,47 +143,51 @@ function VocabSection(props) {
     }, React.createElement("span", { className: "vocab-tap" }, t('tap_reveal', lv)));
   };
   var row = function (v) {
-    var readingCell = !vocabHasReading(v, tk)
-      ? React.createElement("span", { className: "vocab-cell vocab-none", 'aria-hidden': true }, "–")
+    var hidden = practice && !rev[v.id + ':m'];
+    var readingCell = !vocabHasReading(v, tk) ? null
       : practice && !rev[v.id + ':r'] ? cover(v.id + ':r', t('vocab_reading', lv))
-      : React.createElement("span", { className: "vocab-cell vocab-reading jp" }, v.reading);
-    var meaningCell = practice && !rev[v.id + ':m']
-      ? cover(v.id + ':m', t('vocab_meaning', lv))
-      : React.createElement("span", { className: "vocab-cell vocab-meaning" }, glossText(v),
-        v.usage && React.createElement("span", { className: "vocab-usage", lang: "ja" }, rubyNodes(v.usage, props.showFurigana, tk)),
-        React.createElement("span", { className: "pos-chip", title: POS_HELP[posChip(v.pos)] }, posChip(v.pos)));
-    return React.createElement("li", { key: v.id, className: "vocab-row" },
-      React.createElement("div", { className: "vocab-jp jp" }, displayWord(v, tk)),
-      React.createElement("div", { className: "vocab-col-reading" }, readingCell),
-      React.createElement("div", { className: "vocab-col-meaning" }, meaningCell),
+      : React.createElement("span", { className: "vl-rd jp" }, v.reading);
+    // The row's main control is an overlay button, a sibling of the cover and speaker buttons (no
+    // nested buttons); those sit above it. A covered row's main tap reveals the meaning.
+    return React.createElement("li", { key: v.id, className: "vl-row" },
+      React.createElement("button", {
+        className: "vl-main", 'data-vl': v.id,
+        'aria-label': displayWord(v, tk) + ", " + t(hidden ? 'tap_reveal' : 'vocab_details', lv),
+        onClick: function () {
+          if (hidden) return open(v.id + ':m');
+          opener.current = v.id; setSel(v.id);
+        }
+      }),
+      React.createElement("div", { className: "vl-w" },
+        React.createElement("span", { className: "vl-word jp" }, displayWord(v, tk)), readingCell),
+      React.createElement("div", { className: "vl-m" },
+        hidden ? cover(v.id + ':m', t('vocab_meaning', lv)) : glossText(v)),
+      React.createElement("span", { className: "pos-chip", title: POS_HELP[posChip(v.pos)] }, posChip(v.pos)),
+      React.createElement("span", { className: "vl-go", 'aria-hidden': true }, "›"),
       React.createElement("button", {
         className: "speak-btn speak-btn-row", onClick: function () { speak(v.reading); },
         title: "Listen to pronunciation", 'aria-label': "Listen to " + displayWord(v, tk)
-      }, "🔊"),
-      v.tip && (!practice || rev[v.id + ':m']) && React.createElement("div", { className: "vocab-tip" },
-        React.createElement("div", { className: "vocab-tip-label" }, icon('bulb'), t('vocab_tip', lv)),
-        React.createElement("p", null, rubyNodes(v.tip, props.showFurigana, tk))));
+      }, "🔊"));
   };
 
   var groups = vocabGroups(vocab, lv);
-  // Column header row. With several groups each group's label sits in the Word column of its own
-  // header row; only the first repeats Reading / Meaning (the rest keep the row but hide them).
-  var cols = function (label, grouped, quiet) {
-    var hid = { 'aria-hidden': true };
-    return React.createElement("div", { key: "h", className: "vocab-cols" + (quiet ? " quiet" : "") },
-      grouped ? React.createElement("h4", { className: "vocab-cols-grp" }, label) : React.createElement("span", hid, label),
-      React.createElement("span", hid, t('vocab_reading', lv)), React.createElement("span", hid, t('vocab_meaning', lv)),
-      React.createElement("span", hid));
-  };
   var grouped = !(practice && order) && groups.length > 1;
+  // the sheet steps through the list in the order shown (grouped, plain or shuffled)
+  var list = grouped ? [].concat.apply([], groups.map(function (g) { return g.items; })) : (practice && order ? order : vocab);
   var body = !grouped
-    ? [cols(t('vocab_word', lv), false, false), React.createElement("ul", { key: "l", className: "vocab-list" }, (practice && order ? order : vocab).map(row))]
-    : groups.map(function (g, i) {
+    ? React.createElement("ul", { className: "vl-list" }, list.map(row))
+    : groups.map(function (g) {
       return React.createElement("div", { key: g.key, className: "vocab-group" },
-        cols(g.label, true, i > 0),
-        React.createElement("ul", { className: "vocab-list" }, g.items.map(row)));
+        React.createElement("h4", { className: "vl-grp" }, g.label),
+        React.createElement("ul", { className: "vl-list" }, g.items.map(row)));
     });
-  var seg = React.createElement("span", { className: "mode-seg", role: "group", 'aria-label': t('mode_label', lv) },
+  var cur = sel === null ? null : list.filter(function (v) { return v.id === sel; })[0];
+  var sheet = cur && React.createElement(VocabSheet, {
+    key: "sheet", v: cur, lv: lv, tk: tk, practice: practice, rev: rev, cover: cover, showFurigana: props.showFurigana,
+    index: list.indexOf(cur), count: list.length,
+    onStep: function (d) { setSel(vocabStep(list, cur.id, d).id); }, onClose: function () { setSel(null); }
+  });
+  var seg =React.createElement("span", { className: "mode-seg", role: "group", 'aria-label': t('mode_label', lv) },
     React.createElement("button", { 'aria-pressed': !practice, onClick: function () { setMode(false); } }, t('mode_learn', lv)),
     React.createElement("button", { 'aria-pressed': practice, onClick: function () { setMode(true); } }, t('mode_practice', lv)));
   var controls = React.createElement("span", { className: "mode-ctl" },
@@ -129,5 +208,99 @@ function VocabSection(props) {
     seg);
   return React.createElement("div", { className: "section" },
     React.createElement("div", { className: "section-label kj-head" }, React.createElement("span", null, t('section_vocabulary', lv)), controls),
-    body);
+    body, sheet);
+}
+
+// ── Review unit Words tab ────────────────────────────────────────────────────
+// Default: a flashcard deck (reveal, Again re-queues, Know advances). "Show full list instead" opens
+// the scan list grouped by the stage each word came from; Learn / Practice as in the lesson list.
+// The parent keys it by unit id, so deck / list and progress reset on a new stage.
+function ReviewVocab(props) {
+  var unit = props.unit, lv = unit.level, tk = unitTaughtKanji(unit), ce = React.createElement;
+  var groups = reviewSourceGroups(unit, 'vocab');
+  var ordered = [], srcOf = {}, byId = {};
+  groups.forEach(function (g) { g.items.forEach(function (v) { ordered.push(v); srcOf[v.id] = g.source; byId[v.id] = v; }); });
+  var _view = React.useState('deck'), view = _view[0], setView = _view[1];
+  var _deck = React.useState(function () { return deckStart(ordered.map(function (v) { return v.id; })); }), deck = _deck[0], setDeck = _deck[1];
+  var _shuf = React.useState(false), shuf = _shuf[0], setShuf = _shuf[1];
+  var _show = React.useState(false), shown = _show[0], setShown = _show[1];
+  var _pr = React.useState(false), practice = _pr[0], setPractice = _pr[1];
+  var _rev = React.useState({}), rev = _rev[0], setRev = _rev[1];
+  var restart = function (shuffle) {
+    var l = ordered.map(function (v) { return v.id; });
+    setDeck(deckStart(shuffle ? rndShuffle(l) : l)); setShown(false);
+  };
+  var answer = function (know) { setDeck(deckAnswer(deck, know)); setShown(false); };
+  // a separate reading line only when the word is shown in kanji and its reading differs
+  var reading = function (v) { var w = displayWord(v, tk); return v.reading && v.reading !== w && v.reading !== v.word ? v.reading : ''; };
+  var stageName = function (s) { return t('unit_label', lv) + " " + (s.index + 1); };
+  var ghost = function (label, fn) { return ce("button", { className: "rw-ghost", onClick: fn }, label); };
+
+  if (view === 'list') {
+    var row = function (v) {
+      var open = !practice || rev[v.id], rd = reading(v);
+      return ce("li", { key: v.id, className: "rw-row" },
+        ce("div", { className: "rw-main" },
+          ce("div", { className: "rw-l" }, ce("span", { className: "rw-w jp" }, displayWord(v, tk)), rd && ce("span", { className: "rw-rd jp" }, rd)),
+          open ? ce("div", { className: "rw-mn" }, glossText(v),
+            v.usage && ce("span", { className: "vocab-usage", lang: "ja" }, " ", rubyNodes(v.usage, props.showFurigana, tk)),
+            " ", ce("span", { className: "pos-chip", title: POS_HELP[posChip(v.pos)] }, posChip(v.pos)))
+            : ce("button", {
+              className: "vocab-cell covered rw-cover", 'aria-label': t('vocab_meaning', lv) + ", " + t('tap_reveal', lv),
+              onClick: function () { setRev(function (p) { return Object.assign({}, p, { [v.id]: true }); }); }
+            }, ce("span", { className: "vocab-tap" }, t('tap_reveal', lv)))),
+        ce("button", { className: "speak-btn speak-btn-row", onClick: function () { speak(v.reading); }, title: "Listen to pronunciation", 'aria-label': "Listen to " + displayWord(v, tk) }, "🔊"),
+        v.tip && !practice && ce("div", { className: "vocab-tip" },
+          ce("div", { className: "vocab-tip-label" }, icon('bulb'), t('vocab_tip', lv)),
+          ce("p", null, rubyNodes(v.tip, props.showFurigana, tk))));
+    };
+    var setMode = function (p) { setPractice(p); setRev({}); };
+    return ce("div", { className: "section" },
+      ce("div", { className: "section-label kj-head" }, ce("span", null, t('section_vocabulary', lv)),
+        ce("span", { className: "mode-ctl" },
+          ghost("← Back to deck", function () { setView('deck'); }),
+          ce("span", { className: "mode-seg", role: "group", 'aria-label': t('mode_label', lv) },
+            ce("button", { 'aria-pressed': !practice, onClick: function () { setMode(false); } }, t('mode_learn', lv)),
+            ce("button", { 'aria-pressed': practice, onClick: function () { setMode(true); } }, t('mode_practice', lv))))),
+      groups.map(function (g) {
+        return ce("div", { key: g.source.unitId, className: "rw-group" },
+          ce("div", { className: "rw-stg" }, ce("h4", null, stageName(g.source)),
+            ce("span", null, g.items.length + (g.items.length === 1 ? " word" : " words")),
+            ce("button", { className: "rw-open", onClick: function () { props.setUnit(g.source.index); }, 'aria-label': "Open " + stageName(g.source) }, "Open stage →")),
+          ce("ul", { className: "rw-list" }, g.items.map(row)));
+      }));
+  }
+
+  var head = ce("div", { className: "section-label" }, t('section_vocabulary', lv));
+  if (deck.queue.length === 0) {
+    return ce("div", { className: "section" }, head,
+      ce("div", { className: "rw-deck" },
+        ce("div", { className: "rw-done", role: "status" },
+          ce("div", { className: "rw-done-t" }, "Deck done · " + deck.total + " cards, " + deck.missed.length + " needed another look"),
+          ce("div", { className: "rw-btns" },
+            ce("button", { className: "rw-btn go", onClick: function () { restart(shuf); } }, "Go again"),
+            ce("button", { className: "rw-btn", onClick: function () { setView('list'); } }, "Show full list")))));
+  }
+  var v = byId[deck.queue[0]], rd = reading(v), known = deck.total - deck.queue.length;
+  var cardText = displayWord(v, tk) + ", " + (shown ? (rd ? rd + ", " : "") + glossText(v) : t('tap_reveal', lv));
+  return ce("div", { className: "section" }, head,
+    ce("div", { className: "rw-deck" },
+      ce("div", { className: "rw-prog" },
+        ce("span", null, known + " / " + deck.total),
+        ce("div", { className: "rw-bar", role: "progressbar", 'aria-valuemin': 0, 'aria-valuemax': deck.total, 'aria-valuenow': known, 'aria-label': "Deck progress" },
+          ce("i", { style: { width: Math.round(100 * known / deck.total) + "%" } })),
+        ce("span", null, deck.again + " again"),
+        ce("button", { className: "rw-shuf", 'aria-pressed': shuf, onClick: function () { setShuf(!shuf); restart(!shuf); } }, t('mode_shuffle', lv))),
+      ce("button", { className: "rw-card", onClick: function () { setShown(!shown); }, 'aria-label': cardText },
+        ce("span", { className: "rw-big jp" }, displayWord(v, tk)),
+        shown ? ce(React.Fragment, null,
+          rd && ce("span", { className: "rw-crd jp" }, rd),
+          ce("span", { className: "rw-cmn" }, glossText(v)))
+          : ce("span", { className: "rw-tap" }, t('tap_reveal', lv)),
+        ce("span", { className: "rw-tag" }, stageName(srcOf[v.id]))),
+      ce("div", { className: "sr-only", 'aria-live': "polite" }, shown ? cardText : ""),
+      ce("div", { className: "rw-btns" },
+        ce("button", { className: "rw-btn", onClick: function () { answer(false); } }, "Again"),
+        ce("button", { className: "rw-btn go", onClick: function () { answer(true); } }, "Know it")),
+      ghost("Show full list instead", function () { setView('list'); })));
 }

@@ -1,6 +1,6 @@
 # Listening and audio
 
-Load when: writing listening scripts, options, archetype assignments, rendering audio, or using `AUDIO_STALE_OK`. Source: [archive/level-playbook-full.md](archive/level-playbook-full.md) §7 and §10.
+Load when: writing listening scripts, options, archetype assignments, or rendering audio. Source: [archive/level-playbook-full.md](archive/level-playbook-full.md) §7 and §10.
 
 ## Listening items
 
@@ -23,9 +23,9 @@ Load when: writing listening scripts, options, archetype assignments, rendering 
 - Later levels reuse the narrator いち, に, さん clips (same clipKey, already in `have`); do not re-render them.
 - One v5 session renders every missing clip of every level (dialogue characters and exam voices) from saved references, resumable after a disconnect: `tools/audio/render-notebook-v5.ipynb`. Steps in `tools/audio/README.md` "Rendering with v5". The N4 launch was about 1,380 clips (509 N4 exam, 862 N4 dialogue, 6 N5), 1.5–3 hours on a T4.
 
-## AUDIO_STALE_OK
+## Stale clips
 
-- When a transcript changes on purpose (a review fix), its clip is stale until the next render.
-- Running the suite with `AUDIO_STALE_OK=1` turns only the stale-clip hash check into a warning. Everything else still fails.
-- Rules: list every changed line in the branch's rerender notes (id, line, why) at the time of the change. Never use the flag for a line nobody listed. Drop the flag once the owner renders and `build-audio-manifest.js` runs.
-- A brand-new item with no manifest track is skipped without the flag.
+- Every shipped N5 and N4 clip is rendered. The `AUDIO_STALE_OK` opt-out was retired (2026-10-13). The suite passes with no env flag.
+- A changed transcript of a shipped item makes its clip stale. The suite then fails until the owner renders it. Log the change in the branch's rerender notes (id, line, why) and render through `tools/audio/render-notebook-v5.ipynb`.
+- A brand-new item with no manifest track fails the suite until its clip is rendered.
+- `tests/listening.js` and `run-tests.js` still read `AUDIO_STALE_OK=1` as a warning-only escape hatch. Do not use it in new work.
