@@ -52,16 +52,18 @@ function vocabStep(list, id, d) {
   return list[(i + d + list.length) % list.length];
 }
 
-// vocabDetail(v, covered): the optional blocks of a word's sheet (null = not shown). Usage and tip
-// stay hidden while the meaning is still covered in Practice. A future example block slots in here.
+// vocabDetail(v, covered): the optional blocks of a word's sheet (null = not shown). Usage, examples
+// (the word's catalog sentences, at most 3) and tip stay hidden while the meaning is still covered in Practice.
 function vocabDetail(v, covered) {
-  return { usage: !covered && v.usage ? v.usage.split('、') : null, tip: !covered && v.tip ? v.tip : null };
+  var ex = covered ? [] : sentencesUsing(v.id).slice(0, 3);
+  return { usage: !covered && v.usage ? v.usage.split('、') : null, examples: ex.length ? ex : null, tip: !covered && v.tip ? v.tip : null };
 }
 
 // The bottom sheet: a modal dialog over the list. Focus moves in on open; Tab stays inside; Esc closes;
 // Left / Right step. The parent returns focus to the opening row.
 function VocabSheet(p) {
   var v = p.v, lv = p.lv, ref = React.useRef(null);
+  var _tip = React.useState(false), tipOpen = _tip[0], setTipOpen = _tip[1]; // stays as set while stepping
   React.useEffect(function () {
     var prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -73,7 +75,7 @@ function VocabSheet(p) {
     else if (e.key === "ArrowRight") p.onStep(1);
     else if (e.key === "ArrowLeft") p.onStep(-1);
     else if (e.key === "Tab") {
-      var f = [].slice.call(ref.current.querySelectorAll("button")), i = f.indexOf(document.activeElement);
+      var f = [].slice.call(ref.current.querySelectorAll("button, a[href]")), i = f.indexOf(document.activeElement);
       if (e.shiftKey ? i <= 0 : i === f.length - 1) { e.preventDefault(); f[e.shiftKey ? f.length - 1 : 0].focus(); }
     }
   };
@@ -106,9 +108,27 @@ function VocabSheet(p) {
         React.createElement("div", { className: "vl-pills jp", lang: "ja" }, d.usage.map(function (u, i) {
           return React.createElement("span", { key: i, className: "vl-pill" }, rubyNodes(u, p.showFurigana, p.tk));
         }))),
-      d.tip && React.createElement("div", { className: "vl-blk vl-tip" },
-        React.createElement("div", { className: "vocab-tip-label" }, icon('bulb'), t('vocab_tip', lv)),
-        React.createElement("p", null, rubyNodes(d.tip, p.showFurigana, p.tk)))));
+      d.examples && React.createElement("div", { className: "vl-blk" },
+        React.createElement("div", { className: "vl-lbl" }, t('vocab_example', lv)),
+        d.examples.map(function (s) {
+          var tat = s.id.indexOf('s:tatoeba:') === 0, n = s.id.slice(10);
+          return React.createElement("div", { key: s.id, className: "vl-ex" },
+            React.createElement("div", null,
+              React.createElement("div", { className: "vl-sen jp", lang: "ja" }, rubyNodes(s.furigana || s.jp, p.showFurigana, p.tk)),
+              React.createElement("div", { className: "vl-en" }, s.en),
+              // Tatoeba CC BY: credit inline, in the Settings → Sentence credits format
+              tat && React.createElement("div", { className: "vl-cred" },
+                React.createElement("a", { href: "https://tatoeba.org/en/sentences/show/" + n, target: "_blank", rel: "noopener noreferrer" }, "Tatoeba #" + n),
+                " " + t('cred_by', lv) + " " + s.author + " · " + s.license)),
+            React.createElement("button", {
+              className: "example-speak", onClick: function () { speak(speechText(s.furigana || s.jp)); }, title: "Listen", 'aria-label': "Listen to " + s.jp
+            }, icon('speaker')));
+        })),
+      d.tip && React.createElement("div", { className: "vl-blk" },
+        React.createElement("button", {
+          className: "vl-tipbtn vocab-tip-label", 'aria-expanded': tipOpen, onClick: function () { setTipOpen(!tipOpen); }
+        }, icon('bulb'), t('vocab_tip', lv)),
+        tipOpen && React.createElement("p", { className: "vl-tip" }, rubyNodes(d.tip, p.showFurigana, p.tk)))));
 }
 
 function VocabSection(props) {

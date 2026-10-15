@@ -84,6 +84,7 @@ var UI_STRINGS = {
   vocab_tip:        { en: 'Tip', ja: 'ヒント' },
   vocab_usage:      { en: 'Usage', ja: 'つかいかた' },
   vocab_details:    { en: 'details', ja: 'くわしく' },
+  vocab_example:    { en: 'Example', ja: '例文' },
   vocab_prev:       { en: 'Previous word', ja: 'まえのことば' },
   vocab_next:       { en: 'Next word', ja: 'つぎのことば' },
   vocab_close:      { en: 'Close', ja: '閉じる' },

@@ -259,8 +259,16 @@ a.data-btn{display:inline-flex;align-items:center;text-decoration:none}
 .vl-pills{display:flex;flex-wrap:wrap;gap:6px}
 .vl-pill{padding:2px 12px;border-radius:99px;border:1px solid var(--border);background:var(--surface2);font-size:1.05rem;line-height:2.1}
 .vl-sheet rt{font-size:0.6em;font-weight:500}
-.vl-tip{padding:10px 14px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px}
-.vl-tip p{font-size:0.9rem;line-height:1.9;color:var(--text);text-wrap:pretty}
+.vl-ex{display:grid;grid-template-columns:minmax(0,1fr) 44px;align-items:center;gap:8px;padding:6px 6px 10px 14px;background:var(--surface2);border-left:3px solid var(--accent);border-radius:8px}
+.vl-ex .example-speak{background:var(--surface);border:1px solid var(--border);color:var(--text)}
+.vl-ex .example-speak:hover{border-color:var(--accent-fg)}
+.vl-sen{font-size:1.2rem;line-height:2.2;font-weight:500}
+.vl-en{font-size:0.95rem;line-height:1.5;color:var(--muted)}
+.vl-cred{margin-top:4px;font-size:0.72rem;color:var(--muted);opacity:.85}
+.vl-cred a{color:inherit}
+.vl-tipbtn{justify-self:start;min-height:44px;padding:0 12px;border:1px solid var(--border);border-radius:99px;background:transparent;font:inherit;font-size:0.74rem;cursor:pointer}
+.vl-tipbtn:hover,.vl-tipbtn[aria-expanded=true]{border-color:var(--accent-fg);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.vl-tip{padding:10px 14px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:0.9rem;line-height:1.9;color:var(--text);text-wrap:pretty}
 .grammar-card{display:grid;grid-template-columns:minmax(150px,200px) 1fr;gap:20px}
 .grammar-rail{padding-right:20px;border-right:1px solid var(--border)}
 .grammar-pattern{font-size:1.5rem;font-weight:700;line-height:1.25;color:var(--accent-fg);overflow-wrap:anywhere}

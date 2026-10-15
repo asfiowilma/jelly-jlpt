@@ -19,6 +19,7 @@ Files must work without the gitignored scratch folders (`.scratch/`).
 | Passages, mondai, mocks, guide copy | [exam-content.md](exam-content.md), [exam-formats.md](exam-formats.md) |
 | Listening, audio, rendering | [listening-audio.md](listening-audio.md) |
 | Lesson dialogues | [dialogues.md](dialogues.md) |
+| Vocab example sentences (word sheet), `check-vocab-example-*.js` | [vocab-examples.md](vocab-examples.md), [grammar-sentences.md](grammar-sentences.md) |
 | Orchestration, review rounds | [process-review.md](process-review.md) |
 | Licences, release | [licences.md](licences.md) |
 | Building N3, step by step | [build-n3.md](build-n3.md) (it lists the other files per step) |

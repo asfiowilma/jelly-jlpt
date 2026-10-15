@@ -407,16 +407,20 @@ if (!process.env.TEST_ONLY) {
     a.equal(vocabHasReading(by("ドア")), false, "katakana ドア does not");
   });
 
-  test("vocab sheet: steps through the list in order and wraps; usage and tip are optional and hidden while covered", function (a) {
+  test("vocab sheet: steps through the list in order and wraps; usage, examples and tip are optional and hidden while covered", function (a) {
     var list = [{ id: "a" }, { id: "b" }, { id: "c" }];
     a.equal(vocabStep(list, "a", 1).id, "b", "next");
     a.equal(vocabStep(list, "a", -1).id, "c", "prev wraps to the end");
     a.equal(vocabStep(list, "c", 1).id, "a", "next wraps to the start");
-    a.deepEqual(vocabDetail({}, false), { usage: null, tip: null }, "no blocks when the word has neither");
+    a.deepEqual(vocabDetail({}, false), { usage: null, examples: null, tip: null }, "no blocks when the word has neither");
     var v = { usage: "[席|せき]が[空|あ]く、[手|て]が[空|あ]く", tip: "t" };
-    a.deepEqual(vocabDetail(v, false), { usage: ["[席|せき]が[空|あ]く", "[手|て]が[空|あ]く"], tip: "t" }, "usage splits into phrases");
-    a.deepEqual(vocabDetail(v, true), { usage: null, tip: null }, "covered meaning hides both");
-    a.deepEqual(vocabDetail({ tip: "t" }, false), { usage: null, tip: "t" }, "tip alone");
+    a.deepEqual(vocabDetail(v, false), { usage: ["[席|せき]が[空|あ]く", "[手|て]が[空|あ]く"], examples: null, tip: "t" }, "usage splits into phrases");
+    a.deepEqual(vocabDetail(v, true), { usage: null, examples: null, tip: null }, "covered meaning hides both");
+    a.deepEqual(vocabDetail({ tip: "t" }, false), { usage: null, examples: null, tip: "t" }, "tip alone");
+    var rich = catalogOf("vocab").filter(function (w) { return sentencesUsing(w.id).length > 3; })[0];
+    a.ok(rich, "a word with more than 3 sentences exists");
+    a.deepEqual(vocabDetail(rich, false).examples, sentencesUsing(rich.id).slice(0, 3), "examples: the word's first 3 sentences");
+    a.equal(vocabDetail(rich, true).examples, null, "covered meaning hides the examples");
   });
 
   test("React render: VocabSection() opens the sheet from a row, a covered row reveals instead, the sheet follows the shuffled order", function (a) {

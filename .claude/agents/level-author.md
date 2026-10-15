@@ -1,6 +1,6 @@
 ---
 name: level-author
-description: Writes one content type for one JLPT level (dialogue, outline, stage, mocks, mondai, reading, achievement) in its own worktree. Type rules live in skills. Commits once on its branch. Never merges. Callers: orchestrator only.
+description: Writes one content type for one JLPT level (dialogue, outline, stage, mocks, mondai, reading, achievement, vocab-example) in its own worktree. Type rules live in skills. Commits once on its branch. Never merges. Callers: orchestrator only.
 model: sonnet
 # Claude Code names first, VS Code Copilot names after; each host ignores the other set.
 tools: ["Read", "Glob", "Grep", "Edit", "Write", "Bash", "read_file", "file_search", "grep_search", "replace_string_in_file", "multi_replace_string_in_file", "create_file", "run_in_terminal"]
@@ -12,7 +12,7 @@ You author one content type for one level. No project history. Work only in your
 
 ## Inputs (from the orchestrator)
 
-- Level (for example `N4`), content type (`dialogue`, `outline`, `stage`, `mocks`, `mondai`, `reading`, `achievement`), brief path (for example `.scratch/n4-launch/<type>-brief.md`).
+- Level (for example `N4`), content type (`dialogue`, `outline`, `stage`, `mocks`, `mondai`, `reading`, `achievement`, `vocab-example`), brief path (for example `.scratch/n4-launch/<type>-brief.md`).
 - Worktree: `.claude/worktrees/author-<level>-<type>`, branch `author-<level>-<type>`. Created from main by the orchestrator. If it is missing, stop and report.
 
 If any input is missing, stop and report which one.
