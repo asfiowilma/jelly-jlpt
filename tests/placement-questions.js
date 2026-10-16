@@ -83,6 +83,25 @@ QUnit.module('placementQuestions', function () {
     assert.deepEqual(kanaQs().filter(function (x) { return answerLeaks(x.q); }).map(function (x) { return x.q.itemId; }), [], 'leaks');
   });
 
+  QUnit.test('no placement question on any stage is a typed katakana answer', function (assert) {
+    var real = Math.random, seed = 12345, bad = [], typed = 0;
+    Math.random = function () { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+    try {
+      stages().forEach(function (u) {
+        for (var run = 0; run < 6; run++) {
+          var a = placementQuestions(u, 2, []);
+          a.concat(placementQuestions(u, 1, a.map(function (q) { return q.itemId; }))).forEach(function (q) {
+            if (q.type !== 'typing') return;
+            typed++;
+            if ((q.answers || []).some(function (x) { return /[゠-ヿ]/.test(x); })) bad.push(u.id + ' ' + q.form + ' ' + q.itemId);
+          });
+        }
+      });
+    } finally { Math.random = real; }
+    assert.ok(typed > 0, 'hiragana typed recall still appears on lesson stages');
+    assert.deepEqual(bad, [], 'katakana typing');
+  });
+
   QUnit.test('review / prep / mock units give nothing', function (assert) {
     buildUnits(PLAN, CATALOG).filter(liveUnit).filter(function (u) { return u.kind !== 'kana' && u.kind !== 'lesson'; }).forEach(function (u) {
       assert.strictEqual(placementQuestions(u, 2, []).length, 0, u.id);

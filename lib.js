@@ -4660,6 +4660,7 @@ function placementQuestions(unit, count, taken) {
     forms.sort(function (a, b) { return rank(a) - rank(b); });
     for (var j = 0; j < forms.length; j++) {
       var ex = forms[j].make();
+      if (ex && ex.type === 'typing' && (ex.answers || []).some(function (a) { return /[゠-ヿ]/.test(a); })) continue; // no katakana typing in placement
       if (ex && kanaStage && (!ex.options || ex.options.length < 4)) continue;
       if (ex && !answerLeaks(Object.assign(ex, { item: it }))) {
         out.push(Object.assign(ex, { itemId: it.id, item: it, form: forms[j].name, recall: forms[j].recall }));
@@ -4668,80 +4669,6 @@ function placementQuestions(unit, count, taken) {
     }
   }
   return out;
-}
-
-// ── Placement engine (roadmap ticket 36) ────────────────────────────────────
-// Binary search over the teaching stages (kana + lesson units; review/prep/mock never), then
-// spot-checks below the boundary. State is a plain mutable object:
-//   s = placementStart(units, rnd?)      rnd = () => [0,1), default Math.random
-//   set = placementNext(s)               { kind: 'probe'|'spot', stageId, round, wanted, questions[] } | null when done
-//   placementAnswer(s, answers)          answers[i] = response to set.questions[i] (option index or typed
-//                                        text, graded by answerIsRight); null/undefined = "I don't know" = wrong
-//   placementResult(s)                   { passedStageIds, holeStageIds, startStageId, log }
-// Probe = 2 questions of one stage, all right = known through it. No stage is asked twice and no item
-// twice (s.taken). Spot round r (max 2; round 2 only when round 1 found a hole): 3 untested stages
-// below the boundary at different fractions per round, 1 question each. A missed spot-check makes its
-// stage a hole; it does NOT move the boundary. A stage that gives fewer questions than wanted is judged
-// on what it gave (log entry asked < wanted); one that gives none counts as failed (probe) or is
-// skipped (spot). s.answered = questions answered so far (progress bar: about 17).
-var PLACEMENT_PROBE_QUESTIONS = 2;
-var PLACEMENT_SPOT_FRACTIONS = [[0.2, 0.5, 0.85], [0.35, 0.65, 0.95]];
-function placementStart(units, rnd) {
-  var stages = units.filter(function (u) { return u.kind === 'kana' || u.kind === 'lesson'; });
-  return { stages: stages, rnd: rnd || Math.random, lo: 0, hi: stages.length, searching: true, round: 0, roundMissed: false,
-    tested: {}, taken: [], holes: [], spots: [], cur: null, done: false, log: [], answered: 0 };
-}
-function _placementAsk(s, stage, count) {
-  var real = Math.random;
-  Math.random = s.rnd; // the quiz builders shuffle with Math.random: inject ours for determinism
-  try { return placementQuestions(stage, count, s.taken); } finally { Math.random = real; }
-}
-function _placementRound(s) { // queue the next spot round's stages (untested ones nearest each fraction of the boundary)
-  var b = s.lo, f = PLACEMENT_SPOT_FRACTIONS[s.round++];
-  s.roundMissed = false;
-  f.forEach(function (fr) {
-    var want = Math.max(1, Math.round(fr * b)), best = 0;
-    for (var d = 0; d < b && !best; d++) {
-      [want - d, want + d].forEach(function (n) { if (!best && n >= 1 && n <= b && !s.tested[s.stages[n - 1].id]) best = n; });
-    }
-    if (best) { s.tested[s.stages[best - 1].id] = true; s.spots.push(s.stages[best - 1]); }
-  });
-  if (!s.spots.length) s.done = true;
-}
-function placementNext(s) {
-  while (!s.cur && !s.done) {
-    if (s.spots.length) {
-      var st = s.spots.shift(), qs = _placementAsk(s, st, 1);
-      if (qs.length) s.cur = { kind: 'spot', stageId: st.id, round: s.round, wanted: 1, questions: qs };
-      else s.log.push({ k: 'spot', stageId: st.id, right: 0, asked: 0, wanted: 1, pass: null, note: 'no questions available, skipped' });
-    } else if (s.searching && s.lo < s.hi) {
-      var m = Math.ceil((s.lo + s.hi) / 2), pu = s.stages[m - 1], pq = _placementAsk(s, pu, PLACEMENT_PROBE_QUESTIONS);
-      s.tested[pu.id] = true;
-      if (pq.length) s.cur = { kind: 'probe', stageId: pu.id, stage: m, round: 0, wanted: PLACEMENT_PROBE_QUESTIONS, questions: pq };
-      else { s.hi = m - 1; s.log.push({ k: 'probe', stageId: pu.id, right: 0, asked: 0, wanted: PLACEMENT_PROBE_QUESTIONS, pass: false, note: 'no questions available, counted as not known' }); }
-    } else if (s.round === 0 || (s.round < PLACEMENT_SPOT_FRACTIONS.length && s.roundMissed)) {
-      s.searching = false; _placementRound(s);
-    } else s.done = true;
-  }
-  return s.cur;
-}
-function placementAnswer(s, answers) {
-  var c = s.cur;
-  if (!c) return s;
-  var right = c.questions.filter(function (q, i) { return answers && answers[i] != null && answerIsRight(q, answers[i]); }).length;
-  c.questions.forEach(function (q) { s.taken.push(q.itemId); });
-  s.answered += c.questions.length;
-  var pass = right === c.questions.length;
-  s.log.push({ k: c.kind, stageId: c.stageId, right: right, asked: c.questions.length, wanted: c.wanted, pass: pass,
-    note: c.kind === 'probe' ? (pass ? 'known through this stage, search higher' : 'not yet, search lower') : (pass ? 'confirmed' : 'hole found') });
-  if (c.kind === 'probe') { if (pass) s.lo = c.stage; else s.hi = c.stage - 1; }
-  else if (!pass) { s.holes.push(c.stageId); s.roundMissed = true; }
-  s.cur = null;
-  return s;
-}
-function placementResult(s) {
-  var passed = s.stages.slice(0, s.lo).map(function (u) { return u.id; }).filter(function (id) { return s.holes.indexOf(id) < 0; });
-  return { passedStageIds: passed, holeStageIds: s.holes.slice(), startStageId: s.stages[s.lo] ? s.stages[s.lo].id : null, log: s.log.slice() };
 }
 // placementApply(result, units) → what the caller writes (pure; no store here):
 //   doneIds     stages to mark done with skipped: true (= result.passedStageIds, plan order)
@@ -4757,6 +4684,166 @@ function placementApply(result, units) {
     skippedIds: units.filter(function (u) { return hole[u.id]; }).map(function (u) { return u.id; }),
     cardItems: unitItems(done).map(function (it) { return it.id; })
   };
+}
+
+// ── Placement belief model ──────────────────────────────────────────────────
+// Belief = plain array, belief[k] = weight that the learner knows through stage k (k = 0..N).
+// A question on stage s is answered as "known" when k >= s, else "unknown"; the table already includes guessing.
+var PLACEMENT_LIKELIHOOD = {
+  correct:  { known: 0.88, unknown: 0.30 },
+  wrong:    { known: 0.10, unknown: 0.30 },
+  dontKnow: { known: 0.02, unknown: 0.40 }
+};
+function placementBeliefStart(stageCount) {
+  var b = [], k;
+  for (k = 0; k <= stageCount; k++) b.push(1 / (stageCount + 1));
+  return b;
+}
+// placementBeliefAnswer(belief, stageNumber 1..N, outcome 'correct'|'wrong'|'dontKnow') → new renormalized belief
+function placementBeliefAnswer(belief, stageNumber, outcome) {
+  var row = PLACEMENT_LIKELIHOOD[outcome], n = belief.length - 1;
+  if (!row) throw new Error('placementBeliefAnswer: unknown outcome ' + outcome);
+  if (!(stageNumber >= 1 && stageNumber <= n) || stageNumber % 1) throw new Error('placementBeliefAnswer: stage ' + stageNumber + ' outside 1..' + n);
+  var next = belief.map(function (w, k) { return w * (k >= stageNumber ? row.known : row.unknown); });
+  var sum = next.reduce(function (a, b) { return a + b; }, 0);
+  return next.map(function (w) { return w / sum; });
+}
+
+// ── Placement stage choice + stop rule (pure; belief index k = "knows through stage k") ──
+var PLACEMENT_MAX_QUESTIONS = 25; // hard cap on counted questions (the 2 beginner-check ones are extra), never scaled
+var PLACEMENT_STOP_SHARE = 0.9;
+var PLACEMENT_RESULT_CUT = 0.10; // placement = this percentile of the belief: errs low
+
+function placementCheckBelief(who, belief) {
+  if (!Array.isArray(belief) || belief.length < 2) throw new Error(who + ': belief needs at least 2 entries');
+}
+function placementCheckCount(who, name, v) {
+  if (typeof v !== 'number' || v % 1 || v < 1) throw new Error(who + ': ' + name + ' must be an integer of 1 or more');
+}
+
+// placementStopWindow(stageCount) → max(3, ceil(0.02 × N)), clamped to the N + 1 placements the belief holds
+function placementStopWindow(stageCount) {
+  placementCheckCount('placementStopWindow', 'stageCount', stageCount);
+  return Math.min(Math.max(3, Math.ceil(0.02 * stageCount)), stageCount + 1);
+}
+
+// placementWindowShare(belief, width) → largest total weight of any `width` consecutive entries
+function placementWindowShare(belief, width) {
+  placementCheckBelief('placementWindowShare', belief);
+  placementCheckCount('placementWindowShare', 'width', width);
+  var w = Math.min(width, belief.length), sum = 0, best = 0;
+  for (var i = 0; i < belief.length; i++) {
+    sum += belief[i];
+    if (i >= w) sum -= belief[i - w];
+    if (i >= w - 1 && sum > best) best = sum;
+  }
+  return best;
+}
+
+// placementShouldStop(belief, stageCount, answeredCount) → true at the question cap or once the best window holds 90%
+function placementShouldStop(belief, stageCount, answeredCount) {
+  placementCheckBelief('placementShouldStop', belief);
+  placementCheckCount('placementShouldStop', 'stageCount', stageCount);
+  if (typeof answeredCount !== 'number' || isNaN(answeredCount)) throw new Error('placementShouldStop: answeredCount must be a number');
+  if (answeredCount >= PLACEMENT_MAX_QUESTIONS) return true;
+  // 1e-9 is float tolerance only, so a window that sums to the share in theory still stops
+  return placementWindowShare(belief, placementStopWindow(stageCount)) >= PLACEMENT_STOP_SHARE - 1e-9;
+}
+
+// placementPickStage(belief, askedStages, isUsable(s)) → { stage, skipped }
+// Stage whose P(k >= s) is nearest 0.5 (ties: lower s); unasked first; unusable stages are skipped and listed.
+function placementPickStage(belief, askedStages, isUsable) {
+  placementCheckBelief('placementPickStage', belief);
+  var n = belief.length - 1, asked = askedStages || [], skipped = [];
+  var above = new Array(n + 2), s;
+  above[n + 1] = 0;
+  for (var k = n; k >= 0; k--) above[k] = above[k + 1] + belief[k];
+  var bestFresh = null, bestAsked = null;
+  for (s = 1; s <= n; s++) {
+    if (!isUsable(s)) { skipped.push(s); continue; }
+    var d = Math.abs(above[s] - 0.5);
+    if (asked.indexOf(s) < 0) { if (bestFresh === null || d < bestFresh.d) bestFresh = { s: s, d: d }; }
+    else if (bestAsked === null || d < bestAsked.d) bestAsked = { s: s, d: d };
+  }
+  var pick = bestFresh || bestAsked;
+  return { stage: pick ? pick.s : null, skipped: skipped };
+}
+
+// ── Placement run state (plain object; the UI drives start → next → answer → … → result) ──
+//   s = placementRunStart(units, rnd?)     placementRunNext(s) → { stage, stageId, question } | null when finished
+//   placementRunAnswer(s, response)        response = option index or typed text; null = "I don't know"
+//   placementRunResult(s)                  { placement, passedStageIds, holeStageIds, startStageId, log }
+function placementRunStart(units, rnd) {
+  if (!Array.isArray(units)) throw new Error('placementRunStart: units must be an array');
+  var stages = units.filter(function (u) { return u.kind === 'kana' || u.kind === 'lesson'; });
+  return { stages: stages, rnd: rnd || Math.random, belief: placementBeliefStart(stages.length), asked: [], taken: [],
+    unusable: {}, log: [], answered: 0, counted: 0, cur: null, done: false, // answered = all answers, counted = without the beginner check
+    phase: 'check', checkQs: null, checkRight: 0, checkMiss: false }; // phase: 'check' (two kana questions) then 'engine'
+}
+function placementRunAsk(s, stage, count) {
+  var real = Math.random;
+  Math.random = s.rnd; // the quiz builders shuffle with Math.random: inject ours so the run is seeded
+  try { return placementQuestions(s.stages[stage - 1], count || 1, s.taken); } finally { Math.random = real; }
+}
+// Beginner check: 2 distinct questions from the first kana stage; skipped (and logged) if it cannot build 2.
+function placementCheckSetup(s) {
+  var at = -1;
+  s.stages.some(function (u, i) { return u.kind === 'kana' && (at = i) >= 0; });
+  var qs = at < 0 ? [] : placementRunAsk(s, at + 1, 2);
+  if (qs.length < 2) {
+    s.phase = 'engine'; s.checkQs = [];
+    s.log.push({ stage: at + 1 || null, outcome: null, check: true, code: 'checkSkipped', note: 'beginner check skipped, fewer than 2 questions' });
+    return;
+  }
+  s.checkQs = qs.map(function (q) { return { stage: at + 1, stageId: s.stages[at].id, question: q, check: true }; });
+}
+function placementRunNext(s) {
+  if (s.cur) return s.cur;
+  var n = s.stages.length;
+  if (s.phase === 'check' && !s.checkQs) placementCheckSetup(s);
+  if (s.phase === 'check') {
+    var cq = s.checkQs.shift();
+    if (cq) return (s.cur = cq);
+  }
+  while (!s.done) {
+    if (!n || placementShouldStop(s.belief, n, s.counted)) { s.done = true; break; }
+    var stage = placementPickStage(s.belief, s.asked, function (k) { return !s.unusable[k]; }).stage;
+    if (stage === null) { s.done = true; break; }
+    var qs = placementRunAsk(s, stage), id = s.stages[stage - 1].id;
+    if (qs.length) return (s.cur = { stage: stage, stageId: id, question: qs[0] });
+    s.unusable[stage] = true;
+    s.log.push({ stage: stage, stageId: id, outcome: null, code: 'noQuestion', note: 'no usable question, skipped' });
+  }
+  return null;
+}
+function placementRunAnswer(s, response) {
+  var c = s.cur;
+  if (!c) throw new Error('placementRunAnswer: no question pending');
+  var outcome = response == null ? 'dontKnow' : (answerIsRight(c.question, response) ? 'correct' : 'wrong');
+  s.belief = placementBeliefAnswer(s.belief, c.stage, outcome);
+  s.taken.push(c.question.itemId);
+  s.asked.push(c.stage);
+  s.answered++;
+  if (!c.check) s.counted++;
+  var row = { stage: c.stage, stageId: c.stageId, itemId: c.question.itemId, outcome: outcome };
+  if (c.check) row.check = true;
+  s.log.push(row);
+  s.cur = null;
+  if (c.check) {
+    if (outcome === 'correct') s.checkRight++;
+    if (!s.checkQs.length) {
+      s.phase = 'engine';
+      if (!s.checkRight) { s.checkMiss = true; s.done = true; s.log.push({ stage: c.stage, outcome: null, check: true, code: 'checkMissed', note: 'beginner check missed both: start from scratch' }); }
+    }
+  }
+  return s;
+}
+// placement k = smallest k whose cumulative belief reaches PLACEMENT_RESULT_CUT (errs low); "knows through stage k"
+function placementRunResult(s) {
+  var n = s.stages.length, k = 0, cum = s.belief[0];
+  while (!s.checkMiss && k < n && cum < PLACEMENT_RESULT_CUT - 1e-9) cum += s.belief[++k];
+  return { placement: k, passedStageIds: s.stages.slice(0, k).map(function (u) { return u.id; }),
+    startStageId: k < n ? s.stages[k].id : null, holeStageIds: [], log: s.log.slice() };
 }
 
 // ── Welcome + placement UI helpers (roadmap ticket 39) ──────────────────────

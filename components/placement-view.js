@@ -6,8 +6,6 @@
 // wrong feedback. Nothing is written until the result is confirmed (props.onApply); leaving saves
 // nothing. A retake (some stages already done) only searches the stages after the furthest done one.
 
-var PLACEMENT_ABOUT = 19; // "Question n of about 19": 8 probes x 2 + 3 spot-checks
-
 // PlacementQuestion: one question, same markup/classes as the quiz layer, answered with Next or
 // "I don't know". Remounted per question (key), so its pick / typed text start empty.
 function PlacementQuestion(props) {
@@ -76,26 +74,23 @@ function PlacementFlow(props) {
   var _r = React.useState(null), res = _r[0], setRes = _r[1];
   var _p = React.useState(0), pos = _p[0], setPos = _p[1];
   var _l = React.useState(false), leaving = _l[0], setLeaving = _l[1];
-  var eng = React.useRef(null), answers = React.useRef([]), layerRef = React.useRef(null);
+  var eng = React.useRef(null), layerRef = React.useRef(null);
   useLayerLock();
   var step = function () {
-    var s = eng.current, next = placementNext(s);
-    answers.current = [];
+    var s = eng.current, next = placementRunNext(s);
     if (next) { setCur(next); setQi(0); return; }
-    var r = placementResult(s), at = s.stages.map(function (u) { return u.id; }).indexOf(r.startStageId);
+    var r = placementRunResult(s), at = s.stages.map(function (u) { return u.id; }).indexOf(r.startStageId);
     setRes(r);
     setPos(at < 0 ? s.stages.length : at);
     setScreen('result');
   };
   var begin = function () {
-    eng.current = placementStart(scope);
+    eng.current = placementRunStart(scope);
     setScreen('test');
     step();
   };
   var answer = function (resp) {
-    answers.current.push(resp);
-    if (qi + 1 < cur.questions.length) return setQi(qi + 1);
-    placementAnswer(eng.current, answers.current);
+    placementRunAnswer(eng.current, resp);
     step();
   };
   var close = function () { if (screen === 'intro') props.onClose(); else setLeaving(true); };
@@ -143,11 +138,11 @@ function PlacementFlow(props) {
 
   // ── Test ──────────────────────────────────────────────────────────────────
   if (screen === 'test' && cur) {
-    var n = eng.current.answered + qi + 1, total = Math.max(PLACEMENT_ABOUT, n);
+    var warm = !!cur.check, n = (warm ? eng.current.answered : eng.current.counted) + qi + 1, total = PLACEMENT_MAX_QUESTIONS;
     return layer(
-      top(fill(L('pt_q'), { n: n, total: total }), h("div", { className: "qz-prog pl-bar", role: "progressbar", 'aria-label': L('pt_progress'), 'aria-valuemin': 0, 'aria-valuemax': total, 'aria-valuenow': n - 1 },
-        h("i", { className: "pl-fill", style: { width: Math.min(100, (n - 1) / total * 100) + '%' } }))),
-      h(PlacementQuestion, { key: cur.stageId + ':' + qi + ':' + eng.current.answered, ex: cur.questions[qi], level: lv, onAnswer: answer }));
+      top(fill(L(warm ? 'pt_warm' : 'pt_q'), { n: n, total: total }), h("div", { className: "qz-prog pl-bar", role: "progressbar", 'aria-label': L('pt_progress'), 'aria-valuemin': 0, 'aria-valuemax': total, 'aria-valuenow': warm ? 0 : n - 1 },
+        h("i", { className: "pl-fill", style: { width: warm ? 0 : Math.min(100, (n - 1) / total * 100) + '%' } }))),
+      h(PlacementQuestion, { key: cur.stageId + ':' + qi + ':' + eng.current.answered, ex: cur.question, level: lv, onAnswer: answer }));
   }
 
   // ── Result ────────────────────────────────────────────────────────────────
@@ -158,9 +153,8 @@ function PlacementFlow(props) {
   var byId = {};
   units.forEach(function (u) { byId[u.id] = u; });
   var startUnit = stages[pos] || null;
-  var marked = {}, holes = {};
+  var marked = {};
   trimmed.passedStageIds.forEach(function (id) { marked[id] = true; });
-  trimmed.holeStageIds.forEach(function (id) { holes[id] = true; });
   var waiting = pos > 0 ? placementReviewsWaiting(units, startUnit ? startUnit.index : units.length, completed).length : 0;
   var stageNo = function (u) { return u.index + 1; };
   var title = !stages.length || pos >= stages.length ? L('pt_res_all')
@@ -168,13 +162,13 @@ function PlacementFlow(props) {
   var sub = pos >= stages.length ? L('pt_res_all_sub') : pos === 0 ? L('pt_res_zero_sub') : L('pt_res_sub');
   var apply = function (opts) { props.onApply(trimmed, startUnit, opts); };
   var stat = function (num, label) { return h("div", { className: "pl-stat" }, h("b", null, num), h("span", null, label)); };
-  var legend = [['marked', 'pt_lg_marked']].concat(startUnit ? [['start', 'pt_lg_start']] : [], [['todo', 'pt_lg_todo']]).concat(plan.skippedIds.length ? [['hole', 'pt_lg_hole']] : []).concat(retake ? [['done', 'pt_lg_done']] : []);
+  var legend = [['marked', 'pt_lg_marked']].concat(startUnit ? [['start', 'pt_lg_start']] : [], [['todo', 'pt_lg_todo']]).concat(retake ? [['done', 'pt_lg_done']] : []);
   return layer(top(),
     h("div", { key: "m", className: "qz-main" }, h("div", { className: "qz-col wide pl-col" },
       h("h1", { className: "pl-h1" }, title),
       h("p", { className: "pl-sub" }, sub),
       h("div", { className: "pl-rail", role: "img", 'aria-label': L('pt_rail') + ': ' + plan.doneIds.length + ' ' + L('pt_stat_stages') }, teaching.map(function (u) {
-        var c = completed.has(u.id) ? 'done' : marked[u.id] ? 'marked' : startUnit && u.id === startUnit.id ? 'start' : holes[u.id] ? 'hole' : 'todo';
+        var c = completed.has(u.id) ? 'done' : marked[u.id] ? 'marked' : startUnit && u.id === startUnit.id ? 'start' : 'todo';
         return h("i", { key: u.id, className: "pl-seg " + c, title: fill(L('pt_stage_n'), { n: stageNo(u) }) + ': ' + u.title });
       })),
       h("div", { className: "pl-legend" }, legend.map(function (g) { return h("span", { key: g[0] }, h("i", { className: "pl-seg " + g[0], 'aria-hidden': "true" }), L(g[1])); })),
@@ -185,7 +179,6 @@ function PlacementFlow(props) {
         h("input", { id: "pt-earlier", type: "range", min: 0, max: def, step: 1, value: pos, onChange: function (e) { setPos(Math.min(def, Math.max(0, +e.target.value))); } }),
         h("span", { className: "pl-note" }, pos < stages.length ? fill(L('pt_stage_n'), { n: stageNo(stages[pos]) }) : L('pt_res_all'))),
       waiting > 0 && h("p", { className: "pl-note", role: "status" }, fill(L(waiting === 1 ? 'pt_reviews_one' : 'pt_reviews_many'), { n: waiting })),
-      plan.skippedIds.map(function (id) { return h("p", { key: id, className: "pl-note" }, fill(L('pt_hole'), { n: stageNo(byId[id]), title: byId[id].title })); }),
       h("div", { className: "pl-actions" },
         h("button", { id: "pt-apply", className: "qz-btn", type: "button", onClick: function () { apply({}); } },
           startUnit ? fill(L('pt_apply'), { n: stageNo(startUnit) }) : L('pt_apply_all')),
@@ -199,9 +192,9 @@ function PlacementFlow(props) {
           h("tbody", null, res.log.map(function (r, i) {
             var u = byId[r.stageId];
             return h("tr", { key: i },
-              h("td", null, L(r.k === 'probe' ? 'pt_k_probe' : 'pt_k_spot')),
+              h("td", null, L(r.check ? 'pt_k_check' : 'pt_k_q')),
               h("td", null, u ? stageNo(u) + ' · ' + u.title : ''),
-              h("td", { className: r.pass ? 'ok' : 'no' }, r.asked ? r.right + '/' + r.asked : '–'),
-              h("td", { className: "pl-note" }, L(r.pass === null ? 'pt_n_none' : 'pt_n_' + r.k + (r.pass ? '_ok' : '_no'))));
+              h("td", { className: r.outcome === 'correct' ? 'ok' : 'no' }, r.outcome ? L({ correct: 'pt_r_ok', wrong: 'pt_r_no', dontKnow: 'pt_r_dk' }[r.outcome]) : '–'),
+              h("td", { className: "pl-note" }, r.outcome ? '' : L({ checkSkipped: 'pt_n_check_skip', checkMissed: 'pt_n_check_miss' }[r.code] || 'pt_n_none')));
           })))))));
 }

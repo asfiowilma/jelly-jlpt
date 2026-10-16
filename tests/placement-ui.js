@@ -52,6 +52,31 @@ QUnit.module('placement UI helpers', function () {
     assert.deepEqual(zero.cardItems, []);
   });
 
+  QUnit.test('placementApply and placementTrim take a run result as it is: passed stages done, no holes, trim marks fewer', function (assert) {
+    var us = units(), x = 7, rnd = function () { x = (x * 1664525 + 1013904223) % 4294967296; return x / 4294967296; };
+    var s = placementRunStart(us, rnd), cur, n = 0, num = {};
+    s.stages.forEach(function (u, i) { num[u.id] = i + 1; });
+    while ((cur = placementRunNext(s))) {
+      if (++n > 60) throw new Error('runaway');
+      var q = cur.question;
+      placementRunAnswer(s, num[cur.stageId] <= 30 ? (q.options && typeof q.correct === 'number' ? q.correct : q.answers[0]) : null);
+    }
+    var res = placementRunResult(s), plan = placementApply(res, us);
+    assert.ok(res.passedStageIds.length > 2, 'a learner who knows 30 stages passes some: ' + res.passedStageIds.length);
+    assert.deepEqual(res.holeStageIds, []);
+    assert.deepEqual(plan.doneIds, res.passedStageIds, 'doneIds = the passed stages');
+    assert.deepEqual(plan.skippedIds, [], 'no skipped stages');
+    var passed = {};
+    res.passedStageIds.forEach(function (id) { passed[id] = true; });
+    var items = unitItems(us.filter(function (u) { return passed[u.id]; })).map(function (it) { return it.id; });
+    assert.ok(plan.cardItems.length > 0);
+    assert.deepEqual(plan.cardItems, items, 'cards come from the passed stages only');
+    var cut = placementTrim(res, s.stages, 2), cutPlan = placementApply(cut, us);
+    assert.deepEqual(cut.passedStageIds, res.passedStageIds.slice(0, 2), 'trim keeps the first marks');
+    assert.ok(cutPlan.doneIds.length < plan.doneIds.length && cutPlan.cardItems.length < plan.cardItems.length, 'fewer marks, fewer cards');
+    assert.deepEqual(cutPlan.skippedIds, []);
+  });
+
   QUnit.test('placementReviewsWaiting: open review units before the start only', function (assert) {
     var us = units(), reviews = us.filter(function (u) { return u.kind === 'review'; });
     var second = reviews[1];

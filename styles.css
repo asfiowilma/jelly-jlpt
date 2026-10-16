@@ -1148,7 +1148,6 @@ button.qz-qn{font-size:0.95rem}
 .pl-seg{display:inline-block;width:11px;height:11px;border-radius:3px;background:var(--surface2)}
 .pl-seg.marked{background:var(--info)}
 .pl-seg.done{background:var(--ok)}
-.pl-seg.hole{background:var(--warn)}
 .pl-seg.start{background:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,transparent)}
 .pl-legend{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:0.78rem;color:var(--muted);margin-bottom:14px}
 .pl-legend .pl-seg{margin-right:5px;vertical-align:-1px;width:10px;height:10px}

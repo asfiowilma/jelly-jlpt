@@ -1165,24 +1165,33 @@ if (!process.env.TEST_ONLY) {
 
   // ── Welcome + placement UI (ticket 39) ──────────────────────────────────────
   // seq(React, state, refs): feed useState / useRef from a call-order list (the stub React has no state),
-  // run fn, restore. State order in PlacementFlow: scope, screen, cur, qi, res, pos, leaving; refs: eng, answers, layer, key.
+  // run fn, restore. State order in PlacementFlow: scope, screen, cur, qi, res, pos, leaving; refs: eng, layer, key.
   function withState(states, refs, fn) {
     var us = React.useState, ur = React.useRef, i = 0, j = 0;
     React.useState = function (init) { var k = i++; return [k < states.length ? states[k] : (typeof init === "function" ? init() : init), noop]; };
     React.useRef = function () { var k = j++; return refs && refs[k] ? refs[k] : { current: null }; };
     try { return fn(); } finally { React.useState = us; React.useRef = ur; }
   }
-  // a learner who knows stages 1..known (1-based, teaching stages), optionally missing `hole`
-  function scriptedPlacement(scope, known, hole) {
-    var s = placementStart(scope, function () { return 0.5; }), set, n = 0, num = {};
+  // a learner who knows stages 1..known (1-based, teaching stages); answers the rest "I don't know". Runs the real run API, seeded.
+  function scriptedPlacement(scope, known) {
+    var s = placementRunStart(scope, function () { return 0.5; }), cur, n = 0, num = {};
     s.stages.forEach(function (u, i) { num[u.id] = i + 1; });
-    while ((set = placementNext(s))) {
+    while ((cur = placementRunNext(s))) {
       if (++n > 60) throw new Error("runaway");
-      var ok = num[set.stageId] <= known && num[set.stageId] !== hole;
-      placementAnswer(s, set.questions.map(function (q) { return ok ? (q.options && typeof q.correct === "number" ? q.correct : q.answers[0]) : null; }));
+      var q = cur.question;
+      placementRunAnswer(s, num[cur.stageId] <= known ? (q.options && typeof q.correct === "number" ? q.correct : q.answers[0]) : null);
     }
     return s;
   }
+  // render PlacementFlow with fed state/refs and the recording createElement; returns every element made
+  function flowEls(states, refs, props) {
+    var ce = React.createElement, els = [];
+    React.createElement = function (type, p) { var el = { type: type, props: p || {}, children: [].slice.call(arguments, 2) }; els.push(el); return el; };
+    try { withState(states, refs, function () { return PlacementFlow(props); }); } finally { React.createElement = ce; }
+    return els;
+  }
+  var flowProps = function (done) { return { units: units, completed: done || new Set(), level: "N5", onApply: noop, onClose: noop }; };
+  function logRows(els) { return els.filter(function (e) { return e.type === "tr" && e.props.key !== undefined; }); }
 
   test("React render: WelcomeView() renders first-launch and 'again' variants", function (a) {
     try {
@@ -1208,24 +1217,86 @@ if (!process.env.TEST_ONLY) {
     a.ok(seen.typing && seen.gap && seen.order && seen.mc, "typed, gap, order and mc all rendered: " + Object.keys(seen));
   });
 
-  test("React render: PlacementFlow() renders intro, a test question, and the result (incl. retake + holes)", function (a) {
+  test("React render: PlacementFlow() renders intro, a test question, and the result (incl. retake, no holes)", function (a) {
     try {
-      var props = { units: units, completed: new Set(), level: "N5", onApply: noop, onClose: noop };
-      PlacementFlow(props);
-      var s = scriptedPlacement(units, 20, 8), cur = placementNext(placementStart(units));
-      withState([units, "test", cur, 0], [{ current: placementStart(units) }, { current: [] }], function () { return PlacementFlow(props); });
-      var res = placementResult(s), pos = s.stages.map(function (u) { return u.id; }).indexOf(res.startStageId);
-      [pos, 0, 3].forEach(function (p) {
-        withState([units, "result", null, 0, res, p], [{ current: s }, { current: [] }], function () { return PlacementFlow(props); });
+      var props = flowProps();
+      var intro = flowEls([units, "intro"], null, props);
+      a.ok(intro.some(function (e) { return e.props.id === "pt-begin"; }), "intro has the start button");
+      var live = placementRunStart(units), cur = placementRunNext(live);
+      var test_ = flowEls([units, "test", cur, 0], [{ current: live }], props);
+      var qEl = test_.filter(function (e) { return e.type === PlacementQuestion; })[0];
+      a.ok(qEl && qEl.props.ex === cur.question, "test screen shows the current question");
+      var s = scriptedPlacement(units, 20), res = placementRunResult(s);
+      [res.placement, 0, 3].forEach(function (p) {
+        var els = flowEls([units, "result", null, 0, res, p], [{ current: s }], props);
+        a.ok(els.some(function (e) { return e.props.id === "pt-apply"; }), "result at " + p + " has the apply button");
+        a.ok(!els.some(function (e) { return /pl-seg hole/.test(e.props.className || ""); }), "no hole legend or rail segment at " + p);
+        a.ok(!els.some(function (e) { return /pl-note/.test(e.props.className || "") && /might revisit/.test(e.children.join("")); }), "no hole note at " + p);
       });
       var done = new Set(units.filter(function (u) { return u.index < 10; }).map(function (u) { return u.id; }));
       var scope = placementScope(units, done), s2 = scriptedPlacement(scope, 4);
-      withState([scope, "intro"], null, function () { return PlacementFlow(Object.assign({}, props, { completed: done })); });
-      withState([scope, "result", null, 0, placementResult(s2), 4], [{ current: s2 }, { current: [] }], function () { return PlacementFlow(Object.assign({}, props, { completed: done })); });
+      flowEls([scope, "intro"], null, flowProps(done));
+      flowEls([scope, "result", null, 0, placementRunResult(s2), 4], [{ current: s2 }], flowProps(done));
       var all = scriptedPlacement(units, 999);
-      withState([units, "result", null, 0, placementResult(all), all.stages.length], [{ current: all }, { current: [] }], function () { return PlacementFlow(props); });
+      flowEls([units, "result", null, 0, placementRunResult(all), all.stages.length], [{ current: all }], props);
       a.ok(true);
     } catch (e) { a.ok(false, e.stack); }
+  });
+
+  test("React render: PlacementFlow() says up to 25 questions on the intro, a warm-up label during the check, and the progress bar", function (a) {
+    var props = flowProps(), intro = flowEls([units, "intro"], null, props);
+    var sub = intro.filter(function (e) { return e.props.className === "pl-sub"; })[0];
+    a.equal(sub.children[0], t("pt_intro_sub"), "intro shows the sub copy");
+    a.ok(/up to 25/i.test(t("pt_intro_sub")), "intro says up to 25");
+    a.ok(!/kana/i.test(t("pt_intro_sub")), "intro does not promise kana questions");
+    a.ok(!/typ/i.test(t("pt_intro_sub")), "intro promises no typing");
+    var live = placementRunStart(units), cur = placementRunNext(live);
+    var warmEls = flowEls([units, "test", cur, 0], [{ current: live }], props);
+    a.ok(cur.check && JSON.stringify(warmEls.map(function (e) { return e.children; })).indexOf("Warm-up 1 of 2") >= 0, "warm-up label during the check");
+    var ok = function (c) { return c.question.options && typeof c.question.correct === "number" ? c.question.correct : c.question.answers[0]; };
+    placementRunAnswer(live, ok(cur)); cur = placementRunNext(live); placementRunAnswer(live, ok(cur)); cur = placementRunNext(live);
+    var els = flowEls([units, "test", cur, 0], [{ current: live }], props);
+    a.ok(!cur.check && JSON.stringify(els.map(function (e) { return e.children; })).indexOf("Question 1 of up to 25") >= 0, "counted label after the check");
+    var bar = (warmEls.concat(els)).filter(function (e) { return e.props.role === "progressbar"; })[0];
+    a.equal(bar.props["aria-valuemax"], 25, "progress bar max is 25");
+    a.equal(PLACEMENT_MAX_QUESTIONS, 25);
+    a.ok(/up to \{total\}/.test(t("pt_q")) && !/about/i.test(t("pt_q")), "progress text reads 'of up to'");
+  });
+
+  test("React render: PlacementFlow() log table has a row per entry, labelled by check and keyed by code", function (a) {
+    var s = scriptedPlacement(units, 20), res = placementRunResult(s), first = s.stages[0];
+    var els = flowEls([units, "result", null, 0, res, 3], [{ current: s }], flowProps());
+    var rows = logRows(els);
+    a.equal(rows.length, res.log.length, "one row per log entry");
+    a.ok(res.log[0].check, "the run opens with beginner-check rows");
+    var cell = function (row, i) { return row.children[i].children[0]; };
+    a.equal(cell(rows[0], 0), t("pt_k_check"), "a check row shows the check label");
+    a.equal(cell(rows[res.log.length - 1], 0), t("pt_k_q"), "an engine row shows the question label");
+    // hand-built logs: one row per code, note text by code
+    var missed = scriptedPlacement(units, 0), mres = placementRunResult(missed);
+    var mrows = logRows(flowEls([units, "result", null, 0, mres, 0], [{ current: missed }], flowProps()));
+    a.equal(mrows.length, mres.log.length);
+    a.equal(cell(mrows[mrows.length - 1], 3), t("pt_n_check_miss"), "a missed check shows the check-missed note");
+    var codes = { checkSkipped: "pt_n_check_skip", noQuestion: "pt_n_none" };
+    Object.keys(codes).forEach(function (code) {
+      var r = Object.assign({}, res, { log: [{ stage: 1, stageId: first.id, outcome: null, check: code === "checkSkipped", code: code, note: "x" }] });
+      var rr = logRows(flowEls([units, "result", null, 0, r, 0], [{ current: s }], flowProps()));
+      a.equal(rr.length, 1);
+      a.equal(cell(rr[0], 3), t(codes[code]), code + " shows its note");
+      a.equal(cell(rr[0], 2), "–", code + " has no outcome");
+    });
+  });
+
+  test("placement strings: every pt_ key placement-view.js uses has every language app-helpers defines for pt_ keys", function (a) {
+    var src = fs.readFileSync(path.join(projectDir, "components", "placement-view.js"), "utf8"), used = {}, m, re = /["'](pt_[a-z0-9_]+)["']/g;
+    while ((m = re.exec(src))) used[m[1]] = true;
+    var langs = {};
+    Object.keys(UI_STRINGS).filter(function (k) { return /^pt_/.test(k); }).forEach(function (k) { Object.keys(UI_STRINGS[k]).forEach(function (l) { if (l === "en" || l === "ja") langs[l] = true; }); });
+    a.ok(Object.keys(used).length > 30, "found the keys: " + Object.keys(used).length);
+    Object.keys(used).forEach(function (k) {
+      a.ok(UI_STRINGS[k], k + " defined");
+      Object.keys(langs).forEach(function (l) { a.ok(UI_STRINGS[k] && UI_STRINGS[k][l], k + " has " + l); });
+    });
   });
 
   test("React render: SettingsView() shows the starting-point section (open and nothing left to skip)", function (a) {
@@ -1244,10 +1315,10 @@ if (!process.env.TEST_ONLY) {
 
   // Headless end to end: a scripted learner through the real engine, then the real apply path
   // (app.js applyPlacement → Store). Asserts the docs the store ends up holding.
-  testAsync("placement end to end: scripted learner → apply → unit docs (skipped), cards (one undoable batch), holes unmarked", function (a) {
+  testAsync("placement end to end: scripted learner → apply → unit docs (skipped), cards (one undoable batch)", function (a) {
     var before = Store.docs();
     var teach = units.filter(function (u) { return u.kind === "kana" || u.kind === "lesson"; });
-    var s = scriptedPlacement(units, 40, 8), res = placementResult(s);
+    var s = scriptedPlacement(units, 40), res = placementRunResult(s);
     var plan = placementApply(res, units);
     return Store.replaceAll([]).then(function () {
       a.ok(progressIsEmpty(Store.docs()), "store starts empty");
@@ -1255,9 +1326,9 @@ if (!process.env.TEST_ONLY) {
       var snap = Store.snapshot(), docs = Store.docs();
       a.equal(out.marked, plan.doneIds.length);
       a.ok(out.marked >= 30 && out.marked <= 40, "about 40 stages marked: " + out.marked);
+      a.deepEqual(plan.skippedIds, [], "the new engine leaves no holes");
       a.deepEqual(snap.completed.slice().sort(), plan.doneIds.slice().sort(), "exactly the passed stages are done");
       a.deepEqual(snap.skipped.slice().sort(), plan.doneIds.slice().sort(), "…all flagged skipped");
-      a.ok(snap.skipped.indexOf(teach[7].id) < 0 && res.holeStageIds.indexOf(teach[7].id) >= 0, "the hole stage stays unmarked");
       a.ok(!progressIsEmpty(docs), "progress is no longer empty (welcome never returns)");
       a.ok(docs.filter(function (d) { return /^log:/.test(d._id); }).length === 0, "skipped stages write no lesson log");
       var cards = snap.srsCards, ids = Object.keys(cards);
