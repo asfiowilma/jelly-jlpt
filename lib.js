@@ -4638,7 +4638,7 @@ function unseenUnlocks(unlocked, seen) {
 // placementQuestions(unit, count, taken): up to `count` hardest-form questions about distinct items
 // the stage (a kana or lesson unit) teaches, none already in `taken` (item ids asked earlier in the
 // test). Same exercise shape as a quiz question plus itemId / item / form / recall. Typed answers
-// first; grammar asks the hardest multiple choice (order, then gap). A kana stage asks only real
+// first on lesson stages (a kana stage is multiple choice only, four kana options); grammar asks the hardest multiple choice (order, then gap). A kana stage asks only real
 // words written in kana (its vocab + practice, 2+ kana), never a single letter. Bound vocab only
 // in context (formsFor → boundForms). Fewer than `count` back when the stage can't make that many.
 var PLACEMENT_FORMS = { grammar: ['order', 'gap', 'patternMc'] };
@@ -4655,11 +4655,12 @@ function placementQuestions(unit, count, taken) {
     return kanaStage ? it.kind === 'vocab' && KANA_WORD_RE.test(it.word) && Array.from(it.word).length >= 2 && kanaReadable(it.word, ctx.learned) : it.kind !== 'kana';
   }));
   for (var i = 0; i < pool.length && out.length < count; i++) {
-    var it = pool[i], forms = rndShuffle(formsFor(it, ctx)), want = PLACEMENT_FORMS[it.kind];
+    var it = pool[i], forms = rndShuffle(formsFor(it, ctx).filter(function (fm) { return !kanaStage || (!fm.recall && fm.name !== 'meaningMc'); })), want = PLACEMENT_FORMS[it.kind];
     var rank = function (fm) { return want ? (want.indexOf(fm.name) < 0 ? 99 : want.indexOf(fm.name)) : fm.recall ? 0 : 1; };
     forms.sort(function (a, b) { return rank(a) - rank(b); });
     for (var j = 0; j < forms.length; j++) {
       var ex = forms[j].make();
+      if (ex && kanaStage && (!ex.options || ex.options.length < 4)) continue;
       if (ex && !answerLeaks(Object.assign(ex, { item: it }))) {
         out.push(Object.assign(ex, { itemId: it.id, item: it, form: forms[j].name, recall: forms[j].recall }));
         break;

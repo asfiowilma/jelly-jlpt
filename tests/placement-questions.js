@@ -39,6 +39,50 @@ QUnit.module('placementQuestions', function () {
     assert.strictEqual(placementQuestions(some, n + 5, []).length <= n, true, 'never more than the stage has');
   });
 
+  // kana-stage questions, repeated: random forms and distractors
+  var kanaQs = function () {
+    var out = [];
+    stages().filter(function (u) { return u.kind === 'kana'; }).forEach(function (u) {
+      for (var run = 0; run < 6; run++) placementQuestions(u, 3, []).forEach(function (q) { out.push({ u: u, q: q }); });
+    });
+    return out;
+  };
+  var isKata = function (s) { return /^[ァ-ヺー]+$/.test(s) && !/[ぁ-ゖ]/.test(s); };
+  var isHira = function (s) { return /^[ぁ-ゖー]+$/.test(s); };
+
+  QUnit.test('kana stages ask multiple choice only, never a typed or recall form', function (assert) {
+    var all = kanaQs(), bad = all.filter(function (x) { return x.q.recall || x.q.answers || x.q.form === 'meaningMc' || x.q.type !== 'mc' || !x.q.options || x.q.options.length !== 4; });
+    assert.ok(all.length > 100, all.length + ' kana questions sampled');
+    assert.deepEqual(bad.map(function (x) { return x.u.id + ' ' + x.q.form; }), [], 'non-multiple-choice kana questions');
+  });
+
+  QUnit.test('kana multiple-choice distractors are kana of the same type as the answer', function (assert) {
+    var bad = [];
+    kanaQs().forEach(function (x) {
+      var kata = isKata(x.q.item.word), same = kata ? isKata : isHira;
+      x.q.options.forEach(function (o) { if (!same(o)) bad.push(x.q.form + ' ' + x.q.item.word + ' ' + o); });
+      if (x.q.options[x.q.correct] !== x.q.item.word) bad.push('answer differs from item ' + x.q.item.word);
+    });
+    assert.deepEqual(bad, [], 'mixed-script options');
+  });
+
+  QUnit.test('katakana items are never shown as hiragana', function (assert) {
+    var bad = [], kata = 0;
+    kanaQs().forEach(function (x) {
+      if (!isKata(x.q.item.word)) return;
+      kata++;
+      var shown = [x.q.question].concat(x.q.options).filter(function (s) { return KANA_WORD_RE.test(s || ''); });
+      shown.forEach(function (s) { if (/[ぁ-ゖ]/.test(s)) bad.push(x.q.form + ' ' + x.q.item.word + ' ' + s); });
+      if (!isKata(x.q.options[x.q.correct])) bad.push('answer not katakana ' + x.q.item.word);
+    });
+    assert.ok(kata > 10, kata + ' katakana questions sampled');
+    assert.deepEqual(bad, [], 'hiragana shown for katakana');
+  });
+
+  QUnit.test('no kana question shows its own answer', function (assert) {
+    assert.deepEqual(kanaQs().filter(function (x) { return answerLeaks(x.q); }).map(function (x) { return x.q.itemId; }), [], 'leaks');
+  });
+
   QUnit.test('review / prep / mock units give nothing', function (assert) {
     buildUnits(PLAN, CATALOG).filter(liveUnit).filter(function (u) { return u.kind !== 'kana' && u.kind !== 'lesson'; }).forEach(function (u) {
       assert.strictEqual(placementQuestions(u, 2, []).length, 0, u.id);
