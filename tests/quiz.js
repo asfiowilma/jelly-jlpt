@@ -245,6 +245,35 @@ QUnit.module('quiz difficulty model', {
     assert.ok(Object.keys(stems).length > 20, n + ' gap questions, ' + Object.keys(stems).length + ' stems checked');
   });
 
+  // Placement audit C3 (.scratch/placement-audit): every N5 + N4 gap stem was read by hand for a second fit. A full check
+  // needs a parser, so this is heuristic: the pairs found, plus two shapes that make them.
+  QUnit.test('C3 no gap question offers a second option that also fits (audit pairs + shape heuristics), N5 and N4, lessons and reviews', function (assert) {
+    var PAIRS = { 'g:wa-desu': ['も'], 'g:nasai': ['てください'], 'g:masen-ka': ['ますか'], 'g:mashou-ka': ['ますか'], 'g:tara-dou': ['ほうがいい'] };
+    var n = 0, bad = [];
+    this.units.filter(function (u) { return u.kind === 'lesson' || u.kind === 'review'; }).forEach(function (u) {
+      var ctx = quizContext(u);
+      quizItems(u).filter(function (it) { return it.kind === 'grammar'; }).forEach(function (g) {
+        var fm = formsFor(g, ctx).filter(function (x) { return x.name === 'gap'; })[0];
+        for (var r = 0; r < 3; r++) {
+          var ex = fm.make();
+          if (!ex) continue;
+          n++;
+          var ans = ex.options[ex.correct], before = ex.question.split(GAP_BLANK)[0], after = ex.question.split(GAP_BLANK)[1] || '';
+          ex.options.forEach(function (o, i) {
+            if (i === ex.correct) return;
+            if ((PAIRS[g.id] || []).indexOf(o) >= 0) bad.push(g.id + ' ' + ex.question + ': ' + o);
+            // a question-final か after a ます-stem: ません makes an invitation (飲みませんか), ますか a plain question (行きますか)
+            if (/^ま/.test(ans) && (/^か/.test(after) && o === 'ません' || /か$/.test(ans) && o === 'ますか')) bad.push(g.id + ' ' + ex.question + ': ' + o);
+            // an え-row or し stem is also a て-stem (開けてください, 勉強してください)
+            if (/[えけげせぜてでねべぺめれし]$/.test(before) && !/^[てで]/.test(ans) && /^て/.test(o) && /^(ください|ほしい)/.test(o.slice(1))) bad.push(g.id + ' ' + ex.question + ': ' + o);
+          });
+        }
+      });
+    });
+    assert.ok(n > 300, n + ' gap questions checked');
+    assert.deepEqual(bad, [], 'gap questions with a second fit');
+  });
+
   QUnit.test('Q31 requeueExercise: same item, a different form when one exists, marked requeue', function (assert) {
     var u = this.units.filter(function (x) { return x.kind === 'lesson'; })[0];
     buildExercises(u).forEach(function (e) {

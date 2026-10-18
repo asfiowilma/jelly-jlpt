@@ -1114,6 +1114,16 @@ function gapParts(parts, surface, hl) {
   while ((at = text.indexOf(surface, from)) >= 0 && surface.length === 1 && 'すし'.indexOf(text.charAt(at + 1)) >= 0) from = at + 1;
   return at < 0 ? null : spliceParts(parts, at, at + surface.length, [{ t: GAP_BLANK }]);
 }
+// gapFrame(s, parts, ctx): a sentence's authored dialogue framing (s.frame, placement audit C1: 起き（　）！ alone does not
+// say who orders whom) as { lines: [{ who, parts }], note }; the line without jp is the gap sentence itself. null when the
+// sentence has none or a line uses something not taught yet (the bare sentence is asked then).
+function gapFrame(s, parts, ctx) {
+  if (!s.frame || s.frame.some(function (l) { return l.jp && untaughtCount(l, ctx.taught); })) return null;
+  return {
+    lines: s.frame.map(function (l) { return { who: l.who, parts: l.jp ? quizFurigana(furiganaParts(l.furigana || l.jp), ctx.taughtKanji, '') : parts }; }),
+    note: s.frame.map(function (l) { return l.who + ': ' + (l.jp ? l.en : s.en); }).join(' / ')
+  };
+}
 // hlAt(g, parts, surface): where the point's own highlight (g.hl, first capture group) starts on surface in the
 // sentence, else -1: the blank then sits on the grammar, not on the same kana inside a word (おい（し）い, N4 r1 grammar T1).
 function hlAt(g, parts, surface) {
@@ -1162,7 +1172,9 @@ var GAP_INTERCHANGEABLE = [['g:kedo', 'g:keredomo', 'g:ga'], ['g:kara', 'g:node'
   // N5 r1 grammar T3: a sentence-final て-stem takes both (待っている。/ 待ってください。)
   ['g:te-iru', 'g:te-kudasai'],
   // N5 r3 grammar T1: コーヒー（は）おいしいです also takes が
-  ['g:wa-desu', 'g:ga']];
+  ['g:wa-desu', 'g:ga'],
+  // placement audit C3: コーヒー（も）おいしいです reads as the same sentence ("too" is easy to drop in English)
+  ['g:wa-desu', 'g:mo']];
 // One way only: から as "from" fits where まで does (７時から / ７時まで), まで never fits for から "because".
 // N5 r1 grammar T3: トム（と）メアリー also parses with に (spoke to Tom), 駅（まで）歩きます with で (walk at the station)
 var GAP_ANSWER_BLOCKS = { 'g:made': ['g:kara', 'g:de', 'g:wo'], 'g:to': ['g:ni', 'g:ni-ikimasu'], 'g:ka': ['g:ne'] }; // 駅を歩きます (path を) too
@@ -1192,7 +1204,10 @@ Object.assign(GAP_ANSWER_BLOCKS, {
   'g:te-mo': ['g:tara'],                                  // 雨がふっ（たら）、行きます (N4 r4 exam T2)
   'g:to-ii': ['g:hou-ga-ii'],                             // ここにカンマを入れる（ほうがいい）ですよ
   'g:hazu': ['g:mitai'],                                  // バスはすぐ来る（みたい）
-  'g:sou-da-hearsay': ['g:mitai']                         // 雨が降る（みたい）だ: N4 r2 grammar T3
+  'g:sou-da-hearsay': ['g:mitai'],                        // 雨が降る（みたい）だ: N4 r2 grammar T3
+  // placement audit C3: an る-verb or する stem also takes てください (起きてください, 勉強してください: "Get up!" / "Study!")
+  'g:nasai': ['g:te-kudasai'],
+  'g:tara-dou': ['g:hou-ga-ii']                           // 映画に行っ（たほうがいい）: the same suggestion
 });
 // gapClash(a, b): grammar ids a and b share a GAP_INTERCHANGEABLE set.
 function gapClash(a, b) {
@@ -1842,7 +1857,7 @@ function formsFor(item, ctx) {
         var ons = (kj.on || []).concat((kj.extra || []).filter(function (r) { return /^[ァ-ヶ]/.test(r); }));
         return typing('Type the reading for this character:', kj.char, ons.concat(kanjiValidReadings(kj)), 'reading…', KANA_INPUT);
       }),
-      f('kanjiMeanType', true, function () { return typing('What does this kanji mean? (type in English)', kj.char, meaningAnswers(kj.meaning).concat(kj.accept || []), 'English meaning...'); }),
+      f('kanjiMeanType', true, function () { return typing('What does this kanji mean? (any one meaning, in English)', kj.char, meaningAnswers(kj.meaning).concat(kj.accept || []), 'English meaning...'); }),
       f('kanjiReadMc', false, function () {
         return rank >= 3 ? mc('kanji_reading', 'Select the correct reading:', kj.char, 'kanjiReading', ctx.kPool, rndShuffle(rs)[0])
           : mc('mc', 'Which is a reading of this kanji?', kj.char, 'kanjiReading', ctx.kPool, rndShuffle(rs)[0]);
@@ -1897,9 +1912,9 @@ function formsFor(item, ctx) {
               d.push(w);
             });
             if (d.length < 2) return null;
-            var opts = rndShuffle([ans].concat(d));
+            var opts = rndShuffle([ans].concat(d)), fr = gapFrame(s, parts, ctx);
             return { type: 'gap', prompt: 'Choose what fills the gap:', question: parts.map(function (p) { return p.t; }).join(''),
-              parts: parts, note: s.en, options: opts, correct: opts.indexOf(ans), sentence: s.id };
+              parts: parts, frame: fr ? fr.lines : undefined, note: fr ? fr.note : s.en, options: opts, correct: opts.indexOf(ans), sentence: s.id };
           }
         }
         return null;
@@ -3255,6 +3270,12 @@ function englishPool() {
   return (_englishPool = out);
 }
 
+// listForms(a): a bracket that lists examples gives one form per example: "to put on (shirt, coat)" takes
+// "put on a shirt" and "put on a coat" (the bare verb and the whole list are read in checkTyping).
+function listForms(a) {
+  var m = String(a).match(/^(.*?)\(([^)]*,[^)]*)\)(.*)$/);
+  return m ? m[2].split(',').map(function (x) { return normEn(m[1] + ' ' + x + ' ' + m[3]); }) : [];
+}
 // checkTyping(typed, answers, reject?): exact (case, width, punctuation, / and , alternatives)
 // for every answer. English answers also match after normEn, with the space dropped
 // (well-lit / welllit), as a plural, or with a typo (typoTolerance) — but never when the typed
@@ -3282,7 +3303,7 @@ function checkTyping(userAns, answers, reject, noun) {
   if (!n) return false;
   // a bracketed word both dropped and kept: "to ask (a favour)" takes "ask" and "ask a favour", "to take (time)" "take time"
   var forms = [].concat.apply([], en.map(enSplit))
-    .reduce(function (out, a) { return out.concat(normEn(a), /\(/.test(a) ? normEn(a.replace(/[()]/g, ' ')) : []); }, []).filter(Boolean);
+    .reduce(function (out, a) { return out.concat(normEn(a), /\(/.test(a) ? normEn(a.replace(/[()]/g, ' ')) : [], listForms(a)); }, []).filter(Boolean);
   var flat = function (s) { return s.replace(/ /g, ''); };
   if (forms.some(function (f) { return f === n || flat(f) === flat(n); })) return true;
   var own = {}, ownStem = {};
@@ -3293,7 +3314,11 @@ function checkTyping(userAns, answers, reject, noun) {
   if (noun && forms.some(function (f) { return plural(f).indexOf(n) >= 0; })) return true;
   var rej = enSet(reject);
   if ((rej[n] && !own[n]) || (rej[ns] && !ownStem[ns])) return false; // someone else's meaning (news ≠ new)
-  return forms.some(function (f) {
+  // "to be accustomed" for "to become accustomed to": be / get / become / grow are one prefix when both sides
+  // carry one and the rest matches exactly (no typo rule, so "to surprise" still never equals "to be surprised")
+  var core = function (x) { var m = x.match(/^(?:be|get|got|become|grow|is|are) (.+)$/); return m ? m[1].replace(/ (?:to|with|at|of)$/, '') : null; };
+  var uc = core(n);
+  return (!!uc && forms.some(function (f) { var fc = core(f); return fc && (fc === uc || enStem(fc) === enStem(uc)); })) || forms.some(function (f) {
     var fs = enStem(f), tol = typoTolerance(f);
     return fs === ns || (tol > 0 && (osaDistance(n, f) <= tol || osaDistance(ns, fs) <= tol));
   });
@@ -3303,8 +3328,10 @@ function checkTyping(userAns, answers, reject, noun) {
 function acceptedAnswers(ex) {
   var seen = {}, out = [];
   (ex.answers || []).forEach(function (a) {
-    var k = JA_CHARS.test(a) ? kataToHira(a) : normEn(a);
-    if (!seen[k]) { seen[k] = true; out.push(a); }
+    // display only: "doctor (title)" shows as "doctor"; grading still uses the full answer
+    var d = JA_CHARS.test(a) ? a : (String(a).replace(/\s*\([^)]*\)\s*$/, '') || a);
+    var k = JA_CHARS.test(d) ? kataToHira(d) : normEn(d);
+    if (!seen[k]) { seen[k] = true; out.push(d); }
   });
   return out;
 }
@@ -3334,6 +3361,41 @@ function otherReadingNote(ex, o) {
   var it = ex.item || {};
   return o.reading + ' is a reading of ' + o.word + ' too, as in "' + o.gloss + '". This question wants ' + o.word +
     (it.gloss ? ' meaning "' + glossText(it) + '"' : '') + '. Try again.';
+}
+// nearMiss(ex, typed): a note when a typed English meaning is close but not right, else null (right, or plainly
+// wrong). Not a miss: the learner reads it and tries again. Two kinds: fewer words than an answer, all of them in
+// it (田 "field" for "rice field"), and the same verb in the other voice (to surprise / to be surprised).
+// Never changes answerIsRight. ponytail: word-level only; the voice test is a crude stem (surpris-).
+var NEAR_STOP = /^(the|of|to|a|an|and|or|in|on|at|for|be|is|it|my|your|this|that)$/;
+function nearMiss(ex, typed) {
+  if (ex.type !== 'typing' || !/^(meaning|kanjiMean)/.test(ex.form || '')) return null;
+  var s = String(typed == null ? '' : typed), n = normEn(s);
+  if (JA_CHARS.test(s) || n.length < 3 || answerIsRight(ex, s)) return null;
+  var tw = enStem(n).split(' ');
+  if (tw.some(function (w) { return NEAR_STOP.test(w); })) return null;
+  var voice = function (x) {
+    return x.split(' ').filter(function (w) { return !/^(be|is|are|was|were|get|gets|got|being|been)$/.test(w); })
+      .map(function (w) { return enStem(w).replace(/(ing|ed|e|d)$/, ''); }).join(' ');
+  };
+  var forms = [].concat.apply([], (ex.answers || []).filter(function (a) { return typeof a === 'string' && !JA_CHARS.test(a); }).map(enSplit))
+    .map(normEn).filter(Boolean);
+  for (var i = 0; i < forms.length; i++) {
+    var fw = enStem(forms[i]).split(' ');
+    if (tw.length < fw.length && tw.every(function (w) { return fw.indexOf(w) >= 0; })) return 'Close, but be more specific. Try again.';
+    if (voice(n) === voice(forms[i])) return 'Close. Check the voice: is it active (to do) or passive (to be done)? Try again.';
+  }
+  return null;
+}
+// retryNotice(ex, typed): the note for a typed answer that is not a miss but a retry (the other reading of a
+// homograph, a twin word's meaning, a near miss), else null. Quiz and placement both ask this before grading.
+// At most RETRY_CAP retries per question (used = retries so far): after that the answer is graded as a plain miss.
+var RETRY_CAP = 3;
+function retryNotice(ex, typed, used) {
+  if ((used || 0) >= RETRY_CAP) return null;
+  var o = otherReading(ex, typed);
+  if (o) return otherReadingNote(ex, o);
+  var t = otherMeaning(ex, typed);
+  return t ? otherMeaningNote(ex, t) : nearMiss(ex, typed);
 }
 
 // ── Storage helpers ──────────────────────────────────────────────────────────
@@ -4642,6 +4704,20 @@ function unseenUnlocks(unlocked, seen) {
 // words written in kana (its vocab + practice, 2+ kana), never a single letter. Bound vocab only
 // in context (formsFor → boundForms). Fewer than `count` back when the stage can't make that many.
 var PLACEMENT_FORMS = { grammar: ['order', 'gap', 'patternMc'] };
+// A first-timer can't know which English phrase is linked to a word (だいぶ "mostly"), so meaning is picked, never typed.
+var PLACEMENT_NO_TYPED_MEANING = ['meaningType', 'kanjiMeanType'];
+var PLACEMENT_MEANING_MC = ['meaningMc', 'kanjiMeanMc']; // ranked with the typed forms: as hard as the lesson asks
+// placementHintKey(ex) → the UI_STRINGS key naming what a typed placement question wants (language / script).
+function placementHintKey(ex) {
+  if (ex.type === 'conjugation') return 'pt_ph_conj';
+  if (ex.romaji) return 'pt_ph_romaji';
+  if (ex.kata) return 'pt_ph_kata';
+  var f = ex.form || '';
+  if (f === 'kanjiReadType') return 'pt_ph_kana';
+  if (/^(readingType|ctxRead|kanaSpell)$/.test(f)) return 'pt_ph_hira';
+  if (ex.kana) return 'pt_ph_jp';
+  return 'pt_placeholder';
+}
 function placementQuestions(unit, count, taken) {
   if (unit.kind !== 'kana' && unit.kind !== 'lesson') return [];
   var ctx = quizContext(unit), seen = {}, out = [];
@@ -4655,8 +4731,8 @@ function placementQuestions(unit, count, taken) {
     return kanaStage ? it.kind === 'vocab' && KANA_WORD_RE.test(it.word) && Array.from(it.word).length >= 2 && kanaReadable(it.word, ctx.learned) : it.kind !== 'kana';
   }));
   for (var i = 0; i < pool.length && out.length < count; i++) {
-    var it = pool[i], forms = rndShuffle(formsFor(it, ctx).filter(function (fm) { return !kanaStage || (!fm.recall && fm.name !== 'meaningMc'); })), want = PLACEMENT_FORMS[it.kind];
-    var rank = function (fm) { return want ? (want.indexOf(fm.name) < 0 ? 99 : want.indexOf(fm.name)) : fm.recall ? 0 : 1; };
+    var it = pool[i], forms = rndShuffle(formsFor(it, ctx).filter(function (fm) { return PLACEMENT_NO_TYPED_MEANING.indexOf(fm.name) < 0 && (!kanaStage || (!fm.recall && fm.name !== 'meaningMc')); })), want = PLACEMENT_FORMS[it.kind];
+    var rank = function (fm) { return want ? (want.indexOf(fm.name) < 0 ? 99 : want.indexOf(fm.name)) : fm.recall || PLACEMENT_MEANING_MC.indexOf(fm.name) >= 0 ? 0 : 1; };
     forms.sort(function (a, b) { return rank(a) - rank(b); });
     for (var j = 0; j < forms.length; j++) {
       var ex = forms[j].make();
@@ -4772,6 +4848,7 @@ function placementPickStage(belief, askedStages, isUsable) {
 // ── Placement run state (plain object; the UI drives start → next → answer → … → result) ──
 //   s = placementRunStart(units, rnd?)     placementRunNext(s) → { stage, stageId, question } | null when finished
 //   placementRunAnswer(s, response)        response = option index or typed text; null = "I don't know"
+//                                          (log row: stage, stageId, itemId, outcome, question, response, check?)
 //   placementRunResult(s)                  { placement, passedStageIds, holeStageIds, startStageId, log }
 function placementRunStart(units, rnd) {
   if (!Array.isArray(units)) throw new Error('placementRunStart: units must be an array');
@@ -4825,7 +4902,8 @@ function placementRunAnswer(s, response) {
   s.asked.push(c.stage);
   s.answered++;
   if (!c.check) s.counted++;
-  var row = { stage: c.stage, stageId: c.stageId, itemId: c.question.itemId, outcome: outcome };
+  // question + response feed the result screen's answer review; the log stays in memory (only ids are saved)
+  var row = { stage: c.stage, stageId: c.stageId, itemId: c.question.itemId, outcome: outcome, question: c.question, response: response };
   if (c.check) row.check = true;
   s.log.push(row);
   s.cur = null;

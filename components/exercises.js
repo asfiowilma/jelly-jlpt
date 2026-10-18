@@ -11,7 +11,7 @@ function exAnswer(ex) {
   }
   if (ex.type === 'reorder') return ex.answer;
   if (ex.options && typeof ex.correct === 'number') return ex.options[ex.correct];
-  return (ex.answers || [])[0] || '';
+  return acceptedAnswers(ex).join(' · '); // every accepted answer, as the dock lists them after a miss
 }
 // A short label for the question (missed list).
 function exQuestionText(ex) {
@@ -85,6 +85,7 @@ function Exercises(_ref9) {
   var _speaking = React.useState(false), speaking = _speaking[0], setSpeaking = _speaking[1];
   // typed another reading of the same spelling (人: じん for ひと): which word is meant, try again
   var _notice = React.useState(null), notice = _notice[0], setNotice = _notice[1];
+  var retries = React.useRef({ cur: -1, n: 0 }); // retry notices given for question `cur` (capped, RETRY_CAP)
   var stopAudio = function () { if (stopRef.current) stopRef.current(); stopRef.current = null; setSpeaking(false); };
   React.useEffect(function () { return stopAudio; }, [cur, started]); // question change / unmount
   React.useEffect(function () {
@@ -278,7 +279,7 @@ function Exercises(_ref9) {
         var say = exSpeech(e);
         return h("li", { key: i },
           h("span", { className: "q", lang: "ja" }, exQuestionText(e)),
-          h("span", { className: "a", lang: QZ_JA.test(exAnswer(e)) ? "ja" : "en" }, exAnswer(e)),
+          h("span", { className: "a", lang: QZ_JA.test(exAnswer(e)) ? "ja" : "en" }, exAnswerEl(e, exAnswer(e))),
           say ? h("button", { className: "qz-gb", 'aria-label': "Hear it", onClick: function () { speak(say); } }, icon('speaker')) : h("span", null));
       })),
       missed.length > shown.length && h("p", { key: "more", className: "qz-more" }, "and ", missed.length - shown.length, " more")
@@ -310,10 +311,9 @@ function Exercises(_ref9) {
     if (revealed || !ready) return;
     var resp = isOpt ? pick : isReorder || isPair ? picks : (ex.kana ? kanaBox(ex, answer.replace(/n$/, 'ん')) : answer);
     if (typeof resp === 'string') setAnswer(resp);
-    var other = isType && otherReading(ex, resp);
-    if (other) return setNotice(otherReadingNote(ex, other)); // not a miss: say which word, try again
-    var twin = isType && otherMeaning(ex, resp);
-    if (twin) return setNotice(otherMeaningNote(ex, twin));
+    if (!retries.current || retries.current.cur !== cur) retries.current = { cur: cur, n: 0 }; // (null: test stubs ignore the initial value)
+    var note = isType && retryNotice(ex, resp, retries.current.n); // not a miss: say which word (or how close), try again
+    if (note) { retries.current.n++; return setNotice(note); }
     setNotice(null);
     if (isOpt) setSelected(pick); // the track keeps playing; leaving the question stops it
     setRevealed(true);
@@ -364,7 +364,7 @@ function Exercises(_ref9) {
     stopRef.current = speakScript(lines, { onEnd: function () { setSpeaking(false); } });
   };
   var kit = qzKit(h, ex, {
-    lv: lv, pick: pick, revealed: revealed, selected: selected, tone: tone, onPick: setPick,
+    help: true, lv: lv, pick: pick, revealed: revealed, selected: selected, tone: tone, onPick: setPick,
     plays: plays, speaking: speaking, play: play, voiceStatus: voiceStatus, showEarly: showEarly, onEarly: function () { setShowEarly(true); } });
   var promptEl = kit.promptEl, questionEl = kit.questionEl;
   var main, wide = false, extra = null;
@@ -456,7 +456,7 @@ function Exercises(_ref9) {
     dock = h("div", { className: "qz-dock " + (okNow ? 'right' : 'wrong') }, h("div", { className: "qz-in" },
       h("div", { className: "qz-fb", role: "status", 'aria-live': "polite" },
         h("b", null, icon(okNow ? 'check' : 'x'), okNow ? (ex.overridden ? "Counted as right" : "Correct") : "Not quite"),
-        !okNow && h("div", { className: "ans" }, accepted.length > 1 ? "Accepted answers: " : "Answer: ", h("span", { lang: QZ_JA.test(ansText) ? "ja" : "en" }, ansText)),
+        !okNow && h("div", { className: "ans" }, accepted.length > 1 ? "Accepted answers: " : "Answer: ", h("span", { lang: QZ_JA.test(ansText) ? "ja" : "en" }, exAnswerEl(ex, ansText))),
         ex.explain && h("p", null, ex.explain)),
       isType && !okNow && answer.trim() !== '' && h("button", { className: "qz-gb qz-override", onClick: overrule, title: "Count this answer as right (a typo or a fair synonym)" }, "I was right"),
       say && h("button", { className: "qz-gb", 'aria-label': "Hear it", onClick: function () { speak(say); } }, icon('speaker')),

@@ -50,6 +50,38 @@ QUnit.module('typed English answers', function () {
     assert.notOk(checkTyping('news', ['new'], pool), 'no noun flag: reject set as before');
   });
 
+  QUnit.test('be / get / become / grow are one prefix on the same core; typos and voice stay strict', function (assert) {
+    var ok = function (id, typed) { var v = CATALOG.items[id]; return checkTyping(typed, meaningAnswers(v.gloss).concat(v.accept || []), englishPool()); };
+    ['to be accustomed', 'to get accustomed', 'to be accustomed to', 'be used to', 'to grow accustomed', 'to become familiar'].forEach(function (t) {
+      assert.ok(ok('v:慣れる|なれる', t), 'なれる: ' + t);
+    });
+    ['mostly', 'to be', 'to get', 'to be accustom', 'accustomed'].forEach(function (t) { assert.notOk(ok('v:慣れる|なれる', t), 'なれる: ' + t + ' stays wrong'); });
+    assert.notOk(ok('v:大分|だいぶ', 'mostly'), 'だいぶ: mostly is a stretch');
+    assert.ok(ok('v:大分|だいぶ', 'a lot'), 'だいぶ: a lot');
+    assert.ok(checkTyping('to become surprised', ['to be surprised']), 'prefix swap on a shared core');
+    assert.notOk(checkTyping('to surprise', ['to be surprised']), 'active is not passive');
+    var oex = { type: 'typing', form: 'meaningType', item: CATALOG.items['v:驚く|おどろく'], answers: meaningAnswers(CATALOG.items['v:驚く|おどろく'].gloss).concat(CATALOG.items['v:驚く|おどろく'].accept || []) };
+    assert.ok(/voice/.test(retryNotice(oex, 'to surprise')), 'おどろく: to surprise is still a retry note');
+    assert.ok(answerIsRight(oex, 'to get surprised'), 'おどろく: get surprised');
+  });
+  QUnit.test('a bracket that lists examples: each example is an answer (着る put on a shirt)', function (assert) {
+    var ok = function (id, typed) { var v = CATALOG.items[id]; return checkTyping(typed, meaningAnswers(v.gloss).concat(v.accept || []), englishPool()); };
+    ['to put on a shirt', 'put on a coat', 'put on'].forEach(function (t) { assert.ok(ok('v:着る|きる', t), '着る: ' + t); });
+    ['to play the piano', 'play guitar'].forEach(function (t) { assert.ok(ok('v:弾く|ひく', t), '弾く: ' + t); });
+    ['to cross a road', 'cross a bridge'].forEach(function (t) { assert.ok(ok('v:渡る|わたる', t), '渡る: ' + t); });
+    assert.ok(ok('v:受ける|うける', 'to take an exam'), '受ける: take an exam');
+    assert.notOk(ok('v:着る|きる', 'put on a hat'), '着る: an unlisted object');
+    assert.notOk(ok('v:着る|きる', 'coat'), '着る: the bare example');
+  });
+  QUnit.test('audit additions: found by two sources, accepted (N5/N4 high-miss items)', function (assert) {
+    [['v:勤める|つとめる', 'to work at'], ['v:勤める|つとめる', 'to be employed'], ['v:かける|かける', 'to make a call'],
+      ['v:少し|すこし', 'a little bit'], ['v:ちょっと|ちょっと', 'a little bit'], ['v:受ける|うける', 'to take a test'], 
+      ['v:大体|だいたい', 'for the most part']].forEach(function (c) {
+      var v = CATALOG.items[c[0]];
+      assert.ok(checkTyping(c[1], meaningAnswers(v.gloss).concat(v.accept || []), englishPool()), c[0] + ' takes ' + c[1]);
+    });
+  });
+
   QUnit.test('kana answers stay exact (script matters), romaji items unaffected', function (assert) {
     assert.ok(checkTyping('にほんじん', ['にほんじん']));
     assert.notOk(checkTyping('ニホンジン', ['にほんじん']), 'katakana ≠ hiragana');
@@ -101,7 +133,7 @@ QUnit.module('typed English answers', function () {
 
   QUnit.test('acceptedAnswers: one per meaning, in order', function (assert) {
     assert.deepEqual(acceptedAnswers({ answers: meaningAnswers(['to meet', 'to see (a person)']).concat(['to encounter']) }),
-      ['to meet', 'to see (a person)', 'to encounter']);
+      ['to meet', 'to see', 'to encounter']); // the bracketed note is dropped for display only
     assert.deepEqual(acceptedAnswers({ answers: ['にほんじん', 'にっぽんじん'] }), ['にほんじん', 'にっぽんじん']);
   });
 
@@ -150,5 +182,62 @@ QUnit.module('typed English answers', function () {
     var ok = function (id, typed) { var v = CATALOG.items[id]; return checkTyping(typed, meaningAnswers(v.gloss).concat(v.accept || []), englishPool()); };
     ['guitar', 'fire'].forEach(function (t) { assert.notOk(ok(t === 'guitar' ? 'v:弾く|ひく' : 'v:消える|きえる', t), t + ' alone'); });
     assert.notOk(ok('v:着る|きる', 'coat'), 'きる: coat alone');
+  });
+
+  QUnit.test('near miss: a less specific or other-voice meaning is a retry note, a clearly wrong one is not', function (assert) {
+    var kanji = catalogOf('kanji').filter(function (k) { return k.char === '田'; })[0], v = function (id) { return CATALOG.items[id]; };
+    var kex = { type: 'typing', form: 'kanjiMeanType', item: kanji, answers: meaningAnswers(kanji.meaning).concat(kanji.accept || []) };
+    var vex = function (id) { var x = v(id); return { type: 'typing', form: 'meaningType', item: x, answers: meaningAnswers(x.gloss).concat(x.accept || []) }; };
+    assert.notOk(answerIsRight(kex, 'field'), '田 field is not right');
+    assert.ok(/more specific/.test(nearMiss(kex, 'field')), '田 field: be more specific');
+    assert.strictEqual(nearMiss(kex, 'rice field'), null, 'a right answer is no near miss');
+    assert.ok(/more specific/.test(nearMiss(vex('v:小鳥|ことり'), 'bird')), '小鳥 bird');
+    assert.ok(/voice/.test(nearMiss(vex('v:驚く|おどろく'), 'to surprise')), 'おどろく: to surprise is the other voice');
+    assert.strictEqual(nearMiss(vex('v:驚く|おどろく'), 'to be surprised'), null);
+    // distinct meanings, wrong words and stop words stay plain misses (no retry), and none of them became right
+    [[kex, 'house'], [kex, 'water'], [kex, 'the'], [vex('v:小鳥|ことり'), 'chick'], [vex('v:市民|しみん'), 'commoner'],
+      [vex('v:建てる|たてる'), 'to raise'], [vex('v:髪|かみ'), 'paper'], [vex('v:驚く|おどろく'), 'to eat'], [vex('v:紙|かみ'), 'hair']].forEach(function (c) {
+      assert.strictEqual(nearMiss(c[0], c[1]), null, c[1] + ' is no near miss');
+      assert.notOk(answerIsRight(c[0], c[1]), c[1] + ' stays wrong');
+    });
+    // every own answer, and Japanese or kana-form questions, never get a note
+    catalogOf('vocab').slice(0, 400).forEach(function (x) {
+      var e = vex(x.id);
+      e.answers.forEach(function (a) { if (nearMiss(e, a)) assert.ok(false, x.id + ' own answer ' + a + ' got a note'); });
+    });
+    assert.strictEqual(nearMiss({ type: 'typing', form: 'kanaType', answers: ['ka'] }, 'k'), null, 'kana items');
+    assert.strictEqual(nearMiss({ type: 'typing', form: 'readingType', answers: ['ひと'] }, 'ひ'), null, 'kana answers');
+  });
+  QUnit.test('retryNotice: other reading, twin meaning and near miss all retry; a plain miss does not', function (assert) {
+    var ctx = quizContext(allUnits().filter(function (u) { return u.kind === 'lesson'; })[30]), n = 0;
+    ['v:内|うち', 'v:うち|うち'].forEach(function (id) {
+      var ex = formsFor(CATALOG.items[id], ctx).filter(function (f) { return f.name === 'meaningType'; })[0].make();
+      if (!ex) return;
+      n++;
+      ex.item = CATALOG.items[id];
+      assert.strictEqual(retryNotice(ex, 'zzzz'), null, 'plain miss');
+    });
+    assert.ok(n > 0);
+    var twin = { type: 'typing', form: 'meaningType', answers: ['within'], twinMeanings: [{ word: 'うち', answers: ['house'] }] };
+    assert.ok(/another word/.test(retryNotice(twin, 'house')), 'twin meaning retries');
+    var homo = { type: 'typing', answers: ['ひと'], others: [{ word: '人', reading: 'じん', gloss: 'person from' }], kana: true };
+    assert.ok(/じん/.test(retryNotice(homo, 'じん')), 'other reading retries');
+    assert.strictEqual(retryNotice(homo, 'ひと'), null, 'right answer');
+  });
+  QUnit.test('retries are capped at 3 per question; the 4th is a plain miss', function (assert) {
+    var homo = { type: 'typing', answers: ['ひと'], others: [{ word: '人', reading: 'じん', gloss: 'person from' }], kana: true };
+    for (var i = 0; i < 3; i++) assert.ok(retryNotice(homo, 'じん', i), 'retry ' + (i + 1));
+    assert.strictEqual(retryNotice(homo, 'じん', 3), null, '4th try is graded');
+    assert.strictEqual(answerIsRight(homo, 'じん'), false);
+  });
+  QUnit.test('missed list shows a gloss without its trailing bracket, grading unchanged', function (assert) {
+    var ex = { type: 'typing', form: 'meaningType', answers: ['doctor (title)', 'physician'] };
+    assert.deepEqual(acceptedAnswers(ex), ['doctor', 'physician']);
+    assert.ok(answerIsRight(ex, 'doctor (title)'), 'still accepted as written');
+  });
+  QUnit.test('kanji meaning prompt says any one meaning will do', function (assert) {
+    var kj = CATALOG.items[Object.keys(CATALOG.items).filter(function (k) { return CATALOG.items[k].kind === 'kanji'; })[0]];
+    var ex = formsFor(kj, quizContext(allUnits().filter(function (u) { return u.kind === 'lesson'; })[30])).filter(function (f) { return f.name === 'kanjiMeanType'; })[0].make();
+    assert.strictEqual(ex.prompt, 'What does this kanji mean? (any one meaning, in English)');
   });
 });

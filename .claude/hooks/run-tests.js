@@ -1165,10 +1165,11 @@ if (!process.env.TEST_ONLY) {
 
   // ── Welcome + placement UI (ticket 39) ──────────────────────────────────────
   // seq(React, state, refs): feed useState / useRef from a call-order list (the stub React has no state),
-  // run fn, restore. State order in PlacementFlow: scope, screen, cur, qi, res, pos, leaving; refs: eng, layer, key.
-  function withState(states, refs, fn) {
+  // run fn, restore. State order in PlacementFlow: scope, screen, cur, qi, res, pos, leaving, rvOpen, filter,
+  // openRows, sel; refs: eng, layer, key, scroll. `sets` (optional) records setter calls: sets[stateIndex] = value.
+  function withState(states, refs, fn, sets) {
     var us = React.useState, ur = React.useRef, i = 0, j = 0;
-    React.useState = function (init) { var k = i++; return [k < states.length ? states[k] : (typeof init === "function" ? init() : init), noop]; };
+    React.useState = function (init) { var k = i++; return [k < states.length ? states[k] : (typeof init === "function" ? init() : init), sets ? function (v) { sets[k] = v; } : noop]; };
     React.useRef = function () { var k = j++; return refs && refs[k] ? refs[k] : { current: null }; };
     try { return fn(); } finally { React.useState = us; React.useRef = ur; }
   }
@@ -1184,14 +1185,39 @@ if (!process.env.TEST_ONLY) {
     return s;
   }
   // render PlacementFlow with fed state/refs and the recording createElement; returns every element made
-  function flowEls(states, refs, props) {
+  function flowEls(states, refs, props, sets, comp) {
     var ce = React.createElement, els = [];
     React.createElement = function (type, p) { var el = { type: type, props: p || {}, children: [].slice.call(arguments, 2) }; els.push(el); return el; };
-    try { withState(states, refs, function () { return PlacementFlow(props); }); } finally { React.createElement = ce; }
+    try { withState(states, refs, function () { return (comp || PlacementFlow)(props); }, sets); } finally { React.createElement = ce; }
     return els;
   }
   var flowProps = function (done) { return { units: units, completed: done || new Set(), level: "N5", onApply: noop, onClose: noop }; };
-  function logRows(els) { return els.filter(function (e) { return e.type === "tr" && e.props.key !== undefined; }); }
+  // every text child under an element tree made by flowEls, joined
+  function textOf(el) { return (el.children || []).map(function (c) { return c && typeof c === "object" ? (Array.isArray(c) ? c.map(textOf).join("") : textOf(c)) : c === false || c == null ? "" : String(c); }).join(""); }
+  function byClass(els, cls) { return els.filter(function (e) { return (" " + (e.props.className || "") + " ").indexOf(" " + cls + " ") >= 0; }); }
+  // synthetic scope: `levels` (e.g. all of LEVELS), each with `per` lessons then a review; no items
+  function synthUnits(levels, per) {
+    var out = [];
+    levels.forEach(function (lv) {
+      for (var i = 0; i < per; i++) out.push({ id: lv + "-l" + i, level: lv, kind: "lesson", index: out.length, title: lv + " lesson " + (i + 1) });
+      out.push({ id: lv + "-r", level: lv, kind: "review", index: out.length, title: lv + " review" });
+    });
+    return out;
+  }
+  // a hand-built run over synthetic units: 2 warm-up rows (right) then `answers` [stage (1-based), outcome] rows
+  function synthRun(us, answers, place) {
+    var stages = us.filter(function (u) { return u.kind === "lesson" || u.kind === "kana"; });
+    var mc = { type: "mc", prompt: "Pick", question: "水", options: ["みず", "すい", "き", "ひ"], correct: 0 };
+    var typed = { type: "typing", prompt: "Type", question: "山", answers: ["やま"] };
+    var log = [1, 1].map(function () { return { stage: 1, stageId: stages[0].id, outcome: "correct", check: true, question: mc, response: 0 }; });
+    answers.forEach(function (a, i) {
+      var q = i % 2 ? typed : mc, right = a[1] === "correct";
+      log.push({ stage: a[0], stageId: stages[a[0] - 1].id, outcome: a[1], question: q,
+        response: a[1] === "dontKnow" ? null : q === mc ? (right ? 0 : 1) : (right ? "やま" : "やみ") });
+    });
+    return { s: { stages: stages, answered: log.length }, res: { placement: place, passedStageIds: stages.slice(0, place).map(function (u) { return u.id; }),
+      holeStageIds: [], startStageId: stages[place] ? stages[place].id : null, log: log } };
+  }
 
   test("React render: WelcomeView() renders first-launch and 'again' variants", function (a) {
     try {
@@ -1228,11 +1254,16 @@ if (!process.env.TEST_ONLY) {
       a.ok(qEl && qEl.props.ex === cur.question, "test screen shows the current question");
       var s = scriptedPlacement(units, 20), res = placementRunResult(s);
       [res.placement, 0, 3].forEach(function (p) {
-        var els = flowEls([units, "result", null, 0, res, p], [{ current: s }], props);
+        // every answer row open: the review body renders each real question form the engine asked
+        var open = {};
+        res.log.forEach(function (r, i) { open[i] = true; });
+        var els = flowEls([units, "result", null, 0, res, p, false, true, "all", open, 1], [{ current: s }], props);
         a.ok(els.some(function (e) { return e.props.id === "pt-apply"; }), "result at " + p + " has the apply button");
-        a.ok(!els.some(function (e) { return /pl-seg hole/.test(e.props.className || ""); }), "no hole legend or rail segment at " + p);
-        a.ok(!els.some(function (e) { return /pl-note/.test(e.props.className || "") && /might revisit/.test(e.children.join("")); }), "no hole note at " + p);
+        a.ok(byClass(els, "pl-qb").length > 0, "review bodies render at " + p);
       });
+      a.ok(res.log.filter(function (r) { return r.outcome; }).every(function (r) { return r.question && r.itemId && "response" in r; }), "answered log rows keep the question and the response");
+      var chartEl = flowEls([units, "result", null, 0, res, res.placement], [{ current: s }], props).filter(function (e) { return e.type === PlacementChart; })[0];
+      flowEls([], null, chartEl.props, null, PlacementChart);
       var done = new Set(units.filter(function (u) { return u.index < 10; }).map(function (u) { return u.id; }));
       var scope = placementScope(units, done), s2 = scriptedPlacement(scope, 4);
       flowEls([scope, "intro"], null, flowProps(done));
@@ -1263,28 +1294,157 @@ if (!process.env.TEST_ONLY) {
     a.ok(/up to \{total\}/.test(t("pt_q")) && !/about/i.test(t("pt_q")), "progress text reads 'of up to'");
   });
 
-  test("React render: PlacementFlow() log table has a row per entry, labelled by check and keyed by code", function (a) {
-    var s = scriptedPlacement(units, 20), res = placementRunResult(s), first = s.stages[0];
-    var els = flowEls([units, "result", null, 0, res, 3], [{ current: s }], flowProps());
-    var rows = logRows(els);
-    a.equal(rows.length, res.log.length, "one row per log entry");
-    a.ok(res.log[0].check, "the run opens with beginner-check rows");
-    var cell = function (row, i) { return row.children[i].children[0]; };
-    a.equal(cell(rows[0], 0), t("pt_k_check"), "a check row shows the check label");
-    a.equal(cell(rows[res.log.length - 1], 0), t("pt_k_q"), "an engine row shows the question label");
-    // hand-built logs: one row per code, note text by code
-    var missed = scriptedPlacement(units, 0), mres = placementRunResult(missed);
-    var mrows = logRows(flowEls([units, "result", null, 0, mres, 0], [{ current: missed }], flowProps()));
-    a.equal(mrows.length, mres.log.length);
-    a.equal(cell(mrows[mrows.length - 1], 3), t("pt_n_check_miss"), "a missed check shows the check-missed note");
-    var codes = { checkSkipped: "pt_n_check_skip", noQuestion: "pt_n_none" };
-    Object.keys(codes).forEach(function (code) {
-      var r = Object.assign({}, res, { log: [{ stage: 1, stageId: first.id, outcome: null, check: code === "checkSkipped", code: code, note: "x" }] });
-      var rr = logRows(flowEls([units, "result", null, 0, r, 0], [{ current: s }], flowProps()));
-      a.equal(rr.length, 1);
-      a.equal(cell(rr[0], 3), t(codes[code]), code + " shows its note");
-      a.equal(cell(rr[0], 2), "–", code + " has no outcome");
+  test("placementSmooth: the line passes through every answer and never overshoots between two", function (a) {
+    var pts = [[0, 50], [10, 80], [20, 20], [30, 20], [40, 90], [50, 85], [60, 10]];
+    var d = placementSmooth(pts), segs = d.split(" C").slice(1).map(function (s) { return s.trim().split(" ").map(Number); });
+    a.equal(d.indexOf("M0 50"), 0, "starts at the first point");
+    a.equal(segs.length, pts.length - 1, "one curve per gap");
+    segs.forEach(function (c, i) {
+      var p0 = pts[i], p1 = pts[i + 1], lo = Math.min(p0[1], p1[1]) - 1e-9, hi = Math.max(p0[1], p1[1]) + 1e-9;
+      a.deepEqual([c[4], c[5]], p1, "segment " + i + " ends on its point");
+      for (var k = 0; k <= 20; k++) { // Bezier y at k/20
+        var u = k / 20, y = Math.pow(1 - u, 3) * p0[1] + 3 * Math.pow(1 - u, 2) * u * c[1] + 3 * (1 - u) * u * u * c[3] + u * u * u * c[5];
+        if (y < lo || y > hi) { a.ok(false, "segment " + i + " overshoots at " + u + ": " + y); break; }
+      }
     });
+    a.equal(placementSmooth([[5, 6]]), "M5 6", "a single answer is a point");
+    a.equal(placementSmooth([]), "");
+  });
+
+  test("React render: placement result bands, level cards and coming-soon strips come from the units' levels", function (a) {
+    var us = synthUnits(LEVELS, 4), run = synthRun(us, [[3, "correct"], [9, "wrong"], [14, "dontKnow"]], 10);
+    var els = flowEls([us, "result", null, 0, run.res, 10], [{ current: run.s }], { units: us, completed: new Set(), level: "N5", onApply: noop, onClose: noop });
+    var chart = els.filter(function (e) { return e.type === PlacementChart; })[0];
+    a.deepEqual(chart.props.bands.map(function (b) { return [b.level, b.from, b.to]; }), [["N5", 0, 4], ["N4", 4, 8], ["N3", 8, 12], ["N2", 12, 16], ["N1", 16, 20]], "one band per level, N5 first");
+    a.deepEqual(chart.props.soon, [], "every level built: no coming-soon strip");
+    a.equal(chart.props.start, "Start · N3 stage 3", "chip names the start per level");
+    var cards = byClass(els, "pl-lv");
+    a.deepEqual(cards.map(function (c) { return textOf(c); }), ["N5Complete", "N4Complete", "N3" + "2 of 4 marked", "N2Still to learn", "N1Still to learn"], "status per level");
+    a.ok(/here/.test(byClass(els, "pl-lv")[2].props.className), "the start's level is outlined");
+    a.equal(textOf(els.filter(function (e) { return e.type === "h1"; })[0]), "Start N3 at “N3 lesson 3”");
+    a.equal(textOf(byClass(els, "pl-sub")[0]), "N3 · stage 3 of 5. Based on your 5 answers.", "per-level stage of the level's units");
+    // the chart itself: a band rect per level in its colour, ✓ on levels fully below the start
+    var cEls = flowEls([], null, chart.props, null, PlacementChart);
+    a.deepEqual(cEls.filter(function (e) { return e.type === "rect" && /^var\(--n/.test(e.props.fill || ""); }).map(function (e) { return e.props.fill; }), ["var(--n5)", "var(--n4)", "var(--n3)", "var(--n2)", "var(--n1)"]);
+    a.deepEqual(byClass(cEls, "pl-band").map(textOf), ["N5 ✓", "N4 ✓", "N3", "N2", "N1"]);
+    var marks = byClass(cEls, "pl-pt");
+    a.equal(marks.length, 5, "a mark per answer");
+    a.equal(marks[3].props["aria-label"], "Question 2, N3 stage 1, wrong", "marks say question, level stage and result");
+    a.ok(marks.every(function (m) { return m.props.tabIndex === 0 && m.props.role === "button"; }), "marks are focusable buttons");
+    // two levels built: the other three show as coming soon, highest on top
+    var two = synthUnits(["N5", "N4"], 3), r2 = synthRun(two, [[2, "correct"]], 1);
+    var els2 = flowEls([two, "result", null, 0, r2.res, 1], [{ current: r2.s }], { units: two, completed: new Set(), level: "N5", onApply: noop, onClose: noop });
+    var ch2 = els2.filter(function (e) { return e.type === PlacementChart; })[0];
+    a.deepEqual(ch2.props.soon, ["N3", "N2", "N1"]);
+    a.deepEqual(byClass(flowEls([], null, ch2.props, null, PlacementChart), "pl-soon").map(textOf), ["N1 soon", "N2 soon", "N3 soon"]);
+    a.deepEqual(byClass(els2, "pl-lv").map(textOf).slice(2), ["N3Coming soon", "N2Coming soon", "N1Coming soon"]);
+  });
+
+  test("React render: placement evidence line counts counted questions only and follows the start", function (a) {
+    var us = synthUnits(["N5", "N4"], 10), ans = [[2, "correct"], [4, "wrong"], [6, "correct"], [12, "correct"], [15, "dontKnow"], [18, "wrong"]];
+    var run = synthRun(us, ans, 8), props = { units: us, completed: new Set(), level: "N5", onApply: noop, onClose: noop };
+    var ev = function (pos) { var p = byClass(flowEls([us, "result", null, 0, run.res, pos], [{ current: run.s }], props), "pl-ev")[0]; return p && textOf(p); };
+    a.equal(ev(8), "You got 2 of 3 right before your start, and 1 of 3 after it.", "warm-up excluded");
+    a.equal(ev(3), "You got 1 of 1 right before your start, and 2 of 5 after it.", "recomputed when the start moves");
+    a.equal(ev(0), "You got 3 of 6 right after your start.", "nothing before a zero start");
+  });
+
+  test("React render: placement stepper stops at both ends and Jump to lists level starts before the placed start", function (a) {
+    var us = synthUnits(["N5", "N4", "N3"], 6), run = synthRun(us, [[3, "correct"]], 14), props = { units: us, completed: new Set(), level: "N5", onApply: noop, onClose: noop };
+    var at = function (pos, sets) { return flowEls([us, "result", null, 0, run.res, pos], [{ current: run.s }], props, sets); };
+    var btn = function (els, key) { return els.filter(function (e) { return e.type === "button" && e.props["aria-label"] === t(key); })[0]; };
+    var hi = at(14), lo = at(0), mid = at(7, {});
+    a.ok(btn(hi, "pt_fwd1").props.disabled && btn(hi, "pt_fwd5").props.disabled && !btn(hi, "pt_back1").props.disabled, "at the placed start only back works");
+    a.ok(btn(lo, "pt_back1").props.disabled && btn(lo, "pt_back5").props.disabled && !btn(lo, "pt_fwd5").props.disabled, "at 0 only forward works");
+    var sets = {};
+    at(12, sets);
+    btn(at(12, sets), "pt_fwd5").props.onClick();
+    a.equal(sets[5], 14, "+5 clamps to the placed start");
+    btn(at(2, sets), "pt_back5").props.onClick();
+    a.equal(sets[5], 0, "−5 clamps to 0");
+    var out = mid.filter(function (e) { return e.type === "output"; })[0];
+    a.equal(out.props["aria-live"], "polite");
+    a.equal(textOf(out), "N4 · stage 2 · N4 lesson 2", "readout: level, stage, title");
+    var sel = hi.filter(function (e) { return e.props.id === "pt-jump"; })[0], opts = hi.filter(function (e) { return e.type === "option"; });
+    a.deepEqual(opts.map(function (o) { return [o.props.value, textOf(o)]; }), [["", "Jump to…"], ["0", "Start of N5"], ["6", "Start of N4"], ["12", "Start of N3"]]);
+    a.equal(sel.props.value, "", "placeholder when the start is mid-level");
+    a.equal(at(6).filter(function (e) { return e.props.id === "pt-jump"; })[0].props.value, "6", "shows the level start it sits on");
+    var s2 = {};
+    at(14, s2).filter(function (e) { return e.props.id === "pt-jump"; })[0].props.onChange({ target: { value: "6" } });
+    a.equal(s2[5], 6, "jump moves the start");
+    a.equal(at(0).filter(function (e) { return e.props.id === "pt-jump"; }).length, 1);
+  });
+
+  test("React render: placement review is closed, filters missed by default and derives the expected answer", function (a) {
+    var us = synthUnits(["N5", "N4"], 6), run = synthRun(us, [[2, "correct"], [4, "wrong"], [8, "wrong"], [10, "dontKnow"]], 5);
+    var props = { units: us, completed: new Set(), level: "N5", onApply: noop, onClose: noop };
+    var els = flowEls([us, "result", null, 0, run.res, 5], [{ current: run.s }], props);
+    a.strictEqual(els.filter(function (e) { return e.type === "details"; })[0].props.open, false, "review closed by default");
+    a.deepEqual(byClass(els, "pl-flt")[0].children[0].map(function (b) { return [textOf(b), b.props["aria-pressed"]]; }), [["Missed · 3", true], ["All · 6", false], ["Right · 3", false]]);
+    var rows = byClass(els, "pl-q");
+    a.deepEqual(rows.map(function (r) { return r.props.hidden; }), [true, true, true, false, false, false], "missed: right answers hidden");
+    a.deepEqual(byClass(els, "pl-qn").map(textOf), ["W1", "W2", "Q1", "Q2", "Q3", "Q4"]);
+    a.deepEqual(byClass(els, "pl-qt").map(textOf).slice(3), ["山 → やま", "水 → みず", "山 → やま"], "non-correct rows show the expected answer");
+    a.equal(placementExpected({ options: ["a", "b"], correct: 1, answers: ["x"] }), "b", "choice: the correct option");
+    a.equal(placementExpected({ answers: ["やま", "ヤマ"] }), "やま", "typed: the first answer");
+    a.equal(placementExpected({ romaji: "かさ" }), "かさ", "romaji typing: the kana form");
+    a.equal(placementQText({ parts: [{ t: "私" }, { t: "＿" }, { t: "です" }], question: "x" }), "私＿です");
+    var none = synthRun(us, [[2, "correct"]], 5);
+    var allEls = flowEls([us, "result", null, 0, none.res, 5], [{ current: none.s }], props);
+    a.ok(byClass(allEls, "pl-flt")[0].children[0][1].props["aria-pressed"], "nothing missed: All by default");
+    // open bodies: choice shows every option with the right / mine notes, typed shows typed vs correct
+    var open = flowEls([us, "result", null, 0, run.res, 5, false, true, "all", { 3: true, 4: true, 5: true }, 3], [{ current: run.s }], props);
+    var bodies = byClass(open, "pl-qb");
+    a.equal(bodies.length, 3);
+    var choice = textOf(bodies[0]) + textOf(bodies[1]);
+    a.ok(/You typed.*やみ.*Correct answer.*やま/.test(textOf(bodies[0])), "typed: you typed vs correct: " + textOf(bodies[0]));
+    a.ok(/みず✓ Correct answer.*すい✕ Your answer/.test(textOf(bodies[1])), "choice: correct and mine marked: " + choice);
+    a.ok(/You skipped this one\./.test(textOf(bodies[2])) && !/You typed/.test(textOf(bodies[2])), "skipped says so");
+    a.ok(/ sel/.test(byClass(open, "pl-q")[3].props.className), "the selected row is ringed");
+  });
+
+  test("React render: a chart mark opens its answer, switching to All when the row is hidden", function (a) {
+    var us = synthUnits(["N5", "N4"], 6), run = synthRun(us, [[2, "correct"], [8, "wrong"]], 5);
+    var props = { units: us, completed: new Set(), level: "N5", onApply: noop, onClose: noop }, sets = {}, scroll = { current: null };
+    var els = flowEls([us, "result", null, 0, run.res, 5], [{ current: run.s }, null, null, scroll], props, sets);
+    var chart = els.filter(function (e) { return e.type === PlacementChart; })[0];
+    chart.props.onPick(2); // Q1, right: hidden under Missed
+    a.equal(sets[8], "all", "filter switched to All");
+    a.strictEqual(sets[7], true, "review opened");
+    a.ok(sets[9]({})[2], "row expanded");
+    a.equal(sets[10], 2, "mark ringed");
+    a.equal(scroll.current, 2, "row queued to scroll into view");
+    var s2 = {};
+    flowEls([us, "result", null, 0, run.res, 5], [{ current: run.s }], props, s2).filter(function (e) { return e.type === PlacementChart; })[0].props.onPick(3);
+    a.strictEqual(s2[8], undefined, "a missed row is already shown: filter stays");
+    var hdr = byClass(flowEls([us, "result", null, 0, run.res, 5, false, true, "all", {}, null], [{ current: run.s }], props, s2), "pl-qh")[1];
+    hdr.props.onClick();
+    a.equal(s2[10], 1, "opening a row rings its mark");
+  });
+
+  test("React render: placement result buttons call apply / diagnostic / discard; zero and all-known cases", function (a) {
+    var us = synthUnits(["N5", "N4"], 6), run = synthRun(us, [[2, "correct"]], 5), calls = [];
+    var props = { units: us, completed: new Set(), level: "N5", onApply: function (r, u, o) { calls.push([r, u, o]); }, onClose: function () { calls.push("close"); } };
+    var els = flowEls([us, "result", null, 0, run.res, 3], [{ current: run.s }], props);
+    var id = function (es, x) { return es.filter(function (e) { return e.props.id === x; })[0]; };
+    a.equal(textOf(id(els, "pt-apply")), "Start “N5 lesson 4”");
+    id(els, "pt-apply").props.onClick();
+    id(els, "pt-diag").props.onClick();
+    id(els, "pt-discard").props.onClick();
+    a.equal(calls[0][1], run.s.stages[3], "apply passes the start unit");
+    a.deepEqual(calls[0][0].passedStageIds, run.res.passedStageIds.slice(0, 3), "…and the trimmed result");
+    a.deepEqual(calls[0][2], {});
+    a.deepEqual(calls[1][2], { diagnostic: true });
+    a.equal(calls[2], "close", "discard closes");
+    var zero = flowEls([us, "result", null, 0, run.res, 0], [{ current: run.s }], props);
+    a.equal(textOf(zero.filter(function (e) { return e.type === "h1"; })[0]), "Start at N5 stage 1");
+    a.equal(textOf(byClass(zero, "pl-sub")[0]), t("pt_res_zero_sub"));
+    var allRun = synthRun(us, [[2, "correct"]], 12), all = flowEls([us, "result", null, 0, allRun.res, 12], [{ current: allRun.s }], props);
+    a.equal(textOf(all.filter(function (e) { return e.type === "h1"; })[0]), t("pt_res_all"));
+    a.equal(textOf(id(all, "pt-apply")), t("pt_apply_all"));
+    id(all, "pt-apply").props.onClick();
+    a.strictEqual(calls[3][1], null, "all known: no start unit");
+    a.equal(all.filter(function (e) { return e.type === PlacementChart; })[0].props.start, null, "no start chip");
   });
 
   test("placement strings: every pt_ key placement-view.js uses has every language app-helpers defines for pt_ keys", function (a) {

@@ -142,6 +142,7 @@ QUnit.module('catalog checks', function () {
       usesErrors(it.uses, it.jp, items, err);
       if (it.furigana && furiganaText(it.furigana) !== it.jp) err('furigana text ≠ jp');
       if (it.chunks) chunkErrors(it, err);
+      if (it.frame) frameErrors(it, items, err);
     } else if (it.kind === 'mondai') {
       if (!/^m:[a-z0-9-]+$/.test(it.id)) err('id not m:<slug>');
       var four = function (o) { return Array.isArray(o) && o.length === 4 && nonEmptyStrings(o) && new Set(o).size === 4; };
@@ -353,6 +354,22 @@ QUnit.module('catalog checks', function () {
     (uses || []).forEach(function (id) {
       if (!items[id]) err('uses missing ' + id);
       else if (!surfaceMatch(items[id], jp)) err("jp doesn't contain " + id);
+    });
+  }
+  // A gap sentence's dialogue frame (placement audit C1): 2-3 lines, exactly one without jp (the sentence itself), a plain
+  // English speaker on each; an own line has English-only `en`, `uses` it contains, ruby that spells jp, and ≥2 sources
+  // when verified (else notes say why).
+  function frameErrors(it, items, err) {
+    var f = it.frame;
+    if (!Array.isArray(f) || f.length < 2 || f.length > 3) return err('frame needs 2-3 lines');
+    if (f.filter(function (l) { return !l.jp; }).length !== 1) err('frame needs exactly one line without jp (the sentence)');
+    f.forEach(function (l) {
+      if (!l.who || /[぀-ヿ一-鿿]/.test(l.who)) err('frame speaker missing or not English: ' + l.who);
+      if (!l.jp) return;
+      if (!l.en || /[぀-ヿ一-鿿]/.test(l.en)) err('frame line en missing or not English: ' + l.jp);
+      if (l.furigana && furiganaText(l.furigana) !== l.jp) err('frame furigana text ≠ jp: ' + l.jp);
+      usesErrors(l.uses, l.jp, items, err);
+      if (l.verified ? !(l.sources && l.sources.length >= 2) : !l.notes) err('frame line needs 2 sources, or verified: false with notes: ' + l.jp);
     });
   }
   function furiganaText(s) { return furiganaParts(s).map(function (p) { return p.t; }).join(''); }

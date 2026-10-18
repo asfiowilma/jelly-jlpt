@@ -32,6 +32,32 @@ function exBigClass(text) {
   return n <= 2 ? '' : n <= 6 ? ' md' : ' sm';
 }
 
+// A non-default form's instruction is bigger and puts its form word first (N5 r2b newbie N13: ★ was never explained):
+// the helper line under a gap sentence (when its English is shown) or an order question; null for the rest.
+function exHelp(ex, lv) {
+  var k = ex.type === 'order' ? 'qz_order_help' : ex.type === 'gap' && ex.note && !ex.noteLater ? 'qz_gap_help' : null;
+  return k && React.createElement("p", { key: "help", className: "qz-hint", lang: "en" }, t(k, lv));
+}
+// promptCls(ex): the plain vocab / kanji / kana forms keep the 1rem prompt; the rest (conjugation, gap, order, sentence
+// formats, keigo, pattern) get the larger one, with the form word in bold (promptEls).
+var PROMPT_BIG = { conj: 1, keigo: 1, ctxGap: 1, ctxRead: 1, ctxReadMc: 1, gap: 1, order: 1, patternMc: 1, kanjiYomi: 1, hyouki: 1, bunmyaku: 1, synonym: 1 };
+function promptCls(ex) { return "qz-prompt" + (PROMPT_BIG[ex.form] || ex.type === 'conjugation' ? " big" : ""); }
+// promptEls(text, ex): a conjugation prompt with its target form in bold ("Conjugate to <b>passive</b>:"); others as is.
+function promptEls(text, ex) {
+  var m = ex.type === 'conjugation' ? /^(Conjugate to )(.+?)(:)$/.exec(text) : null;
+  return m ? [m[1], React.createElement("b", { key: "f", className: "qz-form" }, m[2]), m[3]] : text;
+}
+
+// exAnswerEl(ex, text): the answer text, with ruby when it is an option that carries furigana parts (製 + せい).
+function exAnswerEl(ex, text) {
+  return ex.options && typeof ex.correct === 'number' && ex.optionParts && text === ex.options[ex.correct] ? rubyEls(ex.optionParts[ex.correct]) : text;
+}
+// exQuestionProps(ex, q): class and lang of the big question line; English (a grammar meaning) is plain text, not the Mincho kanji style.
+function exQuestionProps(ex, q) {
+  if (QZ_SENTENCE.indexOf(ex.type) >= 0) return { className: exSentCls(ex, "qz-sent"), lang: "ja" };
+  return QZ_JA.test(q) ? { className: "qz-big" + exBigClass(q), lang: "ja" } : { className: "qz-big en sm", lang: "en" };
+}
+
 // Furigana parts (quiz rules, Q33) → ruby; u = the underlined / asked part (mondai). The （　）
 // of a gap question shows the chosen option; the ★ slot of an order question does too.
 // st = { chosen, revealed, selected, tone }: shared by the quiz layer and the placement test.
@@ -52,6 +78,16 @@ function exPartsEl(ex, parts, st) {
     return p.u ? h("u", { key: i, className: "ex-u" }, el) : el;
   });
 }
+
+// A gap sentence with a dialogue frame (lib.js gapFrame): one row per line, the speaker in plain text; else the parts.
+// cls(ex): the sentence box class, plus qz-frame for the rows.
+function exSentEls(ex, partsEl) {
+  if (!ex.frame) return partsEl(ex.parts);
+  return ex.frame.map(function (l, i) {
+    return React.createElement("div", { key: i, className: "qz-fl" }, React.createElement("span", { className: "who", lang: "en" }, l.who), React.createElement("span", null, partsEl(l.parts)));
+  });
+}
+function exSentCls(ex, cls) { return cls + (ex.frame ? " qz-frame" : ""); }
 
 // ── Shared quiz shell (ticket 46) ───────────────────────────────────────────
 // The full-screen .ql layer (top bar, centred column, dock, leave dialog) and the rendering of a
@@ -149,22 +185,19 @@ function qzKit(h, ex, st) {
   var partsEl = function partsEl(parts) {
     return exPartsEl(ex, parts, { chosen: chosen, revealed: revealed, selected: selected, tone: st.tone });
   };
-  var promptEl = h("p", { key: "pr", className: "qz-prompt" }, translatePrompt(ex.prompt, lv));
+  var promptEl = h("p", { key: "pr", className: st.help ? promptCls(ex) : "qz-prompt" }, promptEls(translatePrompt(ex.prompt, lv), ex));
   // The question line, the passage of a text-with-blanks, and the English of a gap sentence.
   var questionEl = function () {
     var q = ex.parts ? ex.parts.map(function (p) { return p.t; }).join('') : ex.question;
-    var sentence = QZ_SENTENCE.indexOf(ex.type) >= 0;
     return [
       ex.passageParts && h("div", { key: "ps", className: "qz-passage", lang: "ja" }, partsEl(ex.passageParts)),
-      !ex.passageParts && (ex.question || ex.parts) && h("div", {
-        key: "q", className: sentence ? "qz-sent" : "qz-big" + exBigClass(q), lang: "ja"
-      }, ex.parts ? partsEl(ex.parts) : ex.question),
+      !ex.passageParts && (ex.question || ex.parts) && h("div", Object.assign({ key: "q" }, exQuestionProps(ex, q)), ex.parts ? exSentEls(ex, partsEl) : ex.question),
+      st.help && !revealed && exHelp(ex, lv), // quiz and placement only: the mock stays exam-like
       ex.note && (!ex.noteLater || revealed || st.showEarly) && h("p", { key: "n", className: "qz-gloss" }, ex.note),
       ex.note && ex.noteLater && !revealed && !st.showEarly && h("p", { key: "n", className: "qz-hint", lang: "en" },
         "On the test there is no English. ", h("button", { className: "link-btn", onClick: st.onEarly }, "Stuck? Show the English")),
       // N5 r2b newbie N13: ★ was never explained
-      ex.type === 'order' && !revealed && h("p", { key: "how", className: "qz-hint", lang: "en" },
-        "Put the four pieces in the blanks in an order that makes a sentence, then pick the piece that lands on ★."),
+      ex.type === 'order' && !revealed && exHelp(ex, lv),
       ex.type === 'order' && revealed && ex.sentence && CATALOG.items[ex.sentence] &&
         h("p", { key: "solved", className: "qz-solved", lang: "ja" }, CATALOG.items[ex.sentence].jp)];
   };

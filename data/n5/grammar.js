@@ -42,7 +42,7 @@ CATALOG.add([
     notes: 'を (read "o") marks what the action is done to: パンを[食|た]べる. In casual speech it is often dropped ([水|みず]ください).',
     examples: ['s:tatoeba:11594632', 's:tatoeba:10918358', 's:tatoeba:143718', 's:own:n5-wo-hon', 's:own:n5-wo-terebi', 's:own:n5-wo-namae'], ref: ['を'],
     sources: ['tanos', GENKI + 'particles-genki-i-chapter-3/'], verified: true },
-  { id: 'g:masen-ka', kind: 'grammar', gap: { 'ませんか': ['ましたか', 'ますか', 'ませんでしたか'] }, level: 'N5', pattern: '〜ませんか', meaning: "won't you ~? / would you like to ~? (invitation)",
+  { id: 'g:masen-ka', kind: 'grammar', gap: { 'ませんか': ['ましたか', 'ました', 'ませんでしたか'] }, level: 'N5', pattern: '〜ませんか', meaning: "won't you ~? / would you like to ~? (invitation)",
     formation: 'V-ます stem + ませんか',
     notes: 'A polite invitation; the negative form makes it softer than asking [行|い]きますか. Compare 〜ましょう ("let\'s", once you both agree) and 〜ましょうか ("shall we / shall I").',
     examples: ['s:tatoeba:217531', 's:tatoeba:2265696', 's:tatoeba:236801', 's:own:n5-masen-ka-eiga'], ref: ['～ませんか'],
@@ -67,7 +67,7 @@ CATALOG.add([
     notes: "A suggestion to do something together, polite. To invite someone who hasn't agreed yet, 〜ませんか is softer.",
     examples: ['s:tatoeba:9101667', 's:tatoeba:224571', 's:tatoeba:829657', 's:own:n5-mashou-densha'], ref: ['～ましょう'],
     sources: ['tanos', GENKI + 'masho-genki-i-chapter-5/'], verified: true },
-  { id: 'g:mashou-ka', kind: 'grammar', gap: { 'ましょうか': ['ましたか', 'ませんでしたか', 'ますか'] }, level: 'N5', pattern: '〜ましょうか', meaning: 'shall we ~? / shall I ~ (for you)?',
+  { id: 'g:mashou-ka', kind: 'grammar', gap: { 'ましょうか': ['ましたか', 'ませんでしたか', 'ました'] }, level: 'N5', pattern: '〜ましょうか', meaning: 'shall we ~? / shall I ~ (for you)?',
     formation: 'V-ます stem + ましょうか',
     notes: 'Asks for the other person\'s opinion on doing something together ("shall we go?"), or offers help ("shall I open the window?"). Context tells you which.',
     examples: ['s:tatoeba:173392', 's:tatoeba:171687', 's:own:n5-mashou-ka'], ref: ['～ましょうか'],
@@ -313,7 +313,7 @@ CATALOG.add([
   // ── Conjugation forms (ticket 36): not patterns, so not on Tanos, but every N5 pattern
   // above is built on them. Checked against St. Olaf's Genki I index + Bunpro (both N5).
   // conjForm: the conjugate() form a unit teaching it can quiz (lib.js buildExercises).
-  { id: 'g:masu', kind: 'grammar', gap: { 'ます': ['ました', 'ません', 'ましょう'] }, level: 'N5', pattern: '〜ます', meaning: 'polite non-past: do / will do',
+  { id: 'g:masu', kind: 'grammar', gap: { 'ます': ['ました', 'ませんでした', 'ましょう'] }, level: 'N5', pattern: '〜ます', meaning: 'polite non-past: do / will do',
     formation: 'dictionary form → ます: [食|た]べる → [食|た]べます, [飲|の]む → [飲|の]みます',
     notes: 'ます makes a verb polite, the way to talk to people you do not know well. [食|た]べます means "I eat" or "I will eat": the same form covers what you usually do and what you will do. Pairs to learn: [食|た]べる → [食|た]べます, [飲|の]む → [飲|の]みます, [行|い]く → [行|い]きます, する → します, [来|く]る → [来|き]ます. Learn each ます form together with its word; the full rule comes in Stage 30. The part before ます ([食|た]べ, [飲|の]み) is called the ます-stem; later stages add other endings to it.',
     examples: ['s:tatoeba:5070656', 's:tatoeba:10953992', 's:tatoeba:113471', 's:own:n5-masu-watashi-mo', 's:own:n5-masu-koohii', 's:own:n5-masu-anata-mo'], offList: 'conjugation form — not a Tanos pattern',
