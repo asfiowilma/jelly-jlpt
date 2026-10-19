@@ -7,7 +7,7 @@ Load with [common.md](../common.md), [teaching-order.md](teaching-order.md), [kn
 
 | # | Check | Pass | Fail |
 |---|---|---|---|
-| B8.1 | `MOCK_BLUEPRINT` + each full mock match jlpt.jp counts per mondai, section order, timing (`MOCK_PACE`); diagnostic keeps every mondai | exact | any count/clock off |
+| B8.1 | `MOCK_BLUEPRINT` + each full mock match jlpt.jp counts per mondai, section order, timing (`MOCK_PACE`) | exact | any count/clock off |
 | B8.2 | `JLPT_PASS` for level matches jlpt.jp (values in `levels/<level>.md`) | exact | wrong |
 | B8.3 | Every fixed mock question, passage question, mondai blank, listening item: exactly one supported answer, stored key right; solve each yourself from rendered question (`mockSections`), not key | 0 wrong keys | wrong or double |
 | B8.4 | Mocks share no passage, listening item, mondai, sentence with each other or review units | none | overlap |

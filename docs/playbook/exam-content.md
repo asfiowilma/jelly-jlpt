@@ -20,7 +20,7 @@ Load when: writing passages, mondai, mock items, prep drills, or the guide copy.
 - No answer string inside another question of the same mock (電話 answered in one item, printed in another stem). `tests/mocks.js` checks stems and passages.
 - Mock gaps have exactly one grammatical answer with no English note (N5 mock-1 had けど and から both fit). Each full mock carries one katakana 表記 item.
 - A narrator line in a mock uses only taught patterns: list every pattern in `uses`. A mock is graded, so a form the course never teaches is a defect, not a nit.
-- Everything exam-shaped is keyed by level: `MOCK_PACE`, `MOCK_BLUEPRINT`, `JLPT_PASS` (read through `levelTable()`, which falls back to the nearest easier level), `PASSAGE_FORMATS` in `tests/catalog-checks.js`, the estimate weights (from the blueprint, not N5's 21 / 17 / 5), `quizSeconds` (takes the unit or mock level), and the diagnostic (`x:<lvl>-mock-3`). A new level adds its rows.
+- Everything exam-shaped is keyed by level: `MOCK_PACE`, `MOCK_BLUEPRINT`, `JLPT_PASS` (read through `levelTable()`, which falls back to the nearest easier level), `PASSAGE_FORMATS` in `tests/catalog-checks.js`, the estimate weights (from the blueprint, not N5's 21 / 17 / 5), `quizSeconds` (takes the unit or mock level)). A new level adds its rows.
 
 ## Key spread
 

@@ -5,7 +5,6 @@
 // from the jlpt.jp workbooks or the sample booklet). Same shape as data/n5/mocks.js (see its header).
 //   format 'full'       = the real N4 blueprint (lib.js MOCK_BLUEPRINT.N4.full, 85 questions), timed at
 //                         the real 25 / 55 / 35 minutes (MOCK_PACE.N4).
-//   format 'diagnostic' = about half of it, every mondai kept (MOCK_BLUEPRINT.N4.diagnostic).
 // 漢字読み / 表記 come from catalog sentences; the tested word carries an N4 kanji (an N5-level word
 // such as 病気 when no N4-level word fits: the kanji is what the item tests). 漢字読み fakes come in
 // "squares" (two one-sound slips plus both together), so the key is never the option the others orbit.
@@ -207,61 +206,5 @@ CATALOG.add([
       ]
     },
     uses: ["v:電車|でんしゃ","v:先生|せんせい","v:試験|しけん","v:毎朝|まいあさ","v:大学|だいがく","v:料理|りょうり","v:今日|きょう","v:ドア|ドア","v:銀行|ぎんこう","v:ケーキ|ケーキ","k:電","k:車","k:先","k:生","k:試","k:験","k:飲","k:早","k:道","k:駅","k:人","k:大","k:足","k:毎","k:朝","k:兄","k:学","k:雨","k:店","k:料","k:理","k:田","k:中","k:今","k:日","k:来","k:言","k:弟","k:本","k:食","k:行","k:右","k:銀","k:何","k:山","k:水","k:三","k:年"], names: ["山田|やまだ","田中|たなか","日本|にほん","日本語|にほんご"],
-    sources: ['own'], verified: false },
-  { id: "x:n4-mock-3", kind: 'mock', level: 'N4', format: "diagnostic", title: "N4 diagnostic test",
-    sections: {
-     vocab: [
-      {"m":"kanjiYomi","s":"s:tatoeba:230329","w":"v:元気|げんき","o":["けんぎ","げんき","げんぎ","けんき"],"a":1},
-      {"m":"kanjiYomi","s":"s:tatoeba:233478","w":"v:上手|じょうず","o":["じょうす","じょず","じょす","じょうず"],"a":3},
-      {"m":"kanjiYomi","s":"s:tatoeba:190695","w":"v:古い|ふるい","o":["ふるい","ぶうるい","ぶるい","ふうるい"],"a":0},
-      {"m":"kanjiYomi","s":"s:tatoeba:11692639","w":"v:正しい|ただしい","o":["だだしい","ただじい","ただしい","だだじい"],"a":2},
-      {"m":"hyouki","s":"s:own:n4-sou-da-looks-keeki","w":"v:ケーキ|ケーキ","o":["ゲーキ","ケーキ","ケーギ","ケキー"],"a":1},
-      {"m":"hyouki","s":"s:tatoeba:11483540","w":"v:音|おと","o":["昔","暗","音","意"],"a":2},
-      {"m":"hyouki","s":"s:tatoeba:10899855","w":"v:図書館|としょかん","o":["図書官","区書館","図昼館","図書館"],"a":3},
-      {"m":"bunmyaku","f":"[手|て]がよごれたので、（　）であらいました。","o":["せっけん","はし","かがみ","はさみ"],"a":0,"en":"My hands got dirty, so I washed them with soap.","explain":"You wash with soap: せっけん. はし (chopsticks), かがみ (a mirror) and はさみ (scissors) do not wash anything."},
-      {"m":"bunmyaku","f":"[先生|せんせい]のおたくを（　）とき、おかしを[持|も]って[行|い]きました。","o":["たずねた","さがした","しらべた","むかえた"],"a":0,"en":"When I visited my teacher's house, I took some sweets.","explain":"Going to someone's home is たずねる (visit). さがす (look for), しらべる (look up) and むかえる (meet someone arriving) do not fit a visit."},
-      {"m":"bunmyaku","f":"このはさみはもうよく（　）。","o":["きえません","きれません","とまりません","つきません"],"a":1,"en":"These scissors do not cut well any more.","explain":"Scissors cut: きれる. きえる (go out), つく (switch on) and とまる (stop) are not what scissors do."},
-      {"m":"bunmyaku","f":"[夜|よる]おそくまで[起|お]きていたので、けさは（　）しました。","o":["せわ","けんか","ゆにゅう","ねぼう"],"a":3,"en":"I stayed up late, so this morning I overslept.","explain":"Staying up late leads to oversleeping: ねぼうする. けんか (a quarrel), ゆにゅう (import) and せわ (looking after) do not follow."},
-      {"m":"iikae","item":"m:n4-iikae-shumi","o":[3,1,2,0]},
-      {"m":"iikae","item":"m:n4-iikae-kowarete","o":[3,2,1,0]},
-      {"m":"youhou","item":"m:n4-youhou-sagasu","o":[3,2,1,0]},
-      {"m":"youhou","item":"m:n4-youhou-fukuzatsu","o":[3,0,2,1]}
-      ],
-     grammar: [
-      {"m":"gap","f":"あの[店|みせ]のパンはやす（　）、おいしいです。","o":["いで","いて","くで","くて"],"a":3,"en":"The bread at that shop is cheap and tasty.","explain":"An い-adjective joins the next part with くて: やすくて."},
-      {"m":"gap","f":"うちに（　）、すぐ[手|て]をあらいなさい。","o":["かえるのに","かえったら","かえったので","かえっても"],"a":1,"en":"When you get home, wash your hands right away.","explain":"Once something has happened, do the next thing: 〜たら. ても / のに / ので do not lead into an order like this."},
-      {"m":"gap","f":"[雨|あめ]がふって（　）ので、かさを[持|も]って[行|い]きます。","o":["いった","みた","おいた","きた"],"a":3,"en":"It has started to rain, so I will take an umbrella.","explain":"Rain that has started: ふってくる. いく / みる / おく do not describe rain starting."},
-      {"m":"gap","f":"[日本|にほん]の[歌|うた]を[歌|うた]った（　）があります。","o":["ため","ほう","こと","もの"],"a":2,"en":"I have sung a Japanese song before.","explain":"Experience: た-form + ことがある."},
-      {"m":"gap","f":"この[仕事|しごと]は[明日|あした]（　）に[終|お]わらせてください。","o":["まで","だけ","ほど","から"],"a":0,"en":"Please finish this work by tomorrow.","explain":"A deadline: 〜までに. だけに / からに / ほどに do not give a deadline."},
-      {"m":"gap","f":"[友|とも]だちがわたしに[旅行|りょこう]の[写真|しゃしん]を[見|み]せて（　）。","o":["さしあげました","もらいました","くれました","あげました"],"a":2,"en":"My friend showed me the photos from the trip.","explain":"Someone does a favour for me (友だちが…わたしに): 〜てくれる. あげる / さしあげる go away from me, and もらう needs わたしは as the subject."},
-      {"m":"gap","f":"わたしは[来年|らいねん]、[日本|にほん]へ[行|い]こう（　）[思|おも]っています。","o":["に","が","を","と"],"a":3,"en":"I am thinking of going to Japan next year.","explain":"A plan: volitional + と思っている."},
-      {"m":"order","s":"s:own:n4-nai-de-kasa","star":2,"o":[3,2,1,0]},
-      {"m":"order","s":"s:own:n4-tokoro-deru","star":0,"o":[0,1,3,2]},
-      {"m":"bunshou","item":"m:n4-bunshou-winter-trip","blank":2,"o":[1,2,0,3]},
-      {"m":"bunshou","item":"m:n4-bunshou-winter-trip","blank":3,"o":[1,3,0,2]},
-      {"m":"reading","p":"p:n4-pool-rules","q":0,"o":[3,0,2,1]},
-      {"m":"reading","p":"p:n4-learning-to-cook","q":0,"o":[1,3,0,2]},
-      {"m":"reading","p":"p:n4-learning-to-cook","q":1,"o":[2,0,3,1]},
-      {"m":"reading","p":"p:n4-learning-to-cook","q":2,"o":[2,3,0,1]},
-      {"m":"reading","p":"p:n4-part-time-ads","q":0,"o":[1,2,3,0]},
-      {"m":"reading","p":"p:n4-part-time-ads","q":1,"o":[1,3,0,2]}
-      ],
-     listening: [
-      {"m":"listening","l":"l:n4-laptop-repair-or-new"},
-      {"m":"listening","l":"l:n4-temple-bus-up"},
-      {"m":"listening","l":"l:n4-handout-early-start"},
-      {"m":"listening","l":"l:n4-pool-sign-in"},
-      {"m":"listening","l":"l:n4-bag-birthday-discount"},
-      {"m":"listening","l":"l:n4-scolded-message"},
-      {"m":"listening","l":"l:n4-birthday-wish-watch"},
-      {"m":"listening","l":"l:n4-guest-at-the-door"},
-      {"m":"listening","l":"l:n4-ask-heater-on"},
-      {"m":"listening","l":"l:n4-may-i-smoke"},
-      {"m":"listening","l":"l:n4-done-by-tomorrow"},
-      {"m":"listening","l":"l:n4-what-to-drink"},
-      {"m":"listening","l":"l:n4-used-to-life-here"}
-      ]
-    },
-    uses: ["v:先生|せんせい","v:パン|パン","v:仕事|しごと","v:明日|あした","v:旅行|りょこう","v:写真|しゃしん","v:来年|らいねん","k:手","k:先","k:生","k:持","k:行","k:夜","k:起","k:店","k:雨","k:日","k:本","k:歌","k:仕","k:事","k:明","k:終","k:友","k:旅","k:写","k:真","k:見","k:来","k:年","k:思"], names: ["日本|にほん"],
     sources: ['own'], verified: false }
 ]);

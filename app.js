@@ -483,11 +483,11 @@ function App() {
     setView(nextView || 'unit');
     closeFlow();
   };
-  // Confirmed placement result: write it, then land on the start stage (or the diagnostic mock).
-  var onPlacementApply = function onPlacementApply(res, startUnit, opts) {
+  // Confirmed placement result: write it, then land on the start stage.
+  var onPlacementApply = function onPlacementApply(res, startUnit) {
     applyPlacement(res);
     var next = startUnit || UNITS[nextUnit(UNITS, new Set(Store.snapshot().completed))];
-    startAt(next.index, opts && opts.diagnostic ? 'diagnostic' : 'unit');
+    startAt(next.index, 'unit');
   };
   var teachingLeft = placementScope(UNITS, completed).some(function (u) { return u.kind === 'kana' || u.kind === 'lesson'; });
   React.useEffect(function () {
@@ -670,7 +670,11 @@ function App() {
     streak: streak,
     onOpenStage: function (i) { openStage(i, 'today'); },
     onReview: function () { openReview(true); },
-    onMock: function () { setView('diagnostic'); },
+    onMock: function () {
+      var mocks = UNITS.filter(function (u) { return u.kind === 'mock'; });
+      var target = mocks.filter(function (u) { return !completed.has(u.id); })[0] || mocks[mocks.length - 1];
+      if (target) openStage(target.index, 'today');
+    },
     onSettings: openSettings
   }) : view === 'review' ? /*#__PURE__*/React.createElement(ReviewMode, {
     // remount when released cards change the due deck
@@ -707,12 +711,7 @@ function App() {
     doneToday: doneToday,
     examDate: examDate,
     cards: srsCards,
-    setUnit: function setUnit(i) { openStage(i, 'units'); },
-    onDiagnostic: function () { setView('diagnostic'); }
-  }) : view === 'diagnostic' ? React.createElement(MockExam, {
-    mock: CATALOG.items[diagnosticMockId(level)],
-    showFurigana: showFurigana,
-    onClose: function () { setView('units'); }
+    setUnit: function setUnit(i) { openStage(i, 'units'); }
   }) : React.createElement(React.Fragment, null, React.createElement("button", {
     className: "unit-back",
     onClick: function () { setView(unitFrom); }

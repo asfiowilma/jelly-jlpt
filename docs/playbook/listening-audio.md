@@ -10,7 +10,7 @@ Load when: writing listening scripts, options, archetype assignments, or renderi
 - Quick-response and utterance options are audio only until answered.
 - Key spread: see [exam-content.md](exam-content.md).
 - Listening shape at N4: task and point = one narrator scene line + 4–7 speaker lines (mean 5.6), each script making the listener track a change of mind, a correction, a reason or a condition. Frame text as N5 (`男の人と女の人が話しています。`, `なんといいますか。`). Registers: plain between friends, polite with coworkers, keigo in service scenes.
-- Split listening into sets before the plan exists: mock-1, mock-2, diagnostic, review (with spares for prep drills). No item shared, top slot at most 45% per set. Review items go after the unit that teaches their words. Swap in a spare when one leaks.
+- Split listening into sets before the plan exists: mock-1, mock-2, review (with spares for prep drills). No item shared, top slot at most 45% per set. Review items go after the unit that teaches their words. Swap in a spare when one leaks.
 - Archetype assignments: every non-dialogue item needs an entry in `tools/audio/man-assignments.json` and `woman-assignments.json` (archetype + one-line reason, read from the transcript). `export-tracks.js` fails otherwise. Dialogues use `cast.json` instead.
 
 ## Rendering

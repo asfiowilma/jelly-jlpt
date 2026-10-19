@@ -28,11 +28,9 @@ QUnit.module('mock exams', function () {
     mockLevels().forEach(function (lv) {
       var l = lv.toLowerCase();
       assert.deepEqual(mocks().filter(function (m) { return m.level === lv; }).map(function (m) { return m.id + ' ' + m.format; }),
-        ['x:' + l + '-mock-1 full', 'x:' + l + '-mock-2 full', 'x:' + l + '-mock-3 diagnostic'], lv + ' mocks');
+        ['x:' + l + '-mock-1 full', 'x:' + l + '-mock-2 full'], lv + ' mocks');
       var full = mockSections(CATALOG.items['x:' + l + '-mock-1']).map(function (s) { return s.seconds / 60; });
       assert.deepEqual(full, OFFICIAL_MINUTES[lv], lv + ' full mock: ' + OFFICIAL_MINUTES[lv].join(' / ') + ' minutes');
-      var diag = mockSections(CATALOG.items['x:' + l + '-mock-3']);
-      assert.ok(diag.every(function (s, i) { return s.seconds < full[i] * 60 && s.seconds > full[i] * 20; }), lv + ' diagnostic: about half the time');
     });
     mocks().forEach(function (m) {
       var bp = MOCK_BLUEPRINT[m.level][m.format];
@@ -148,7 +146,7 @@ QUnit.module('mock exams', function () {
   // A later stem must not print the word an earlier 読み / 表記 question asks for.
   // ponytail: substring match, no tokenizer; so single-kanji spellings and 1-2 kana readings are skipped
   // (人, き, いま sit inside other words everywhere). Add a tokenizer if short answers need guarding.
-  // N5 r1 newbie N3: the diagnostic printed 彼はあまり本を読まない. A stem sentence holding a word the
+  // N5 r1 newbie N3: a mock printed 彼はあまり本を読まない. A stem sentence holding a word the
   // course never teaches (lib.js OFF_CATALOG) is a leak on a graded test.
   QUnit.test('no mock stem sentence holds a word the course never teaches', function (assert) {
     var bad = [];
@@ -188,7 +186,7 @@ QUnit.module('mock exams', function () {
       parts = parts || [];
       return parts.map(function (p) { return p.t; }).join('') + ' ' + parts.map(function (p) { return p.r || p.t; }).join('');
     };
-    // ponytail: N4 and up; the N5 mocks belong to the N5 audit (x:n5-mock-3 vocab Q9 きらい shows in Q12)
+    // ponytail: N4 and up; the N5 mocks belong to the N5 audit
     mocks().filter(function (m) { return levelRank(m.level) >= 1; }).forEach(function (m) {
       mockSections(m).forEach(function (s) {
         s.questions.forEach(function (ex, i) {
@@ -321,7 +319,7 @@ QUnit.module('mock exams', function () {
   QUnit.test('mockOutlook: scaled ranges around the estimate and a 3-way verdict', function (assert) {
     var parts = function (v, g, r, l) { return { vocab: v, grammar: g, reading: r, listening: l }; };
     var perfect = mockOutlook(parts([6, 6], [10, 10], [4, 4], [11, 11]), 'N5');
-    assert.strictEqual(perfect.verdict, 'likely', 'a perfect diagnostic clears every mark even at the low end');
+    assert.strictEqual(perfect.verdict, 'likely', 'a perfect mock clears every mark even at the low end');
     assert.strictEqual(perfect.total[1], 180, 'upper end capped at the maximum');
     var none = mockOutlook(parts([0, 6], [0, 10], [0, 4], [0, 11]), 'N5');
     assert.strictEqual(none.verdict, 'unlikely');
@@ -355,34 +353,34 @@ QUnit.module('mock exams', function () {
   // ── attempts + trend (ticket 49): mock docs are write-once, so "practice" is derived from takenAt order ──
   QUnit.test('mock attempts: the first sitting of a mock counts, later ones of the same mock are practice', function (assert) {
     var doc = function (id, at, total) { return { mockId: id, takenAt: at, estimate: { total: total, passed: total >= 80 } }; };
-    var snapshotOrder = [doc('x:n5-mock-1', 50, 120), doc('x:n5-mock-3', 40, 90), doc('x:n5-mock-1', 30, 100), doc('x:n5-mock-1', 10, 60)]; // newest first
+    var snapshotOrder = [doc('x:n5-mock-1', 50, 120), doc('x:n5-mock-2', 40, 90), doc('x:n5-mock-1', 30, 100), doc('x:n5-mock-1', 10, 60)]; // newest first
     var at = mockAttempts(snapshotOrder);
     assert.deepEqual(at.map(function (a) { return a.doc.takenAt + ':' + a.n + (a.practice ? 'p' : ''); }), ['10:1', '30:2p', '40:1', '50:3p'], 'oldest first, numbered per mock');
     assert.strictEqual(mockHeadline(snapshotOrder, 'x:n5-mock-1').estimate.total, 60, 'headline = the first attempt, not the latest or the best');
-    assert.strictEqual(mockHeadline(snapshotOrder, 'x:n5-mock-2'), null);
+    assert.strictEqual(mockHeadline(snapshotOrder, 'x:n5-mock-9'), null);
     assert.ok(mockIsPractice(snapshotOrder, snapshotOrder[0]) && mockIsPractice(snapshotOrder, snapshotOrder[2]) && !mockIsPractice(snapshotOrder, snapshotOrder[3]) && !mockIsPractice(snapshotOrder, snapshotOrder[1]));
     // a result not saved yet (just finished) is judged against the saved ones
-    assert.ok(mockIsPractice(snapshotOrder, doc('x:n5-mock-3', 99, 50)) && !mockIsPractice(snapshotOrder, doc('x:n5-mock-2', 99, 50)));
+    assert.ok(mockIsPractice(snapshotOrder, doc('x:n5-mock-2', 99, 50)) && !mockIsPractice(snapshotOrder, doc('x:n5-mock-9', 99, 50)));
     assert.deepEqual(mockTrend(snapshotOrder, 'N5').points.map(function (p) { return [p.total, p.practice]; }), [[60, false], [100, true], [90, false], [120, true]], 'one point per attempt');
     assert.strictEqual(mockTrend(snapshotOrder, 'N5').pass, 80, 'the pass line');
     assert.deepEqual(mockTrend([], 'N5').points, []);
   });
 
   QUnit.test('mockResult: right / total per part and per mondai; unanswered counts wrong', function (assert) {
-    var m = CATALOG.items['x:n5-mock-3'], secs = mockSections(m), answers = {};
+    var m = CATALOG.items['x:n5-mock-1'], secs = mockSections(m), answers = {};
     secs.forEach(function (s) { answers[s.key] = s.questions.map(function (ex) { return ex.correct; }); });
     var all = mockResult(m, secs, answers, 1000);
     assert.deepEqual(all.estimate, { lkr: 120, listening: 60, total: 180, passed: true });
-    assert.deepEqual(all.parts.reading, [4, 4], 'reading counted apart from grammar');
-    assert.deepEqual(all.parts.grammar, [10, 10]);
-    assert.deepEqual(all.byMondai.kanjiYomi, [4, 4]);
+    assert.deepEqual(all.parts.reading, [5, 5], 'reading counted apart from grammar');
+    assert.deepEqual(all.parts.grammar, [17, 17]);
+    assert.deepEqual(all.byMondai.kanjiYomi, [7, 7]);
     answers.listening = answers.listening.map(function () { return null; }); // ran out of time
     answers.vocab[0] = (answers.vocab[0] + 1) % 4;
     var r = mockResult(m, secs, answers, 2000);
-    assert.deepEqual(r.parts.listening, [0, 11]);
-    assert.deepEqual(r.byMondai.kanjiYomi, [3, 4]);
+    assert.deepEqual(r.parts.listening, [0, 24]);
+    assert.deepEqual(r.byMondai.kanjiYomi, [6, 7]);
     assert.ok(!r.estimate.passed && r.estimate.listening === 0, 'no listening, no pass');
-    assert.strictEqual(r.mockId, 'x:n5-mock-3');
+    assert.strictEqual(r.mockId, 'x:n5-mock-1');
     assert.strictEqual(r.takenAt, 2000);
   });
 

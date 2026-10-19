@@ -14,7 +14,7 @@ QUnit.module('url routing', function () {
   });
 
   QUnit.test('top-level views parse, with or without the leading slash', function (assert) {
-    ['today', 'units', 'review', 'stats', 'achievements', 'settings', 'diagnostic'].forEach(function (v) {
+    ['today', 'units', 'review', 'stats', 'achievements', 'settings'].forEach(function (v) {
       assert.deepEqual(parseRoute('#/' + v, IDS), { view: v }, v);
       assert.deepEqual(parseRoute('#' + v, IDS), { view: v }, v + ' without slash');
     });

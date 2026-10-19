@@ -47,7 +47,7 @@ Do not read review reports, `STATE.md`, `known-issues.md`, official PDFs, or oth
 3. Lengths and shapes per format: per `exam-formats.md` and the check windows in `PASSAGE_FORMATS`. Listening follows the level's header: one narrator scene line then 4 to 7 speaker lines for `task` and `point`, all-narrator lines for `utterance`, one M or F line for `quick`.
 4. One correct option per question. Wrong options are wrong in meaning, not in grammar. Options are of similar length. Single longest option is the key in at most 40% of a format. No answer string inside another stem of the same set.
 5. Key spread: passages author the key first, the build rotates it. Listening options are not shuffled at runtime, so the authored order sets the key. Per format and per set, no slot above 45%. No `explain` refers to an option position.
-6. Sets: mock-1, mock-2, diagnostic and review (with spares for prep drills) per the brief. No item in two sets. A set swap is cheaper now than after the plan exists.
+6. Sets: mock-1, mock-2 and review (with spares for prep drills) per the brief. No item in two sets. A set swap is cheaper now than after the plan exists.
 7. Every new non-dialogue listening item has an archetype entry (`man`, `woman`, one-line reason read from the transcript) in both assignment files. `export-tracks.js` fails without it.
 8. `furigana` is the source; `jp` is derived. Write the kana reading so TTS speaks it right: は as particle stays は, `[は|わ]` ruby only where the clip needs it.
 9. Original text only. Never copy jlpt.jp, JLPT Sensei or NHK text, skeletons or audio. `sources: ['own']`, `verified` only when every `uses` item is verified and the checks pass; otherwise `verified: false` with the reason in `notes`.

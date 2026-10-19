@@ -487,11 +487,7 @@ if (!process.env.TEST_ONLY) {
   test("React render: Overview() renders units + coming-soon levels", function (a) {
     try {
       Overview({ units: units, completed: emptySet, current: 0, suggested: 0, setUnit: noop });
-      Overview({ units: units, completed: new Set([units[0].id]), current: units.length - 1, suggested: 1, setUnit: noop, onDiagnostic: noop });
-      DiagnosticPanel({ onStart: noop });
-      DiagnosticPanel({ onStart: noop, level: "N4" });
-      a.equal(diagnosticMockId("N5"), "x:n5-mock-3");
-      a.equal(diagnosticMockId("N4"), "x:n4-mock-3", "N4 diagnostic");
+      Overview({ units: units, completed: new Set([units[0].id]), current: units.length - 1, suggested: 1, setUnit: noop });
     } catch (e) { a.ok(false, e.message); }
   });
 
@@ -544,11 +540,11 @@ if (!process.env.TEST_ONLY) {
 
   test("achievements: groupAchievements counts, orders categories, keeps hidden", function (a) {
     var g = groupAchievements(ACHIEVEMENTS, { "first-steps": 1700000000000, comeback: 1700000001000 });
-    a.equal(g.total, 88); a.equal(g.earned, 2); // 64 N5 + 24 N4
+    a.equal(g.total, 85); a.equal(g.earned, 2); // 63 N5 + 22 N4
     a.deepEqual(g.groups.map(function (x) { return x.category; }), ["progress", "habit", "quiz", "mock", "review", "mastery"]);
-    a.equal(g.groups.reduce(function (n, x) { return n + x.total; }, 0), 88);
+    a.equal(g.groups.reduce(function (n, x) { return n + x.total; }, 0), 85);
     a.equal(g.groups[0].earned, 1);
-    a.equal(ACHIEVEMENTS.filter(function (d) { return d.hidden; }).length, 9);
+    a.equal(ACHIEVEMENTS.filter(function (d) { return d.hidden; }).length, 8);
     a.ok(ACHIEVEMENTS.filter(function (d) { return d.hidden; }).every(function (d) { return d.revealed; }), "hidden rows carry revealed text");
   });
 
@@ -973,11 +969,11 @@ if (!process.env.TEST_ONLY) {
     });
   });
 
-  // Ticket 18: sit the whole diagnostic mock through the real MockExam component — hook emulator
+  // Ticket 18: sit a whole full mock through the real MockExam component — hook emulator
   // with effects, a fake clock and a captured setInterval, a speech stub. Part 1: some right, one
   // wrong, one flagged, finished by hand; part 2 all right; part 3: one replay used up, two answers,
   // then the clock runs out. The saved mock: doc must score exactly that.
-  testAsync("MockExam: full diagnostic playthrough (navigation, flags, replay limit, time-out, saved result)", function (a) {
+  testAsync("MockExam: full mock playthrough (navigation, flags, replay limit, time-out, saved result)", function (a) {
     var before = Store.docs();
     var orig = { useState: React.useState, createElement: React.createElement, useRef: React.useRef, useEffect: React.useEffect,
       setInterval: global.setInterval, clearInterval: global.clearInterval };
@@ -988,7 +984,7 @@ if (!process.env.TEST_ONLY) {
     global.SpeechSynthesisUtterance = function (text) { this.text = text; };
     var clock = 1000000, intervals = [], store = {}, origLS = global.localStorage;
     global.localStorage = { getItem: function (k) { return k in store ? store[k] : null; }, setItem: function (k, v) { store[k] = String(v); }, removeItem: function (k) { delete store[k]; } };
-    var mock = CATALOG.items["x:n5-mock-3"], taken = null;
+    var mock = CATALOG.items["x:n5-mock-1"], taken = null;
     var state = [], refs = [], deps = [], cleanups = [], k = 0, r = 0, e = 0, els = [];
     React.useState = function (init) {
       var i = k++;
@@ -1107,9 +1103,9 @@ if (!process.env.TEST_ONLY) {
       render();
       a.ok(taken, "time-out ends the test");
       a.ok(find(/mock-done timeup/).length === 1 && /Time ran out/.test(JSON.stringify(find(/mock-done timeup/)[0].children)), "time-up is announced on the result");
-      want = { vocab: [secs[0].questions.length - 1, secs[0].questions.length], grammar: [10, 10], reading: [3, 4], listening: [2, secs[2].questions.length] };
+      want = { vocab: [secs[0].questions.length - 1, secs[0].questions.length], grammar: [17, 17], reading: [4, 5], listening: [2, secs[2].questions.length] };
       a.deepEqual(taken.parts, want, "scored: one vocab miss, unanswered listening wrong");
-      a.deepEqual(taken.estimate, mockEstimate({ vocab: want.vocab[0] / want.vocab[1], grammar: 1, reading: 3 / 4, listening: 2 / want.listening[1] }));
+      a.deepEqual(taken.estimate, mockEstimate({ vocab: want.vocab[0] / want.vocab[1], grammar: 1, reading: 4 / 5, listening: 2 / want.listening[1] }));
       a.ok(find(/mr-card/).length && find(/mr-q$/).length, "results: score card + missed rows");
       a.equal(find(/mr-tile/).length, 14, "results: a tile per question type");
       a.ok(find(/mr-again/).length === 1, "results offer Take again");
@@ -1422,20 +1418,18 @@ if (!process.env.TEST_ONLY) {
     a.equal(s2[10], 1, "opening a row rings its mark");
   });
 
-  test("React render: placement result buttons call apply / diagnostic / discard; zero and all-known cases", function (a) {
+  test("React render: placement result buttons call apply / discard; zero and all-known cases", function (a) {
     var us = synthUnits(["N5", "N4"], 6), run = synthRun(us, [[2, "correct"]], 5), calls = [];
     var props = { units: us, completed: new Set(), level: "N5", onApply: function (r, u, o) { calls.push([r, u, o]); }, onClose: function () { calls.push("close"); } };
     var els = flowEls([us, "result", null, 0, run.res, 3], [{ current: run.s }], props);
     var id = function (es, x) { return es.filter(function (e) { return e.props.id === x; })[0]; };
     a.equal(textOf(id(els, "pt-apply")), "Start “N5 lesson 4”");
     id(els, "pt-apply").props.onClick();
-    id(els, "pt-diag").props.onClick();
     id(els, "pt-discard").props.onClick();
     a.equal(calls[0][1], run.s.stages[3], "apply passes the start unit");
     a.deepEqual(calls[0][0].passedStageIds, run.res.passedStageIds.slice(0, 3), "…and the trimmed result");
     a.deepEqual(calls[0][2], {});
-    a.deepEqual(calls[1][2], { diagnostic: true });
-    a.equal(calls[2], "close", "discard closes");
+    a.equal(calls[1], "close", "discard closes");
     var zero = flowEls([us, "result", null, 0, run.res, 0], [{ current: run.s }], props);
     a.equal(textOf(zero.filter(function (e) { return e.type === "h1"; })[0]), "Start at N5 stage 1");
     a.equal(textOf(byClass(zero, "pl-sub")[0]), t("pt_res_zero_sub"));
@@ -1443,7 +1437,7 @@ if (!process.env.TEST_ONLY) {
     a.equal(textOf(all.filter(function (e) { return e.type === "h1"; })[0]), t("pt_res_all"));
     a.equal(textOf(id(all, "pt-apply")), t("pt_apply_all"));
     id(all, "pt-apply").props.onClick();
-    a.strictEqual(calls[3][1], null, "all known: no start unit");
+    a.strictEqual(calls[2][1], null, "all known: no start unit");
     a.equal(all.filter(function (e) { return e.type === PlacementChart; })[0].props.start, null, "no start chip");
   });
 

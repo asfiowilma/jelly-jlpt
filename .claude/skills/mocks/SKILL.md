@@ -1,18 +1,18 @@
 ---
 name: mocks
-description: Level mock exams and diagnostic for jelly-jlpt. Use when composing one level's fixed mock tests (x:<level>-mock-1, -2, and the diagnostic -3) as JSON ids in tools/<level>-mocks.json, then running tools/author-mocks.js to write data/<level>/mocks.js. Items come from the mondai, passage and listening pools. Sets the write ceiling for the level-author mocks type. Not for the unit outline (plan), vocab, kanji, grammar, dialogues, mondai items, passages, listening scripts (reading skill), or audio renders.
+description: Level mock exams for jelly-jlpt. Use when composing one level's fixed mock tests (x:<level>-mock-1 and -2) as JSON ids in tools/<level>-mocks.json, then running tools/author-mocks.js to write data/<level>/mocks.js. Items come from the mondai, passage and listening pools. Sets the write ceiling for the level-author mocks type. Not for the unit outline (plan), vocab, kanji, grammar, dialogues, mondai items, passages, listening scripts (reading skill), or audio renders.
 model: haiku
 ---
 
 # Mocks (level-author)
 
-Composes the fixed mock tests for one level: two full mocks and one diagnostic. Mocks hold ids only. Question text lives in the mondai, passage and listening pools. Counts come from `MOCK_BLUEPRINT` in `lib.js`. Rules live in [docs/playbook/exam-content.md](../../../docs/playbook/exam-content.md) and [docs/playbook/exam-formats.md](../../../docs/playbook/exam-formats.md). Cite them, do not copy them here.
+Composes the fixed mock tests for one level: two full mocks. Mocks hold ids only. Question text lives in the mondai, passage and listening pools. Counts come from `MOCK_BLUEPRINT` in `lib.js`. Rules live in [docs/playbook/exam-content.md](../../../docs/playbook/exam-content.md) and [docs/playbook/exam-formats.md](../../../docs/playbook/exam-formats.md). Cite them, do not copy them here.
 
 ## Sources to read (only these)
 
 1. `CLAUDE.md`: hard constraints, generated-file rule, commit rules.
 2. [docs/playbook/exam-content.md](../../../docs/playbook/exam-content.md) (Mocks section) and [docs/playbook/exam-formats.md](../../../docs/playbook/exam-formats.md).
-3. `lib.js`: `MOCK_BLUEPRINT[level].full` and `.diagnostic`, `MOCK_SECTIONS`, `MOCK_PACE`, `MOCK_LABELS`, `mockItemIds()`.
+3. `lib.js`: `MOCK_BLUEPRINT[level].full`, `MOCK_SECTIONS`, `MOCK_PACE`, `MOCK_LABELS`, `mockItemIds()`.
 4. `data/<level>/mondai.js`, `passages.js`, `listening.js`: the pool of ids the mock may use.
 5. `tools/<level>-mocks.json` (current state, if it exists) and the header of `tools/author-mocks.js` (input shape).
 6. `tests/mocks.js`, `tests/listening.js`, `tests/catalog-checks.js` (`PASSAGE_FORMATS`): the checks that will run.
@@ -31,7 +31,7 @@ Do not read review reports, `STATE.md`, `known-issues.md`, or other levels' stag
 ## Input shape (`tools/<level>-mocks.json`)
 
 - Ids only. No item text is copied into the JSON.
-- Per mock: `id` (`x:<level>-mock-<n>`), `format` (`full` or `diagnostic`), `title`, and `sections` for `vocab`, `grammar`, `listening`.
+- Per mock: `id` (`x:<level>-mock-<n>`), `format` (`full`), `title`, and `sections` for `vocab`, `grammar`, `listening`.
 - Per question: `id` (mondai `m:`, passage `p:` or listening `l:`), `a` (answer index into the item's options as authored), and:
   - `o`: the options in the order the mock shows them, a permutation of the authored options. Not used for listening.
   - `blank`: 1-based blank number, for `bunshou` only. `q`: question index, for passage items.
@@ -41,7 +41,6 @@ Do not read review reports, `STATE.md`, `known-issues.md`, or other levels' stag
 
 - N5 full: vocab 7 / 5 / 6 / 3 (kanjiYomi / hyouki / bunmyaku / iikae); grammar 9 gap / 4 order / 4 bunshou; reading 2 short / 2 mid / 1 info; listening 7 / 6 / 5 / 6. Total 67.
 - N4 full: vocab 7 / 5 / 8 / 4 / 4 (adds youhou); grammar 13 gap / 4 order / 4 bunshou; reading 3 short / 3 mid / 2 info; listening 8 / 7 / 5 / 8. Total 85.
-- Diagnostic: the `diagnostic` row of the same blueprint, every mondai kept. N4 is 45.
 - Each full mock carries one katakana 表記 item.
 
 ## Rules

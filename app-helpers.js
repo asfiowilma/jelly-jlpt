@@ -410,7 +410,6 @@ var UI_STRINGS = {
   pt_reviews_one:    { en: '1 review is waiting in the stages you skipped. It stays open.', ja: '飛ばした範囲に復習が1件あります。開いたままです。' },
   pt_apply:          { en: 'Start “{title}”', ja: '「{title}」を始める' },
   pt_apply_all:      { en: 'Save the result', ja: '結果を保存' },
-  pt_diag:           { en: 'Save and take the diagnostic mock', ja: '保存して診断模試を受ける' },
   pt_discard:        { en: 'Discard result', ja: '結果を破棄' },
   pt_res_note:       { en: 'Undo any time in Settings, under Already known.', ja: '設定の「しっている項目」からいつでも取り消せます。' },
   set_start:         { en: 'Starting point', ja: '開始地点' },

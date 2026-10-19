@@ -4,7 +4,6 @@
 // Written for this project in the official N5 formats (nothing copied from jlpt.jp workbooks).
 //   format 'full'       = the real N5 blueprint (lib.js MOCK_BLUEPRINT.full, item counts from
 //                         jlpt.jp), timed at the real 20 / 40 / 30 minutes (MOCK_PACE).
-//   format 'diagnostic' = about half of it, every mondai kept; open from the Units tab anytime.
 // sections.vocab / grammar / listening: one entry per question, in test order. `m` = the mondai:
 //   kanjiYomi / hyouki   s: catalog sentence, w: the vocab item underlined in it, o: options, a: answer
 //   bunmyaku / gap       f: own sentence with （　） ([漢字|かな] ruby), o (ruby), a, en, explain
@@ -171,53 +170,5 @@ CATALOG.add([
       ]
     },
     uses: ["g:de","g:te-kudasai","g:hou-ga-ii","g:mada-te-imasen","g:adj-i","g:no-ga-suki","g:te-iru","g:ya","v:バス|バス","v:行く|いく","v:一|いち","v:日|にち","v:三|さん","v:九|く","v:時|じ","v:食べる|たべる","v:パン|パン","v:川|かわ","v:五|ご","v:ズボン|ズボン","k:雨","k:川","k:五","k:行","k:一","k:日","k:三","k:九","k:時","k:食","k:山"], names: ["山川|やまかわ"],
-    sources: ['own'], verified: false, notes: 'One source (own writing), so not verified.' },
-  { id: "x:n5-mock-3", kind: 'mock', level: 'N5', format: "diagnostic", title: "N5 diagnostic test",
-    sections: {
-     vocab: [
-      {"m":"kanjiYomi","s":"s:own:n5-ne","w":"v:天気|てんき","o":["でんき","てんぎ","でんぎ","てんき"],"a":3},
-      {"m":"kanjiYomi","s":"s:own:n5-no-ga-heta-ryouri","w":"v:父|ちち","o":["ちち","ちぢ","ちっち","ちっぢ"],"a":0},
-      {"m":"kanjiYomi","s":"s:tatoeba:9231680","w":"v:電話|でんわ","o":["でんわ","てんわ","でんは","てんは"],"a":0},
-      {"m":"kanjiYomi","s":"s:tatoeba:2143385","w":"v:大きい|おおきい","o":["おきい","おおきい","おぎい","おおぎい"],"a":1},
-      {"m":"hyouki","s":"s:own:n5-ya-pan","w":"v:上|うえ","o":["工","土","上","士"],"a":2},
-      {"m":"hyouki","s":"s:own:n5-ne-hon","w":"v:本|ほん","o":["休","末","木","本"],"a":3},
-      {"m":"hyouki","s":"s:tatoeba:10953992","w":"v:時|じ","o":["持","待","時","特"],"a":2},
-      {"m":"bunmyaku","f":"きのうは　[雨|あめ]でしたから、かさを（　）[出|で]かけました。","o":["はいて","さして","きて","かぶって"],"a":1,"en":"It rained yesterday, so I went out with my umbrella up.","explain":"An umbrella is held up: かさをさす. かぶる is for hats, はく for shoes and trousers, きる for clothes."},
-      {"m":"bunmyaku","f":"わたしは　コーヒーが（　）ですから、のみません。","o":["げんき","すき","じょうず","きらい"],"a":3,"en":"I don't like coffee, so I don't drink it.","explain":"Not drinking it follows from disliking it (きらい); すき would be a reason to drink it."},
-      {"m":"bunmyaku","f":"ごはんの　まえに、てを（　）ください。","o":["あらって","かって","たべて","あびて"],"a":0,"en":"Please wash your hands before the meal.","explain":"Hands are washed: てをあらう. かう (buy), たべる (eat) and あびる (take a shower) don't fit て."},
-      {"m":"iikae","item":"m:n5-iikae-shokudou","o":[0,1,2,3]},
-      {"m":"iikae","item":"m:n5-iikae-heta","o":[1,0,3,2]}
-      ],
-     grammar: [
-      {"m":"gap","f":"まいにち　[七|しち][時|じ]（　）おきます。","o":["が","で","に","を"],"a":2,"en":"I get up at seven every day.","explain":"A clock time takes に."},
-      {"m":"gap","f":"この　[本|ほん]は　わたし（　）です。","o":["を","に","が","の"],"a":3,"en":"This book is mine.","explain":"わたしの = mine."},
-      {"m":"gap","f":"[山川|やまかわ]さん、あした　いっしょに　えいがを　[見|み]（　）か。","o":["ました","に","ません","て"],"a":2,"en":"Mr. Yamakawa, would you like to see a movie together tomorrow?","explain":"An invitation: 〜ませんか. ましたか is past, but the plan is for tomorrow; に and て can't end the sentence before か."},
-      {"m":"gap","f":"きょうしつで　たばこを　すわないで（　）。","o":["ます","ください","たい","ません"],"a":1,"en":"Please don't smoke in the classroom.","explain":"ない-form + でください = please don't."},
-      {"m":"gap","f":"この　へやは　しずか（　）、きれいです。","o":["く","に","な","で"],"a":3,"en":"This room is quiet and clean.","explain":"A な-adjective joins the next one with で."},
-      {"m":"order","s":"s:own:n5-order-kaban-yori","star":2,"o":[0,3,1,2]},
-      {"m":"order","s":"s:own:n5-order-asobi-ni","star":0,"o":[0,1,2,3]},
-      {"m":"bunshou","item":"m:n5-bunshou-kouen","blank":1,"o":[1,0,3,2]},
-      {"m":"bunshou","item":"m:n5-bunshou-kouen","blank":2,"o":[2,3,0,1]},
-      {"m":"bunshou","item":"m:n5-bunshou-kouen","blank":3,"o":[3,2,1,0]},
-      {"m":"reading","p":"p:n5-sunday-diary","q":0,"o":[1,2,0,3]},
-      {"m":"reading","p":"p:n5-lost-umbrella","q":0,"o":[2,0,3,1]},
-      {"m":"reading","p":"p:n5-lost-umbrella","q":1,"o":[3,1,2,0]},
-      {"m":"reading","p":"p:n5-class-party-flyer","q":0,"o":[0,3,1,2]}
-      ],
-     listening: [
-      {"m":"listening","l":"l:n5-clean-room-first"},
-      {"m":"listening","l":"l:n5-before-the-train"},
-      {"m":"listening","l":"l:n5-test-classroom"},
-      {"m":"listening","l":"l:n5-study-hours"},
-      {"m":"listening","l":"l:n5-when-sea"},
-      {"m":"listening","l":"l:n5-how-many-tickets"},
-      {"m":"listening","l":"l:n5-show-me-bag"},
-      {"m":"listening","l":"l:n5-buy-hat"},
-      {"m":"listening","l":"l:n5-how-long-japan"},
-      {"m":"listening","l":"l:n5-favorite-drink"},
-      {"m":"listening","l":"l:n5-close-door"}
-      ]
-    },
-    uses: ["g:ni","g:no","g:masen-ka","g:nai-de-kudasai","g:adj-na","v:七|しち","v:時|じ","v:本|ほん","v:見る|みる","v:雨|あめ","v:出かける|でかける","v:コーヒー|コーヒー","k:雨","k:出","k:七","k:時","k:本","k:山","k:川","k:見"], names: ["山川|やまかわ"],
     sources: ['own'], verified: false, notes: 'One source (own writing), so not verified.' }
 ]);

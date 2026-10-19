@@ -234,8 +234,7 @@ LESSONS.forEach(function (l, n) {
 // ── 4. Test prep (ticket 18) ───────────────────────────────────────────────
 // After the last lesson review: strategy units, each with a timed section drill (lib.js prepDrill;
 // drill = questions per mondai, or passages / listening items per format), then the two fixed full
-// mocks (data/<lvl>/mocks.js), with a mixed drill between them. The diagnostic mock (N5: x:n5-mock-3) is
-// not a unit: it opens from the Units tab anytime. Unit ids continue after the lessons (n5.u106…).
+// mocks (data/<lvl>/mocks.js), with a mixed drill between them. Unit ids continue after the lessons (n5.u106…).
 PREP.forEach(function (p, i) {
   const u = { id: uid(), level: LEVEL, kind: p[2] ? "mock" : "prep", title: p[0], guide: GUIDES[i] };
   if (p[2]) u.mock = p[2]; else u.drill = p[1];

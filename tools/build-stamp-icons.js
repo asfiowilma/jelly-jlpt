@@ -12,10 +12,10 @@ const fs = require('fs');
 const path = require('path');
 
 const LEVELS = ['n5', 'n4'];
-const LEVEL_IDS = `all-lessons all-reviews prep clear quiz-sweep diagnostic mock-sat mock-pass
+const LEVEL_IDS = `all-lessons all-reviews prep clear quiz-sweep mock-sat mock-pass
 mock-pass-all mock-honors mock-perfect mock-balanced vocab-mature kanji-mature grammar-mature
 all-mature`.split(/\s+/);
-const LEVEL_EXTRA = { n5: ['hiragana', 'katakana'], n4: 'first keigo voice conditionals giving mock-ears diag-first speedrun'.split(' ') };
+const LEVEL_EXTRA = { n5: ['hiragana', 'katakana'], n4: 'first keigo voice conditionals giving mock-ears speedrun'.split(' ') };
 const IDS = [].concat(...LEVELS.map(function (lv) { return LEVEL_IDS.concat(LEVEL_EXTRA[lv] || []).map(function (id) { return lv + '-' + id; }); }),
   `hiragana-mastered katakana-mastered first-steps units-10 units-25 units-50
 units-100 hiragana-blitz completionist streak-4 streak-7 streak-30 streak-100 streak-365 study-days-30 study-days-100

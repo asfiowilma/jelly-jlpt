@@ -15,22 +15,22 @@ QUnit.module('achievements', function () {
     'streak-4', 'streak-7', 'streak-30', 'streak-100', 'streak-365', 'study-days-30', 'study-days-100', 'study-days-200',
     'double-feature', 'hat-trick', 'binge', 'comeback', 'early-bird', 'night-owl', 'new-year',
     'first-quiz', 'first-perfect', 'perfect-10', 'perfect-50', 'ippatsu', 'redemption-arc', 'n5-quiz-sweep',
-    'mock-sittings-5', 'mock-sittings-15', 'n5-diagnostic', 'n5-mock-sat', 'n5-mock-pass', 'n5-mock-pass-all', 'n5-mock-honors', 'n5-mock-perfect', 'n5-mock-balanced',
+    'mock-sittings-5', 'mock-sittings-15', 'n5-mock-sat', 'n5-mock-pass', 'n5-mock-pass-all', 'n5-mock-honors', 'n5-mock-perfect', 'n5-mock-balanced',
     'first-review', 'reviews-100', 'reviews-1000', 'reviews-5000', 'review-day-50', 'review-day-100', 'mature-1', 'mature-100', 'mature-500', 'interval-365', 'import-first', 'import-proved',
     'kanji-mature-25', 'kanji-mature-50', 'hiragana-mastered', 'katakana-mastered', 'n5-vocab-mature', 'n5-kanji-mature', 'n5-grammar-mature', 'n5-all-mature'];
 
   // Level template rows a later level (N4+) instantiates, when it has the unit kinds / mocks for them.
-  var TEMPLATE = ['all-lessons', 'all-reviews', 'prep', 'clear', 'quiz-sweep', 'diagnostic', 'mock-sat', 'mock-pass', 'mock-pass-all',
+  var TEMPLATE = ['all-lessons', 'all-reviews', 'prep', 'clear', 'quiz-sweep', 'mock-sat', 'mock-pass', 'mock-pass-all',
     'mock-honors', 'mock-perfect', 'mock-balanced', 'vocab-mature', 'kanji-mature', 'grammar-mature', 'all-mature'];
   var laterLevels = PLAN.map(function (p) { return p.level; }).filter(function (lv) { return lv !== 'N5'; });
   // N4-only rows after the template (.scratch/n4-launch/achievements-n4.md), in list order.
-  var N4_EXTRAS = ['first', 'keigo', 'voice', 'conditionals', 'giving', 'mock-ears', 'diag-first', 'speedrun'];
+  var N4_EXTRAS = ['first', 'keigo', 'voice', 'conditionals', 'giving', 'mock-ears', 'speedrun'];
   var levelRow = function (lv, id) {
     var l = lv.toLowerCase(), t = id.replace(l + '-', '');
     return id.indexOf(l + '-') === 0 && (TEMPLATE.indexOf(t) >= 0 || (lv === 'N4' && N4_EXTRAS.indexOf(t) >= 0));
   };
   // N4 stand-in: the N5 plan relabelled (every template row) plus lessons teaching the N4 grammar the
-  // extras name, and three N4 mocks (the real N4 plan now has prep and mocks; the stand-in stays for controlled fixtures).
+  // extras name, and two N4 mocks (the real N4 plan now has prep and mocks; the stand-in stays for controlled fixtures).
   var G = function (ids) { return ids.map(function (id) { return CATALOG.items[id]; }); };
   var N4U = UNITS_.map(function (u) { return Object.assign({}, u, { id: u.id.replace('n5.', 'n4.'), level: 'N4' }); }).concat([
     { id: 'n4.k1', level: 'N4', kind: 'lesson', grammar: G(['g:sonkeigo-verbs', 'g:o-ni-naru', 'g:o-kudasai']) },
@@ -38,16 +38,16 @@ QUnit.module('achievements', function () {
     { id: 'n4.v1', level: 'N4', kind: 'lesson', grammar: G(['g:passive', 'g:causative', 'g:causative-passive']) },
     { id: 'n4.c1', level: 'N4', kind: 'lesson', grammar: G(['g:to-conditional', 'g:tara', 'g:ba', 'g:nara', 'g:te-ageru', 'g:te-kureru', 'g:te-morau']) }]);
   var N4CAT = { items: Object.assign({}, CATALOG.items) };
-  ['x:n4-mock-1', 'x:n4-mock-2', 'x:n4-mock-3'].forEach(function (id, i) { N4CAT.items[id] = { id: id, kind: 'mock', level: 'N4', format: i < 2 ? 'full' : 'diagnostic' }; });
+  ['x:n4-mock-1', 'x:n4-mock-2'].forEach(function (id) { N4CAT.items[id] = { id: id, kind: 'mock', level: 'N4', format: 'full' }; });
   var N4ROWS = levelAchievements('N4', N4U, N4CAT);
 
   QUnit.test('the list matches the approved draft: ids, categories, rarities, hidden', function (assert) {
     var n5List = ACHIEVEMENTS.filter(function (a) { return !a.level || a.level === 'N5'; });
     var tally = function (key) { var o = {}; n5List.forEach(function (a) { o[a[key]] = (o[a[key]] || 0) + 1; }); return o; };
     assert.deepEqual(n5List.map(function (a) { return a.id; }).sort(), EXPECTED.slice().sort());
-    assert.equal(n5List.length, 64);
-    assert.deepEqual(tally('category'), { progress: 13, habit: 15, quiz: 7, mock: 9, review: 12, mastery: 8 });
-    assert.deepEqual(tally('rarity'), { common: 15, uncommon: 20, rare: 17, epic: 7, legendary: 5 });
+    assert.equal(n5List.length, 63);
+    assert.deepEqual(tally('category'), { progress: 13, habit: 15, quiz: 7, mock: 8, review: 12, mastery: 8 });
+    assert.deepEqual(tally('rarity'), { common: 14, uncommon: 20, rare: 17, epic: 7, legendary: 5 });
     assert.deepEqual(n5List.filter(function (a) { return a.hidden; }).map(function (a) { return a.id; }).sort(),
       ['comeback', 'completionist', 'early-bird', 'hiragana-blitz', 'new-year', 'night-owl', 'redemption-arc']);
     // a level still being built (ready: false) is out of ACHIEVEMENTS; check its rows as they will ship
@@ -80,9 +80,9 @@ QUnit.module('achievements', function () {
       assert.equal(r.hidden ? !!r.revealed : !r.revealed, true, r.id + ': revealed text only on hidden rows');
     });
     var extras = rows.slice(TEMPLATE.length), tally = function (key) { var o = {}; extras.forEach(function (a) { o[a[key]] = (o[a[key]] || 0) + 1; }); return o; };
-    assert.deepEqual(tally('rarity'), { common: 1, uncommon: 3, rare: 3, epic: 1 }, 'extras by effort');
-    assert.deepEqual(tally('category'), { progress: 4, mastery: 2, mock: 2 });
-    assert.deepEqual(extras.filter(function (r) { return r.hidden; }).map(function (r) { return r.id; }), ['n4-diag-first', 'n4-speedrun'], 'hidden only for surprises');
+    assert.deepEqual(tally('rarity'), { common: 1, uncommon: 2, rare: 3, epic: 1 }, 'extras by effort');
+    assert.deepEqual(tally('category'), { progress: 4, mastery: 2, mock: 1 });
+    assert.deepEqual(extras.filter(function (r) { return r.hidden; }).map(function (r) { return r.id; }), ['n4-speedrun'], 'hidden only for surprises');
     // a plan that doesn't teach the grammar (or lacks the mocks) doesn't get those rows, never unearnable ones
     var bare = levelAchievements('N4', UNITS_.map(function (u) { return Object.assign({}, u, { level: 'N4' }); }), CATALOG).map(function (r) { return r.id; });
     ['n4-keigo', 'n4-voice', 'n4-conditionals', 'n4-giving'].forEach(function (id) { assert.ok(bare.indexOf(id) < 0, id + ' needs its grammar'); }); // the mock rows key on the catalog's N4 mocks, which now exist
@@ -90,7 +90,7 @@ QUnit.module('achievements', function () {
     assert.ok(partKeigo.indexOf('n4-keigo') < 0, 'keigo row needs every keigo point taught');
     // the real N4 plan teaches every point the extras name (the mock rows wait for the N4 mocks)
     var real = levelAchievements('N4', buildUnits(PLAN, CATALOG), CATALOG).map(function (r) { return r.id; });
-    ['n4-first', 'n4-keigo', 'n4-voice', 'n4-conditionals', 'n4-giving', 'n4-speedrun', 'n4-mock-ears', 'n4-diag-first'].forEach(function (id) { assert.ok(real.indexOf(id) >= 0, id + ' on the real N4 plan'); });
+    ['n4-first', 'n4-keigo', 'n4-voice', 'n4-conditionals', 'n4-giving', 'n4-speedrun', 'n4-mock-ears'].forEach(function (id) { assert.ok(real.indexOf(id) >= 0, id + ' on the real N4 plan'); });
     assert.equal(new Set(rows.map(function (r) { return r.name; })).size, rows.length, 'N4 names unique');
     assert.ok(/\(N3\)$/.test(levelAchievements('N3', n4.map(function (u) { return Object.assign({}, u, { level: 'N3' }); }), CATALOG)[0].name), 'N3 keeps the placeholder until written');
   });
@@ -161,9 +161,9 @@ QUnit.module('achievements', function () {
     Object.keys(dayQuizzes).forEach(function (k) { logs[k] = Object.assign(logs[k] || {}, { quizzes: dayQuizzes[k] }); });
     for (n = 0; n < 200; n++) { var dd = ymd(new Date(2023, 0, 1 + n)); logs[dd] = logs[dd] || { reviews: { count: 1, again: 0 } }; } // 200+ study days (2023: gap before 2024)
     Object.keys(logs).forEach(function (k) { docs.push(logDoc(k, logs[k])); });
-    // mocks: full 1 and 2 (perfect first sitting), diagnostic, plus enough sittings for 15
-    docs.push(mockDoc('x:n5-mock-1', at(2025, 5, 1)), mockDoc('x:n5-mock-2', at(2025, 5, 2)), mockDoc('x:n5-mock-3', at(2025, 5, 3)));
-    for (n = 0; n < 13; n++) docs.push(mockDoc('x:n5-mock-3', at(2025, 5, 10 + n)));
+    // mocks: full 1 and 2 (perfect first sitting), plus enough sittings for 15
+    docs.push(mockDoc('x:n5-mock-1', at(2025, 5, 1)), mockDoc('x:n5-mock-2', at(2025, 5, 2)));
+    for (n = 0; n < 13; n++) docs.push(mockDoc('x:n5-mock-2', at(2025, 5, 10 + n)));
     // first-attempt perfects for 25 units
     return docs;
   }
@@ -172,7 +172,7 @@ QUnit.module('achievements', function () {
     var got = earned(everything());
     var missing = EXPECTED.filter(function (id) { return got.indexOf(id) < 0; });
     assert.deepEqual(missing, [], 'unreachable: ' + missing.join(', '));
-    assert.equal(got.length, 64);
+    assert.equal(got.length, 63);
     assert.equal(got[got.length - 1], 'completionist', 'completionist is last');
   });
 
@@ -274,11 +274,8 @@ QUnit.module('achievements', function () {
     assert.ok(earned([mockDoc('x:n5-mock-1', at(2026, 1, 1), weak)]).indexOf('n5-mock-pass-all') < 0, 'both full mocks are needed');
     assert.ok(earned([mockDoc('x:n5-mock-1', at(2026, 1, 1), weak), mockDoc('x:n5-mock-2', at(2026, 1, 2), weak)]).indexOf('n5-mock-pass-all') >= 0);
   });
-  QUnit.test('a blank mock submit is not a sitting; the diagnostic is its own stamp', function (assert) {
+  QUnit.test('a blank mock submit is not a sitting', function (assert) {
     assert.deepEqual(earned([mockDoc('x:n5-mock-1', at(2026, 1, 1), { blank: true })]), []);
-    var d = earned([mockDoc('x:n5-mock-3', at(2026, 1, 1))]);
-    assert.ok(d.indexOf('n5-diagnostic') >= 0 && d.indexOf('n5-mock-sat') < 0, 'diagnostic is not a full mock');
-    assert.ok(d.indexOf('n5-mock-perfect') < 0, 'only full mocks');
   });
 
   // ── N4 extras: one positive and one negative world each ──
@@ -309,15 +306,6 @@ QUnit.module('achievements', function () {
     assert.ok(has4([mockDoc('x:n4-mock-1', at(2026, 3, 1), o([20, 24], true))], 'n4-mock-ears'));
     assert.notOk(has4([mockDoc('x:n4-mock-1', at(2026, 3, 1), o([18, 24], true))], 'n4-mock-ears'), '75% listening');
     assert.notOk(has4([mockDoc('x:n4-mock-1', at(2026, 3, 1), o([24, 24], false))], 'n4-mock-ears'), 'not passed');
-    assert.notOk(has4([mockDoc('x:n4-mock-3', at(2026, 3, 1), o([24, 24], true))], 'n4-mock-ears'), 'the diagnostic is not a full mock');
-  });
-  QUnit.test('n4-diag-first: diagnostic before any N4 lesson activity, earned at the first lesson pass', function (assert) {
-    var diag = mockDoc('x:n4-mock-3', at(2026, 3, 1));
-    var res = evaluateAchievements([diag, unitDoc('n4.k1', at(2026, 3, 2))], {}, { units: N4U, catalog: N4CAT, defs: N4ROWS, now: at(2026, 12, 1) });
-    assert.deepEqual(res.filter(function (r) { return r.id === 'n4-diag-first'; }), [{ id: 'n4-diag-first', at: at(2026, 3, 2) }]);
-    assert.notOk(has4([diag], 'n4-diag-first'), 'no lesson yet');
-    assert.notOk(has4([diag, unitDoc('n4.k1', at(2026, 2, 20))], 'n4-diag-first'), 'a lesson came first');
-    assert.notOk(has4([logDoc('2026-02-27', { quizzes: [quiz('n4.k1', 2, 10, at(2026, 2, 27))] }), diag, unitDoc('n4.k1', at(2026, 3, 2))], 'n4-diag-first'), 'a failed lesson quiz came first');
   });
   QUnit.test('n4-speedrun: every N4 unit within 90 days of starting, no placement skips', function (assert) {
     var run = function (step) { return N4U.map(function (u, i) { return unitDoc(u.id, at(2026, 1, 1) + i * step); }); };

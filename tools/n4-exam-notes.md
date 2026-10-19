@@ -68,7 +68,7 @@ Already replaced by the author before this review: おさらをつつむ, 手が
 
 ## Mocks (`data/n4/mocks.js`)
 
-- `x:n4-mock-1`, `x:n4-mock-2`: `MOCK_BLUEPRINT.N4.full` exactly (vocab 7 / 5 / 8 / 4 / 4, grammar 13 / 4 / 4, reading 3 short + 1 mid × 3 + 1 info × 2, listening 8 / 7 / 5 / 8 = 85). Timed 25 / 55 / 35 min. `x:n4-mock-3`: the diagnostic blueprint (45 questions).
+- `x:n4-mock-1`, `x:n4-mock-2`: `MOCK_BLUEPRINT.N4.full` exactly (vocab 7 / 5 / 8 / 4 / 4, grammar 13 / 4 / 4, reading 3 short + 1 mid × 3 + 1 info × 2, listening 8 / 7 / 5 / 8 = 85). Timed 25 / 55 / 35 min.
 - **Item split** (no passage, listening item, mondai or sentence shared, and none in a review):
 
   | | mock 1 | mock 2 | diagnostic |

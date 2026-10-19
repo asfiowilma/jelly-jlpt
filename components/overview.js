@@ -270,26 +270,5 @@ function Overview(props) {
         ce("span", { className: "seal", 'aria-hidden': "true" }, "済"),
         ce("span", null, ce("b", null, level + " cleared"), ce("small", null, "All " + lvUnits.length + " stages done" + (lvSkipped ? " · " + lvSkipped + " skipped" : ""))),
         ce("button", { className: "btn-outline", 'aria-expanded': revisit[level] ? "true" : "false", onClick: function () { var r = Object.assign({}, revisit); r[level] = !r[level]; setRevisit(r); } }, revisit[level] ? "Hide chapters" : "Revisit chapters")),
-      (hasQuery || !levelDone || revisit[level]) && ce("div", { className: "q-list" }, chapterList())),
-    props.onDiagnostic && DiagnosticPanel({ onStart: props.onDiagnostic, level: cur && cur.level }));
-}
-
-// DiagnosticPanel: the anytime diagnostic mock of the learner's level (ticket 18, x:<lvl>-mock-3)
-// and its last result. diagnosticMockId(level): that level's diagnostic, else N5's (a level whose
-// mocks are not written yet).
-function diagnosticMockId(level) {
-  var id = 'x:' + String(level || 'N5').toLowerCase() + '-mock-3';
-  return CATALOG.items[id] ? id : 'x:n5-mock-3';
-}
-function DiagnosticPanel(props) {
-  var ce = React.createElement, m = CATALOG.items[diagnosticMockId(props.level)];
-  if (!m) return null;
-  var lv = m.level;
-  var last = mockHeadline(Store.snapshot().mocks, m.id); // the first attempt: retakes are practice and never replace it
-  var mins = mockSections(m).reduce(function (n, s) { return n + Math.round(s.seconds / 60); }, 0);
-  return ce("section", { className: "panel diagnostic", 'aria-label': lv + " diagnostic test" },
-    ce("h2", { className: "panel-h" }, lv + " diagnostic test", ce("span", { className: "r" }, "About " + mins + " min · take it anytime")),
-    ce("p", null, "A timed, half-length " + lv + " test in the exam format. You get an estimated score and every missed question explained.",
-      last ? " First score: " + last.estimate.total + " / 180, " + (last.estimate.passed ? "a pass." : "below the pass mark.") + " Retakes are practice and don't change it." : ""),
-    ce("button", { className: "btn-outline", onClick: props.onStart }, last ? "Retake diagnostic" : "Start diagnostic"));
+      (hasQuery || !levelDone || revisit[level]) && ce("div", { className: "q-list" }, chapterList())));
 }

@@ -2721,23 +2721,16 @@ var MOCK_SECTIONS = [
 ];
 // Questions per mondai (jlpt-scoring.md §3, n4-format.md §3). Reading and listening count by item
 // format, per question: N5 mid 2 = one passage with 2 questions, N4 mid 3 = one passage with 3.
-// diagnostic: about half a full mock, every mondai kept.
 var MOCK_BLUEPRINT = {
   N5: {
     full: { vocab: { kanjiYomi: 7, hyouki: 5, bunmyaku: 6, iikae: 3 },
       grammar: { gap: 9, order: 4, bunshou: 4, short: 2, mid: 2, info: 1 },
-      listening: { task: 7, point: 6, utterance: 5, quick: 6 } },
-    diagnostic: { vocab: { kanjiYomi: 4, hyouki: 3, bunmyaku: 3, iikae: 2 },
-      grammar: { gap: 5, order: 2, bunshou: 3, short: 1, mid: 2, info: 1 },
-      listening: { task: 3, point: 3, utterance: 2, quick: 3 } }
+      listening: { task: 7, point: 6, utterance: 5, quick: 6 } }
   },
   N4: {
     full: { vocab: { kanjiYomi: 7, hyouki: 5, bunmyaku: 8, iikae: 4, youhou: 4 },
       grammar: { gap: 13, order: 4, bunshou: 4, short: 3, mid: 3, info: 2 },
-      listening: { task: 8, point: 7, utterance: 5, quick: 8 } },
-    diagnostic: { vocab: { kanjiYomi: 4, hyouki: 3, bunmyaku: 4, iikae: 2, youhou: 2 },
-      grammar: { gap: 7, order: 2, bunshou: 2, short: 1, mid: 3, info: 2 },
-      listening: { task: 4, point: 3, utterance: 2, quick: 4 } }
+      listening: { task: 8, point: 7, utterance: 5, quick: 8 } }
   }
 };
 var MOCK_LABELS = { short: '内容理解（短文）', mid: '内容理解（中文）', info: '情報検索', task: '課題理解', point: 'ポイント理解',
@@ -2885,7 +2878,7 @@ function mockSteps(sections, phase, sec) {
 // { vocab, grammar, reading, listening }. Linear proxy (labelled an estimate in the UI): the
 // real test scores answer patterns with IRT and equates sessions, so no exact conversion
 // exists. 言語知識・読解 (0-120) weights the three parts by the level's official item counts
-// (mockWeights: N5 21 / 17 / 5, N4 28 / 21 / 8), so a short diagnostic counts each part as much as
+// (mockWeights: N5 21 / 17 / 5, N4 28 / 21 / 8), so a short mock counts each part as much as
 // the real test does. N5: lkr = 120 × (21·vocab + 17·grammar + 5·reading) / 43,
 // listening = 60 × listening, each rounded; pass = total ≥ 80 (N4: 90) and lkr ≥ 38 and
 // listening ≥ 19 (JLPT_PASS). level defaults to N5.
@@ -3029,7 +3022,7 @@ function prepDrill(unit) {
   order.forEach(function (key) {
     var n = (unit.drill || {})[key];
     if (!n) return;
-    var got = 0, add = function (qs) { if (qs.length && got < n && !drillLeak(out, qs)) { out = out.concat(qs); got++; } };
+    var got = 0, add = function (qs) { if (qs.length && got < n && !drillLeak(out, qs) && !(key === 'bunshou' && qs.some(function (q, i) { return drillLeak([q], qs.filter(function (_, j) { return j !== i; })); }))) { out = out.concat(qs); got++; } };
     if (key === 'iikae' || key === 'youhou' || key === 'bunshou') {
       fresh(catalogOf('mondai').filter(function (m) { return m.type === key && m.level === unit.level; })).forEach(function (m) { add(mondaiQuestions(key, m, ctx)); });
     } else if (['short', 'mid', 'info'].indexOf(key) >= 0) {
@@ -4491,7 +4484,6 @@ function levelAchievements(L, units, catalog) {
   };
   var sittings = function (s, mockId) { return s.mocks.filter(function (m) { return m.mockId === mockId; }); };
   var fullIds = mocksOf('full').map(function (m) { return m.id; });
-  var diagIds = mocksOf('diagnostic').map(function (m) { return m.id; });
   var fullSittings = function (s) { return s.mocks.filter(function (m) { return fullIds.indexOf(m.mockId) >= 0; }); };
   var firstSittings = function (s) { return fullIds.map(function (id) { return sittings(s, id)[0]; }).filter(Boolean); };
   var out = [];
@@ -4510,11 +4502,6 @@ function levelAchievements(L, units, catalog) {
     { progress: function (s) { return [quizzed.filter(function (u) { return s.perfectAt[u.id]; }).length, quizzed.length]; } }));
   var firstAt = function (arr) { return arr.length ? arr[0].takenAt : false; };
   var passed = function (m) { return m.estimate && m.estimate.passed; };
-  if (diagIds.length) {
-    add(_def(tag('diagnostic'), 'mock', 'common', nm('Jiko Shōkai'), 'Sit the ' + L + ' diagnostic.', function (s) {
-      return firstAt(s.mocks.filter(function (x) { return diagIds.indexOf(x.mockId) >= 0; }));
-    }));
-  }
   if (fullIds.length) {
     add(_def(tag('mock-sat'), 'mock', 'common', nm('Dress Rehearsal'), 'Sit a full ' + L + ' mock exam.', function (s) { return firstAt(fullSittings(s)); }));
     add(_def(tag('mock-pass'), 'mock', 'uncommon', nm('Gōkaku!'), 'Pass a full ' + L + ' mock (estimate).', function (s) { return firstAt(fullSittings(s).filter(passed)); }));
@@ -4588,15 +4575,6 @@ function levelAchievements(L, units, catalog) {
           return passed(m) && p && p[1] > 0 && p[0] / p[1] >= 0.8;
         }));
       }));
-    }
-    if (diagIds.length && lessons.length) {
-      // diagnostic sat before any N4 lesson was touched; earned when the first lesson is passed
-      add(_hid(_def('n4-diag-first', 'mock', 'uncommon', 'Ishibashi wo Tataite', 'Tap the stone bridge before you cross.', function (s) {
-        var diag = s.mocks.filter(function (m) { return diagIds.indexOf(m.mockId) >= 0; })[0];
-        var passedAt = lessons.filter(function (u) { return s.done[u.id] && !s.skipped[u.id]; }).map(function (u) { return s.done[u.id]; });
-        if (!diag || !passedAt.length) return false;
-        return diag.takenAt < firstActivity(s, lessons) ? Math.min.apply(null, passedAt) : false;
-      }), 'Sat the N4 diagnostic before your first N4 lesson.'));
     }
     if (lv.length) {
       // every N4 unit done within 90 days of the first N4 activity; a placement skip can't shortcut it
@@ -5123,7 +5101,7 @@ function shouldAskSupport(milestone, state, now) {
 
 // ── Hash routes (app.js) ─────────────────────────────────────────────────────
 // '#/today', '#/unit/<unitId>/quiz' and friends. Unit ids are opaque catalog ids (n5.u001).
-var ROUTE_VIEWS = ['today', 'units', 'review', 'stats', 'achievements', 'settings', 'diagnostic'];
+var ROUTE_VIEWS = ['today', 'units', 'review', 'stats', 'achievements', 'settings'];
 // parseRoute(hash, unitIds): { view, unitId?, quiz? }, or null for an empty or unknown hash.
 // A unit id not in unitIds falls back to the units list.
 function parseRoute(hash, unitIds) {
