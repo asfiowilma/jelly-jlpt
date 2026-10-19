@@ -3753,12 +3753,13 @@ function matchCatalogText(text) {
 //                   { mondai key: [right, total] }, answers: { section: [option index | null] },
 //                   estimate: { lkr, listening, total, passed } }. Written once, never changed:
 //                   the merge rule (last write wins) never has two versions to pick from.
+//   chrun:<level>:<startedAt ms>   one mastery challenge run (see challengeRecord): { level, startedAt, mode, pool, stages, missed, cleared }.
 //   ach:<id>        { unlockedAt (ms) }  one earned achievement (ticket 08). Sticky: written once by
 //                   Store.putUnlocks, never deleted by evaluation, un-marking a unit or undoing an
 //                   import; replaceAll keeps them. Merge: earliest unlockedAt wins (mergeAchDocs).
 // Device-only prefs stay in localStorage and never become docs:
 var DEVICE_PREF_KEYS = ['jlpt_palette', 'jlpt_theme', 'jlpt_tts_rate', 'jlpt_sfx_mute'];
-var STORE_ID_RE = /^(unit:n[1-5]\.u\d{3}|card:(v:[^|\s]+\|[^|\s]+|k:\S+|g:[\w-]+|c:\S+)|prefs:learning|log:\d{4}-\d{2}-\d{2}:[\w-]+|mock:x:[\w-]+:\d+|ach:[\w-]+)$/;
+var STORE_ID_RE = /^(unit:n[1-5]\.u\d{3}|card:(v:[^|\s]+\|[^|\s]+|k:\S+|g:[\w-]+|c:\S+)|prefs:learning|log:\d{4}-\d{2}-\d{2}:[\w-]+|mock:x:[\w-]+:\d+|chrun:n[1-5]:\d+|ach:[\w-]+)$/;
 var PREFS_DEFAULTS = { currentUnit: null, pace: 1, examDate: null, furigana: null, uiLang: 'en', kanjiView: 'rows' };
 
 // ── Activity log (log:* docs) ───────────────────────────────────────────────
@@ -4103,6 +4104,112 @@ function realCompletions(unitDocs) {
   }).map(function (d) { return { id: d._id.slice(5), at: d.completedAt }; })
     .sort(function (a, b) { return a.at - b.at; });
 }
+// ── Mastery challenge (pure logic) ──────────────────────────────────────────
+// A run asks up to CH_MAX_STAGES stages, at most CH_MAX_QUESTIONS questions. A stage clears only when every one
+// of its questions is right; a cleared stage stays done. Not a mock: it writes unit docs and its own chrun doc.
+//   chrun:<level>:<startedAt ms>   { level: 'n5', startedAt, mode: 'incomplete'|'whole', pool: [stage ids at start],
+//                                    stages: [stage ids asked], missed: [stage ids not cleared], cleared: [stage ids] }
+var CH_MAX_STAGES = 5, CH_MAX_QUESTIONS = 40, CH_STAGE_FULL = CH_MAX_QUESTIONS; // a stage's full set: every item, only a stage alone past the run cap is sampled
+function _chShuffle(a, rnd) {
+  a = a.slice();
+  for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(rnd() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; }
+  return a;
+}
+// challengeStages(level): the level's lesson and kana units in plan order (reviews, prep and mocks never run; a review clears only through its own quiz).
+function challengeStages(level) {
+  var L = String(level).toUpperCase();
+  return allUnits().filter(function (u) {
+    return u.level === L && liveUnit(u) && (u.kind === 'lesson' || u.kind === 'kana');
+  });
+}
+// challengePool(stages, unitDocs, mode): 'incomplete' = stages not done (skipped counts as done), 'whole' = all.
+// An empty incomplete pool falls back to the whole level.
+function challengePool(stages, unitDocs, mode) {
+  if (mode !== 'whole') {
+    var done = {};
+    unitDocs.forEach(function (d) { if (d._id.indexOf('unit:') === 0 && (d.done || d.skipped)) done[d._id.slice(5)] = true; });
+    var left = stages.filter(function (u) { return !done[u.id]; });
+    if (left.length) return left;
+  }
+  return stages.slice();
+}
+// challengeCompose(pool, missedIds, rnd, itemsOf) → { questions: [{ stage: stage id, kind: item kind, item }] (one flat list),
+// deferred: missed ids that did not fit }.
+// Missed stages first with their full set (every item; a stage alone past the run cap gets a random CH_STAGE_FULL); random pool
+// stages fill to CH_MAX_STAGES. Fresh stages share what is left of CH_MAX_QUESTIONS equally (floor(left / fresh stages), at most
+// the stage's item count): fresh samples shrink, a missed set never does. Missed sets that together pass CH_MAX_QUESTIONS cannot
+// all run: the later ones are deferred (never trimmed) and the caller keeps them missed for the next run. Zero-share stages are dropped.
+// Interleave: always draw from the stage with most items left that is not the previous one (random among ties).
+function challengeCompose(pool, missedIds, rnd, itemsOf) {
+  rnd = rnd || Math.random; itemsOf = itemsOf || quizItems;
+  var want = (missedIds || []).map(function (id) { return pool.filter(function (u) { return u.id === id; })[0]; }).filter(Boolean).slice(0, CH_MAX_STAGES);
+  var full = function (u) { var a = itemsOf(u); return a.length > CH_STAGE_FULL ? _chShuffle(a, rnd).slice(0, CH_STAGE_FULL) : a; };
+  var used = 0, missed = [], lists = [], deferred = [];
+  want.forEach(function (u) {
+    var items = full(u);
+    if (used + items.length > CH_MAX_QUESTIONS) return deferred.push(u.id);
+    used += items.length; missed.push(u); lists.push({ id: u.id, items: items });
+  });
+  var rest = _chShuffle(pool.filter(function (u) { return missed.indexOf(u) < 0; }), rnd).slice(0, CH_MAX_STAGES - missed.length);
+  var share = rest.length ? Math.floor((CH_MAX_QUESTIONS - used) / rest.length) : 0;
+  rest.forEach(function (u) {
+    if (share > 0) lists.push({ id: u.id, items: _chShuffle(itemsOf(u), rnd).slice(0, share) });
+  });
+  lists.forEach(function (l) { l.items = _chShuffle(l.items, rnd); });
+  var out = [], last = null;
+  for (;;) {
+    var live = lists.filter(function (l) { return l.items.length; });
+    if (!live.length) break;
+    var cands = live.filter(function (l) { return l.id !== last; });
+    if (!cands.length) cands = live;
+    var most = Math.max.apply(null, cands.map(function (l) { return l.items.length; }));
+    cands = cands.filter(function (l) { return l.items.length === most; });
+    var pick = cands[Math.floor(rnd() * cands.length)], it = pick.items.pop();
+    out.push({ stage: pick.id, kind: it.kind, item: it });
+    last = pick.id;
+  }
+  return { questions: out, deferred: deferred };
+}
+// challengeScore(questions, correct) → [{ stage, cleared, missed, total }] per stage in order of first question;
+// correct[i] is true when question i was answered right. Cleared = every question of the stage right.
+function challengeScore(questions, correct) {
+  var by = {}, order = [];
+  questions.forEach(function (q, i) {
+    var s = by[q.stage] || (by[q.stage] = { stage: q.stage, cleared: true, missed: 0, total: 0 });
+    if (s.total === 0) order.push(q.stage);
+    s.total++;
+    if (correct[i] !== true) { s.missed++; s.cleared = false; }
+  });
+  return order.map(function (id) { return by[id]; });
+}
+// challengeApply(scores, unitDocs, now) → unit doc bodies to write: done:true, completedAt, no skipped, for each cleared
+// stage not already really done. Never writes done:false, a missed stage, a card or a mock doc.
+function challengeApply(scores, unitDocs, now) {
+  var real = {};
+  unitDocs.forEach(function (d) { if (d._id.indexOf('unit:') === 0 && d.done && !d.skipped) real[d._id] = true; });
+  return scores.filter(function (s) { return s.cleared && !real['unit:' + s.stage]; })
+    .map(function (s) { return { _id: 'unit:' + s.stage, done: true, completedAt: now }; });
+}
+// challengeRecord(level, mode, pool, scores, startedAt, deferred) → the chrun doc body (pool = pool stage ids at start;
+// deferred = missed ids from the last compose that did not fit, they stay missed).
+function challengeRecord(level, mode, pool, scores, startedAt, deferred) {
+  var lv = String(level).toLowerCase();
+  return {
+    _id: 'chrun:' + lv + ':' + startedAt, level: lv, startedAt: startedAt, mode: mode === 'whole' ? 'whole' : 'incomplete',
+    pool: pool.map(function (u) { return u.id || u; }), stages: scores.map(function (s) { return s.stage; }),
+    missed: scores.filter(function (s) { return !s.cleared; }).map(function (s) { return s.stage; }).concat(deferred || []),
+    cleared: scores.filter(function (s) { return s.cleared; }).map(function (s) { return s.stage; })
+  };
+}
+// challengeRetake(run, stages, unitDocs, rnd, itemsOf): the next run from a stored chrun: its missed stages first, random
+// fill from the remembered pool (an incomplete pool drops stages done since; empty → whole level). stages = challengeStages(level).
+function challengeRetake(run, stages, unitDocs, rnd, itemsOf) {
+  var kept = stages.filter(function (u) { return run.pool.indexOf(u.id) >= 0; });
+  var pool = run.mode === 'whole' ? kept : challengePool(kept, unitDocs, 'incomplete');
+  var c = challengeCompose(pool, run.missed, rnd, itemsOf);
+  return { pool: pool, questions: c.questions, deferred: c.deferred };
+}
+
 var BACKLOG_OVERDUE = 20; // cards overdue before today's midnight: review goes first
 // dayPlan(o) → { steps, done, rest, backlog, levelEnd, nextStageIn, stageTarget, stagesDone, due, overdue }
 //   o.pace, o.now (ms), o.cards (srs map), o.doneToday: units passed today (oldest first),
