@@ -18,7 +18,7 @@ The course is a list of 112 **stages**. Every stage is open from the start, so y
 | Test prep | 5 | Exam prep and timed drills for each section of the test |
 | Mock exam | 2 | Full-length N5 mocks in the official format and timing |
 
-There is also a half-length **diagnostic test** you can take at any time from the Stages tab.
+There is also the **N5 Mastery Challenge**, a short run of stages you pick yourself, from the bottom of the Stages tab.
 
 What the stages cover:
 
@@ -41,7 +41,7 @@ N4 is a list of 109 stages, open from the start like N5. It carries on from the 
 | Test prep | 5 | Exam prep and timed drills for each section of the test |
 | Mock exam | 2 | Full-length N4 mocks in the official format and timing (25 / 55 / 35 minutes) |
 
-There is also an N4 half-length diagnostic test.
+There is also an N4 Mastery Challenge.
 
 - **Vocabulary**: every word on the community N4 list (678 of 678 entries), taught as 687 catalog entries.
 - **Kanji**: 166 kanji, with readings, meanings and stroke order.
@@ -80,7 +80,7 @@ If you add your JLPT exam date, the app tells you whether your pace finishes at 
 
 A known item skips the new-card queue and comes back once, 3 to 4 weeks later, as a real test. Get it wrong and it goes back into normal review.
 
-**Take the mocks.** The two full mocks and the diagnostic are fixed tests: the same questions in the same order each time. At the end you get an **estimated** score out of 180 checked against the real pass rules (N5: 80 total; N4: 90 total; both need at least 38 in language knowledge and reading and at least 19 in listening), a breakdown per question type, and an explanation for every miss.
+**Take the mocks.** The two full mocks are fixed tests: the same questions in the same order each time. (The Mastery Challenge is not a mock: it draws fresh questions every run and gives no score estimate.) At the end you get an **estimated** score out of 180 checked against the real pass rules (N5: 80 total; N4: 90 total; both need at least 38 in language knowledge and reading and at least 19 in listening), a breakdown per question type, and an explanation for every miss.
 
 ## Limits
 
