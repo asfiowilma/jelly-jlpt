@@ -286,6 +286,12 @@ function createStore(opts) {
       if (sk) body.skipped = true;
       return write('unit:' + id, body);
     },
+    // A mastery challenge run (challengeRecord in lib.js): one chrun:<level>:<startedAt> doc. Not a mock, no SRS cards.
+    putChrun: function (doc) {
+      var body = Object.assign({}, doc);
+      delete body._id;
+      return write(doc._id, body);
+    },
     // Writes only the cards that differ from what's stored.
     // ponytail: O(cards) JSON compare per call; track dirty ids if reviews get slow.
     // A card older (by lastReviewedAt) than the stored one is skipped: App state

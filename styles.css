@@ -811,7 +811,6 @@ rt{font-size:0.6em;color:var(--accent-fg);font-weight:400;letter-spacing:0.02em}
 .ms-how[open] summary::before{content:"-"}
 .ms-how p{margin:0 0 8px}
 @media(max-width:560px){.ms-row{grid-template-columns:auto 1fr}.ms-row>:last-child{grid-column:1 / -1}.ms-row.live .ms-btn{width:100%}.ms-side{text-align:left}}
-.diagnostic p{margin:0 0 10px;font-size:0.9rem}
 .btn-outline{min-height:44px;padding:0 22px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font:inherit;font-size:0.9rem;font-weight:600;cursor:pointer}
 .btn-outline:hover{border-color:var(--text)}
 
@@ -1645,3 +1644,58 @@ button.qz-qn{font-size:0.95rem}
 @media (prefers-reduced-motion:reduce){.rw-bar i{transition:none}}
 .kg-detail .kj-word{flex-wrap:wrap;column-gap:8px}
 .kg-detail .kj-word-jp,.kg-detail .kj-word-rd{white-space:nowrap}
+
+.dare{position:relative;border-style:dashed;border-width:2px;border-color:var(--muted);margin-top:18px}
+.dare .dare-stamp{position:absolute;top:10px;right:12px;transform:rotate(6deg);border:2px solid var(--accent);color:var(--accent);border-radius:6px;padding:0 8px;font-size:.72rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.dare .row{display:flex;gap:12px;align-items:flex-start}
+.dare .row .txt{flex:1;min-width:0}
+.dare .eyebrow{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.dare .lead{font-size:1.2rem;font-weight:700;line-height:1.3;margin:0 0 6px}
+.dare p{margin:0 0 10px;font-size:.92rem}
+.dare .rules{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 12px}
+.dare .rules span{font-size:.76rem;border:1px solid var(--border);border-radius:99px;padding:2px 10px;color:var(--muted)}
+.pool .top{display:flex;gap:12px;align-items:flex-end}
+.pool .top .txt{flex:1;min-width:0}
+.pool .eyebrow{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.pool .lead{font-size:1.2rem;font-weight:700;line-height:1.3;margin:0}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.opts.one{grid-template-columns:1fr}
+.opt{display:block;text-align:left;width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);font:inherit;cursor:pointer;min-height:44px}
+.opt b{display:block;font-size:1rem}
+.opt small{display:block;color:var(--muted);font-size:.8rem;margin-top:2px}
+.opt[aria-checked=true]{border-color:var(--text);box-shadow:0 0 0 1px var(--text)}
+.opt .tick{float:right;font-size:.8rem;color:var(--muted)}
+.pool .rules{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
+.pool .rules span{font-size:.76rem;border:1px solid var(--border);border-radius:99px;padding:2px 10px;color:var(--muted)}
+@media (max-width:480px){.opts{grid-template-columns:1fr}}
+.ch-tag{display:inline-block;margin:12px 0 0;font-size:.74rem;color:var(--muted);border:1px solid var(--border);border-radius:99px;padding:2px 10px}
+.ch-fb{margin:14px 0 0;font-size:.92rem}
+.ch-fb b{display:block}
+.ch-fb.ok b{color:var(--ok)}.ch-fb.bad b{color:var(--bad)}
+.ch-fb span{color:var(--muted);font-size:.84rem}
+.ch-say{flex:1;min-width:0;font-size:.84rem;color:var(--muted)}
+
+/* challenge result */
+[hidden]{display:none!important}
+.ch-res{display:flex;gap:14px;align-items:center;margin:8px 0}
+.ch-res h3{font-size:1.2rem;margin:0}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}
+.sc2{position:relative;border:1px solid var(--border);border-radius:10px;padding:10px 62px 10px 12px;background:var(--surface);min-height:84px;opacity:0;transform:translateY(8px);transition:opacity .35s,transform .35s}
+.sc2.in{opacity:1;transform:none}
+.sc2 b{display:block;font-size:.9rem}
+.sc2 small{color:var(--muted);font-size:.78rem}
+.sc2 .st{position:absolute;right:8px;top:6px;width:44px;height:44px;border:3px solid var(--ok);color:var(--ok);border-radius:50%;display:grid;place-items:center;font-size:1.4rem;font-weight:800;transform:rotate(-12deg);font-family:"Yu Mincho","Hiragino Mincho ProN",serif;animation:stamp .32s cubic-bezier(.3,.9,.4,1) both}
+.sc2.m{border-style:dashed;padding-right:12px;padding-bottom:30px}
+.sc2.m .st{top:auto;bottom:6px;right:8px;border-color:var(--bad);color:var(--bad);font-size:.7rem;border-radius:6px;width:auto;height:auto;padding:0 6px;border-width:2px;letter-spacing:.06em}
+@keyframes stamp{0%{transform:rotate(-12deg) scale(3.2);opacity:0}55%{transform:rotate(-12deg) scale(.88);opacity:1}100%{transform:rotate(-12deg) scale(1);opacity:1}}
+@media(prefers-reduced-motion:reduce){.sc2 .st{animation:none}.sc2{transition:none}}
+@media(max-width:480px){.cards{grid-template-columns:1fr}}
+#ch-missed{margin-top:16px;opacity:0;transition:opacity .4s}#ch-missed.in{opacity:1}
+#ch-missed h4{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:10px 0 2px}
+#ch-missed .stg{font-size:.86rem;font-weight:600;margin-top:10px}
+#ch-missed ul{list-style:none;padding:0;margin:0}#ch-missed li{display:flex;gap:10px;font-size:.88rem;padding:5px 0;border-top:1px solid var(--border)}
+#ch-missed li .ch-q{flex:1}#ch-missed li .a{color:var(--muted)}
+#ch-missed .more{font-size:.8rem;color:var(--muted);margin-top:8px}
+.ch-gb{min-height:46px;padding:0 14px;border:0;background:none;color:var(--muted);font:inherit;cursor:pointer}
+.ch-sp{flex:1}
+@media(prefers-reduced-motion:reduce){#ch-missed{transition:none}}

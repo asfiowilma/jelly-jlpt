@@ -428,6 +428,7 @@ function PlacementFlow(props) {
     h("div", { key: "d", className: "qz-dock pl-dock" }, h("div", { className: "pl-dock-in" },
       h("button", { id: "pt-apply", className: "qz-btn", type: "button", onClick: function () { apply({}); } },
         startUnit ? fill(L('pt_apply'), { title: startUnit.title }) : L('pt_apply_all')),
+      h("button", { id: "pt-challenge", className: "btn-outline", type: "button", onClick: function () { apply({ challenge: lv }); } }, L('pt_challenge')),
       h("div", { className: "pl-dock-row" },
         h("button", { id: "pt-discard", className: "pl-link", type: "button", onClick: props.onClose }, L('pt_discard'))),
       h("p", { className: "pl-note" }, L('pt_res_note')))));

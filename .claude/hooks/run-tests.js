@@ -48,6 +48,7 @@ global.document = { getElementById: function () { return {}; } };
 const dataDir = path.join(projectDir, "data");
 load(path.join("data", "catalog.js"));
 load(path.join("data", "stamp-icons.js"));
+load(path.join("data", "challenge.js"));
 // n5 first, then n4 …: index.html loads the levels from the lowest up, so catalog order matches the app
 for (const lv of fs.readdirSync(dataDir).filter(function (f) { return fs.statSync(path.join(dataDir, f)).isDirectory(); }).sort().reverse()) {
   for (const file of fs.readdirSync(path.join(dataDir, lv)).sort()) load(path.join("data", lv, file));
@@ -78,6 +79,9 @@ var appFiles = [
   path.join("components", "import-view.js"),
   path.join("components", "welcome-view.js"),
   path.join("components", "placement-view.js"),
+  path.join("components", "challenge-pool.js"),
+  path.join("components", "challenge-run.js"),
+  path.join("components", "challenge-result.js"),
   path.join("components", "settings-view.js"),
   path.join("components", "toast-stack.js"),
   path.join("components", "donate.js"),

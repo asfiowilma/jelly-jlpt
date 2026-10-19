@@ -484,8 +484,9 @@ function App() {
     closeFlow();
   };
   // Confirmed placement result: write it, then land on the start stage.
-  var onPlacementApply = function onPlacementApply(res, startUnit) {
+  var onPlacementApply = function onPlacementApply(res, startUnit, opts) {
     applyPlacement(res);
+    if (opts && opts.challenge) { setFlow({ screen: 'challenge-pool', level: opts.challenge }); return; }
     var next = startUnit || UNITS[nextUnit(UNITS, new Set(Store.snapshot().completed))];
     startAt(next.index, 'unit');
   };
@@ -711,6 +712,7 @@ function App() {
     doneToday: doneToday,
     examDate: examDate,
     cards: srsCards,
+    onChallenge: function (lv) { setFlow({ screen: 'challenge-pool', level: lv }); },
     setUnit: function setUnit(i) { openStage(i, 'units'); }
   }) : React.createElement(React.Fragment, null, React.createElement("button", {
     className: "unit-back",
@@ -769,6 +771,24 @@ function App() {
     onApply: onPlacementApply,
     // leaving saves nothing: back to the welcome it came from, else straight to where the learner was
     onClose: function () { setFlow(flow.fromWelcome ? { screen: 'welcome', again: flow.again, swap: true } : null); }
+  }), flow && flow.screen === 'challenge-pool' && React.createElement(ChallengePool, {
+    level: flow.level,
+    completed: completed,
+    onGo: function (mode) { setFlow({ screen: 'challenge-run', level: flow.level, mode: mode }); },
+    onClose: function () { setFlow(null); }
+  }), flow && flow.screen === 'challenge-run' && React.createElement(ChallengeRun, {
+    level: flow.level,
+    mode: flow.mode,
+    retakeOf: flow.retakeOf,
+    onDone: function (r) { setFlow({ screen: 'challenge-result', level: flow.level, run: r.run, scores: r.scores, misses: r.misses }); },
+    onClose: function () { setFlow(null); }
+  }), flow && flow.screen === 'challenge-result' && React.createElement(ChallengeResult, {
+    level: flow.level,
+    scores: flow.scores,
+    misses: flow.misses,
+    run: flow.run,
+    onRetake: function () { setFlow({ screen: 'challenge-run', level: flow.level, retakeOf: flow.run }); },
+    onClose: function () { setFlow(null); }
   }));
 }
 

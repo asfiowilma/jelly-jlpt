@@ -410,6 +410,7 @@ var UI_STRINGS = {
   pt_reviews_one:    { en: '1 review is waiting in the stages you skipped. It stays open.', ja: '飛ばした範囲に復習が1件あります。開いたままです。' },
   pt_apply:          { en: 'Start “{title}”', ja: '「{title}」を始める' },
   pt_apply_all:      { en: 'Save the result', ja: '結果を保存' },
+  pt_challenge:      { en: 'Save and take the Mastery Challenge', ja: '保存してマスターチャレンジに挑戦' },
   pt_discard:        { en: 'Discard result', ja: '結果を破棄' },
   pt_res_note:       { en: 'Undo any time in Settings, under Already known.', ja: '設定の「しっている項目」からいつでも取り消せます。' },
   set_start:         { en: 'Starting point', ja: '開始地点' },
@@ -553,12 +554,13 @@ function icon(name) {
 // Eyes: ex/ey = offset from the body centre, er = dot radius, dot/arc = which eye style shows,
 // bend = arc curve (up < 0 < down), shine = highlight on the dots, z = sleepy "z"s.
 var JELLY_MOODS = {
-  idle:   { rx: 228, ry: 218, n: 2.7, w: 0.07, lean: 0,    a: 0,     ph: 0, ex: 62, ey: 26, er: 30, cx: 0, dot: 1, arc: 0, bend: 0,   shine: 1, z: 0 },
-  hello:  { rx: 222, ry: 226, n: 2.7, w: 0.07, lean: 0.55, a: 0,     ph: 0, ex: 63, ey: 14, er: 30, cx: 8, dot: 1, arc: 0, bend: 0,   shine: 1, z: 0 },
-  happy:  { rx: 242, ry: 192, n: 2.5, w: 0.1,  lean: 0,    a: 0,     ph: 0, ex: 70, ey: 24, er: 26, cx: 0, dot: 0, arc: 1, bend: -36, shine: 1, z: 0 },
-  cheer:  { rx: 204, ry: 238, n: 2.7, w: -0.1, lean: 0,    a: 0,     ph: 0, ex: 62, ey: 2,  er: 38, cx: 0, dot: 1, arc: 0, bend: 0,   shine: 1, z: 0 },
-  sleepy: { rx: 236, ry: 162, n: 2.4, w: 0.15, lean: 0,    a: 0,     ph: 0, ex: 72, ey: 16, er: 26, cx: 0, dot: 0, arc: 1, bend: 26,  shine: 1, z: 1 },
-  oops:   { rx: 244, ry: 196, n: 2.5, w: 0.1,  lean: -0.3, a: 0.035, ph: 1, ex: 84, ey: 52, er: 20, cx: 0, dot: 1, arc: 0, bend: 0,   shine: 0, z: 0 }
+  idle:   { rx: 228, ry: 218, n: 2.7, w: 0.07, lean: 0,    a: 0,     ph: 0, ex: 62, ey: 26, er: 30, cx: 0, dot: 1, arc: 0, bend: 0,   shine: 1, z: 0, lid: 0, brow: 0, look: 0 },
+  hello:  { rx: 222, ry: 226, n: 2.7, w: 0.07, lean: 0.55, a: 0,     ph: 0, ex: 63, ey: 14, er: 30, cx: 8, dot: 1, arc: 0, bend: 0,   shine: 1, z: 0, lid: 0, brow: 0, look: 0 },
+  happy:  { rx: 242, ry: 192, n: 2.5, w: 0.1,  lean: 0,    a: 0,     ph: 0, ex: 70, ey: 24, er: 26, cx: 0, dot: 0, arc: 1, bend: -36, shine: 1, z: 0, lid: 0, brow: 0, look: 0 },
+  cheer:  { rx: 204, ry: 238, n: 2.7, w: -0.1, lean: 0,    a: 0,     ph: 0, ex: 62, ey: 2,  er: 38, cx: 0, dot: 1, arc: 0, bend: 0,   shine: 1, z: 0, lid: 0, brow: 0, look: 0 },
+  sleepy: { rx: 236, ry: 162, n: 2.4, w: 0.15, lean: 0,    a: 0,     ph: 0, ex: 72, ey: 16, er: 26, cx: 0, dot: 0, arc: 1, bend: 26,  shine: 1, z: 1, lid: 0, brow: 0, look: 0 },
+  oops:   { rx: 244, ry: 196, n: 2.5, w: 0.1,  lean: -0.3, a: 0.035, ph: 1, ex: 84, ey: 52, er: 20, cx: 0, dot: 1, arc: 0, bend: 0,   shine: 0, z: 0, lid: 0, brow: 0, look: 0 },
+  smug:   { rx: 234, ry: 200, n: 2.6, w: 0.08, lean: 0.5, a: 0, ph: 0, ex: 68, ey: 34, er: 30, cx: 8, dot: 1, arc: 0, bend: 0, shine: 0, z: 0, lid: 0.58, brow: 1, look: 0.55 }
 };
 var JELLY_KEYS = Object.keys(JELLY_MOODS.idle);
 function jellyLerp(A, B, t) {
@@ -591,7 +593,17 @@ function jellyFrom(S, size, id, d, wobble) {
   var eyes = [];
   [-1, 1].forEach(function (side) {
     var x = 256 + S.cx + side * S.ex;
-    if (S.dot > 0) {
+    if (S.dot > 0 && S.lid > 0) {
+      // half-lid: eye clipped below the lid line, pupil glancing sideways, flat tilted lid, smug brows (left arched, right pushed down)
+      var ly = eyeCy - S.er + S.lid * 2 * S.er, px = x + S.look * S.er * 0.5, stk = { fill: 'none', strokeWidth: 13, strokeLinecap: 'round' };
+      if (S.brow > 0) {
+        var by = eyeCy - S.er - 30;
+        eyes.push(h('path', Object.assign({ key: 'b' + side, d: side < 0 ? 'M' + (x - 36) + ' ' + (by - 4) + ' Q' + (x - 2) + ' ' + (by - 38) + ' ' + (x + 34) + ' ' + (by - 10) : 'M' + (x - 34) + ' ' + (by + 16) + ' Q' + (x + 2) + ' ' + (by - 2) + ' ' + (x + 36) + ' ' + (by - 4), opacity: S.brow }, stk, sc('stroke', 'var(--jeye)'))));
+      }
+      eyes.push(h('clipPath', { key: 'lc' + side, id: id + 'l' + side }, h('rect', { x: x - S.er, y: ly, width: 2 * S.er, height: 2 * S.er })));
+      eyes.push(h('circle', Object.assign({ key: 'e' + side, cx: px, cy: eyeCy, r: S.er, clipPath: 'url(#' + id + 'l' + side + ')' }, sc('fill', 'var(--jeye)'))));
+      eyes.push(h('path', Object.assign({ key: 'ld' + side, d: 'M' + (x - S.er - 4) + ' ' + (ly + side * 5) + ' L' + (x + S.er + 4) + ' ' + (ly - side * 5) }, stk, { strokeWidth: 10 }, sc('stroke', 'var(--jeye)'))));
+    } else if (S.dot > 0) {
       eyes.push(h('circle', Object.assign({ key: 'e' + side, cx: x, cy: eyeCy, r: S.er, opacity: S.dot }, sc('fill', 'var(--jeye)'))));
       if (S.shine > 0) eyes.push(h('circle', { key: 's' + side, cx: x + S.er * 0.32, cy: eyeCy - S.er * 0.34, r: S.er * 0.28, fill: '#fff', opacity: 0.92 * S.shine * S.dot }));
     }
