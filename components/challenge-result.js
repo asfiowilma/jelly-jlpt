@@ -25,7 +25,7 @@ function ChallengeResult(props) {
     var timers = [];
     scores.forEach(function (_, i) {
       timers.push(setTimeout(function () { setIn(i + 1); }, i * 1000 + 400));
-      timers.push(setTimeout(function () { setSt(i + 1); }, i * 1000 + 1050));
+      timers.push(setTimeout(function () { setSt(i + 1); playSynthSfx('stamp'); }, i * 1000 + 1050));
     });
     return function () { timers.forEach(clearTimeout); };
   }, []);

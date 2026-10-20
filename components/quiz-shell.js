@@ -197,7 +197,7 @@ function qzKit(h, ex, st) {
       ex.note && ex.noteLater && !revealed && !st.showEarly && h("p", { key: "n", className: "qz-hint", lang: "en" },
         "On the test there is no English. ", h("button", { className: "link-btn", onClick: st.onEarly }, "Stuck? Show the English")),
       // N5 r2b newbie N13: ★ was never explained
-      ex.type === 'order' && !revealed && exHelp(ex, lv),
+      ex.type === 'order' && !st.help && !revealed && exHelp(ex, lv),
       ex.type === 'order' && revealed && ex.sentence && CATALOG.items[ex.sentence] &&
         h("p", { key: "solved", className: "qz-solved", lang: "ja" }, CATALOG.items[ex.sentence].jp)];
   };

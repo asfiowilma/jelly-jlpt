@@ -35,6 +35,7 @@ function ChallengeRun(props) {
   var voiceStatus = React.useState(function () { return jaVoiceStatus(false); })[0];
   var shell = useQuizLayer(true, leaving);
   useQuizBusy(true);
+  React.useEffect(function () { playSynthSfx('whoosh'); }, []); // the challenge opens with a whoosh
   var exs = run.exs;
   if (!exs.length) return null;
   var ex = exs[cur];
@@ -46,13 +47,17 @@ function ChallengeRun(props) {
     if (revealed || !ready) return;
     var resp = isOpt ? pick : (ex.kana ? kanaBox(ex, answer.replace(/n$/, 'ん')) : answer);
     if (typeof resp === 'string') setAnswer(resp);
+    var ok = answerIsRight(ex, resp);
+    playSfx(ok ? 'correct' : 'wrong');
     setRevealed(true);
-    setResults(results.concat([answerIsRight(ex, resp)]));
+    setResults(results.concat([ok]));
   };
   var finish = function (all) {
     var scores = challengeScore(run.questions, all);
+    playSfx('complete');
     var docs = Store.docs();
     challengeApply(scores, docs, Date.now()).forEach(function (d) { Store.putUnit(d._id.slice(5), true); });
+    notifyStoreChanged(); // App re-reads completed, so the Stages list shows the cleared stages without a reload
     var chrun = challengeRecord(lv, props.retakeOf ? props.retakeOf.mode : props.mode, run.pool, scores, startedAt, run.deferred);
     Store.putChrun(chrun);
     var misses = run.questions.filter(function (_, i) { return all[i] !== true; });
@@ -74,6 +79,7 @@ function ChallengeRun(props) {
       return revealed ? next() : check();
     }
     if (tag === 'INPUT') return;
+    if (e.key === ' ' && (ex.type === 'listen' || ex.type === 'listen_dialog')) { e.preventDefault(); if (!e.repeat) { if (ex.type === 'listen') speak(ex.audio); else speakScript(ex.script, {}); } return; }
     var n = /^[1-9]$/.test(e.key) ? Number(e.key) - 1 : -1;
     if (isOpt && !revealed && n >= 0 && n < ex.options.length) setPick(n);
   };

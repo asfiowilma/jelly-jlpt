@@ -95,16 +95,17 @@ function dareCard(level, completed, onChallenge) {
   var ce = React.createElement, stages = challengeStages(level);
   if (!stages.length) return null;
   var L = stages.filter(function (u) { return !completed.has(u.id); }).length; // completed includes skipped stages
+  var early = (stages.length - L) * 10 < stages.length; // early state: under 10% of lesson + kana stages cleared, so no "forgotten" pitch
   var it = CATALOG.items['x:' + level.toLowerCase() + '-challenge'], title = it ? it.title : level + " Mastery Challenge";
   return ce("section", { className: "panel dare", 'aria-label': title },
     ce("span", { className: "dare-stamp", 'aria-hidden': "true" }, "Dare"),
     ce("div", { className: "row" }, jelly(L ? 'smug' : 'happy', 78, true),
       ce("div", { className: "txt" },
         ce("div", { className: "eyebrow" }, title),
-        ce("p", { className: "lead" }, L ? "Bet you've forgotten some of it." : "Fine, you remembered everything."),
-        ce("p", null, L ? "Stage quizzes check what you just studied. This checks what stuck. A perfect stage counts as passed, no quiz needed." : "Go again anyway. Jelly dares you."))),
+        ce("p", { className: "lead" }, !L ? "Fine, you remembered everything." : early ? "Bet you already know this." : "Bet you've forgotten some of it."),
+        ce("p", null, !L ? "Go again anyway. Jelly dares you." : early ? "Ace it and the stage is done. Blow it and, well, you'll find out what you didn't know." : "Stage quizzes check what you just studied. This checks what stuck. A perfect stage counts as passed, no quiz needed."))),
     ce("div", { className: "rules" }, ce("span", null, "Perfect or nothing"), ce("span", null, "Retake all you like"), ce("span", null, "No timer")),
-    ce("button", { className: "btn-outline", onClick: function () { onChallenge(level); } }, "Prove me wrong"));
+    ce("button", { className: "btn-outline", onClick: function () { onChallenge(level); } }, early ? "Prove yourself" : "Prove me wrong"));
 }
 
 function Overview(props) {

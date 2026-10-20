@@ -53,13 +53,21 @@ QUnit.module('challenge screens', function () {
   function unitDocs(list) { return list.map(function (id) { return { _id: 'unit:' + id, done: true }; }); }
 
   // ── overview Dare card ────────────────────────────────────────────────────
-  QUnit.test('Dare card shows for N5 and N4 with the stages-left copy and Prove me wrong', function (assert) {
+  QUnit.test('Dare card early state (under 10% of stages cleared) uses the cheeky copy and Prove yourself', function (assert) {
     ['N5', 'N4'].forEach(function (lv) {
       var els = mount(function () { dareCard(lv, new Set(), noop); }, {}).render();
       assert.ok(els.some(function (e) { return e.props.className === 'panel dare'; }), lv + ' card present');
-      assert.ok(allText(els).indexOf("Bet you've forgotten some of it.") >= 0, lv + ' stages-left copy');
-      assert.ok(btn(els, 'Prove me wrong'), lv + ' button');
+      assert.ok(allText(els).indexOf('Bet you already know this.') >= 0, lv + ' early copy');
+      assert.ok(allText(els).indexOf("Bet you've forgotten") < 0, lv + ' no forgotten pitch early');
+      assert.ok(btn(els, 'Prove yourself'), lv + ' button');
     });
+  });
+
+  QUnit.test('Dare card at 10% cleared or more uses the forgotten copy and Prove me wrong', function (assert) {
+    var n = stages().length, tenth = new Set(ids(stages()).slice(0, Math.ceil(n / 10)));
+    var els = mount(function () { dareCard('N5', tenth, noop); }, {}).render();
+    assert.ok(allText(els).indexOf("Bet you've forgotten some of it.") >= 0, 'late stages-left copy');
+    assert.ok(btn(els, 'Prove me wrong'), 'late button');
   });
 
   QUnit.test('Dare card with nothing left says so and still offers Prove me wrong', function (assert) {
@@ -83,7 +91,7 @@ QUnit.module('challenge screens', function () {
   QUnit.test('Dare card button hands its level to the entry handler', function (assert) {
     var got = [];
     var els = mount(function () { dareCard('N4', new Set(), function (lv) { got.push(lv); }); }, {}).render();
-    btn(els, 'Prove me wrong').props.onClick();
+    btn(els, 'Prove yourself').props.onClick();
     assert.deepEqual(got, ['N4']);
   });
 
