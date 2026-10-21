@@ -131,12 +131,11 @@ QUnit.module('kana reading through words (ticket 44)', function () {
     assert.strictEqual(kanaToRomaji('おおきい', true), 'ookii', 'hiragana long vowels stay spelled out');
     var u = units().filter(function (x) { return x.id === 'n5.u012'; })[0];
     var ctx = quizContext(u), w = { kind: 'kanaword', id: 'w:コーヒー', word: 'コーヒー', level: 'N5' }, ex = null;
-    for (var i = 0; i < 30 && !ex; i++) { var e = makeQuestion(w, ctx, true, [], true, 'read'); if (e && e.form === 'kanaSpell') ex = e; }
-    assert.ok(ex, 'kanaSpell made for a ー word');
+    for (var i = 0; i < 60 && !ex; i++) { var e = makeQuestion(w, ctx, false, [], true, 'read'); if (e && e.form === 'kanaSpellPick') ex = e; }
+    assert.ok(ex, 'kanaSpellPick made for a ー word');
     assert.strictEqual(ex.question, 'kōhī');
-    assert.ok(ex.kata && /Type - for ー/.test(ex.hint), 'katakana box, hint for ー');
-    assert.ok(answerIsRight(ex, kanaBox(ex, 'ko-hi-')), 'ko-hi- is right');
-    assert.notOk(answerIsRight(ex, kanaBox(ex, 'koohii')), 'コオヒイ is not how it is written');
+    assert.ok(/katakana/.test(ex.prompt), 'asks for katakana');
+    assert.strictEqual(ex.options[ex.correct], 'コーヒー');
     assert.notOk(answerLeaks(ex), 'no leak');
   });
 
@@ -171,18 +170,20 @@ QUnit.module('kana reading through words (ticket 44)', function () {
     assert.ok(kanaReadWords(u9).some(function (w) { return w.level !== 'N5'; }), 'u009 (にゃ–りょ) gets beyond-N5 words');
   });
 
-  QUnit.test('kanaSpell: romaji → typed kana, accepts only the word\'s own kana', function (assert) {
+  QUnit.test('kanaSpellPick: romaji → four kana spellings, exactly one is the word', function (assert) {
     var u = units().filter(function (x) { return x.id === 'n5.u006'; })[0];
     var ctx = quizContext(u), ex = null;
     var w = ctx.readWords.filter(function (x) { return x.word === 'おおぜい'; })[0];
     assert.ok(w, 'おおぜい readable at u006 (holds ぜ)');
-    for (var i = 0; i < 30 && !ex; i++) { var e = makeQuestion(w, ctx, true, [], true, 'read'); if (e && e.form === 'kanaSpell') ex = e; }
-    assert.ok(ex, 'kanaSpell made');
+    for (var i = 0; i < 60 && !ex; i++) { var e = makeQuestion(w, ctx, false, [], true, 'read'); if (e && e.form === 'kanaSpellPick') ex = e; }
+    assert.ok(ex, 'kanaSpellPick made');
+    assert.strictEqual(ex.type, 'mc');
     assert.strictEqual(ex.question, 'oozei');
-    assert.ok(ex.kana && /IME/.test(ex.hint), 'kana answer box with the IME hint');
-    assert.ok(answerIsRight(ex, 'おおぜい'));
-    assert.notOk(answerIsRight(ex, 'おうぜい'), 'おう is not how this word is written');
-    assert.notOk(answerIsRight(ex, 'オオゼイ'), 'wrong script');
+    assert.ok(/hiragana/.test(ex.prompt), 'asks for hiragana');
+    assert.strictEqual(ex.options.length, 4);
+    assert.strictEqual(new Set(ex.options).size, 4, 'distinct');
+    assert.strictEqual(ex.options.filter(function (o) { return o === 'おおぜい'; }).length, 1);
+    assert.strictEqual(ex.options[ex.correct], 'おおぜい');
     assert.notOk(answerLeaks(ex), 'no leak');
   });
   QUnit.test('kanaHear: every kana stage hears 2-3 words; 4 distinct options, one right spelling, learned kana only', function (assert) {

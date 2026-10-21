@@ -145,7 +145,7 @@ QUnit.module('placementQuestions', function () {
     assert.strictEqual(seen.readingType, 'pt_ph_hira');
     assert.strictEqual(placementHintKey({ type: 'typing', form: 'kanjiReadType' }), 'pt_ph_kana'); // random sampling may not draw one
     assert.strictEqual(seen.conj, 'pt_ph_conj');
-    assert.strictEqual(placementHintKey({ type: 'typing', form: 'kanaSpell', kata: true }), 'pt_ph_kata');
+    assert.strictEqual(placementHintKey({ type: 'typing', form: 'kanaType', kata: true }), 'pt_ph_kata');
     assert.strictEqual(placementHintKey({ type: 'typing', form: 'romajiType', romaji: 'さん' }), 'pt_ph_romaji');
   });
 

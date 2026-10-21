@@ -1717,23 +1717,21 @@ function formsFor(item, ctx) {
   if (item.kind === 'kanaword' || item.kind === 'vocab' && ctx.kanaMode) {
     // shown romaji: ー as a macron (kōhī), so it names one spelling; typed answers take kōhī or koohii
     var kw = item, rom = kanaToRomaji(kw.word), shown = kanaToRomaji(kw.word, true), kata = /[ァ-ヺ]/.test(kw.word);
+    var kanaWordPick = function (prompt, minFakes) {
+      // square fakes first: one-edit fakes alone leave the answer the "centre" option (N5 r2 vocab T2: 95%)
+      var gen = function (w) { return kanaWordFakes(w, ctx.learned, 99); };
+      var sq = squareFakes(kw.word, function (x) { return kanaToRomaji(x) !== rom; }, gen);
+      if (sq && new Set(sq.map(function (x) { return kanaToRomaji(x); })).size < 3) sq = null;
+      var fakes = sq || kanaWordFakes(kw.word, ctx.learned).slice(0, 3);
+      if (fakes.length < minFakes) return null;
+      var opts = rndShuffle([kw.word].concat(fakes));
+      return { type: 'mc', prompt: prompt, question: shown, options: opts, correct: opts.indexOf(kw.word) };
+    };
     var read = [
       f('romajiType', true, function () { return typing('Type this word in romaji:', kw.word, [rom], 'romaji…', { romaji: kw.word }); }),
-      f('romajiPick', false, function () {
-        // square fakes first: one-edit fakes alone leave the answer the "centre" option (N5 r2 vocab T2: 95%)
-        var gen = function (w) { return kanaWordFakes(w, ctx.learned, 99); };
-        var sq = squareFakes(kw.word, function (x) { return kanaToRomaji(x) !== rom; }, gen);
-        if (sq && new Set(sq.map(function (x) { return kanaToRomaji(x); })).size < 3) sq = null;
-        var fakes = sq || kanaWordFakes(kw.word, ctx.learned).slice(0, 3);
-        if (fakes.length < 2) return null;
-        var opts = rndShuffle([kw.word].concat(fakes));
-        return { type: 'mc', prompt: 'Which is "' + shown + '"?', question: shown, options: opts, correct: opts.indexOf(kw.word) };
-      }),
-      f('kanaSpell', true, function () {
-        var hint = kata ? { hint: IME_HINT + ' Type - for ー (ō is o-).' } : {};
-        return kanaSpellable(kw.word) ? typing('Type this word in ' + (kata ? 'katakana' : 'hiragana') + ':', shown, [kw.word],
-          kata ? 'katakana…' : 'hiragana…', Object.assign({}, KANA_INPUT, kata ? { kata: true } : {}, hint)) : null;
-      })
+      f('romajiPick', false, function () { return kanaWordPick('Which is "' + shown + '"?', 2); }),
+      // typing the kana is pointless (the box converts romaji as you type), so it is picked among four
+      f('kanaSpellPick', false, function () { return kanaWordPick('Which is "' + shown + '" in ' + (kata ? 'katakana' : 'hiragana') + '?', 3); })
     ];
     if (item.kind === 'kanaword') return read;
     // a taught word (ticket 42) is also asked for its meaning, and as the word for a meaning (only
@@ -2021,7 +2019,7 @@ function askedRecently(recent, id) {
 }
 
 // Kana quiz parts (ticket 44): reading forms (single kana, kana words) vs the meaning forms of a taught word.
-var KANA_READ_FORMS = { kanaHear: true, kanaType: true, kanaRead: true, kanaPick: true, romajiType: true, romajiPick: true, kanaSpell: true };
+var KANA_READ_FORMS = { kanaHear: true, kanaType: true, kanaRead: true, kanaPick: true, romajiType: true, romajiPick: true, kanaSpellPick: true };
 function formPart(name) { return KANA_READ_FORMS[name] ? 'read' : 'meaning'; }
 
 // Kana hearing question: the browser voice says a kana word, the learner picks which written word
@@ -4799,7 +4797,7 @@ function placementHintKey(ex) {
   if (ex.kata) return 'pt_ph_kata';
   var f = ex.form || '';
   if (f === 'kanjiReadType') return 'pt_ph_kana';
-  if (/^(readingType|ctxRead|kanaSpell)$/.test(f)) return 'pt_ph_hira';
+  if (/^(readingType|ctxRead)$/.test(f)) return 'pt_ph_hira';
   if (ex.kana) return 'pt_ph_jp';
   return 'pt_placeholder';
 }

@@ -93,18 +93,13 @@ QUnit.module('kana unit words (ticket 42)', function () {
         buildsOf(u, 4).filter(function (e) { return !isChar(e); }).forEach(function (e) {
           forms[e.form] = true;
           var tag = u.id + ' ' + e.form + ' ' + e.item.id;
-          if (['romajiType', 'romajiPick', 'kanaSpell', 'meaningMc', 'wordMc'].indexOf(e.form) < 0) assert.ok(false, tag + ': unexpected form');
+          if (['romajiType', 'romajiPick', 'kanaSpellPick', 'meaningMc', 'wordMc'].indexOf(e.form) < 0) assert.ok(false, tag + ': unexpected form');
           if (hasKanji(e.question || '') || (e.options || []).some(hasKanji)) assert.ok(false, tag + ': kanji shown');
           if (e.question && /[ぁ-ヺ]/.test(e.question) && !kanaReadable(e.question, learned)) assert.ok(false, tag + ': question uses unlearned kana');
           if (answerLeaks(e)) assert.ok(false, tag + ': leaks ' + answerLeaks(e));
           if (e.form === 'romajiType') assert.ok(answerIsRight(e, kanaToRomaji(e.item.word)) && !answerIsRight(e, e.item.word + 'x'), tag);
-          if (e.form === 'kanaSpell') {
-            var typeKana = function (s) { // as a learner types it (ō → o-), then the answer box + Check
-              s = s.replace(/[āīūēō]/g, function (c) { return 'aiueo'.charAt('āīūēō'.indexOf(c)) + '-'; });
-              return kanaBox(e, kanaBox(e, s).replace(/n$/, 'ん'));
-            };
-            if (!answerIsRight(e, typeKana(e.question)) || answerIsRight(e, typeKana(e.question + 'a'))) assert.ok(false, tag + ': typing the shown romaji must spell the word, nothing else');
-            if (!kanaReadable(e.answers[0], learned)) assert.ok(false, tag + ': answer uses unlearned kana');
+          if (e.form === 'kanaSpellPick') {
+            if (e.options.length !== 4 || new Set(e.options).size !== 4 || e.options[e.correct] !== e.item.word) assert.ok(false, tag + ': four distinct options, the word is the one right');
           }
           if (e.form === 'romajiPick') { // N5 r2 vocab T2: the one option nearest all others was the answer 95%
             var sum = e.options.map(function (o) { return e.options.reduce(function (t, x) { return t + editDistance(o, x); }, 0); });
@@ -112,7 +107,7 @@ QUnit.module('kana unit words (ticket 42)', function () {
             picks++;
             if (sum[e.correct] === min && sum.filter(function (x) { return x === min; }).length === 1) centre++;
           }
-          if (e.form === 'romajiPick' || e.form === 'wordMc') {
+          if (e.form === 'romajiPick' || e.form === 'kanaSpellPick' || e.form === 'wordMc') {
             e.options.forEach(function (o) { if (!kanaReadable(o, learned)) assert.ok(false, tag + ': option ' + o + ' uses unlearned kana'); });
           }
           if (e.form === 'wordMc') {
@@ -127,7 +122,7 @@ QUnit.module('kana unit words (ticket 42)', function () {
         });
       });
     });
-    assert.deepEqual(Object.keys(forms).sort(), ['kanaSpell', 'meaningMc', 'romajiPick', 'romajiType', 'wordMc']);
+    assert.deepEqual(Object.keys(forms).sort(), ['kanaSpellPick', 'meaningMc', 'romajiPick', 'romajiType', 'wordMc']);
     assert.ok(centre / picks <= 0.3, 'romajiPick answer is the unique centre option ' + centre + '/' + picks);
   });
 

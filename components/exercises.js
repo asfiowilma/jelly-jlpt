@@ -428,14 +428,15 @@ function Exercises(_ref9) {
     main = [promptEl,
       ex.passage && h("div", { key: "pg", className: "qz-passage" }, ex.passage),
       questionEl(),
-      h("input", {
-        key: "in", ref: inputRef, className: "qz-input" + tone, type: "text", value: answer, 'aria-label': ex.prompt, lang: "ja",
+      // a <form> so the phone keyboard's Enter/go key submits; the Enter keydown below handles desktop and stops the implicit submit
+      h("form", { key: "in", className: "qz-form", noValidate: true, onSubmit: function (e) { e.preventDefault(); if (!revealed) check(); } }, h("input", {
+        ref: inputRef, className: "qz-input" + tone, type: "text", value: answer, 'aria-label': ex.prompt, lang: "ja",
         placeholder: ex.placeholder || 'Type your answer...', disabled: revealed, autoFocus: true,
-        autoComplete: "off", autoCapitalize: "off", spellCheck: false,
+        autoComplete: "off", autoCapitalize: "off", spellCheck: false, enterKeyHint: "go",
         onChange: function (e) { setNotice(null); setAnswer(ex.kana ? kanaBox(ex, e.target.value) : e.target.value); },
         // Enter while an IME is composing confirms the kana, not the answer
-        onKeyDown: function (e) { if (e.key === 'Enter' && !(e.nativeEvent && e.nativeEvent.isComposing)) { e.stopPropagation(); check(); } }
-      }),
+        onKeyDown: function (e) { if (e.key === 'Enter' && !(e.nativeEvent && e.nativeEvent.isComposing)) { e.stopPropagation(); e.preventDefault(); check(); } }
+      })),
       ex.hint && h("p", { key: "hint", className: "qz-hint" }, ex.hint),
       notice && !revealed && h("div", { key: "other", className: "qz-warn qz-other", role: "status" }, notice)];
   }

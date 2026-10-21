@@ -863,3 +863,20 @@ function loadStrokeOrderSvg(char) {
   }
   return attempt(0);
 }
+
+// On-screen keyboard: iOS Safari keeps the layout viewport and slides the keyboard over it, hiding the
+// bottom-fixed quiz dock. Track the gap under the visible area; .ql (styles.css) shrinks by it.
+(function () {
+  var vv = typeof window !== 'undefined' && window.visualViewport;
+  if (!vv || typeof document === 'undefined') return;
+  var root = document.documentElement;
+  var sync = function () {
+    var gap = Math.round(window.innerHeight - vv.height - vv.offsetTop);
+    var open = gap > 80; // smaller shifts are browser toolbars, not a keyboard
+    root.style.setProperty('--kb-inset', open ? gap + 'px' : '0px');
+    root.style.setProperty('--kb-top', open ? Math.round(vv.offsetTop) + 'px' : '0px');
+    root.classList.toggle('kb-open', open);
+  };
+  vv.addEventListener('resize', sync);
+  vv.addEventListener('scroll', sync);
+})();

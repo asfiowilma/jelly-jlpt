@@ -55,14 +55,15 @@ function PlacementQuestion(props) {
         return h("button", { key: i, className: "qz-opt" + (pick === i ? " sel" : ""), type: "button", 'aria-pressed': pick === i, lang: QZ_JA.test(opt) ? "ja" : "en",
           onClick: function () { setPick(i); } }, h("kbd", null, i + 1), h("span", null, ex.optionParts ? partsEl(ex.optionParts[i]) : opt));
       }))
-    : h("input", { key: "in", className: "qz-input", type: "text", value: answer, 'aria-label': ex.prompt, lang: "ja", placeholder: L(placementHintKey(ex)),
-      autoFocus: true, autoComplete: "off", autoCapitalize: "off", spellCheck: false,
+    : h("form", { key: "in", className: "qz-form", noValidate: true, onSubmit: function (e) { e.preventDefault(); submit(); } }, h("input", { className: "qz-input", type: "text", value: answer, 'aria-label': ex.prompt, lang: "ja", placeholder: L(placementHintKey(ex)),
+      autoFocus: true, autoComplete: "off", autoCapitalize: "off", spellCheck: false, enterKeyHint: "go",
       onChange: function (e) { setNotice(null); setAnswer(ex.kana ? kanaBox(ex, e.target.value) : e.target.value); },
       onKeyDown: function (e) {
         if (e.key !== 'Enter' || (e.nativeEvent && e.nativeEvent.isComposing)) return;
         e.stopPropagation();
-        if (e.shiftKey) { e.preventDefault(); if (!e.repeat) props.onAnswer(null); } else submit();
-      } });
+        e.preventDefault(); // keeps the form's implicit submit from firing a second time
+        if (e.shiftKey) { if (!e.repeat) props.onAnswer(null); } else submit();
+      } }));
   return h(React.Fragment, null,
     h("div", { className: "qz-main" }, h("div", { className: "qz-col" },
       h("p", { className: promptCls(ex) }, promptEls(translatePrompt(ex.prompt, lv), ex)),

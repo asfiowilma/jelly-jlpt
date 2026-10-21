@@ -89,12 +89,12 @@ function ChallengeRun(props) {
   var body;
   if (isOpt) body = kit.choice();
   else body = { wide: false, main: [kit.promptEl, kit.questionEl(),
-    h("input", {
-      key: "in", className: "qz-input" + tone, type: "text", value: answer, 'aria-label': ex.prompt, lang: "ja",
-      placeholder: ex.placeholder || 'Type your answer...', disabled: revealed, autoFocus: true, autoComplete: "off", autoCapitalize: "off", spellCheck: false,
+    h("form", { key: "in", className: "qz-form", noValidate: true, onSubmit: function (e) { e.preventDefault(); if (!revealed) check(); } }, h("input", {
+      className: "qz-input" + tone, type: "text", value: answer, 'aria-label': ex.prompt, lang: "ja",
+      placeholder: ex.placeholder || 'Type your answer...', disabled: revealed, autoFocus: true, autoComplete: "off", autoCapitalize: "off", spellCheck: false, enterKeyHint: "go",
       onChange: function (e) { setAnswer(ex.kana ? kanaBox(ex, e.target.value) : e.target.value); },
-      onKeyDown: function (e) { if (e.key === 'Enter' && !(e.nativeEvent && e.nativeEvent.isComposing)) { e.stopPropagation(); check(); } }
-    })] };
+      onKeyDown: function (e) { if (e.key === 'Enter' && !(e.nativeEvent && e.nativeEvent.isComposing)) { e.stopPropagation(); e.preventDefault(); check(); } }
+    }))] };
   var tagKey = CH_TAG[run.questions[cur].kind];
   var ansText = exAnswer(ex);
   var main = [tagKey && h("span", { key: "tag", className: "ch-tag" }, t(tagKey, lv))].concat(body.main,

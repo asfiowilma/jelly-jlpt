@@ -816,7 +816,7 @@ rt{font-size:0.6em;color:var(--accent-fg);font-weight:400;letter-spacing:0.02em}
 
 /* ── Quiz layer (sketch: .scratch/quiz-interface-sketch). Start opens .ql over the app, page scroll locked ── */
 body.quiz-open{overflow:hidden}
-.ql{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;background:var(--bg);container-type:inline-size;animation:ql-rise .28s cubic-bezier(.2,.8,.2,1)}
+.ql{position:fixed;inset:var(--kb-top,0px) 0 var(--kb-inset,0px);z-index:100;display:flex;flex-direction:column;background:var(--bg);container-type:inline-size;animation:ql-rise .28s cubic-bezier(.2,.8,.2,1)}
 @keyframes ql-rise{from{transform:translateY(24px);opacity:0}}
 /* welcome <-> placement swap: no rise, or the page blinks (old layer gone, new one fades in from nothing) */
 .ql.ql-swap{animation:none}
@@ -965,6 +965,8 @@ button.qz-qn{font-size:0.95rem}
 
 /* the dock: Skip + Check, then feedback + Continue */
 .qz-dock{border-top:1px solid var(--border);background:var(--surface);padding:12px 20px calc(12px + env(safe-area-inset-bottom));transition:background .2s}
+.kb-open .qz-dock{padding-bottom:12px}
+.qz-form{margin:0}
 .qz-in{max-width:640px;margin:0 auto;display:flex;align-items:center;gap:12px;min-height:56px}
 .qz-dock.right{background:color-mix(in srgb,var(--ok) 14%,var(--surface));border-color:color-mix(in srgb,var(--ok) 40%,var(--border))}
 .qz-dock.wrong{background:color-mix(in srgb,var(--bad) 13%,var(--surface));border-color:color-mix(in srgb,var(--bad) 40%,var(--border))}
