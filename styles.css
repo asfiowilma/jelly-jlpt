@@ -1012,11 +1012,45 @@ button.qz-qn{font-size:0.95rem}
 .qz-parts li.pass{color:var(--ok)}
 .qz-parts li.fail{color:var(--bad);font-weight:600}
 .qz-miss-h{font-size:0.7rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:22px 0 6px}
-.qz-miss{list-style:none}
-.qz-miss li{display:grid;grid-template-columns:minmax(3.2em,auto) 1fr auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--border);font-size:0.95rem}
-.qz-miss .q{font-size:1.4rem;font-family:'Yu Mincho','Hiragino Mincho ProN','Noto Serif JP',serif}
-.qz-miss .a{color:var(--ok);font-weight:600}
-.qz-more{font-size:0.82rem;color:var(--muted);padding:8px 0}
+.qz-grp{margin-bottom:14px}
+.qz-grp>h3{font-size:0.78rem;display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.qz-grp>h3 span{background:var(--surface2);color:var(--muted);border-radius:99px;padding:0 8px;font-size:0.7rem;font-weight:600}
+.qz-mts{display:flex;flex-wrap:wrap;gap:8px}
+.qz-mt{min-width:0;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:8px 12px;min-height:56px;text-align:left;display:flex;flex-direction:column;justify-content:center;max-width:100%;font:inherit;color:inherit;cursor:pointer}
+.qz-mt .tq{font-size:1.4rem;line-height:1.2;font-family:var(--serif)}
+.qz-mt .tq.s{font-size:0.95rem;font-family:inherit}
+.qz-mt .tq.sj{font-size:1rem}
+.qz-mt .tm{font-size:0.78rem;color:var(--ok);margin-top:2px;max-width:9.5em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qz-mt.wide{flex:1 1 100%}
+.qz-mt.wide .tm{max-width:none}
+.qz-mt .tq{max-width:100%}
+.qz-mt.wide .tq{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qz-mt[aria-expanded=true]{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 8%,var(--surface))}
+.qz-det{flex:1 1 100%;min-width:0;background:var(--surface);border:1px solid var(--ok);border-radius:14px;padding:12px 12px 12px 14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:start}
+.qz-det .tag{grid-column:1/-1;font-size:0.65rem;letter-spacing:0.06em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+.qz-det .dq{font-size:1.5rem;line-height:1.25;font-family:var(--serif)}
+.qz-det .dq.en{font-size:1rem;font-family:inherit;color:var(--muted)}
+.qz-det .qz-spk{grid-column:2;grid-row:2/4}
+.qz-det .ans{grid-column:1/-1;border-top:1px dashed var(--border);padding-top:8px;margin-top:4px;display:flex;flex-wrap:wrap;gap:8px;align-items:baseline}
+.qz-det .ans::before{content:"→";color:var(--muted)}
+.qz-det .ans .v{color:var(--ok);font-weight:600;font-size:0.95rem}
+.qz-det .ans .v[lang=ja]{font-size:1.3rem;font-family:var(--serif)}
+.qz-det .more{background:none;border:0;color:var(--muted);font:inherit;font-size:0.85rem;padding:0 4px;min-height:44px;cursor:pointer}
+.qz-det .more:hover{color:var(--text)}
+.qz-det mark{background:color-mix(in srgb,var(--ok) 22%,transparent);color:var(--ok);border-radius:4px;padding:0 3px}
+.qz-det .dq{overflow-wrap:anywhere}
+/* word order: the finished sentence as reorder-style chips; the star chunk is tinted */
+.qz-det .qz-slots{display:flex;justify-content:flex-start;margin:2px 0 0;gap:6px}
+.qz-det .qz-slot{min-width:0;min-height:40px;padding:0 10px;border-width:1px;border-style:solid;background:var(--surface2);color:var(--text);font-size:1.15rem;gap:4px;white-space:normal}
+.qz-det .qz-slot.ok{background:color-mix(in srgb,var(--ok) 18%,var(--surface))}
+.qz-det .qz-slot b{color:var(--ok);font-size:0.8rem;font-weight:400}
+.qz-det .qz-slots .pl{font-size:1.15rem}
+.qz-spk{flex:none;width:44px;height:44px;border:1px solid var(--border);border-radius:12px;background:transparent;color:var(--muted);display:grid;place-items:center;cursor:pointer}
+.qz-spk:hover{color:var(--accent);border-color:var(--accent)}
+.qz-mt:focus-visible,.qz-spk:focus-visible,.qz-det .more:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* result dock: labels never wrap; buttons that don't fit side by side stack full width */
+.qz-dock.resd .qz-in{flex-wrap:wrap;row-gap:12px}
+.qz-dock.resd .qz-gb,.qz-dock.resd .qz-btn{white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.ql{animation:none}.qz-seg{transition:none}.qz-play.on{animation:none;box-shadow:0 0 0 6px color-mix(in srgb,var(--accent) 35%,transparent)}}
 
 /* phone-width layer: answers sink to the bottom of the question area when the page doesn't scroll
@@ -1040,7 +1074,7 @@ button.qz-qn{font-size:0.95rem}
   .qz-dock.right .qz-gb,.qz-dock.wrong .qz-gb{align-self:flex-start}
   .qz-dock.right .qz-btn,.qz-dock.wrong .qz-btn{flex:1 1 100%}
   .qz-dock.resd .qz-sp{display:none}
-  .qz-dock.resd .qz-gb{flex:1}
+  .qz-dock.resd .qz-gb{flex:1 1 auto}
   .qz-dock.resd .qz-btn{flex:1 1 100%}
 }
 

@@ -1369,7 +1369,9 @@ function orderQuestion(s, taughtKanji, fixedStar, fixedOrder) {
   return { type: 'order', prompt: 'Which goes in the ★ slot?', question: c.pre + ' ' + slots + ' ' + c.post,
     parts: sliceParts(raw, 0, c.pre.length).concat({ t: ' ' + slots + ' ' }, sliceParts(raw, at, Infinity)),
     options: order.map(function (i) { return c.move[i]; }), optionParts: order.map(function (i) { return chunkParts[i]; }),
-    correct: order.indexOf(star), star: star, sentence: s.id };
+    correct: order.indexOf(star), star: star, sentence: s.id,
+    // the finished sentence in the right order (the ★ chunk flagged), for the result screen
+    full: [].concat(sliceParts(raw, 0, c.pre.length), [].concat.apply([], chunkParts.map(function (p, i) { return p.map(function (x) { return Object.assign(i === star ? { chunk: i, star: true } : { chunk: i }, x); }); })), sliceParts(raw, at, Infinity)) };
 }
 // mcFromAuthored(options, answer, order?): options shuffled (or in `order`, indexes into
 // options: a mock's fixed order) + the answer's new index.

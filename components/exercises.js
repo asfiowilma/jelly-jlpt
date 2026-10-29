@@ -31,6 +31,92 @@ function exSpeech(ex) {
   return '';
 }
 
+// ── The result's Missed list: tiles grouped by kind, one detail card open at a time ──
+var MISS_GROUPS = ['Words', 'Kanji', 'Grammar', 'Other'];
+var MISS_SENT = /^(gap|bunmyaku|bunshou|hyouki|iikae|youhou|reading|kanji_yomi)$/;
+// What a miss is, for its tile and card: group, folded-onto-its-word, the finished sentence if any.
+function missQ(e) {
+  if (e.type === 'bunshou') return e.prompt;
+  if (e.type === 'reading') return e.question || e.prompt;
+  if (e.type === 'listen_dialog' && e.questionParts) return e.questionParts.map(function (p) { return p.t; }).join('');
+  return exQuestionText(e) || '';
+}
+function missInfo(e) {
+  var it = e.item, k = it && it.kind, listen = e.type === 'listen' || e.type === 'listen_dialog';
+  var blank = !!e.parts && e.parts.some(function (p) { return p.t === GAP_BLANK; });
+  var vk = k === 'vocab' || k === 'kanji' || k === 'kanaword';
+  var sent = MISS_SENT.test(e.type), fold = vk && (listen || blank || sent || !QZ_JA.test(missQ(e)));
+  var g = k === 'vocab' || k === 'kanaword' || k === 'kana' ? 0 : k === 'kanji' ? 1 : /^(listen|listen_dialog|reading|pair_match)$/.test(e.type) ? 3 : 2;
+  var word = fold ? (it.word || it.char) : '';
+  var tag = ['Word', 'Kanji', 'Grammar', 'Other'][g];
+  if (e.type === 'order') tag = 'Grammar · word order';
+  else if (blank) tag = g === 2 ? 'Fill the gap' : tag + ' · fill the gap';
+  else if (listen && fold) tag += ' · listening';
+  else if (fold && sent) tag += ' · in a sentence';
+  return { g: g, fold: fold, listen: listen, blank: blank, word: word, tag: tag, say: exSpeech(e) || (fold && listen ? (it.reading || word) : '') };
+}
+// The finished sentence with the answer highlighted (a gap's blank, or an order question's ★ chunk); null for the rest.
+function missFilled(e, info) {
+  var h = React.createElement, ru = function (p, i) { return p.r ? h("ruby", { key: i }, p.t, h("rt", null, p.r)) : p.t; };
+  if (info.blank) return e.parts.map(function (p, i) { return p.t === GAP_BLANK ? h("mark", { key: i }, exAnswerEl(e, exAnswer(e))) : ru(p, i); });
+  if (e.type !== 'order' || !e.full) return null;
+  // sentence order, each ★-question chunk in its own chip (the reorder look: .qz-slots/.qz-slot); the ★ chunk is tinted
+  var groups = [];
+  e.full.forEach(function (p) {
+    var last = groups[groups.length - 1];
+    if (last && last.chunk === p.chunk) last.parts.push(p); else groups.push({ chunk: p.chunk, star: !!p.star, parts: [p] });
+  });
+  return h("span", { className: "qz-slots" }, groups.map(function (g, i) {
+    var els = g.parts.map(ru);
+    return g.chunk === undefined ? h("span", { key: i, className: "pl" }, els)
+      : h("span", { key: i, className: "qz-slot" + (g.star ? " star ok" : "") }, g.star && h("b", { 'aria-label': "star slot" }, "★"), els);
+  }));
+}
+function QuizMissed(_ref) {
+  var h = React.createElement, missed = _ref.missed;
+  var _o = React.useState(-1), open = _o[0], setOpen = _o[1];
+  var _m = React.useState(false), allMeanings = _m[0], setAllMeanings = _m[1];
+  var groups = MISS_GROUPS.map(function () { return []; });
+  var infos = missed.map(function (e) { return missInfo(e); });
+  infos.forEach(function (n, i) { groups[n.g].push(i); });
+  var tile = function (i) {
+    var e = missed[i], n = infos[i], it = e.item, filled = missFilled(e, n), ans = exAnswer(e) || '', ms = ans.split(' · ');
+    var q = n.fold ? n.word : e.type === 'order' && e.full ? e.full.map(function (p) { return p.t; }).join('') : missQ(e);
+    var line = n.fold && it.reading && it.reading !== it.word ? it.reading : ms[0];
+    if (it && it.kind === 'kanaword') { // its answer is romaji: show the meaning of the same catalog word, or nothing
+      var kv = catalogOf('vocab').filter(function (x) { return x.word === it.word; })[0];
+      line = kv ? glossText(kv) : '';
+    }
+    if (line === q) line = ''; // the reading line only when it adds something
+    var qja = QZ_JA.test(q), long = Array.from(q).length > 6;
+    var wide = !n.fold && (n.blank || !qja || long);
+    var on = open === i, id = "qz-miss-d" + i;
+    var out = [h("button", { key: "t" + i, type: "button", className: "qz-mt" + (wide ? " wide" : ""), 'aria-expanded': on, 'aria-controls': id,
+        onClick: function () { setOpen(on ? -1 : i); setAllMeanings(false); } },
+      h("span", { className: "tq" + (qja ? (wide ? " sj" : "") : " s"), lang: qja ? "ja" : "en" }, q),
+      line && h("span", { className: "tm", lang: QZ_JA.test(line) ? "ja" : "en" }, line))];
+    if (on) {
+      var more = ms.length > 3 && !allMeanings;
+      var cq = filled || (n.fold && n.listen ? n.word : missQ(e));
+      out.push(h("div", { key: "d" + i, id: id, className: "qz-det", role: "group", 'aria-label': q },
+        h("span", { className: "tag" }, n.tag),
+        h("span", { className: "dq" + (filled || QZ_JA.test(cq) ? "" : " en"), lang: filled || QZ_JA.test(cq) ? "ja" : "en" }, cq),
+        n.say && h("button", { type: "button", className: "qz-spk", 'aria-label': "Hear it", onClick: function () { speak(n.say); } }, icon('speaker')),
+        h("div", { className: "ans" },
+          h("span", { className: "v", lang: QZ_JA.test(ans) ? "ja" : "en" }, ms.length > 1 ? (more ? ms.slice(0, 3) : ms).join(' · ') : exAnswerEl(e, ans)),
+          more && h("button", { type: "button", className: "more", 'aria-label': "Show " + (ms.length - 3) + " more", onClick: function () { setAllMeanings(true); } }, "+" + (ms.length - 3) + " more"))));
+    }
+    return out;
+  };
+  return h("div", { className: "qz-missed" },
+    h("div", { className: "qz-miss-h" }, "Missed (", missed.length, ")"),
+    groups.map(function (idx, g) {
+      return idx.length > 0 && h("section", { key: g, className: "qz-grp" },
+        h("h3", null, MISS_GROUPS[g], " ", h("span", null, idx.length)),
+        h("div", { className: "qz-mts" }, idx.map(function (i) { return tile(i); })));
+    }));
+}
+
 // ── Exercises: the unit quiz (ticket 35) ────────────────────────────────────
 // Pass mark gates completion (Q28); a missed question comes back once at the
 // end in another form, unscored (Q31). onResult(scoreQuiz(...)) when finished.
@@ -252,7 +338,6 @@ function Exercises(_ref9) {
     var pct = s.total ? Math.round(s.right / s.total * 100) : 0;
     var missed = [];
     exs.forEach(function (e, i) { if (results[i] === false && !e.requeue) missed.push(e); });
-    var shown = missed.slice(0, 8);
     var retake = function () { launch(build(unit)); };
     keyRef.current = function (e) { if (trapTab(e)) return; if (e.key === 'Escape') leaveQuiz(); };
     return layer(topBar("Done"), [
@@ -274,15 +359,7 @@ function Exercises(_ref9) {
           })),
           timedOut && h("p", { className: "qz-timeup" }, "Time is up: unanswered questions count as wrong."))),
       supportAsk && h(SupportAsk, { key: "ask", kind: supportAsk, level: lv, onNo: function () { supportDismiss(); setSupportAsk(null); } }),
-      missed.length > 0 && h("div", { key: "mh", className: "qz-miss-h" }, "Missed (", missed.length, ")"),
-      missed.length > 0 && h("ul", { key: "ml", className: "qz-miss" }, shown.map(function (e, i) {
-        var say = exSpeech(e);
-        return h("li", { key: i },
-          h("span", { className: "q", lang: "ja" }, exQuestionText(e)),
-          h("span", { className: "a", lang: QZ_JA.test(exAnswer(e)) ? "ja" : "en" }, exAnswerEl(e, exAnswer(e))),
-          say ? h("button", { className: "qz-gb", 'aria-label': "Hear it", onClick: function () { speak(say); } }, icon('speaker')) : h("span", null));
-      })),
-      missed.length > shown.length && h("p", { key: "more", className: "qz-more" }, "and ", missed.length - shown.length, " more")
+      missed.length > 0 && h(QuizMissed, { key: "miss", missed: missed })
     ], h("div", { className: "qz-dock resd" }, h("div", { className: "qz-in" },
       h("button", { className: "qz-gb", onClick: leaveQuiz }, "Back to the lesson"),
       s.passed && h("button", { className: "qz-gb", onClick: retake }, "Retake"),
